@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using Microsoft.Win32;
 
 namespace SimpleImageViewer
 {
@@ -15,7 +16,7 @@ namespace SimpleImageViewer
             InitializeComponent();
         }
 
-        // Allow dragging the window
+        // Enable window dragging
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
@@ -24,7 +25,6 @@ namespace SimpleImageViewer
             }
         }
 
-        // Handle right-click menu -> Open Image
         private void OpenImage_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -43,6 +43,12 @@ namespace SimpleImageViewer
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        // Open context menu on right-click
+        private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ImageContextMenu.IsOpen = true;
         }
 
         // Fullscreen toggle with F11
@@ -80,8 +86,6 @@ namespace SimpleImageViewer
 
             if (msg == WM_NCHITTEST)
             {
-                handled = true;
-
                 // Convert mouse coordinates
                 int x = lParam.ToInt32() & 0xFFFF; // LOWORD
                 int y = lParam.ToInt32() >> 16;    // HIWORD
@@ -95,6 +99,7 @@ namespace SimpleImageViewer
                 // Left edge
                 if (mousePos.X >= windowRect.Left && mousePos.X < windowRect.Left + edgeThreshold)
                 {
+                    handled = true;
                     if (mousePos.Y >= windowRect.Top && mousePos.Y < windowRect.Top + edgeThreshold)
                         return (IntPtr)HTTOPLEFT;
                     if (mousePos.Y >= windowRect.Bottom - edgeThreshold && mousePos.Y <= windowRect.Bottom)
@@ -105,6 +110,7 @@ namespace SimpleImageViewer
                 // Right edge
                 if (mousePos.X >= windowRect.Right - edgeThreshold && mousePos.X <= windowRect.Right)
                 {
+                    handled = true;
                     if (mousePos.Y >= windowRect.Top && mousePos.Y < windowRect.Top + edgeThreshold)
                         return (IntPtr)HTTOPRIGHT;
                     if (mousePos.Y >= windowRect.Bottom - edgeThreshold && mousePos.Y <= windowRect.Bottom)
@@ -114,19 +120,24 @@ namespace SimpleImageViewer
 
                 // Top edge
                 if (mousePos.Y >= windowRect.Top && mousePos.Y < windowRect.Top + edgeThreshold)
+                {
+                    handled = true;
                     return (IntPtr)HTTOP;
+                }
 
                 // Bottom edge
                 if (mousePos.Y >= windowRect.Bottom - edgeThreshold && mousePos.Y <= windowRect.Bottom)
+                {
+                    handled = true;
                     return (IntPtr)HTBOTTOM;
+                }
 
-                // Default behavior for dragging the window
-                return (IntPtr)HTCAPTION;
+                // Default behavior for client area
+                handled = false; // Allow propagation for right-click menu
+                return (IntPtr)HTCLIENT;
             }
 
             return IntPtr.Zero;
         }
-
-
     }
 }

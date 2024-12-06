@@ -7,6 +7,7 @@
         Background="Black" 
         ResizeMode="CanResize"
         MouseDown="Window_MouseDown" 
+        MouseRightButtonUp="Window_MouseRightButtonUp"
         KeyDown="Window_KeyDown"
         SourceInitialized="Window_SourceInitialized">
     <Grid>
@@ -15,7 +16,7 @@
 
         <!-- Context Menu -->
         <Grid.ContextMenu>
-            <ContextMenu>
+            <ContextMenu x:Name="ImageContextMenu">
                 <MenuItem Header="Open Image..." Click="OpenImage_Click"/>
                 <MenuItem Header="Exit" Click="Exit_Click"/>
             </ContextMenu>
