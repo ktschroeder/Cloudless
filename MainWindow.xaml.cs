@@ -16,14 +16,59 @@ namespace SimpleImageViewer
             InitializeComponent();
         }
 
-        // Enable window dragging
+        private bool isDragging = false;
+        private Point initialCursorPosition;
+
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            // Ensure the action is triggered only by the left mouse button
+            if (e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1)
             {
-                DragMove();
+                // If we're currently fullscreen, we don't want to exit unless dragging
+                if (WindowState == WindowState.Maximized)
+                {
+                    // Capture the cursor position when clicking in fullscreen
+                    initialCursorPosition = e.GetPosition(this);
+                    // Flag that dragging has started (this flag will help us track dragging)
+                    isDragging = true;
+                }
+                else
+                {
+                    // Otherwise, start dragging normally
+                    DragMove();
+                }
             }
         }
+
+        private void Window_MouseMove(object sender, MouseEventArgs e)
+        {
+            // If dragging is enabled (left button is pressed), we can check if fullscreen mode should be exited
+            if (isDragging && WindowState == WindowState.Maximized)
+            {
+                // Calculate the distance moved from the initial cursor position
+                Point cursorPosition = e.GetPosition(this);
+                double offsetX = cursorPosition.X - initialCursorPosition.X;
+                double offsetY = cursorPosition.Y - initialCursorPosition.Y;
+
+                ToggleFullscreen();
+
+                // Center the window on the cursor position by updating its Top and Left properties
+                this.Left = cursorPosition.X - (this.ActualWidth / 2);
+                this.Top = cursorPosition.Y - (this.ActualHeight / 2);
+
+                // Exit fullscreen only when the user moves the mouse after clicking
+                //ToggleFullscreen();
+                DragMove();
+
+            }
+        }
+
+        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            // If the user stops dragging, reset the flag
+            isDragging = false;
+        }
+
 
         private void OpenImage_Click(object sender, RoutedEventArgs e)
         {
@@ -36,6 +81,28 @@ namespace SimpleImageViewer
             {
                 var bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
                 ImageDisplay.Source = bitmap;
+            }
+        }
+
+        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                ToggleFullscreen();
+            }
+        }
+
+        private void ToggleFullscreen()
+        {
+            if (WindowState == WindowState.Normal)
+            {
+                WindowStyle = WindowStyle.None;
+                WindowState = WindowState.Maximized;
+            }
+            else
+            {
+                WindowStyle = WindowStyle.None;
+                WindowState = WindowState.Normal;
             }
         }
 

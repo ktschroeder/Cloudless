@@ -7,7 +7,10 @@
         Background="Black" 
         ResizeMode="CanResize"
         MouseDown="Window_MouseDown" 
+        MouseMove="Window_MouseMove"
+        MouseUp="Window_MouseUp"
         MouseRightButtonUp="Window_MouseRightButtonUp"
+        MouseDoubleClick="Window_MouseDoubleClick"
         KeyDown="Window_KeyDown"
         SourceInitialized="Window_SourceInitialized">
     <Grid>
