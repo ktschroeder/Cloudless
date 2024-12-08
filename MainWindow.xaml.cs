@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,6 +12,10 @@ namespace SimpleImageViewer
 {
     public partial class MainWindow : Window
     {
+        private string currentDirectory;
+        private string[] imageFiles;
+        private int currentImageIndex;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -19,6 +24,8 @@ namespace SimpleImageViewer
             ImageDisplay.Visibility = Visibility.Collapsed;
 
             ApplyDisplayMode();
+
+            this.KeyDown += Window_KeyDown;
         }
 
         private void ApplyDisplayMode()
@@ -153,7 +160,7 @@ namespace SimpleImageViewer
             isDragging = false;
         }
 
-
+        //TODO handle additional (general?) image types, including GIF
         private void OpenImage_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -163,15 +170,68 @@ namespace SimpleImageViewer
 
             if (openFileDialog.ShowDialog() == true)
             {
-                var bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
-                ImageDisplay.Source = bitmap;
+                string selectedImagePath = openFileDialog.FileName;
+                currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
+                imageFiles = Directory.GetFiles(currentDirectory, "*.*")
+                                      .Where(s => s.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                                      .ToArray();
 
-                // Show the image and hide the no-image message
-                ImageDisplay.Visibility = Visibility.Visible;
-                NoImageMessage.Visibility = Visibility.Collapsed;
+                // Find the index of the selected image
+                currentImageIndex = Array.IndexOf(imageFiles, selectedImagePath);
 
-                ApplyDisplayMode();
+                DisplayImage(currentImageIndex);
             }
+        }
+
+        private void DisplayImage(int index)
+        {
+            if (index < 0 || index >= imageFiles.Length) return;
+
+            var bitmap = new BitmapImage(new Uri(imageFiles[index]));
+            ImageDisplay.Source = bitmap;
+
+            // Optionally hide the no-image message if an image is loaded
+            ImageDisplay.Visibility = Visibility.Visible;
+            NoImageMessage.Visibility = Visibility.Collapsed;
+
+            ApplyDisplayMode();
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.F11)
+            {
+                if (WindowState == WindowState.Normal)
+                {
+                    WindowStyle = WindowStyle.None;
+                    WindowState = WindowState.Maximized;
+                }
+                else
+                {
+                    WindowStyle = WindowStyle.None;
+                    WindowState = WindowState.Normal;
+                }
+            }
+
+            if (imageFiles == null || imageFiles.Length == 0) return;
+
+            if (e.Key == Key.Left)
+            {
+                // Go to the previous image
+                currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
+                DisplayImage(currentImageIndex);
+            }
+            else if (e.Key == Key.Right)
+            {
+                // Go to the next image
+                currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
+                DisplayImage(currentImageIndex);
+            }
+
+
         }
 
         private void OpenPreferences_Click(object sender, RoutedEventArgs e)
@@ -230,23 +290,6 @@ namespace SimpleImageViewer
             ImageContextMenu.IsOpen = true;
         }
 
-        // Fullscreen toggle with F11
-        private void Window_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.F11)
-            {
-                if (WindowState == WindowState.Normal)
-                {
-                    WindowStyle = WindowStyle.None;
-                    WindowState = WindowState.Maximized;
-                }
-                else
-                {
-                    WindowStyle = WindowStyle.None;
-                    WindowState = WindowState.Normal;
-                }
-            }
-        }
 
         // Handle resizing and edge dragging
         private void Window_SourceInitialized(object sender, EventArgs e)
