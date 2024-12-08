@@ -44,6 +44,8 @@ namespace SimpleImageViewer
             ApplyDisplayMode();
 
             this.KeyDown += Window_KeyDown;
+
+            UpdateContextMenuState();
         }
 
         private void ApplyDisplayMode()
@@ -500,12 +502,8 @@ namespace SimpleImageViewer
 
         private void UpdateContextMenuState()
         {
-            var contextMenu = ContextMenu as ContextMenu;
-            if (contextMenu == null)
-                return;
-
             // Enable/disable "Image Info" based on loaded image
-            var imageInfoMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Image Info");
+            var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Image Info");
             if (imageInfoMenuItem != null)
                 imageInfoMenuItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
         }
