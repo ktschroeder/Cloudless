@@ -51,12 +51,14 @@ namespace SimpleImageViewer
         private void ApplyDisplayMode()
         {
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
 
             // Reset Width, Height, and Margin for all modes
             ImageDisplay.Width = Double.NaN; // Reset explicit width
             ImageDisplay.Height = Double.NaN; // Reset explicit height
             ImageDisplay.Margin = new Thickness(0); // Reset margin
 
+            // Apply display mode for stretching
             switch (displayMode)
             {
                 case "StretchToFit":
@@ -76,7 +78,20 @@ namespace SimpleImageViewer
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform; // Default to BestFit
                     break;
             }
+
+            // Apply border if the flag is set
+            if (useBorder)
+            {
+                PrimaryWindow.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black); // Set the border color
+                PrimaryWindow.BorderThickness = new Thickness(2); // Set border thickness
+            }
+            else
+            {
+                PrimaryWindow.BorderBrush = null; // Remove border
+                PrimaryWindow.BorderThickness = new Thickness(0); // Remove border thickness
+            }
         }
+
 
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -430,7 +445,7 @@ namespace SimpleImageViewer
                 JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
                 JustView.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
                 JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
-
+                JustView.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
 
                 JustView.Properties.Settings.Default.Save();
 

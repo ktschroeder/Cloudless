@@ -70,5 +70,17 @@ namespace JustView.Properties {
                 this["ResizeWindowToNewImageWhenOpeningThroughApp"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool BorderOnMainWindow {
+            get {
+                return ((bool)(this["BorderOnMainWindow"]));
+            }
+            set {
+                this["BorderOnMainWindow"] = value;
+            }
+        }
     }
 }

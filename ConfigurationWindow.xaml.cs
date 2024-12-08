@@ -11,6 +11,7 @@ namespace SimpleImageViewer
         public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle { get; private set; }
         public int SpaceAroundBounds {  get; private set; }
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
+        public bool BorderOnMainWindow { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -39,6 +40,10 @@ namespace SimpleImageViewer
             var currentResizeWindowToNewImageWhenOpeningThroughApp = JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp;
             ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked = currentResizeWindowToNewImageWhenOpeningThroughApp;
             ResizeWindowToNewImageWhenOpeningThroughApp = currentResizeWindowToNewImageWhenOpeningThroughApp;
+
+            var currentBorderOnMainWindow = JustView.Properties.Settings.Default.BorderOnMainWindow;
+            BorderOnMainWindowCheckbox.IsChecked = currentBorderOnMainWindow;
+            BorderOnMainWindow = currentBorderOnMainWindow;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -81,6 +86,8 @@ namespace SimpleImageViewer
             SpaceAroundBounds = parsed ? space : 0;
 
             ResizeWindowToNewImageWhenOpeningThroughApp = ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked ?? false;
+
+            BorderOnMainWindow = BorderOnMainWindowCheckbox.IsChecked ?? false;
 
             DialogResult = true;
             Close();

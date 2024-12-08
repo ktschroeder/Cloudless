@@ -6,7 +6,6 @@ TODO
 - styling
 - maybe zooming and panning
 - ability to rotate by 90 deg increments. should it be "saved" in case user navigates to next image in directory but then back? Or in a subsequent session?
-- Basic details about file loaded: dimensions, size, format, name/path.
 - load via drag-and-drop
 - intuitive behavior of multiple windows
 - optionally, recent files, where disabling it also clears the history (or just have button to clear history)
@@ -20,4 +19,3 @@ TODO
 advanced settings/features that can be implemented, often hidden behind flags in settings so as to keep UI clean for most people. Or consider power user mode:
 - right click option to set window to typed dimensions
 - (maybe difficult) smart colliding/snapping with other windows/instances of the app
-- Add a thin border to window
