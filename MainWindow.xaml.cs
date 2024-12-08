@@ -177,8 +177,13 @@ namespace SimpleImageViewer
             isDragging = false;
         }
 
-        //TODO handle additional (general?) image types, including GIF
         private void OpenImage_Click(object sender, RoutedEventArgs e)
+        {
+            OpenImage();
+        }
+
+        //TODO handle additional (general?) image types, including GIF
+        private void OpenImage()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -341,6 +346,34 @@ namespace SimpleImageViewer
                 return;
             }
 
+            if (e.Key == Key.O)
+            {
+                OpenImage();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.C)
+            {
+                Close();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.P)
+            {
+                OpenPreferences();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.A)
+            {
+                About();
+                e.Handled = true;
+                return;
+            }
+
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0)
             {
@@ -365,9 +398,11 @@ namespace SimpleImageViewer
 
         private void OpenPreferences_Click(object sender, RoutedEventArgs e)
         {
-            // Load current preferences
-            string currentDisplayMode = JustView.Properties.Settings.Default.DisplayMode;
+            OpenPreferences();
+        }
 
+        private void OpenPreferences()
+        {
             var configWindow = new ConfigurationWindow();
             if (configWindow.ShowDialog() == true)
             {
@@ -385,6 +420,11 @@ namespace SimpleImageViewer
         }
 
         private void About_Click(object sender, RoutedEventArgs e)
+        {
+            About();
+        }
+
+        private void About()
         {
             var aboutWindow = new AboutWindow();
             var _ = aboutWindow.ShowDialog();

@@ -52,7 +52,7 @@ namespace SimpleImageViewer
         }
 
         // Helper method to determine if the click is on a clickable control like a button or dropdown
-        private bool IsControlClicked(MouseButtonEventArgs e)
+        private bool IsControlClicked(MouseButtonEventArgs e)  // TODO move to helper, duplicate code
         {
             var hit = VisualTreeHelper.HitTest(this, e.GetPosition(this));
 
@@ -86,12 +86,20 @@ namespace SimpleImageViewer
             Close();
         }
 
-
-
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             //DialogResult = true;
             Close();
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape || e.Key == Key.C)  // TODO user may try to copy text with CTRL C?
+            {
+                Close();
+                e.Handled = true;
+                return;
+            }
         }
     }
 }

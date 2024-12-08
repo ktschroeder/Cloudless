@@ -41,5 +41,15 @@ namespace SimpleImageViewer
             //DialogResult = true;
             Close();
         }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape || e.Key == Key.C)
+            {
+                Close();
+                e.Handled = true;
+                return;
+            }
+        }
     }
 }
