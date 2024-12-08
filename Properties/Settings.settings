@@ -5,5 +5,14 @@
     <Setting Name="DisplayMode" Type="System.String" Scope="User">
       <Value Profile="(Default)">BestFit</Value>
     </Setting>
+    <Setting Name="ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="PixelsSpaceAroundBounds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="ResizeWindowToNewImageWhenOpeningThroughApp" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

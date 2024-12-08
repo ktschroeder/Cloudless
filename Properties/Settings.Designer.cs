@@ -34,5 +34,41 @@ namespace JustView.Properties {
                 this["DisplayMode"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle {
+            get {
+                return ((bool)(this["ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle"]));
+            }
+            set {
+                this["ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int PixelsSpaceAroundBounds {
+            get {
+                return ((int)(this["PixelsSpaceAroundBounds"]));
+            }
+            set {
+                this["PixelsSpaceAroundBounds"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ResizeWindowToNewImageWhenOpeningThroughApp {
+            get {
+                return ((bool)(this["ResizeWindowToNewImageWhenOpeningThroughApp"]));
+            }
+            set {
+                this["ResizeWindowToNewImageWhenOpeningThroughApp"] = value;
+            }
+        }
     }
 }

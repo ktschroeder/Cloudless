@@ -15,6 +15,7 @@ namespace SimpleImageViewer
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
+        private bool autoResizingSpaceIsToggled;
 
         public MainWindow(string? filePath)
         {
@@ -22,7 +23,7 @@ namespace SimpleImageViewer
 
             if (filePath != null)
             {
-                LoadImage(filePath);
+                LoadImage(filePath, false);
                 ResizeWindowToImage();
             }
         }
@@ -186,11 +187,11 @@ namespace SimpleImageViewer
 
             if (openFileDialog.ShowDialog() == true)
             {
-                LoadImage(openFileDialog.FileName);
+                LoadImage(openFileDialog.FileName, true);
             }
         }
 
-        private void LoadImage(string imagePath)
+        private void LoadImage(string imagePath, bool openedThroughApp)
         {
             try
             {
@@ -206,7 +207,7 @@ namespace SimpleImageViewer
                 // Find the index of the selected image
                 currentImageIndex = Array.IndexOf(imageFiles, selectedImagePath);
 
-                DisplayImage(currentImageIndex);
+                DisplayImage(currentImageIndex, openedThroughApp);
             }
             catch (Exception ex)
             {
@@ -214,6 +215,7 @@ namespace SimpleImageViewer
             }
         }
 
+        // TODO this always sends image to first screen; probably easy fix but does it always get WorkArea from main monitor or what? May be better to be more flexible.
         private void ResizeWindowToImage()
         {
             if (ImageDisplay.Source is BitmapImage bitmap)
@@ -226,6 +228,17 @@ namespace SimpleImageViewer
                 var workingArea = System.Windows.SystemParameters.WorkArea;
                 double screenWidth = workingArea.Width;
                 double screenHeight = workingArea.Height;
+
+                if (JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle)
+                {
+                    if (!autoResizingSpaceIsToggled)
+                    {
+                        int buffer = JustView.Properties.Settings.Default.PixelsSpaceAroundBounds;
+                        screenWidth -= 2 * buffer;
+                        screenHeight -= 2 * buffer;
+                    }
+                    
+                }
 
                 // Calculate the window size, ensuring it does not exceed the screen size
                 // double newWidth = Math.Min(imageWidth, screenWidth);
@@ -257,15 +270,17 @@ namespace SimpleImageViewer
                 // Set the window size and center it
                 this.Width = newWidth;
                 this.Height = newHeight;
-                this.Left = (screenWidth - newWidth) / 2 + workingArea.Left;
-                this.Top = (screenHeight - newHeight) / 2 + workingArea.Top;
+                this.Left = (workingArea.Width - newWidth) / 2 + workingArea.Left;
+                this.Top = (workingArea.Height - newHeight) / 2 + workingArea.Top;
             }
         }
 
 
 
-        private void DisplayImage(int index)
+        private void DisplayImage(int index, bool openedThroughApp)
         {
+            autoResizingSpaceIsToggled = false;
+
             try
             {
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
@@ -276,6 +291,9 @@ namespace SimpleImageViewer
                 // Optionally hide the no-image message if an image is loaded
                 ImageDisplay.Visibility = Visibility.Visible;
                 NoImageMessage.Visibility = Visibility.Collapsed;
+
+                if (openedThroughApp && JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                    ResizeWindowToImage();
 
                 ApplyDisplayMode();
             }
@@ -299,15 +317,29 @@ namespace SimpleImageViewer
                     WindowStyle = WindowStyle.None;
                     WindowState = WindowState.Normal;
                 }
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Escape)
+            {
+                if (WindowState == WindowState.Maximized)
+                {
+                    WindowStyle = WindowStyle.None;
+                    WindowState = WindowState.Normal;
+                }
+                e.Handled = true;
                 return;
             }
 
             // set window dimensions to image if possible
             if (e.Key == Key.F)
             {
+                autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
                 ResizeWindowToImage();
+                e.Handled = true;
+                return;
             }
-
 
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0)
@@ -316,15 +348,18 @@ namespace SimpleImageViewer
                 {
                     // Go to the previous image
                     currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
-                    DisplayImage(currentImageIndex);
+                    DisplayImage(currentImageIndex, true);
+                    e.Handled = true;
+                    return;
                 }
                 else if (e.Key == Key.Right)
                 {
                     // Go to the next image
                     currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
-                    DisplayImage(currentImageIndex);
+                    DisplayImage(currentImageIndex, true);
+                    e.Handled = true;
+                    return;
                 }
-                return;
             }
         }
 
@@ -333,11 +368,16 @@ namespace SimpleImageViewer
             // Load current preferences
             string currentDisplayMode = JustView.Properties.Settings.Default.DisplayMode;
 
-            var configWindow = new ConfigurationWindow(currentDisplayMode);
+            var configWindow = new ConfigurationWindow();
             if (configWindow.ShowDialog() == true)
             {
                 // Save the new preference
                 JustView.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
+                JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+                JustView.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
+                JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
+
+
                 JustView.Properties.Settings.Default.Save();
 
                 ApplyDisplayMode();

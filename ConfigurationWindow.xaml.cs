@@ -8,11 +8,15 @@ namespace SimpleImageViewer
     public partial class ConfigurationWindow : Window
     {
         public string SelectedDisplayMode { get; private set; }
+        public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle { get; private set; }
+        public int SpaceAroundBounds {  get; private set; }
+        public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
 
-        public ConfigurationWindow(string currentDisplayMode)
+        public ConfigurationWindow()
         {
             InitializeComponent();
 
+            var currentDisplayMode = JustView.Properties.Settings.Default.DisplayMode;
             // Set the current selection
             if (currentDisplayMode == "StretchToFit")
                 DisplayModeDropdown.SelectedIndex = 0;
@@ -22,8 +26,19 @@ namespace SimpleImageViewer
                 DisplayModeDropdown.SelectedIndex = 2;
             else if (currentDisplayMode == "BestFitWithoutZooming")
                 DisplayModeDropdown.SelectedIndex = 3;
-
             SelectedDisplayMode = currentDisplayMode;
+
+            var currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+            ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox.IsChecked = currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+            ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+
+            var currentSpaceAroundBounds = JustView.Properties.Settings.Default.PixelsSpaceAroundBounds;
+            SpaceAroundBoundsTextBox.Text = currentSpaceAroundBounds.ToString();
+            SpaceAroundBounds = currentSpaceAroundBounds;
+
+            var currentResizeWindowToNewImageWhenOpeningThroughApp = JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp;
+            ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked = currentResizeWindowToNewImageWhenOpeningThroughApp;
+            ResizeWindowToNewImageWhenOpeningThroughApp = currentResizeWindowToNewImageWhenOpeningThroughApp;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -42,7 +57,7 @@ namespace SimpleImageViewer
             var hit = VisualTreeHelper.HitTest(this, e.GetPosition(this));
 
             // Check if the hit test is on a Button or ComboBox (any other controls you want to exclude)
-            if (hit?.VisualHit is Button || hit?.VisualHit is ComboBox)
+            if (hit?.VisualHit is Button || hit?.VisualHit is ComboBox || hit?.VisualHit is CheckBox || hit?.VisualHit is TextBox)
             {
                 return true;
             }
@@ -59,6 +74,13 @@ namespace SimpleImageViewer
                 SelectedDisplayMode = "BestFit";
             else if (DisplayModeDropdown.SelectedIndex == 3)
                 SelectedDisplayMode = "BestFitWithoutZooming";
+
+            ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox.IsChecked ?? false;
+
+            var parsed = int.TryParse(SpaceAroundBoundsTextBox.Text.Trim(), out int space);
+            SpaceAroundBounds = parsed ? space : 0;
+
+            ResizeWindowToNewImageWhenOpeningThroughApp = ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked ?? false;
 
             DialogResult = true;
             Close();
