@@ -3,34 +3,36 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Preferences" Height="400" Width="600"
         WindowStyle="None" ResizeMode="NoResize" MouseDown="Window_MouseDown" KeyDown="Window_KeyDown">
-    <StackPanel Margin="10">
-        <TextBlock Text="Image Display Mode:" FontWeight="Bold" Margin="0,0,0,10"/>
+    <Border BorderBrush="Black" BorderThickness="2" Background="White">
+        <StackPanel Margin="10">
+            <TextBlock Text="Image Display Mode:" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <!-- Dropdown for display modes -->
-        <ComboBox x:Name="DisplayModeDropdown" SelectedIndex="0" Margin="0,5">
-            <ComboBoxItem Content="Stretch to Fit" />
-            <ComboBoxItem Content="Zoom to Fill" />
-            <ComboBoxItem Content="Best Fit; Zoom to Window" />
-            <ComboBoxItem Content="Best Fit; Never Zoom" />
-        </ComboBox>
+            <!-- Dropdown for display modes -->
+            <ComboBox x:Name="DisplayModeDropdown" SelectedIndex="0" Margin="0,5">
+                <ComboBoxItem Content="Stretch to Fit" />
+                <ComboBoxItem Content="Zoom to Fill" />
+                <ComboBoxItem Content="Best Fit; Zoom to Window" />
+                <ComboBoxItem Content="Best Fit; Never Zoom" />
+            </ComboBox>
 
-        <TextBlock Text="Window Resizing Options:" FontWeight="Bold" Margin="10,20,0,10"/>
+            <TextBlock Text="Window Resizing Options:" FontWeight="Bold" Margin="10,20,0,10"/>
 
-        <!-- New Checkboxes -->
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5">
-            <CheckBox x:Name="ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox" 
+            <!-- New Checkboxes -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5">
+                <CheckBox x:Name="ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox" 
                       Content="Leave space around window bounds when near screen size" />
-            <TextBox x:Name="SpaceAroundBoundsTextBox" Width="50" Margin="10,0,0,0" 
+                <TextBox x:Name="SpaceAroundBoundsTextBox" Width="50" Margin="10,0,0,0" 
                      VerticalAlignment="Center" 
                      ToolTip="# pixels space around window"/>
-        </StackPanel>
-        <CheckBox x:Name="ResizeWindowToNewImageWhenOpeningThroughAppCheckbox" 
+            </StackPanel>
+            <CheckBox x:Name="ResizeWindowToNewImageWhenOpeningThroughAppCheckbox" 
                 Content="Resize window to match new image when opening in app" 
                 Margin="0,5"/>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
-            <Button Content="Cancel" Click="Cancel_Click" Margin="0,5"/>
-            <Button Content="OK" Click="Save_Click" Margin="0,5"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <Button Content="Cancel" Click="Cancel_Click" Margin="0,5"/>
+                <Button Content="OK" Click="Save_Click" Margin="0,5"/>
+            </StackPanel>
         </StackPanel>
-    </StackPanel>
+    </Border>
 </Window>
