@@ -31,9 +31,9 @@
         <Grid.ContextMenu>
             <ContextMenu x:Name="ImageContextMenu">
                 <MenuItem Header="Close" Click="Exit_Click"/>
-                <MenuItem Header="Open Image..." Click="OpenImage_Click"/>
-                <MenuItem Header="Preferences..." Click="OpenPreferences_Click"/>
-                
+                <MenuItem Header="Open Image" Click="OpenImage_Click"/>
+                <MenuItem Header="Preferences" Click="OpenPreferences_Click"/>
+                <MenuItem Header="About" Click="About_Click"/>
             </ContextMenu>
         </Grid.ContextMenu>
     </Grid>

@@ -190,6 +190,12 @@ namespace SimpleImageViewer
             }
         }
 
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            var aboutWindow = new AboutWindow();
+            var _ = aboutWindow.ShowDialog();
+        }
+
         private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
