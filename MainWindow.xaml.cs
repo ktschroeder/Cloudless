@@ -12,11 +12,26 @@ namespace SimpleImageViewer
 {
     public partial class MainWindow : Window
     {
-        private string currentDirectory;
-        private string[] imageFiles;
+        private string? currentDirectory;
+        private string[]? imageFiles;
         private int currentImageIndex;
 
+        public MainWindow(string? filePath)
+        {
+            Setup();
+
+            if (filePath != null)
+            {
+                LoadImage(filePath);
+            }
+        }
+
         public MainWindow()
+        {
+            Setup();
+        }
+
+        private void Setup()
         {
             InitializeComponent();
 
@@ -170,7 +185,15 @@ namespace SimpleImageViewer
 
             if (openFileDialog.ShowDialog() == true)
             {
-                string selectedImagePath = openFileDialog.FileName;
+                LoadImage(openFileDialog.FileName);
+            }
+        }
+
+        private void LoadImage(string imagePath)
+        {
+            try
+            {
+                string selectedImagePath = imagePath;
                 currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
                 imageFiles = Directory.GetFiles(currentDirectory, "*.*")
                                       .Where(s => s.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
@@ -184,20 +207,32 @@ namespace SimpleImageViewer
 
                 DisplayImage(currentImageIndex);
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load the image at path \"{imagePath}\": {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+
 
         private void DisplayImage(int index)
         {
-            if (index < 0 || index >= imageFiles.Length) return;
+            try
+            {
+                if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
 
-            var bitmap = new BitmapImage(new Uri(imageFiles[index]));
-            ImageDisplay.Source = bitmap;
+                var bitmap = new BitmapImage(new Uri(imageFiles[index]));
+                ImageDisplay.Source = bitmap;
 
-            // Optionally hide the no-image message if an image is loaded
-            ImageDisplay.Visibility = Visibility.Visible;
-            NoImageMessage.Visibility = Visibility.Collapsed;
+                // Optionally hide the no-image message if an image is loaded
+                ImageDisplay.Visibility = Visibility.Visible;
+                NoImageMessage.Visibility = Visibility.Collapsed;
 
-            ApplyDisplayMode();
+                ApplyDisplayMode();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to display image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)

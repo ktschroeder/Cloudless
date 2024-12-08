@@ -14,7 +14,7 @@
 
         <TextBlock Text="License: Placeholder License" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-        <TextBlock Text="Features that may not be obvious: You can press the left and right arrow keys to view other images in the same directory." TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <TextBlock Text="Features that may not be obvious: You can press the left and right arrow keys to view other images in the same directory. Double-click and F11 toggle full-screen." TextWrapping="Wrap" Margin="0,0,0,10"/>
 
         <TextBlock Text="You are loved." TextWrapping="Wrap" Margin="0,0,0,10"/>
 
