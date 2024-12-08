@@ -35,11 +35,26 @@ namespace SimpleImageViewer
             FormatText.Text = $"Format: {fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
         }
 
-        private void CopyPath_Click(object sender, RoutedEventArgs e)
+        private async void CopyPath_Click(object sender, RoutedEventArgs e)
         {
+            // Copy the path to the clipboard
             Clipboard.SetText(_imagePath);
-            MessageBox.Show("File path copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            // Get the button and change its text
+            Button? button = sender as Button;
+            if (button != null)
+            {
+                string originalContent = button.Content.ToString() ?? "";
+                button.Content = "Copied!";
+
+                // Wait for 1 second (1000ms)
+                await Task.Delay(1000);
+
+                // Restore the original text
+                button.Content = originalContent;
+            }
         }
+
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
