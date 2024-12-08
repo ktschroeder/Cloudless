@@ -2,7 +2,7 @@
 
 TODO 
 - Good one: setting for image-associated opening: Option to auto set dimension to "true" dimensions of the image. But, max height and width of screen space. Also, option to do the same but at max would be like 90% of screen height/width, maybe user-coonfigured values.
--
+- config/about windows open in weird locations
 - fix F11
 - allow thru-window transparency?
 - maybe logo for app, other name

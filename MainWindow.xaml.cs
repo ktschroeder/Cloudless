@@ -23,6 +23,7 @@ namespace SimpleImageViewer
             if (filePath != null)
             {
                 LoadImage(filePath);
+                ResizeWindowToImage();
             }
         }
 
@@ -213,6 +214,55 @@ namespace SimpleImageViewer
             }
         }
 
+        private void ResizeWindowToImage()
+        {
+            if (ImageDisplay.Source is BitmapImage bitmap)
+            {
+                // Get the dimensions of the image
+                double imageWidth = bitmap.PixelWidth;
+                double imageHeight = bitmap.PixelHeight;
+
+                // Get the screen's working area (excluding taskbar)
+                var workingArea = System.Windows.SystemParameters.WorkArea;
+                double screenWidth = workingArea.Width;
+                double screenHeight = workingArea.Height;
+
+                // Calculate the window size, ensuring it does not exceed the screen size
+                // double newWidth = Math.Min(imageWidth, screenWidth);
+                // double newHeight = Math.Min(imageHeight, screenHeight);
+                bool widerThanScreen = imageWidth > screenWidth;
+                
+                double newWidth = imageWidth;
+                double newHeight = imageHeight;
+
+                if (widerThanScreen)
+                {
+                    newWidth = screenWidth;
+                    newHeight *= screenWidth / imageWidth;
+                }
+
+                // even after adjusting when too wide, it may still be too tall, so check afterward.
+                // for this to be the case, the image must be more portrait-oriented than the screen.
+                bool tallerThanScreen = newHeight > screenHeight;
+                if (tallerThanScreen)
+                {
+                    double tempWidth = newWidth;
+                    double tempHeight = newHeight;
+
+                    newWidth = tempWidth * (screenHeight / tempHeight);
+                    newHeight = screenHeight;
+                }
+
+
+                // Set the window size and center it
+                this.Width = newWidth;
+                this.Height = newHeight;
+                this.Left = (screenWidth - newWidth) / 2 + workingArea.Left;
+                this.Top = (screenHeight - newHeight) / 2 + workingArea.Top;
+            }
+        }
+
+
 
         private void DisplayImage(int index)
         {
@@ -249,24 +299,33 @@ namespace SimpleImageViewer
                     WindowStyle = WindowStyle.None;
                     WindowState = WindowState.Normal;
                 }
+                return;
             }
 
-            if (imageFiles == null || imageFiles.Length == 0) return;
-
-            if (e.Key == Key.Left)
+            // set window dimensions to image if possible
+            if (e.Key == Key.F)
             {
-                // Go to the previous image
-                currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
-                DisplayImage(currentImageIndex);
+                ResizeWindowToImage();
             }
-            else if (e.Key == Key.Right)
+
+
+            // navigating in directory
+            if (imageFiles != null && imageFiles.Length != 0)
             {
-                // Go to the next image
-                currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
-                DisplayImage(currentImageIndex);
+                if (e.Key == Key.Left)
+                {
+                    // Go to the previous image
+                    currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
+                    DisplayImage(currentImageIndex);
+                }
+                else if (e.Key == Key.Right)
+                {
+                    // Go to the next image
+                    currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
+                    DisplayImage(currentImageIndex);
+                }
+                return;
             }
-
-
         }
 
         private void OpenPreferences_Click(object sender, RoutedEventArgs e)
