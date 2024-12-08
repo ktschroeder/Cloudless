@@ -15,6 +15,9 @@ namespace SimpleImageViewer
         {
             InitializeComponent();
 
+            NoImageMessage.Visibility = Visibility.Visible;
+            ImageDisplay.Visibility = Visibility.Collapsed;
+
             ApplyDisplayMode();
         }
 
@@ -162,6 +165,10 @@ namespace SimpleImageViewer
             {
                 var bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
                 ImageDisplay.Source = bitmap;
+
+                // Show the image and hide the no-image message
+                ImageDisplay.Visibility = Visibility.Visible;
+                NoImageMessage.Visibility = Visibility.Collapsed;
 
                 ApplyDisplayMode();
             }

@@ -5,10 +5,13 @@
     <StackPanel Margin="10">
         <TextBlock Text="Image Display Mode:" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <RadioButton x:Name="StretchToFit" Content="Stretch to Fit" GroupName="DisplayMode" Margin="0,5"/>
-        <RadioButton x:Name="ZoomToFill" Content="Zoom to Fill" GroupName="DisplayMode" Margin="0,5"/>
-        <RadioButton x:Name="BestFit" Content="Best Fit" GroupName="DisplayMode" Margin="0,5"/>
-        <RadioButton x:Name="BestFitWithoutZooming" Content="Best Fit and no zooming beyond true dimensions" GroupName="DisplayMode" Margin="0,5"/>
+        <!-- Dropdown for display modes -->
+        <ComboBox x:Name="DisplayModeDropdown" SelectedIndex="0" Margin="0,5">
+            <ComboBoxItem Content="Stretch to Fit" />
+            <ComboBoxItem Content="Zoom to Fill" />
+            <ComboBoxItem Content="Best Fit; Zoom to Window" />
+            <ComboBoxItem Content="Best Fit; Never Zoom" />
+        </ComboBox>
 
         <Button Content="Save" Click="Save_Click" Margin="0,20,0,0" HorizontalAlignment="Center"/>
     </StackPanel>

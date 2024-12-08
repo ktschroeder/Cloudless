@@ -12,26 +12,26 @@ namespace SimpleImageViewer
 
             // Set the current selection
             if (currentDisplayMode == "StretchToFit")
-                StretchToFit.IsChecked = true;
+                DisplayModeDropdown.SelectedIndex = 0;
             else if (currentDisplayMode == "ZoomToFill")
-                ZoomToFill.IsChecked = true;
+                DisplayModeDropdown.SelectedIndex = 1;
             else if (currentDisplayMode == "BestFit")
-                BestFit.IsChecked = true;
+                DisplayModeDropdown.SelectedIndex = 2;
             else if (currentDisplayMode == "BestFitWithoutZooming")
-                BestFitWithoutZooming.IsChecked = true;
+                DisplayModeDropdown.SelectedIndex = 3;
 
             SelectedDisplayMode = currentDisplayMode;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (StretchToFit.IsChecked == true)
+            if (DisplayModeDropdown.SelectedIndex == 0)
                 SelectedDisplayMode = "StretchToFit";
-            else if (ZoomToFill.IsChecked == true)
+            else if (DisplayModeDropdown.SelectedIndex == 1)
                 SelectedDisplayMode = "ZoomToFill";
-            else if (BestFit.IsChecked == true)
+            else if (DisplayModeDropdown.SelectedIndex == 2)
                 SelectedDisplayMode = "BestFit";
-            else if (BestFitWithoutZooming.IsChecked == true)
+            else if (DisplayModeDropdown.SelectedIndex == 3)
                 SelectedDisplayMode = "BestFitWithoutZooming";
 
             DialogResult = true;
