@@ -1,0 +1,15 @@
+﻿<Window x:Class="SimpleImageViewer.ConfigurationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Preferences" Height="400" Width="300">
+    <StackPanel Margin="10">
+        <TextBlock Text="Image Display Mode:" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <RadioButton x:Name="StretchToFit" Content="Stretch to Fit" GroupName="DisplayMode" Margin="0,5"/>
+        <RadioButton x:Name="ZoomToFill" Content="Zoom to Fill" GroupName="DisplayMode" Margin="0,5"/>
+        <RadioButton x:Name="BestFit" Content="Best Fit" GroupName="DisplayMode" Margin="0,5"/>
+        <RadioButton x:Name="BestFitWithoutZooming" Content="Best Fit and no zooming beyond true dimensions" GroupName="DisplayMode" Margin="0,5"/>
+
+        <Button Content="Save" Click="Save_Click" Margin="0,20,0,0" HorizontalAlignment="Center"/>
+    </StackPanel>
+</Window>

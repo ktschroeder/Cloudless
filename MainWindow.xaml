@@ -12,7 +12,8 @@
         MouseRightButtonUp="Window_MouseRightButtonUp"
         MouseDoubleClick="Window_MouseDoubleClick"
         KeyDown="Window_KeyDown"
-        SourceInitialized="Window_SourceInitialized">
+        SourceInitialized="Window_SourceInitialized"
+        SizeChanged="Window_SizeChanged">
     <Grid>
         <!-- Image Display -->
         <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -20,8 +21,10 @@
         <!-- Context Menu -->
         <Grid.ContextMenu>
             <ContextMenu x:Name="ImageContextMenu">
+                <MenuItem Header="Close" Click="Exit_Click"/>
                 <MenuItem Header="Open Image..." Click="OpenImage_Click"/>
-                <MenuItem Header="Exit" Click="Exit_Click"/>
+                <MenuItem Header="Preferences..." Click="OpenPreferences_Click"/>
+                
             </ContextMenu>
         </Grid.ContextMenu>
     </Grid>

@@ -14,7 +14,88 @@ namespace SimpleImageViewer
         public MainWindow()
         {
             InitializeComponent();
+
+            ApplyDisplayMode();
         }
+
+        private void ApplyDisplayMode()
+        {
+            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+
+            // Reset Width, Height, and Margin for all modes
+            ImageDisplay.Width = Double.NaN; // Reset explicit width
+            ImageDisplay.Height = Double.NaN; // Reset explicit height
+            ImageDisplay.Margin = new Thickness(0); // Reset margin
+
+            switch (displayMode)
+            {
+                case "StretchToFit":
+                    ImageDisplay.Stretch = System.Windows.Media.Stretch.Fill;
+                    break;
+                case "ZoomToFill":
+                    ImageDisplay.Stretch = System.Windows.Media.Stretch.UniformToFill;
+                    break;
+                case "BestFit":
+                    ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
+                    break;
+                case "BestFitWithoutZooming":
+                    ImageDisplay.Stretch = System.Windows.Media.Stretch.None; // Prevent automatic stretching
+                    CenterImageIfNeeded(); // Center and scale the image as needed
+                    break;
+                default:
+                    ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform; // Default to BestFit
+                    break;
+            }
+        }
+
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (JustView.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
+            {
+                CenterImageIfNeeded();
+            }
+        }
+
+        private void CenterImageIfNeeded()
+        {
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
+                double imageWidth = bitmap.PixelWidth;
+                double imageHeight = bitmap.PixelHeight;
+                double windowWidth = this.ActualWidth;
+                double windowHeight = this.ActualHeight;
+
+                // Calculate scaling factor to fit the image within the window
+                double scaleX = windowWidth / imageWidth;
+                double scaleY = windowHeight / imageHeight;
+
+                // Ensure the image scales down if the window is smaller
+                double scale = Math.Min(1, Math.Min(scaleX, scaleY)); // No upscaling
+
+                // Apply scaled dimensions to ImageDisplay
+                ImageDisplay.Width = imageWidth * scale;
+                ImageDisplay.Height = imageHeight * scale;
+
+                // Center the image display
+                double marginX = (windowWidth - ImageDisplay.Width) / 2;
+                double marginY = (windowHeight - ImageDisplay.Height) / 2;
+
+                ImageDisplay.Margin = new Thickness(
+                    Math.Max(0, marginX),
+                    Math.Max(0, marginY),
+                    Math.Max(0, marginX),
+                    Math.Max(0, marginY)
+                );
+
+                // Ensure the image is not clipped by setting Stretch to Uniform
+                ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
+            }
+        }
+
+
+
+
 
         private bool isDragging = false;
         private Point initialCursorPosition;
@@ -47,8 +128,8 @@ namespace SimpleImageViewer
             {
                 // Calculate the distance moved from the initial cursor position
                 Point cursorPosition = e.GetPosition(this);
-                double offsetX = cursorPosition.X - initialCursorPosition.X;
-                double offsetY = cursorPosition.Y - initialCursorPosition.Y;
+                //double offsetX = cursorPosition.X - initialCursorPosition.X;
+                //double offsetY = cursorPosition.Y - initialCursorPosition.Y;
 
                 ToggleFullscreen();
 
@@ -81,6 +162,24 @@ namespace SimpleImageViewer
             {
                 var bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
                 ImageDisplay.Source = bitmap;
+
+                ApplyDisplayMode();
+            }
+        }
+
+        private void OpenPreferences_Click(object sender, RoutedEventArgs e)
+        {
+            // Load current preferences
+            string currentDisplayMode = JustView.Properties.Settings.Default.DisplayMode;
+
+            var configWindow = new ConfigurationWindow(currentDisplayMode);
+            if (configWindow.ShowDialog() == true)
+            {
+                // Save the new preference
+                JustView.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
+                JustView.Properties.Settings.Default.Save();
+
+                ApplyDisplayMode();
             }
         }
 
