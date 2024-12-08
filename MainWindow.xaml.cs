@@ -404,6 +404,11 @@ namespace SimpleImageViewer
         private void OpenPreferences()
         {
             var configWindow = new ConfigurationWindow();
+
+            // Center the window relative to the main application window
+            configWindow.Owner = this; // Set the owner to the main window
+            configWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
             if (configWindow.ShowDialog() == true)
             {
                 // Save the new preference
@@ -427,6 +432,11 @@ namespace SimpleImageViewer
         private void About()
         {
             var aboutWindow = new AboutWindow();
+
+            // Center the window relative to the main application window
+            aboutWindow.Owner = this; // Set the owner to the main window
+            aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
             var _ = aboutWindow.ShowDialog();
         }
 
