@@ -15,6 +15,7 @@ namespace SimpleImageViewer
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
+        private string? currentlyDisplayedImagePath;
         private bool autoResizingSpaceIsToggled;
 
         public MainWindow(string? filePath)
@@ -290,8 +291,11 @@ namespace SimpleImageViewer
             {
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
 
-                var bitmap = new BitmapImage(new Uri(imageFiles[index]));
+                var uri = new Uri(imageFiles[index]);
+                var bitmap = new BitmapImage(uri);
                 ImageDisplay.Source = bitmap;
+
+                currentlyDisplayedImagePath = uri.AbsolutePath;  // used for displaying image details
 
                 // Optionally hide the no-image message if an image is loaded
                 ImageDisplay.Visibility = Visibility.Visible;
@@ -301,6 +305,7 @@ namespace SimpleImageViewer
                     ResizeWindowToImage();
 
                 ApplyDisplayMode();
+                UpdateContextMenuState();
             }
             catch (Exception ex)
             {
@@ -370,6 +375,13 @@ namespace SimpleImageViewer
             if (e.Key == Key.A)
             {
                 About();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.I)
+            {
+                ImageInfo();
                 e.Handled = true;
                 return;
             }
@@ -466,6 +478,36 @@ namespace SimpleImageViewer
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void ImageInfo_Click(object sender, RoutedEventArgs e)
+        {
+            ImageInfo();
+        }
+
+        private void ImageInfo()
+        {
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+                return;
+
+            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePath)
+            {
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            imageInfoWindow.ShowDialog();
+        }
+
+        private void UpdateContextMenuState()
+        {
+            var contextMenu = ContextMenu as ContextMenu;
+            if (contextMenu == null)
+                return;
+
+            // Enable/disable "Image Info" based on loaded image
+            var imageInfoMenuItem = contextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Image Info");
+            if (imageInfoMenuItem != null)
+                imageInfoMenuItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
         }
 
         // Open context menu on right-click

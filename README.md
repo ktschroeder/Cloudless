@@ -5,7 +5,7 @@ TODO
 - maybe logo for app, other name
 - styling
 - maybe zooming and panning
-- ability to rotate by 90 deg increments
+- ability to rotate by 90 deg increments. should it be "saved" in case user navigates to next image in directory but then back? Or in a subsequent session?
 - Basic details about file loaded: dimensions, size, format, name/path.
 - load via drag-and-drop
 - intuitive behavior of multiple windows
