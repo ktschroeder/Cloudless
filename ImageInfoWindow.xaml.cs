@@ -10,11 +10,14 @@ namespace SimpleImageViewer
     public partial class ImageInfoWindow : Window
     {
         private readonly string _imagePath;
+        private readonly string _originalCopyButtonText;
+        private CancellationTokenSource? _copyAnimationCancellationTokenSource;
 
         public ImageInfoWindow(string imagePath)
         {
             InitializeComponent();
             _imagePath = imagePath;
+            _originalCopyButtonText = CopyButton.Content.ToString() ?? "";
             LoadImageInfo();
         }
 
@@ -37,6 +40,10 @@ namespace SimpleImageViewer
 
         private async void CopyPath_Click(object sender, RoutedEventArgs e)
         {
+            // Cancel any previous timer if the button is clicked again quickly
+            _copyAnimationCancellationTokenSource?.Cancel();
+            _copyAnimationCancellationTokenSource = new CancellationTokenSource();
+
             // Copy the path to the clipboard
             Clipboard.SetText(_imagePath);
 
@@ -44,16 +51,23 @@ namespace SimpleImageViewer
             Button? button = sender as Button;
             if (button != null)
             {
-                string originalContent = button.Content.ToString() ?? "";
                 button.Content = "Copied!";
 
-                // Wait for 1 second (1000ms)
-                await Task.Delay(1000);
+                try
+                {
+                    // Wait for 1 second or until the cancellation is requested
+                    await Task.Delay(1000, _copyAnimationCancellationTokenSource.Token);
 
-                // Restore the original text
-                button.Content = originalContent;
+                    // Restore the original text
+                    button.Content = _originalCopyButtonText;
+                }
+                catch (TaskCanceledException)
+                {
+                    // Task was canceled, so just return and don't change the text back
+                }
             }
         }
+
 
 
         private void Close_Click(object sender, RoutedEventArgs e)
