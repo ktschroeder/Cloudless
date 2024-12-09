@@ -14,7 +14,10 @@
         MouseDoubleClick="Window_MouseDoubleClick"
         KeyDown="Window_KeyDown"
         SourceInitialized="Window_SourceInitialized"
-        SizeChanged="Window_SizeChanged">
+        SizeChanged="Window_SizeChanged"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop">
     <Grid>
         <!-- Text displayed when no image is loaded -->
         <TextBlock x:Name="NoImageMessage"

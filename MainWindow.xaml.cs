@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -440,6 +441,94 @@ namespace SimpleImageViewer
                 }
             }
         }
+
+        private void Window_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Text))
+            {
+                e.Effects = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+
+            e.Handled = true;
+        }
+
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            try
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    // Handle file drop
+                    string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (files.Length > 0 && IsSupportedImageFile(files[0]))
+                    {
+                        LoadImage(files[0], true);
+                    }
+                }
+                else if (e.Data.GetDataPresent(DataFormats.Text))
+                {
+                    // Handle URL drop
+                    string url = (string)e.Data.GetData(DataFormats.Text);
+                    if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) && IsSupportedImageUri(uri))
+                    {
+                        DownloadAndLoadImage(uri);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load the dragged content: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private bool IsSupportedImageFile(string filePath)
+        {
+            string? extension = Path.GetExtension(filePath)?.ToLower();
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp";
+        }
+
+        private bool IsSupportedImageUri(Uri uri)
+        {
+            string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp";
+        }
+
+        private async void DownloadAndLoadImage(Uri uri)
+        {
+            try
+            {
+                using HttpClient client = new HttpClient();
+                byte[] imageData = await client.GetByteArrayAsync(uri);
+                using MemoryStream stream = new MemoryStream(imageData);
+
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = stream;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                ImageDisplay.Source = bitmap;
+
+                // Show the image and hide the no-image message
+                ImageDisplay.Visibility = Visibility.Visible;
+                NoImageMessage.Visibility = Visibility.Collapsed;
+
+                ApplyDisplayMode();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load image from URL: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+
+
 
         private void CopyImageToClipboard()
         {
