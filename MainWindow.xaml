@@ -34,6 +34,13 @@
         <!-- Context Menu -->
         <Grid.ContextMenu>
             <ContextMenu x:Name="ImageContextMenu">
+                <!-- Unclickable Title -->
+                <MenuItem Header="Just View" IsEnabled="False" 
+                    FontWeight="Bold" Foreground="Gray" />
+
+                <!-- Separator -->
+                <Separator />
+                
                 <MenuItem Header="Close" Click="Exit_Click"/>
                 <MenuItem Header="Minimize" Click="Minimize_Click"/>
                 <MenuItem Header="Open Image" Click="OpenImage_Click"/>
