@@ -8,6 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
+using static System.Net.Mime.MediaTypeNames;
+using WpfAnimatedGif;
 
 namespace SimpleImageViewer
 {
@@ -206,7 +208,7 @@ namespace SimpleImageViewer
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp)|*.jpg;*.jpeg;*.png;*.bmp"
+                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -215,6 +217,7 @@ namespace SimpleImageViewer
             }
         }
 
+        // TODO WEBP
         private void LoadImage(string imagePath, bool openedThroughApp)
         {
             try
@@ -225,7 +228,8 @@ namespace SimpleImageViewer
                                       .Where(s => s.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                                                 s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
                                       .ToArray();
 
                 // Find the index of the selected image
@@ -239,10 +243,11 @@ namespace SimpleImageViewer
             }
         }
 
+
         // TODO this always sends image to first screen; probably easy fix but does it always get WorkArea from main monitor or what? May be better to be more flexible.
         private void ResizeWindowToImage()
         {
-            if (ImageDisplay.Source is BitmapImage bitmap)
+            if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 // Get the dimensions of the image
                 double imageWidth = bitmap.PixelWidth;
@@ -311,9 +316,22 @@ namespace SimpleImageViewer
 
                 var uri = new Uri(imageFiles[index]);
                 var bitmap = new BitmapImage(uri);
-                ImageDisplay.Source = bitmap;
+                currentlyDisplayedImagePath = uri.AbsolutePath;  
 
-                currentlyDisplayedImagePath = uri.AbsolutePath;  // used for displaying image details
+                
+
+                if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
+                {
+                    ImageDisplay.Source = null;
+                    ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
+                }
+                else
+                {
+                    // TODO can have RepeatBehavior (whether to loop) be a config
+                    ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                    ImageDisplay.Source = bitmap;
+                }
+                
 
                 // Optionally hide the no-image message if an image is loaded
                 ImageDisplay.Visibility = Visibility.Visible;
@@ -488,13 +506,13 @@ namespace SimpleImageViewer
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif";
         }
 
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif";
         }
 
         private async void DownloadAndLoadImage(Uri uri)
