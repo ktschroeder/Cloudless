@@ -10,6 +10,8 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using static System.Net.Mime.MediaTypeNames;
 using WpfAnimatedGif;
+using SixLabors.ImageSharp;
+using Point = System.Windows.Point;
 
 namespace SimpleImageViewer
 {
@@ -208,7 +210,7 @@ namespace SimpleImageViewer
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
+                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -229,6 +231,7 @@ namespace SimpleImageViewer
                                                  s.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
                                       .ToArray();
 
@@ -315,19 +318,46 @@ namespace SimpleImageViewer
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
 
                 var uri = new Uri(imageFiles[index]);
-                var bitmap = new BitmapImage(uri);
+                
                 currentlyDisplayedImagePath = uri.AbsolutePath;  
 
                 
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
+                    // TODO can have RepeatBehavior (whether to loop) be a config
+                    var bitmap = new BitmapImage(uri);
                     ImageDisplay.Source = null;
                     ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
                 }
+                else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
+                {
+                    var webpImage = SixLabors.ImageSharp.Image.Load(imageFiles[index]);
+                    // WEBP Handling using ImageSharp
+                    using (webpImage)
+                    {
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            // Convert WebP to Bitmap
+                            webpImage.SaveAsBmp(memoryStream);
+                            //SixLabors.ImageSharp.Image.
+
+                            memoryStream.Seek(0, SeekOrigin.Begin);
+
+                            BitmapImage bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.StreamSource = memoryStream;
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.EndInit();
+
+                            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                            ImageDisplay.Source = bitmap;
+                        }
+                    }
+                }
                 else
                 {
-                    // TODO can have RepeatBehavior (whether to loop) be a config
+                    var bitmap = new BitmapImage(uri);
                     ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                     ImageDisplay.Source = bitmap;
                 }
@@ -506,13 +536,13 @@ namespace SimpleImageViewer
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp";
         }
 
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp";
         }
 
         private async void DownloadAndLoadImage(Uri uri)

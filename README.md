@@ -11,7 +11,6 @@ TODO
 - optionally, recent files, where disabling it also clears the history (or just have button to clear history)
 - customizable hotkeys
 - graceful error handling
-..- support for wider range of image formats including GIFs perhaps: .jpg, .png, .bmp, .gif, .tiff, and possibly vector formats like .svg.
 - Automatically rotate images based on the EXIF orientation tag in case the image was taken on a camera or smartphone that stored the rotation information.
 - Clean up code, especially when "done" with everything else
 
