@@ -375,9 +375,18 @@ namespace SimpleImageViewer
                 return;
             }
 
+            
             if (e.Key == Key.C)
             {
-                Close();
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    CopyImageToClipboard();
+                }
+                else
+                {
+                    Close();
+                }
+                
                 e.Handled = true;
                 return;
             }
@@ -431,6 +440,22 @@ namespace SimpleImageViewer
                 }
             }
         }
+
+        private void CopyImageToClipboard()
+        {
+            if (ImageDisplay.Source is BitmapSource bitmapSource)
+            {
+                try
+                {
+                    Clipboard.SetImage(bitmapSource);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
 
         private void MinimizeWindow()
         {

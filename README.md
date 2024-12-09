@@ -11,7 +11,6 @@ TODO
 - load via drag-and-drop
 - intuitive behavior of multiple windows
 - optionally, recent files, where disabling it also clears the history (or just have button to clear history)
-- ability to copy image to clipboard
 - customizable hotkeys
 - graceful error handling
 - support for wider range of image formats including GIFs perhaps: .jpg, .png, .bmp, .gif, .tiff, and possibly vector formats like .svg.
