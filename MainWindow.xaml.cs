@@ -403,6 +403,13 @@ namespace SimpleImageViewer
                 return;
             }
 
+            if (e.Key == Key.M)
+            {
+                MinimizeWindow();
+                e.Handled = true;
+                return;
+            }
+
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0)
             {
@@ -423,6 +430,16 @@ namespace SimpleImageViewer
                     return;
                 }
             }
+        }
+
+        private void MinimizeWindow()
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            MinimizeWindow();
         }
 
         private void OpenPreferences_Click(object sender, RoutedEventArgs e)

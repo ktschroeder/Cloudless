@@ -1,6 +1,8 @@
 # JustView
 
 TODO
+- unclickable "title" on context dropdown that shows app's nanme, maybe? I think I've seen this elsewhere before?
+- some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - allow thru-window transparency?
 - maybe logo for app, other name
 - styling
@@ -19,3 +21,4 @@ TODO
 advanced settings/features that can be implemented, often hidden behind flags in settings so as to keep UI clean for most people. Or consider power user mode:
 - right click option to set window to typed dimensions
 - (maybe difficult) smart colliding/snapping with other windows/instances of the app
+- always-on-top option (global or per-image with key T), possibly other z-index shenanigans
