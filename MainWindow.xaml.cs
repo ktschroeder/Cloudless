@@ -222,7 +222,7 @@ namespace SimpleImageViewer
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp"
+                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -243,6 +243,7 @@ namespace SimpleImageViewer
                                                  s.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
                                       .ToArray();
 
@@ -546,13 +547,13 @@ namespace SimpleImageViewer
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif";
         }
 
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif";
         }
 
         private async void DownloadAndLoadImage(Uri uri)
