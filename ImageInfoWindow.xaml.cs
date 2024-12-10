@@ -9,7 +9,7 @@ namespace SimpleImageViewer
 {
     public partial class ImageInfoWindow : Window
     {
-        private readonly string _imagePath;
+        private string _imagePath;
         private readonly string _originalCopyButtonText;
         private CancellationTokenSource? _copyAnimationCancellationTokenSource;
 

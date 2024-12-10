@@ -3,15 +3,15 @@
 TODO
 
 Probably should/will:
-- encountered before, some bug with viewing image details maybe when image is dragged in from file explorer or from web.
 - like other Windows apps, maximize vertical dimension when dragging window top to top of screen. And/or have hotkey for maximizing vertical space.
-- implement: holdintg ctrl or shift while dragging corner/side fo window keeps ratio
+- implement: holdintg ctrl or shift while dragging corner of window keeps ratio
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl click and drag to pan. (click and drag moves window; maybe option to swap which needs CTRL)
 - ability to rotate by 90 deg increments. should it be "saved" in case user navigates to next image in directory but then back? Or in a subsequent session?
 - always-on-top option (global or per-image with key T)
 - optionally, recent files, where disabling it also clears the history (or just have button to clear history). Windows natively provides a history function when right clicking on icon on taskbar. Manage and given option to enable/disable this?
 - for GIFs: can have RepeatBehavior (whether to loop) be a config
+- odd jitter of window when changing images, such as when navigating through a directory
 
 
 Probably should but lower priority:
@@ -26,6 +26,7 @@ Probably should but lower priority:
 
 
 Maybe / ideas:
+- should window do something else other than move to center of screen when changing image etc.?
 - possibly other z-index shenanigans beyond always-on-top
 - intuitive behavior of multiple windows
 - (maybe difficult) smart colliding/snapping with other windows/instances of the app

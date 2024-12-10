@@ -12,6 +12,7 @@ using Point = System.Windows.Point;
 using System.Drawing;
 using WebP.Net;
 using System.Windows.Media;
+using System.Net;
 
 namespace SimpleImageViewer
 {
@@ -315,7 +316,7 @@ namespace SimpleImageViewer
 
                 var uri = new Uri(imageFiles[index]);
                 
-                currentlyDisplayedImagePath = uri.AbsolutePath;  
+                currentlyDisplayedImagePath = WebUtility.UrlDecode(uri.AbsolutePath);
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
