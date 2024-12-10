@@ -12,6 +12,7 @@ namespace SimpleImageViewer
         public int SpaceAroundBounds {  get; private set; }
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
         public bool BorderOnMainWindow { get; private set; }
+        public bool LoopGifs { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -44,6 +45,10 @@ namespace SimpleImageViewer
             var currentBorderOnMainWindow = JustView.Properties.Settings.Default.BorderOnMainWindow;
             BorderOnMainWindowCheckbox.IsChecked = currentBorderOnMainWindow;
             BorderOnMainWindow = currentBorderOnMainWindow;
+
+            var currentLoopGifs = JustView.Properties.Settings.Default.LoopGifs;
+            LoopGifsCheckbox.IsChecked = currentLoopGifs;
+            LoopGifs = currentLoopGifs;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -88,6 +93,8 @@ namespace SimpleImageViewer
             ResizeWindowToNewImageWhenOpeningThroughApp = ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked ?? false;
 
             BorderOnMainWindow = BorderOnMainWindowCheckbox.IsChecked ?? false;
+
+            LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
 
             DialogResult = true;
             Close();

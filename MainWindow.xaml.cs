@@ -13,6 +13,7 @@ using System.Drawing;
 using WebP.Net;
 using System.Windows.Media;
 using System.Net;
+using System.Windows.Media.Animation;
 
 namespace SimpleImageViewer
 {
@@ -60,6 +61,7 @@ namespace SimpleImageViewer
         {
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
             bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
+            bool loopGifs = JustView.Properties.Settings.Default.LoopGifs;
 
             // Reset Width, Height, and Margin for all modes
             ImageDisplay.Width = Double.NaN; // Reset explicit width
@@ -97,6 +99,15 @@ namespace SimpleImageViewer
             {
                 PrimaryWindow.BorderBrush = null; // Remove border
                 PrimaryWindow.BorderThickness = new Thickness(0); // Remove border thickness
+            }
+
+            if (loopGifs)
+            {
+                ImageBehavior.SetRepeatBehavior(ImageDisplay, RepeatBehavior.Forever);
+            }
+            else
+            {
+                ImageBehavior.SetRepeatBehavior(ImageDisplay, new RepeatBehavior(1));
             }
         }
 
@@ -608,6 +619,7 @@ namespace SimpleImageViewer
                 JustView.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
                 JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
                 JustView.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
+                JustView.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
 
                 JustView.Properties.Settings.Default.Save();
 

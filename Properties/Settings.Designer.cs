@@ -82,5 +82,17 @@ namespace JustView.Properties {
                 this["BorderOnMainWindow"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool LoopGifs {
+            get {
+                return ((bool)(this["LoopGifs"]));
+            }
+            set {
+                this["LoopGifs"] = value;
+            }
+        }
     }
 }
