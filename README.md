@@ -3,7 +3,6 @@
 TODO
 
 Probably should/will:
-- like other Windows apps, maximize vertical dimension when dragging window top to top of screen. And/or have hotkey for maximizing vertical space.
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag moves window; maybe option to swap which needs CTRL)
 - ability to rotate by 90 deg increments. should it be "saved" in case user navigates to next image in directory but then back? Or in a subsequent session?

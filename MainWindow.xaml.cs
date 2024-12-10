@@ -310,7 +310,7 @@ namespace SimpleImageViewer
                 }
 
 
-                // Set the window size and center it
+                // Set the window size and center it  // TODO may want to not center it in some cases
                 this.Width = newWidth;
                 this.Height = newHeight;
                 this.Left = (workingArea.Width - newWidth) / 2 + workingArea.Left;
@@ -421,7 +421,14 @@ namespace SimpleImageViewer
                 return;
             }
 
-            
+            if (e.Key == Key.V && !(Keyboard.Modifiers == ModifierKeys.Control))
+            {
+                MaximizeVerticalDimension();
+                e.Handled = true;
+                return;
+            }
+
+
             if (e.Key == Key.C)
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
@@ -588,6 +595,14 @@ namespace SimpleImageViewer
                     MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        // Maximize vertical dimension and align window with it vertically
+        private void MaximizeVerticalDimension()
+        {
+            var wa = SystemParameters.WorkArea;
+            this.Height = wa.Height;
+            this.Top = wa.Top;
         }
 
 
