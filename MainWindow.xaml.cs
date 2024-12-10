@@ -2,19 +2,15 @@
 using System;
 using System.IO;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using static System.Net.Mime.MediaTypeNames;
 using WpfAnimatedGif;
-using SixLabors.ImageSharp;
 using Point = System.Windows.Point;
 using System.Drawing;
 using WebP.Net;
-using Imazen.WebP;
 using System.Windows.Media;
 
 namespace SimpleImageViewer
@@ -148,10 +144,6 @@ namespace SimpleImageViewer
                 ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
             }
         }
-
-
-
-
 
         private bool isDragging = false;
         private Point initialCursorPosition;
@@ -327,8 +319,6 @@ namespace SimpleImageViewer
                 
                 currentlyDisplayedImagePath = uri.AbsolutePath;  
 
-                
-
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
                     // TODO can have RepeatBehavior (whether to loop) be a config
@@ -338,36 +328,10 @@ namespace SimpleImageViewer
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
-                    //// WEBP Handling using ImageSharp
-                    //var webpImage = SixLabors.ImageSharp.Image.Load(imageFiles[index]);
-                    //using (webpImage)
-                    //{
-                    //    using (var memoryStream = new MemoryStream())
-                    //    {
-                    //        // Convert WebP to Bitmap
-                    //        webpImage.SaveAsBmp(memoryStream);
-                    //        //SixLabors.ImageSharp.Image.
-
-                    //        memoryStream.Seek(0, SeekOrigin.Begin);
-
-                    //        BitmapImage bitmap = new BitmapImage();
-                    //        bitmap.BeginInit();
-                    //        bitmap.StreamSource = memoryStream;
-                    //        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    //        bitmap.EndInit();
-
-                    //        ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                    //        ImageDisplay.Source = bitmap;
-                    //    }
-                    //}
-
-                    // WEBP Handling using WebP.NET
-                    // Handle WebP
                     byte[] webpBytes = File.ReadAllBytes(imageFiles[index]);
                     using var webp = new WebPObject(webpBytes);
-                    var webpImage = webp.GetImage(); // Decode WebP into an Image object
-                    // Convert the Image to BitmapSource for WPF
-                    BitmapSource bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                    var webpImage = webp.GetImage();
+                    BitmapSource bitmapSource = Imaging.CreateBitmapSourceFromHBitmap(
                         ((Bitmap)webpImage).GetHbitmap(),
                         IntPtr.Zero,
                         Int32Rect.Empty,
@@ -375,20 +339,6 @@ namespace SimpleImageViewer
                     );
                     ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                     ImageDisplay.Source = bitmapSource;
-
-                    //// WEBP Handling using Imazen.webp
-                    //byte[] webpBytes = File.ReadAllBytes(imageFiles[index]);
-                    //var decoder = new Imazen.WebP.SimpleDecoder();
-                    //Bitmap bitmap = decoder.DecodeFromBytes(webpBytes, webpBytes.Length);  // why is length not defaulted to this?
-                    //// Convert the Image to BitmapSource for WPF
-                    //BitmapSource bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
-                    //    bitmap.GetHbitmap(),
-                    //    IntPtr.Zero,
-                    //    Int32Rect.Empty,
-                    //    BitmapSizeOptions.FromEmptyOptions()
-                    //);
-                    //ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                    //ImageDisplay.Source = bitmapSource;
                 }
                 else
                 {
@@ -397,8 +347,7 @@ namespace SimpleImageViewer
                     ImageDisplay.Source = bitmap;
                 }
                 
-
-                // Optionally hide the no-image message if an image is loaded
+                // hide the no-image message if an image is loaded
                 ImageDisplay.Visibility = Visibility.Visible;
                 NoImageMessage.Visibility = Visibility.Collapsed;
 
