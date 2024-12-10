@@ -12,6 +12,10 @@ using static System.Net.Mime.MediaTypeNames;
 using WpfAnimatedGif;
 using SixLabors.ImageSharp;
 using Point = System.Windows.Point;
+using System.Drawing;
+using WebP.Net;
+using Imazen.WebP;
+using System.Windows.Media;
 
 namespace SimpleImageViewer
 {
@@ -51,6 +55,8 @@ namespace SimpleImageViewer
             this.KeyDown += Window_KeyDown;
 
             UpdateContextMenuState();
+
+            RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
         }
 
         private void ApplyDisplayMode()
@@ -332,28 +338,57 @@ namespace SimpleImageViewer
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
-                    var webpImage = SixLabors.ImageSharp.Image.Load(imageFiles[index]);
-                    // WEBP Handling using ImageSharp
-                    using (webpImage)
-                    {
-                        using (var memoryStream = new MemoryStream())
-                        {
-                            // Convert WebP to Bitmap
-                            webpImage.SaveAsBmp(memoryStream);
-                            //SixLabors.ImageSharp.Image.
+                    //// WEBP Handling using ImageSharp
+                    //var webpImage = SixLabors.ImageSharp.Image.Load(imageFiles[index]);
+                    //using (webpImage)
+                    //{
+                    //    using (var memoryStream = new MemoryStream())
+                    //    {
+                    //        // Convert WebP to Bitmap
+                    //        webpImage.SaveAsBmp(memoryStream);
+                    //        //SixLabors.ImageSharp.Image.
 
-                            memoryStream.Seek(0, SeekOrigin.Begin);
+                    //        memoryStream.Seek(0, SeekOrigin.Begin);
 
-                            BitmapImage bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.StreamSource = memoryStream;
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.EndInit();
+                    //        BitmapImage bitmap = new BitmapImage();
+                    //        bitmap.BeginInit();
+                    //        bitmap.StreamSource = memoryStream;
+                    //        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    //        bitmap.EndInit();
 
-                            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                            ImageDisplay.Source = bitmap;
-                        }
-                    }
+                    //        ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                    //        ImageDisplay.Source = bitmap;
+                    //    }
+                    //}
+
+                    // WEBP Handling using WebP.NET
+                    // Handle WebP
+                    byte[] webpBytes = File.ReadAllBytes(imageFiles[index]);
+                    using var webp = new WebPObject(webpBytes);
+                    var webpImage = webp.GetImage(); // Decode WebP into an Image object
+                    // Convert the Image to BitmapSource for WPF
+                    BitmapSource bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                        ((Bitmap)webpImage).GetHbitmap(),
+                        IntPtr.Zero,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions()
+                    );
+                    ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                    ImageDisplay.Source = bitmapSource;
+
+                    //// WEBP Handling using Imazen.webp
+                    //byte[] webpBytes = File.ReadAllBytes(imageFiles[index]);
+                    //var decoder = new Imazen.WebP.SimpleDecoder();
+                    //Bitmap bitmap = decoder.DecodeFromBytes(webpBytes, webpBytes.Length);  // why is length not defaulted to this?
+                    //// Convert the Image to BitmapSource for WPF
+                    //BitmapSource bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                    //    bitmap.GetHbitmap(),
+                    //    IntPtr.Zero,
+                    //    Int32Rect.Empty,
+                    //    BitmapSizeOptions.FromEmptyOptions()
+                    //);
+                    //ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                    //ImageDisplay.Source = bitmapSource;
                 }
                 else
                 {

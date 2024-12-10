@@ -1,8 +1,13 @@
 # JustView
 
 TODO
+- like oter Windows apps, maximize vertical dimension when dragging window top to top of screen. And/or have hotkey for maximizing vertical space.
+- option: snap to best fit
+- webp looks worse on this than windows photo viewer. anti-aliasing or something? maybe conversion to BMP or not leveraging benefits of WEBP. Also ImageSharp looks unnecessarily heavy for our purposes and is large.
+- - implement: holdintg ctrl or shift while dragging corner/side fo window keeps ratio
 ..- some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
-- allow thru-window transparency?
+- allow thru-window transparency? option to show transparency as black, or something else (gray checker?), or thru-window. ==> possibility of appearance of entirely floating image, would be neat.
+- maybe option for dropshadow beyond window
 - maybe logo for app, other name
 - styling
 - maybe zooming and panning
