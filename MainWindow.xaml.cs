@@ -203,7 +203,6 @@ namespace SimpleImageViewer
             OpenImage();
         }
 
-        //TODO handle additional (general?) image types, including GIF
         private void OpenImage()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -217,7 +216,6 @@ namespace SimpleImageViewer
             }
         }
 
-        // TODO WEBP
         private void LoadImage(string imagePath, bool openedThroughApp)
         {
             try
