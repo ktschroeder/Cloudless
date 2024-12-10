@@ -62,6 +62,7 @@ namespace SimpleImageViewer
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
             bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
             bool loopGifs = JustView.Properties.Settings.Default.LoopGifs;
+            bool alwaysOnTop = JustView.Properties.Settings.Default.AlwaysOnTop;
 
             // Reset Width, Height, and Margin for all modes
             ImageDisplay.Width = Double.NaN; // Reset explicit width
@@ -109,6 +110,8 @@ namespace SimpleImageViewer
             {
                 ImageBehavior.SetRepeatBehavior(ImageDisplay, new RepeatBehavior(1));
             }
+
+            Topmost = JustView.Properties.Settings.Default.AlwaysOnTop;
         }
 
 
@@ -620,6 +623,7 @@ namespace SimpleImageViewer
                 JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
                 JustView.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
                 JustView.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
+                JustView.Properties.Settings.Default.AlwaysOnTop = configWindow.AlwaysOnTop;
 
                 JustView.Properties.Settings.Default.Save();
 
@@ -776,3 +780,14 @@ namespace SimpleImageViewer
         }
     }
 }
+
+
+//// Optionally subscribe to a property-changed event if the setting can be changed at runtime
+//JustView.Properties.Settings.Default.PropertyChanged += Settings_PropertyChanged;
+//private void Settings_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+//{
+//    if (e.PropertyName == nameof(JustView.Properties.Settings.Default.AlwaysOnTop))
+//    {
+//        ApplyAlwaysOnTopSetting();
+//    }
+//}

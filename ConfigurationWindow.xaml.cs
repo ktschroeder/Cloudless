@@ -13,6 +13,7 @@ namespace SimpleImageViewer
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
         public bool BorderOnMainWindow { get; private set; }
         public bool LoopGifs { get; private set; }
+        public bool AlwaysOnTop { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -49,6 +50,10 @@ namespace SimpleImageViewer
             var currentLoopGifs = JustView.Properties.Settings.Default.LoopGifs;
             LoopGifsCheckbox.IsChecked = currentLoopGifs;
             LoopGifs = currentLoopGifs;
+
+            var currentAlwaysOnTop = JustView.Properties.Settings.Default.AlwaysOnTop;
+            AlwaysOnTopCheckbox.IsChecked = currentAlwaysOnTop;
+            AlwaysOnTop = currentAlwaysOnTop;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -95,6 +100,7 @@ namespace SimpleImageViewer
             BorderOnMainWindow = BorderOnMainWindowCheckbox.IsChecked ?? false;
 
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
+            AlwaysOnTop = AlwaysOnTopCheckbox.IsChecked ?? false;
 
             DialogResult = true;
             Close();

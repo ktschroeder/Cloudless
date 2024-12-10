@@ -7,7 +7,6 @@ Probably should/will:
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag moves window; maybe option to swap which needs CTRL)
 - ability to rotate by 90 deg increments. should it be "saved" in case user navigates to next image in directory but then back? Or in a subsequent session?
-- always-on-top option (global or per-image with key T)
 - optionally, recent files, where disabling it also clears the history (or just have button to clear history). Windows natively provides a history function when right clicking on icon on taskbar. Manage and given option to enable/disable this?
 - odd jitter of window when changing images, such as when navigating through a directory
 
@@ -23,9 +22,10 @@ Probably should but lower priority:
 - allow thru-window transparency? option to show transparency as black, or something else (gray checker? see what other apps do), or thru-window. ==> possibility of appearance of entirely floating image, would be neat.
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
-
+- If you change a config in one window/instance, how should/can it affec tother windows that are open?
 
 Maybe / ideas:
+- per-window/instance always-on-top via a hotkey like "T".
 - should window do something else other than move to center of screen when changing image etc.?
 - possibly other z-index shenanigans beyond always-on-top
 - intuitive behavior of multiple windows

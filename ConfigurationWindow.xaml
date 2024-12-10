@@ -37,6 +37,10 @@
                 Content="Loop GIFs" 
                 Margin="0,5"/>
 
+            <CheckBox x:Name="AlwaysOnTopCheckbox" 
+                Content="Always on top" 
+                Margin="0,5"/>
+
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
                 <Button Content="Cancel" Click="Cancel_Click" Margin="0,5"/>
                 <Button Content="OK" Click="Save_Click" Margin="0,5"/>
