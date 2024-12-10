@@ -263,7 +263,6 @@ namespace SimpleImageViewer
         {
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
-                // Get the dimensions of the image
                 double imageWidth = bitmap.PixelWidth;
                 double imageHeight = bitmap.PixelHeight;
 
@@ -472,6 +471,13 @@ namespace SimpleImageViewer
                 return;
             }
 
+            if (e.Key == Key.R)
+            {
+                RotateImage90Degrees();
+                e.Handled = true;
+                return;
+            }
+
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0)
             {
@@ -596,6 +602,31 @@ namespace SimpleImageViewer
                 }
             }
         }
+
+        // could consider adding another hotkey for counter-clockwise, or making the rotation direction a toggleable setting.
+        private void RotateImage90Degrees()
+        {
+            if (ImageDisplay.Source is not BitmapSource bitmapSource)
+            {
+                MessageBox.Show("No image is currently loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Create a TransformedBitmap to apply the rotation
+            TransformedBitmap rotatedBitmap = new TransformedBitmap();
+            rotatedBitmap.BeginInit();
+            rotatedBitmap.Source = bitmapSource;
+            rotatedBitmap.Transform = new RotateTransform(90); // Rotate by 90 degrees
+            rotatedBitmap.EndInit();
+
+            // Set the rotated image as the source
+            ImageDisplay.Source = rotatedBitmap;
+            ApplyDisplayMode();  // could add an option to also ResizeWindowToImage() when rotating, but realistically may be rarely desired
+            // No need to reset explicitly when changing images, since Source is just reassigned.
+        }
+
+        
+
 
         // Maximize vertical dimension and align window with it vertically
         private void MaximizeVerticalDimension()
