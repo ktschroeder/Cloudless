@@ -571,6 +571,27 @@ namespace SimpleImageViewer
                     e.Handled = true;
                 }
             }
+
+            if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+            {
+                if (!isPanningImage && ImageDisplay.IsMouseOver)
+                {
+                    this.Cursor = Cursors.Hand;
+                }
+            }
+        }
+
+        
+        private void Window_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+            {
+                // Revert to the default cursor when Ctrl is released
+                if (!isPanningImage)
+                {
+                    this.Cursor = Cursors.Arrow;
+                }
+            }
         }
 
         // TODO if compression attempts take significant time, show message to user: "Finding best compression..."
@@ -835,8 +856,10 @@ namespace SimpleImageViewer
 
         private void OnMouseDownStartPanning(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left && Keyboard.Modifiers == ModifierKeys.Control)
+            if (e.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers == ModifierKeys.Control)
             {
+                this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired. TODO
+                isPanningImage = true;
                 lastMousePosition = e.GetPosition(this);
                 ImageDisplay.CaptureMouse();
             }
@@ -844,8 +867,9 @@ namespace SimpleImageViewer
 
         private void OnMouseMovePan(object sender, MouseEventArgs e)
         {
-            if (ImageDisplay.IsMouseCaptured)
+            if (isPanningImage)
             {
+                // Handle panning logic
                 Point currentMousePosition = e.GetPosition(this);
                 Vector delta = currentMousePosition - lastMousePosition;
                 imageTranslateTransform.X += delta.X;
@@ -853,12 +877,23 @@ namespace SimpleImageViewer
 
                 lastMousePosition = currentMousePosition;
             }
+            else if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
+            {
+                this.Cursor = Cursors.Hand;  // TODO could be better custom cursor
+            }
         }
 
         private void OnMouseUpEndPanning(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (isPanningImage)
             {
+                // Revert to open hand cursor when mouse is released, if still applicable
+                if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
+                    this.Cursor = Cursors.Hand;
+                // Otherwise return to default
+                else
+                    this.Cursor = Cursors.Arrow;
+                isPanningImage = false;
                 ImageDisplay.ReleaseMouseCapture();
             }
         }

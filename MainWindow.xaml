@@ -13,6 +13,7 @@
         MouseRightButtonUp="Window_MouseRightButtonUp"
         MouseDoubleClick="Window_MouseDoubleClick"
         KeyDown="Window_KeyDown"
+        KeyUp="Window_KeyUp"
         SourceInitialized="Window_SourceInitialized"
         SizeChanged="Window_SizeChanged"
         AllowDrop="True"

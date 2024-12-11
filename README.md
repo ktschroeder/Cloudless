@@ -1,6 +1,8 @@
 # JustView
 
 TODO
+- should not be able to pan "beyond" image, which introduces black space
+- zooming could be more intuitive. right now it zooms from the center of the image. It would be better to zoom from the cursor's position (if ctrl scrolling) or from the center of the window (if using ctrl and plus or minus).
 
 Probably should/will:
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
