@@ -479,6 +479,13 @@ namespace SimpleImageViewer
                 return;
             }
 
+            if (e.Key == Key.B)
+            {
+                ResizeWindowToRemoveBestFitBars();
+                e.Handled = true;
+                return;
+            }
+
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0)
             {
@@ -624,6 +631,58 @@ namespace SimpleImageViewer
             ImageDisplay.Source = rotatedBitmap;
             ApplyDisplayMode();  // could add an option to also ResizeWindowToImage() when rotating, but realistically may be rarely desired
             // No need to reset explicitly when changing images, since Source is just reassigned.
+        }
+
+
+        private void ResizeWindowToRemoveBestFitBars()
+        {
+            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+
+            switch (displayMode)
+            {
+                case "BestFit":
+                case "BestFitWithoutZooming":
+                    break;
+                default:
+                    return;
+            }
+
+            var newHeight = ImageDisplay.Height;
+            var newWidth = ImageDisplay.Width;
+
+            if (displayMode.Equals("BestFit"))
+            {
+                if (ImageDisplay.Source is BitmapSource bitmap)
+                {
+                    double imageWidth = bitmap.PixelWidth;
+                    double imageHeight = bitmap.PixelHeight;
+
+                    bool windowIsMoreLandscapeThanImage = (this.Width / this.Height) > (imageWidth / imageHeight);
+
+                    if (windowIsMoreLandscapeThanImage)
+                    {
+                        newWidth = imageWidth * (this.Height/imageHeight);
+                    }
+                    else
+                    {
+                        newHeight = imageHeight * (this.Width/imageWidth);
+                    }
+                }
+            }
+
+            // Temporarily disable layout updates by deferring them to the next frame. TODO use this concept to make other things smoother as well.
+            // TODO also this actually does not work (regarding smoother change)
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                // Apply the calculated size and position adjustments all at once
+                this.Top += (this.Height - newHeight) / 2;
+                this.Left += (this.Width - newWidth) / 2;
+
+                this.Height = newHeight;
+                this.Width = newWidth;
+
+                this.InvalidateMeasure();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         
