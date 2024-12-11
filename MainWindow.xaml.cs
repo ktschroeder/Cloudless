@@ -14,6 +14,11 @@ using WebP.Net;
 using System.Windows.Media;
 using System.Net;
 using System.Windows.Media.Animation;
+using System.Drawing.Imaging;
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
+using System.Runtime.InteropServices;
+using System.Collections.Specialized;
+using System.Reflection;
 
 namespace SimpleImageViewer
 {
@@ -431,15 +436,22 @@ namespace SimpleImageViewer
 
             if (e.Key == Key.C)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control)
+                ModifierKeys modifiers = Keyboard.Modifiers;
+
+                if ((modifiers & ModifierKeys.Control) != 0 && (modifiers & ModifierKeys.Alt) != 0)
                 {
-                    CopyImageToClipboard();
+                    CopyCompressedImageToClipboardAsJpgFile();
+                }
+                else if ((modifiers & ModifierKeys.Control) != 0)
+                {
+                    // TODO allows paste into file explorer or Discord (file copied) but not, say, MS Paint (image copied)?
+                    CopyImageFileToClipboard();
                 }
                 else
                 {
                     Close();
                 }
-                
+
                 e.Handled = true;
                 return;
             }
@@ -515,6 +527,117 @@ namespace SimpleImageViewer
                 }
             }
         }
+
+        // TODO if compression attempts take significant time, show message to user: "Finding best compression..."
+        private void CopyCompressedImageToClipboardAsJpgFile()
+        {
+            // TODO configure these
+            var tempFilePath = "temp.jpg";
+            double maxSizeInMB = 10;
+
+            try
+            {
+                if (ImageDisplay.Source is not BitmapSource bitmapSource)
+                    return;
+
+                // Define maximum size in bytes
+                double maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+
+                // Ensure the temp file has a valid path
+                tempFilePath = Path.Combine(Path.GetTempPath(), tempFilePath);
+
+                // Convert BitmapSource to Bitmap
+                using (Bitmap bitmap = BitmapSourceToBitmap(bitmapSource))
+                {
+                    // Ensure Bitmap is in a compatible format
+                    using (Bitmap compatibleBitmap = new(bitmap.Width, bitmap.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
+                    {
+                        using (Graphics g = Graphics.FromImage(compatibleBitmap))
+                        {
+                            g.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
+                        }
+
+                        long quality = 75L; // Start at medium quality
+                        const long minQuality = 10L; // Minimum quality to avoid over-compression
+
+                        while (true)
+                        {
+                            using (MemoryStream memoryStream = new())
+                            {
+                                ImageCodecInfo? jpegCodec = GetEncoder(ImageFormat.Jpeg);
+                                if (jpegCodec == null)
+                                    throw new Exception("Failed to get JPEG codec");
+
+                                EncoderParameters encoderParams = new(1);
+                                encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality);
+
+                                compatibleBitmap.Save(memoryStream, jpegCodec, encoderParams);
+
+                                // Check the file size
+                                if (memoryStream.Length <= maxSizeInBytes)
+                                {
+                                    // Save the compressed image to the temporary file
+                                    File.WriteAllBytes(tempFilePath, memoryStream.ToArray());
+                                    break;
+                                }
+
+                                // Reduce quality for further compression
+                                quality -= 5L;
+                                if (quality < minQuality)
+                                    throw new Exception("Unable to compress image to fit the size limit");
+                            }
+                        }
+                    }
+                }
+
+                // Copy file path to clipboard
+                StringCollection filePaths = new();
+                filePaths.Add(tempFilePath);
+                Clipboard.SetFileDropList(filePaths);
+
+                MessageBox.Show("Compressed image file copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy compressed image as file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        //TODO remove pop-ups after debugging
+
+
+
+        // Helper methods to convert and resize images
+        private Bitmap BitmapSourceToBitmap(BitmapSource source)
+        {
+            using var ms = new MemoryStream();
+            BitmapEncoder encoder = new JpegBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(source));
+            encoder.Save(ms);
+            return new Bitmap(ms);
+        }
+
+        private Bitmap ResizeImage(Bitmap image, int width, int height)
+        {
+            Bitmap resized = new(width, height);
+            using var g = Graphics.FromImage(resized);
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.DrawImage(image, 0, 0, width, height);
+            return resized;
+        }
+
+        private ImageCodecInfo? GetEncoder(ImageFormat format)
+        {
+            return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
+        }
+
+        private BitmapSource BitmapToBitmapSource(Bitmap bitmap)
+        {
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, ImageFormat.Bmp);
+            ms.Position = 0;
+            return BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+        }
+
 
         private void Window_DragOver(object sender, DragEventArgs e)
         {
@@ -604,19 +727,33 @@ namespace SimpleImageViewer
 
 
 
-        private void CopyImageToClipboard()
+        private void CopyImageFileToClipboard()
         {
-            if (ImageDisplay.Source is BitmapSource bitmapSource)
+            try
             {
-                try
-                {
-                    Clipboard.SetImage(bitmapSource);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                StringCollection filePaths = new();
+                filePaths.Add(currentlyDisplayedImagePath);
+                Clipboard.SetFileDropList(filePaths);
+
+                MessageBox.Show("File reference copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy file reference: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+
+            //if (ImageDisplay.Source is BitmapSource bitmapSource)
+            //{
+            //    try
+            //    {
+            //        Clipboard.SetImage(bitmapSource);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //    }
+            //}
         }
 
         // could consider adding another hotkey for counter-clockwise, or making the rotation direction a toggleable setting.
