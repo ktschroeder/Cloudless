@@ -4,7 +4,7 @@ TODO
 
 Probably should/will:
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
--- large feature: maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag moves window; maybe option to swap which needs CTRL)
+-- large feature: maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag already moves window)
 - odd jitter of window when changing images, such as when navigating through a directory
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
 

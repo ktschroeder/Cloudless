@@ -595,7 +595,7 @@ namespace SimpleImageViewer
                 filePaths.Add(tempFilePath);
                 Clipboard.SetFileDropList(filePaths);
 
-                MessageBox.Show("Compressed image file copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                //MessageBox.Show("Compressed image file copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -735,7 +735,7 @@ namespace SimpleImageViewer
                 filePaths.Add(currentlyDisplayedImagePath);
                 Clipboard.SetFileDropList(filePaths);
 
-                MessageBox.Show("File reference copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                //MessageBox.Show("File reference copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
