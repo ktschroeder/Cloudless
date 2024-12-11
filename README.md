@@ -7,7 +7,8 @@ Probably should/will:
 -- large feature: maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag already moves window)
 - odd jitter of window when changing images, such as when navigating through a directory
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
-
+- create simple system of toaster messages: copied, copied compressed w/ size, changed view mode, reset view, etc.
+- for zoom/pan, maybe change display style to a best-fit when intuitive/necessary if it was stretch or fill.
 
 Probably should but lower priority:
 -- Add window for hotkey cheatsheet, also list the less obvious features such as drag-and-drop and double-click for fullscreen

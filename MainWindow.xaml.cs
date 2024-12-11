@@ -62,6 +62,7 @@ namespace SimpleImageViewer
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
         
             InitializeZooming();
+            InitializePanning();
         }
 
         private void ApplyDisplayMode()
@@ -167,25 +168,32 @@ namespace SimpleImageViewer
             }
         }
 
-        private bool isDragging = false;
+        //private bool isDragging = false;
         private Point initialCursorPosition;
+
+        private bool isDraggingWindow = false;
+        private bool isPanningImage = false;
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // Ensure the action is triggered only by the left mouse button
             if (e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1)
             {
-                // If we're currently fullscreen, we don't want to exit unless dragging
-                if (WindowState == WindowState.Maximized)
+                if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
-                    // Capture the cursor position when clicking in fullscreen
+                    // Enable panning
+                    isPanningImage = true;
+                    lastMousePosition = e.GetPosition(this);
+                    ImageDisplay.CaptureMouse();
+                }
+                else if (WindowState == WindowState.Maximized)
+                {
+                    // Dragging window in fullscreen mode
                     initialCursorPosition = e.GetPosition(this);
-                    // Flag that dragging has started (this flag will help us track dragging)
-                    isDragging = true;
+                    isDraggingWindow = true;
                 }
                 else
                 {
-                    // Otherwise, start dragging normally
+                    // Dragging window in normal mode
                     DragMove();
                 }
             }
@@ -193,32 +201,43 @@ namespace SimpleImageViewer
 
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
-            // If dragging is enabled (left button is pressed), we can check if fullscreen mode should be exited
-            if (isDragging && WindowState == WindowState.Maximized)
+            if (isPanningImage)
             {
-                // Calculate the distance moved from the initial cursor position
-                Point cursorPosition = e.GetPosition(this);
-                //double offsetX = cursorPosition.X - initialCursorPosition.X;
-                //double offsetY = cursorPosition.Y - initialCursorPosition.Y;
+                // Handle panning logic
+                Point currentMousePosition = e.GetPosition(this);
+                Vector delta = currentMousePosition - lastMousePosition;
+                imageTranslateTransform.X += delta.X;
+                imageTranslateTransform.Y += delta.Y;
 
+                lastMousePosition = currentMousePosition;
+            }
+            else if (isDraggingWindow && WindowState == WindowState.Maximized)
+            {
+                // Handle dragging window out of fullscreen
+                Point cursorPosition = e.GetPosition(this);
                 ToggleFullscreen();
 
-                // Center the window on the cursor position by updating its Top and Left properties
                 this.Left = cursorPosition.X - (this.ActualWidth / 2);
                 this.Top = cursorPosition.Y - (this.ActualHeight / 2);
 
-                // Exit fullscreen only when the user moves the mouse after clicking
-                //ToggleFullscreen();
                 DragMove();
-
             }
         }
 
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            // If the user stops dragging, reset the flag
-            isDragging = false;
+            if (isPanningImage)
+            {
+                ImageDisplay.ReleaseMouseCapture();
+                isPanningImage = false;
+            }
+
+            if (isDraggingWindow)
+            {
+                isDraggingWindow = false;
+            }
         }
+
 
         private void OpenImage_Click(object sender, RoutedEventArgs e)
         {
@@ -797,6 +816,53 @@ namespace SimpleImageViewer
                 imageScaleTransform.ScaleY = 1.0 / ImageDisplay.ActualHeight * bitmap.PixelHeight;
             }
         }
+
+        private TranslateTransform imageTranslateTransform = new TranslateTransform();
+        private Point lastMousePosition;
+
+        private void InitializePanning()
+        {
+            TransformGroup transformGroup = new TransformGroup();
+            transformGroup.Children.Add(imageScaleTransform);
+            transformGroup.Children.Add(imageTranslateTransform);
+
+            ImageDisplay.RenderTransform = transformGroup;
+
+            ImageDisplay.MouseDown += OnMouseDownStartPanning;
+            ImageDisplay.MouseMove += OnMouseMovePan;
+            ImageDisplay.MouseUp += OnMouseUpEndPanning;
+        }
+
+        private void OnMouseDownStartPanning(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                lastMousePosition = e.GetPosition(this);
+                ImageDisplay.CaptureMouse();
+            }
+        }
+
+        private void OnMouseMovePan(object sender, MouseEventArgs e)
+        {
+            if (ImageDisplay.IsMouseCaptured)
+            {
+                Point currentMousePosition = e.GetPosition(this);
+                Vector delta = currentMousePosition - lastMousePosition;
+                imageTranslateTransform.X += delta.X;
+                imageTranslateTransform.Y += delta.Y;
+
+                lastMousePosition = currentMousePosition;
+            }
+        }
+
+        private void OnMouseUpEndPanning(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                ImageDisplay.ReleaseMouseCapture();
+            }
+        }
+
 
 
 
