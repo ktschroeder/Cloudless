@@ -59,3 +59,4 @@ M: Minimize window
 R: Rotate image 90 degrees clockwise
 Left and Right: Load adjacent respective images in the directory of the currently loaded image
 B: Resize window to remove best-fit bars
+T: Toggle always-on-top for the focused window

@@ -98,12 +98,12 @@ namespace JustView.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool AlwaysOnTop {
+        public bool AlwaysOnTopByDefault {
             get {
-                return ((bool)(this["AlwaysOnTop"]));
+                return ((bool)(this["AlwaysOnTopByDefault"]));
             }
             set {
-                this["AlwaysOnTop"] = value;
+                this["AlwaysOnTopByDefault"] = value;
             }
         }
     }

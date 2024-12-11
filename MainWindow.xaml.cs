@@ -62,7 +62,7 @@ namespace SimpleImageViewer
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
             bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
             bool loopGifs = JustView.Properties.Settings.Default.LoopGifs;
-            bool alwaysOnTop = JustView.Properties.Settings.Default.AlwaysOnTop;
+            bool alwaysOnTopByDefault = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
 
             // Reset Width, Height, and Margin for all modes
             ImageDisplay.Width = Double.NaN; // Reset explicit width
@@ -111,7 +111,7 @@ namespace SimpleImageViewer
                 ImageBehavior.SetRepeatBehavior(ImageDisplay, new RepeatBehavior(1));
             }
 
-            Topmost = JustView.Properties.Settings.Default.AlwaysOnTop;
+            Topmost = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
         }
 
 
@@ -458,6 +458,14 @@ namespace SimpleImageViewer
                 return;
             }
 
+            // Toggle Topmost (always-on-top) for this window
+            if (e.Key == Key.T)
+            {
+                Topmost = !Topmost;
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.I)
             {
                 ImageInfo();
@@ -729,7 +737,7 @@ namespace SimpleImageViewer
                 JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
                 JustView.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
                 JustView.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
-                JustView.Properties.Settings.Default.AlwaysOnTop = configWindow.AlwaysOnTop;
+                JustView.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
 
                 JustView.Properties.Settings.Default.Save();
 
@@ -892,7 +900,7 @@ namespace SimpleImageViewer
 //JustView.Properties.Settings.Default.PropertyChanged += Settings_PropertyChanged;
 //private void Settings_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
 //{
-//    if (e.PropertyName == nameof(JustView.Properties.Settings.Default.AlwaysOnTop))
+//    if (e.PropertyName == nameof(JustView.Properties.Settings.Default.AlwaysOnTopByDefault))
 //    {
 //        ApplyAlwaysOnTopSetting();
 //    }
