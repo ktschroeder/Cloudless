@@ -24,7 +24,7 @@ Probably should but lower priority:
 - option: snap to best fit when dragging border
 - allow thru-window transparency? option to show transparency as black, or something else (gray checker? see what other apps do), or thru-window. ==> possibility of appearance of entirely floating image, would be neat.
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
-- If you change a config in one window/instance, how should/can it affec tother windows that are open?
+- If you change a config in one window/instance, how should/can it affect other windows that are open?
 
 
 Maybe / ideas:

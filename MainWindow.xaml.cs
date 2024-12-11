@@ -60,6 +60,8 @@ namespace SimpleImageViewer
             UpdateContextMenuState();
 
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
+        
+            InitializeZooming();
         }
 
         private void ApplyDisplayMode()
@@ -526,6 +528,30 @@ namespace SimpleImageViewer
                     return;
                 }
             }
+
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (e.Key == Key.OemPlus || e.Key == Key.Add) // Zoom In
+                {
+                    AdjustZoom(1.1);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.OemMinus || e.Key == Key.Subtract) // Zoom Out
+                {
+                    AdjustZoom(1 / 1.1);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.D0) // Reset to Best Fit
+                {
+                    ResetZoomToBestFit();
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.D9) // True Resolution (100%)
+                {
+                    ResetZoomToTrueResolution();
+                    e.Handled = true;
+                }
+            }
         }
 
         // TODO if compression attempts take significant time, show message to user: "Finding best compression..."
@@ -724,6 +750,53 @@ namespace SimpleImageViewer
         }
 
 
+        private ScaleTransform imageScaleTransform = new ScaleTransform();
+
+        private void InitializeZooming()
+        {
+            ImageDisplay.RenderTransform = imageScaleTransform;
+            ImageDisplay.RenderTransformOrigin = new Point(0.5, 0.5);
+            this.PreviewMouseWheel += OnMouseWheelZoom;
+        }
+
+        private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control)
+                return;
+
+            double zoomFactor = e.Delta > 0 ? 1.1 : 1 / 1.1;
+            imageScaleTransform.ScaleX *= zoomFactor;
+            imageScaleTransform.ScaleY *= zoomFactor;
+
+            // Optional: Clamp zoom level to a reasonable range (e.g., 10%-500%)
+            imageScaleTransform.ScaleX = Math.Clamp(imageScaleTransform.ScaleX, 0.1, 5.0);
+            imageScaleTransform.ScaleY = Math.Clamp(imageScaleTransform.ScaleY, 0.1, 5.0);
+
+            e.Handled = true;
+        }
+
+        private void AdjustZoom(double zoomFactor)
+        {
+            imageScaleTransform.ScaleX *= zoomFactor;
+            imageScaleTransform.ScaleY *= zoomFactor;
+            imageScaleTransform.ScaleX = Math.Clamp(imageScaleTransform.ScaleX, 0.1, 5.0);
+            imageScaleTransform.ScaleY = Math.Clamp(imageScaleTransform.ScaleY, 0.1, 5.0);
+        }
+
+        private void ResetZoomToBestFit()
+        {
+            imageScaleTransform.ScaleX = 1.0;
+            imageScaleTransform.ScaleY = 1.0;
+        }
+
+        private void ResetZoomToTrueResolution()
+        {
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
+                imageScaleTransform.ScaleX = 1.0 / ImageDisplay.ActualWidth * bitmap.PixelWidth;
+                imageScaleTransform.ScaleY = 1.0 / ImageDisplay.ActualHeight * bitmap.PixelHeight;
+            }
+        }
 
 
 
