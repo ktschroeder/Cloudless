@@ -867,14 +867,51 @@ namespace SimpleImageViewer
 
         private void OnMouseMovePan(object sender, MouseEventArgs e)
         {
+            //if (isPanningImage)
+            //{
+            //    // Handle panning logic
+            //    Point currentMousePosition = e.GetPosition(this);
+            //    Vector delta = currentMousePosition - lastMousePosition;
+            //    imageTranslateTransform.X += delta.X;
+            //    imageTranslateTransform.Y += delta.Y;
+
+            //    lastMousePosition = currentMousePosition;
+            //}
             if (isPanningImage)
             {
-                // Handle panning logic
+                // Current mouse position
                 Point currentMousePosition = e.GetPosition(this);
-                Vector delta = currentMousePosition - lastMousePosition;
-                imageTranslateTransform.X += delta.X;
-                imageTranslateTransform.Y += delta.Y;
 
+                // Calculate the movement delta
+                Vector delta = currentMousePosition - lastMousePosition;
+
+                // Get current image dimensions including any scaling (zoom)
+                double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
+                double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
+
+                // Get bounds of the window or container
+                double containerWidth = this.ActualWidth;
+                double containerHeight = this.ActualHeight;
+
+                // Calculate new translate values
+                double newTranslateX = imageTranslateTransform.X + delta.X;
+                double newTranslateY = imageTranslateTransform.Y + delta.Y;
+
+                // Constrain X-axis translation
+                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
+                double minTranslateX = -maxTranslateX;
+                newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
+
+                // Constrain Y-axis translation
+                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
+                double minTranslateY = -maxTranslateY;
+                newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
+
+                // Apply constrained translation
+                imageTranslateTransform.X = newTranslateX;
+                imageTranslateTransform.Y = newTranslateY;
+
+                // Update last mouse position
                 lastMousePosition = currentMousePosition;
             }
             else if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
