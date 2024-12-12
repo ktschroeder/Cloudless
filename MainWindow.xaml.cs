@@ -29,6 +29,7 @@ namespace SimpleImageViewer
         private int currentImageIndex;
         private string? currentlyDisplayedImagePath;
         private bool autoResizingSpaceIsToggled;
+        private bool isExplorationMode;
 
         private OverlayMessageManager overlayManager;
 
@@ -52,6 +53,9 @@ namespace SimpleImageViewer
         {
             InitializeComponent();
 
+            overlayManager = new OverlayMessageManager(MessageOverlayStack);
+
+            isExplorationMode = false;
             NoImageMessage.Visibility = Visibility.Visible;
             ImageDisplay.Visibility = Visibility.Collapsed;
             CompositionTarget.Rendering += UpdateDebugInfo;
@@ -67,7 +71,7 @@ namespace SimpleImageViewer
             InitializeZooming();
             InitializePanning();
 
-            overlayManager = new OverlayMessageManager(MessageOverlayStack);
+            
         }
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
@@ -121,9 +125,45 @@ namespace SimpleImageViewer
                 $"Display mode: {displayMode:F2}";
         }
 
-        private void ApplyDisplayMode()
+        // mode that enables zooming/panning and disables behavior associated with standard display modes and window resizing
+        private void EnterExplorationMode()
         {
+            var wasExplorationMode = isExplorationMode;
+
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            switch (displayMode)
+            {
+                case "StretchToFit":
+                case "ZoomToFill":
+                    // To clear out weirdness and prepare for zooming/panning, apply display for zoomless best fit.
+                    // This is cleaner than doing nothing, pending future work to make this more seamless (particularly for ZoomToFill).
+                    //ApplyDisplayMode(true);
+                    break;
+                //case "BestFit":
+                //case "BestFitWithoutZooming":
+                default:
+                    break;
+            }
+              
+            isExplorationMode = true;
+            ImageDisplay.Stretch = System.Windows.Media.Stretch.None;
+
+            //bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
+
+            if (!wasExplorationMode)
+                Message("Entered Exploration Mode (zoom and pan)");
+            else
+                Message("Debug: expl mode ==> expl mode");
+        }
+
+        private void ApplyDisplayMode(bool simulateZoomlessBestFit = false)
+        {
+            var wasExplorationMode = isExplorationMode;
+            isExplorationMode = false;
+
+            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            if (simulateZoomlessBestFit)
+                displayMode = "BestFitWithoutZooming";
             bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
             bool loopGifs = JustView.Properties.Settings.Default.LoopGifs;
             bool alwaysOnTopByDefault = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
@@ -132,6 +172,9 @@ namespace SimpleImageViewer
             ImageDisplay.Width = Double.NaN; // Reset explicit width
             ImageDisplay.Height = Double.NaN; // Reset explicit height
             ImageDisplay.Margin = new Thickness(0); // Reset margin
+
+            ResetZoom();
+            ResetPan();
 
             // Apply display mode for stretching
             switch (displayMode)
@@ -176,13 +219,18 @@ namespace SimpleImageViewer
             }
 
             Topmost = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
+
+            if (wasExplorationMode)
+                Message("Entered Display Mode");
+            else
+                Message("Debug: display mode ==> display mode");
         }
 
 
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (JustView.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
+            if (!isExplorationMode && JustView.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
             {
                 CenterImageIfNeeded();
             }
@@ -236,6 +284,8 @@ namespace SimpleImageViewer
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
+                    if (!isExplorationMode) EnterExplorationMode();
+
                     // Enable panning
                     isPanningImage = true;
                     lastMousePosition = e.GetPosition(this);
@@ -321,9 +371,10 @@ namespace SimpleImageViewer
             if (openFileDialog.ShowDialog() == true)
             {
                 LoadImage(openFileDialog.FileName, true);
+                Message("File loaded from dialog.");
             }
 
-            Message("File loaded from dialog.");
+            
         }
 
         private void LoadImage(string imagePath, bool openedThroughApp)
@@ -357,6 +408,8 @@ namespace SimpleImageViewer
         // TODO this always sends image to first screen; probably easy fix but does it always get WorkArea from main monitor or what? May be better to be more flexible.
         private void ResizeWindowToImage()
         {
+            if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
+
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 double imageWidth = bitmap.PixelWidth;
@@ -501,12 +554,23 @@ namespace SimpleImageViewer
             }
 
             
-            if (e.Key == Key.D && Keyboard.Modifiers == ModifierKeys.Control)
+            if (e.Key == Key.D)
             {
-                DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
                     ? Visibility.Collapsed
                     : Visibility.Visible;
+                }
+                else
+                {
+                    ApplyDisplayMode();
+                }
+                e.Handled = true;
+                return;
             }
+
+            
 
 
             // set window dimensions to image if possible
@@ -524,6 +588,8 @@ namespace SimpleImageViewer
                 e.Handled = true;
                 return;
             }
+
+            
 
             if (e.Key == Key.V && !(Keyboard.Modifiers == ModifierKeys.Control))
             {
@@ -610,7 +676,6 @@ namespace SimpleImageViewer
             {
                 if (e.Key == Key.Left)
                 {
-                    Message("Debug: you pressed the left key");
                     // Go to the previous image
                     currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
                     DisplayImage(currentImageIndex, true);
@@ -619,7 +684,6 @@ namespace SimpleImageViewer
                 }
                 else if (e.Key == Key.Right)
                 {
-                    Message("Debug: you pressed the right key");
                     // Go to the next image
                     currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
                     DisplayImage(currentImageIndex, true);
@@ -643,7 +707,7 @@ namespace SimpleImageViewer
                 else if (e.Key == Key.D0) // Reset to Best Fit
                 {
                     ResetPan();
-                    ResetZoomToBestFit();
+                    ResetZoom();
                     e.Handled = true;
                 }
                 else if (e.Key == Key.D9) // True Resolution (100%)
@@ -881,7 +945,7 @@ namespace SimpleImageViewer
             this.PreviewMouseWheel += OnMouseWheelZoom;
         }
 
-        // Can add configurablee setting for how much to zoom per scroll event; also for ctrl plus and minus
+        // Can add configurable setting for how much to zoom per scroll event; also for ctrl plus and minus
         //private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         //{
         //    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
@@ -916,6 +980,8 @@ namespace SimpleImageViewer
         {
             if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
             {
+                if (!isExplorationMode) EnterExplorationMode();
+
                 // Get current mouse position relative to the image
                 Point cursorPosition = e.GetPosition(PrimaryWindow);
 
@@ -930,6 +996,8 @@ namespace SimpleImageViewer
 
         private void ZoomFromCenter(bool zoomIn)
         {
+            if (!isExplorationMode) EnterExplorationMode();
+
             // Get window center relative to the image
             Point windowCenter = new Point(PrimaryWindow.ActualWidth / 2, PrimaryWindow.ActualHeight / 2);
 
@@ -941,6 +1009,8 @@ namespace SimpleImageViewer
 
         private void Zoom(double zoomDelta, Point zoomOrigin)
         {
+            if (!isExplorationMode) EnterExplorationMode();
+
             // Calculate new scale
             double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
             double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
@@ -961,15 +1031,15 @@ namespace SimpleImageViewer
             imageScaleTransform.ScaleY = newScaleY;
         }
         
-        private void AdjustZoom(double zoomFactor)
-        {
-            imageScaleTransform.ScaleX *= zoomFactor;
-            imageScaleTransform.ScaleY *= zoomFactor;
-            imageScaleTransform.ScaleX = Math.Clamp(imageScaleTransform.ScaleX, 0.1, 5.0);
-            imageScaleTransform.ScaleY = Math.Clamp(imageScaleTransform.ScaleY, 0.1, 5.0);
-        }
+        //private void AdjustZoom(double zoomFactor)
+        //{
+        //    imageScaleTransform.ScaleX *= zoomFactor;
+        //    imageScaleTransform.ScaleY *= zoomFactor;
+        //    imageScaleTransform.ScaleX = Math.Clamp(imageScaleTransform.ScaleX, 0.1, 5.0);
+        //    imageScaleTransform.ScaleY = Math.Clamp(imageScaleTransform.ScaleY, 0.1, 5.0);
+        //}
 
-        private void ResetZoomToBestFit()
+        private void ResetZoom()
         {
             imageScaleTransform.ScaleX = 1.0;
             imageScaleTransform.ScaleY = 1.0;
@@ -977,6 +1047,8 @@ namespace SimpleImageViewer
 
         private void ResetZoomToTrueResolution()
         {
+            if (!isExplorationMode) EnterExplorationMode();
+
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 imageScaleTransform.ScaleX = 1.0 / ImageDisplay.ActualWidth * bitmap.PixelWidth;
@@ -1011,6 +1083,8 @@ namespace SimpleImageViewer
         {
             if (e.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers == ModifierKeys.Control)
             {
+                if (!isExplorationMode) EnterExplorationMode();
+
                 this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired. TODO
                 isPanningImage = true;
                 lastMousePosition = e.GetPosition(this);
@@ -1032,6 +1106,8 @@ namespace SimpleImageViewer
             //}
             if (isPanningImage)
             {
+                if (!isExplorationMode) EnterExplorationMode();
+
                 // Current mouse position
                 Point currentMousePosition = e.GetPosition(this);
 
@@ -1083,7 +1159,7 @@ namespace SimpleImageViewer
 
         public void Message(string message, TimeSpan? duration = null)
         {
-            duration ??= TimeSpan.FromSeconds(5);
+            duration ??= TimeSpan.FromSeconds(1.5);
             overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
         }
 
@@ -1144,6 +1220,8 @@ namespace SimpleImageViewer
 
         private void ResizeWindowToRemoveBestFitBars()
         {
+            if (isExplorationMode) ApplyDisplayMode(); // TODO possibly just disable/return here
+
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
 
             switch (displayMode)

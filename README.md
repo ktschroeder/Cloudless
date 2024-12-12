@@ -2,18 +2,26 @@
 JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-rich, but visually quiet and minimal.
 
 TODO
-- zooming could be more intuitive. right now it zooms from the center of the image. It would be better to zoom from the cursor's position (if ctrl scrolling) or from the center of the window (if using ctrl and plus or minus).
+
+Up next:
+- "display mode" and "exploration mode" to distinguish the use of the display modes with the ability to zoom/pan. 
+	- User can reset to return to display mode, and automatically enters exploration mode when zooming/panning. 
+	- Bonus: seamless transition from the stretch and zoom display modes. Possibly just disable exploration in those cases though if it's wacky.
+	- bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
+- ability to quickly load recent images (esp. useful for development/debugging). ==> history.
+- messages: copied, copied compressed w/ size, changed view mode, reset view, etc. Maybe loading for GIF.
 
 Probably should/will:
-- ability to quickly load recent images (esp. useful for development/debugging)
+- similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
+- setting to mute messages
+- provide a simple window that can be accessed, showing all messages from this session.
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
--- large feature: maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag already moves window)
 - odd jitter of window when changing images, such as when navigating through a directory
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
-- create simple system of toaster messages: copied, copied compressed w/ size, changed view mode, reset view, etc.
-- for zoom/pan, maybe change display style to a best-fit when intuitive/necessary if it was stretch or fill.
+- allow focus/interaction on main window while secondary windows are open? In particualr may be useful for hotkey reference.
 
 Probably should but lower priority:
+- For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
 - bug: right click to context menu then left click on main window is treated as double-click
 -- Add window for hotkey cheatsheet, also list the less obvious features such as drag-and-drop and double-click for fullscreen
 - hotkey: zoom to fill window with best fit (only during BestFit)
@@ -30,6 +38,7 @@ Probably should but lower priority:
 - allow thru-window transparency? option to show transparency as black, or something else (gray checker? see what other apps do), or thru-window. ==> possibility of appearance of entirely floating image, would be neat.
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
 - If you change a config in one window/instance, how should/can it affect other windows that are open?
+- optional online listening for updates.
 
 
 Maybe / ideas:
