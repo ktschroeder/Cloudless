@@ -28,6 +28,7 @@ namespace SimpleImageViewer
         private string[]? imageFiles;
         private int currentImageIndex;
         private string? currentlyDisplayedImagePath;
+        private string? currentlyDisplayedImagePathBackslashes;
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
 
@@ -484,8 +485,10 @@ namespace SimpleImageViewer
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
 
                 var uri = new Uri(imageFiles[index]);
-                
+
+                // TODO currentlyDisplayedImagePath can possibly be replaced with the backslashes version
                 currentlyDisplayedImagePath = WebUtility.UrlDecode(uri.AbsolutePath);
+                currentlyDisplayedImagePathBackslashes = uri.LocalPath;
                 AddToRecentFiles(uri.LocalPath);
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
@@ -1391,10 +1394,10 @@ namespace SimpleImageViewer
 
         private void ImageInfo()
         {
-            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePathBackslashes))
                 return;
 
-            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePath)
+            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePathBackslashes)
             {
                 Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
