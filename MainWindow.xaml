@@ -43,7 +43,7 @@
                        Foreground="White" 
                        FontSize="12" 
                        TextWrapping="Wrap"
-                       Visibility="Collapsed"/>
+                       Visibility="Hidden"/>
         </Border>
 
         <!-- Messages -->

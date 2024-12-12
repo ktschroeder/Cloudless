@@ -4,17 +4,19 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-- bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
-- similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
+- properly hide debug overlay
+*-* bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size. Other times, can pan more than you should be able to (blackspace around borders)? Maybe a bad order of panning/zooming somewhere in the transition.
+- (fix bug first as it could impact this) similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
 	- Conceptually simple approach may be: if new position would be out of bounds, then nudge back to in-bounds. 
 
 Probably should/will:
-- messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
-- ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.) 
+*-* messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
+*-* odd jitter of window when changing images, such as when navigating through a directory
+*-* ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.) 
 - provide a simple window that can be accessed, showing all messages from this session.
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
-- odd jitter of window when changing images, such as when navigating through a directory
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
+- bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should but lower priority:
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.

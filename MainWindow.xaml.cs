@@ -158,8 +158,6 @@ namespace SimpleImageViewer
 
             if (!wasExplorationMode)
                 Message("Entered Exploration Mode (zoom and pan)");
-            else
-                Message("Debug: expl mode ==> expl mode");
         }
 
         private void ApplyDisplayMode(bool simulateZoomlessBestFit = false)
@@ -228,8 +226,6 @@ namespace SimpleImageViewer
 
             if (wasExplorationMode)
                 Message("Entered Display Mode");
-            else
-                Message("Debug: display mode ==> display mode");
         }
 
 
@@ -570,7 +566,7 @@ namespace SimpleImageViewer
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
                     DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
-                    ? Visibility.Collapsed
+                    ? Visibility.Hidden
                     : Visibility.Visible;
                 }
                 else
