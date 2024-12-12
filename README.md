@@ -5,12 +5,12 @@ TODO
 
 Up next:
 - bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
+- similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
+- setting to mute messages
 
 Probably should/will:
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
-- similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
-- setting to mute messages
-- ability to copy image itself rather than just image file (can we "do both" dynamically?)
+- ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.) 
 - provide a simple window that can be accessed, showing all messages from this session.
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - odd jitter of window when changing images, such as when navigating through a directory
@@ -20,7 +20,6 @@ Probably should/will:
 Probably should but lower priority:
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
 - bug: right click to context menu then left click on main window is treated as double-click
--- Add window for hotkey cheatsheet, also list the less obvious features such as drag-and-drop and double-click for fullscreen
 - hotkey: zoom to fill window with best fit (only during BestFit)
 - extended context window (Secondary?) so that nothing "must" be done with a hotkey. maybe.
 - other filetypes that MAY be simple to add/handle: TIFF, HEIF, HEIC, SVG, ICO
@@ -47,24 +46,4 @@ Maybe / ideas:
 - maybe logo for app, other name
 - maybe option for dropshadow beyond window
 - Automatically rotate images based on the EXIF orientation tag in case the image was taken on a camera or smartphone that stored the rotation information.
-
-
-
-Hotkeys:
-
-F11: toggle fullscreen
-Esc: exit fullscreen, or close a secondary window such as Preferences
-F: set window size to image's true dimensions if possible, not exceeding the screen size. If the setting to leave a buffer is enabled, then pressing F subsequently will toggle between the buffer size and the bufferless size.
-O: open an image
-V: maximize vertical dimension and align window
-CTRL C: copy displayed image file to clipboard
-CTRL ALT C: convert displayed image to JPG, and compress iteratively until it is below a configured max file size, then copy the resulting image file to clipboard
-C: close window or secondary window
-P: open Preferences window
-A: open About window
-I: open Image Info window if an image is loaded
-M: Minimize window
-R: Rotate image 90 degrees clockwise
-Left and Right: Load adjacent respective images in the directory of the currently loaded image
-B: Resize window to remove best-fit bars
-T: Toggle always-on-top for the focused window
+- somewhere list the less obvious features such as drag-and-drop and double-click for fullscreen

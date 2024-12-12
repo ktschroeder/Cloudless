@@ -600,7 +600,12 @@ namespace SimpleImageViewer
                 return;
             }
 
-            
+            if (e.Key == Key.H)
+            {
+                HotkeyRef();
+                e.Handled = true;
+                return;
+            }
 
             if (e.Key == Key.V && !(Keyboard.Modifiers == ModifierKeys.Control))
             {
@@ -1348,6 +1353,11 @@ namespace SimpleImageViewer
             About();
         }
 
+        private void HotkeyRef_Click(object sender, RoutedEventArgs e)
+        {
+            HotkeyRef();
+        }
+
         private void About()
         {
             var aboutWindow = new AboutWindow();
@@ -1357,6 +1367,17 @@ namespace SimpleImageViewer
             aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             var _ = aboutWindow.ShowDialog();
+        }
+
+        private void HotkeyRef()
+        {
+            var hkrWindow = new HotkeyRefWindow();
+
+            // Center the window relative to the main application window
+            hkrWindow.Owner = this; // Set the owner to the main window
+            hkrWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            var _ = hkrWindow.ShowDialog();
         }
 
         private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)

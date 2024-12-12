@@ -42,7 +42,8 @@
             <TextBlock x:Name="DebugTextBlock" 
                        Foreground="White" 
                        FontSize="12" 
-                       TextWrapping="Wrap" />
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed"/>
         </Border>
 
         <!-- Messages -->
@@ -72,6 +73,7 @@
                 <MenuItem Header="Image Info" Click="ImageInfo_Click"/>
                 <MenuItem Header="Preferences" Click="OpenPreferences_Click"/>
                 <MenuItem Header="About" Click="About_Click"/>
+                <MenuItem Header="Hot Key Reference" Click="HotkeyRef_Click"/>
             </ContextMenu>
         </Grid.ContextMenu>
 
