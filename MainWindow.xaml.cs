@@ -33,6 +33,10 @@ namespace SimpleImageViewer
 
         private OverlayMessageManager overlayManager;
 
+        private const int MaxRecentFiles = 10;
+        private readonly List<string> recentFiles = new();
+
+
         public MainWindow(string? filePath)
         {
             Setup();
@@ -64,6 +68,7 @@ namespace SimpleImageViewer
 
             this.KeyDown += Window_KeyDown;
 
+            LoadRecentFiles();
             UpdateContextMenuState();
 
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
@@ -381,6 +386,8 @@ namespace SimpleImageViewer
         {
             try
             {
+
+
                 string selectedImagePath = imagePath;
                 currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
                 imageFiles = Directory.GetFiles(currentDirectory, "*.*")
@@ -479,6 +486,7 @@ namespace SimpleImageViewer
                 var uri = new Uri(imageFiles[index]);
                 
                 currentlyDisplayedImagePath = WebUtility.UrlDecode(uri.AbsolutePath);
+                AddToRecentFiles(uri.LocalPath);
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
@@ -1479,6 +1487,119 @@ namespace SimpleImageViewer
 
             return IntPtr.Zero;
         }
+
+        private void SaveRecentFiles()
+        {
+            System.Collections.Specialized.StringCollection collection = new();
+            collection.AddRange(recentFiles.ToArray());
+
+            JustView.Properties.Settings.Default.RecentFiles = collection;
+            JustView.Properties.Settings.Default.Save();
+        }
+
+
+        private void AddToRecentFiles(string filePath)
+        {
+            // Avoid duplicates
+            recentFiles.Remove(filePath);
+            recentFiles.Insert(0, filePath);
+
+            // Enforce max size
+            if (recentFiles.Count > MaxRecentFiles)
+                recentFiles.RemoveAt(recentFiles.Count - 1);
+
+            UpdateRecentFilesMenu();
+            SaveRecentFiles();
+        }
+
+
+        private void UpdateRecentFilesMenu()
+        {
+            // Clear the existing items
+            RecentFilesMenu.Items.Clear();
+
+            // Add recent files
+            foreach (string file in recentFiles)
+            {
+                MenuItem fileItem = new MenuItem
+                {
+                    Header = System.IO.Path.GetFileName(file),
+                    ToolTip = file,
+                    Tag = file
+                };
+                fileItem.Click += (s, e) => OpenRecentFile((string)((MenuItem)s).Tag);
+                RecentFilesMenu.Items.Add(fileItem);
+            }
+
+            // Add a separator if there are recent files
+            if (recentFiles.Count > 0)
+            {
+                RecentFilesMenu.Items.Add(new Separator());
+
+                // Add "Clear History" item
+                MenuItem clearHistoryItem = new MenuItem
+                {
+                    Header = "Clear History",
+                    ToolTip = "Clear the list of recent files."
+                };
+                clearHistoryItem.Click += (s, e) => ClearRecentFiles();
+                RecentFilesMenu.Items.Add(clearHistoryItem);
+            }
+            else
+            {
+                MenuItem noRecentFilesItem = new()
+                {
+                    Header = "No Recent Files",
+                    IsEnabled = false
+                };
+                RecentFilesMenu.Items.Add(noRecentFilesItem);
+            }
+        }
+
+
+        private void OpenRecentFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                MessageBox.Show($"File not found: {filePath}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Your logic to open the file
+            LoadImage(filePath, true);
+        }
+
+        private void LoadRecentFiles()
+        {
+            try
+            {
+                var savedFiles = JustView.Properties.Settings.Default.RecentFiles;
+
+                if (savedFiles != null)
+                {
+                    recentFiles.Clear();
+                    recentFiles.AddRange(savedFiles.Cast<string>().ToList());
+                }
+            }
+            catch
+            {
+                // Log or handle the error, e.g., recreate the list
+                recentFiles.Clear();
+                throw;
+            }
+
+            UpdateRecentFilesMenu();
+        }
+
+        // TODO not yet used. Probably should be a button in Preferences. Consider also adding icons of images (behind a feature flag setting).
+        private void ClearRecentFiles()
+        {
+            recentFiles.Clear();
+            SaveRecentFiles();
+            UpdateRecentFilesMenu();
+        }
+
+
     }
 }
 

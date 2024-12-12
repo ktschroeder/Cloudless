@@ -5,7 +5,6 @@ TODO
 
 Up next:
 - bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
-- ability to quickly load recent images (esp. useful for development/debugging). ==> history.
 
 Probably should/will:
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
