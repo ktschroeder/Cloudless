@@ -915,43 +915,25 @@ namespace SimpleImageViewer
                 // Zoom factor
                 double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
 
-                // Calculate new scale
-                double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
-                double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
-
-                // Limit zoom levels (optional)
-                newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
-                newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
-
-                // Adjust translation to zoom around the cursor
-                double offsetX = cursorPosition.X - imageTranslateTransform.X - (ImageDisplay.ActualWidth/2);
-                double offsetY = cursorPosition.Y - imageTranslateTransform.Y - (ImageDisplay.ActualHeight / 2);
-
-                //offsetX *= newScaleX;
-                //offsetY *= newScaleY;
-
-                imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
-                imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
-
-                // Apply new scale
-                imageScaleTransform.ScaleX = newScaleX;
-                imageScaleTransform.ScaleY = newScaleY;
+                Zoom(zoomDelta, cursorPosition);
 
                 e.Handled = true;
             }
         }
 
-
-
-
         private void ZoomFromCenter(bool zoomIn)
         {
             // Get window center relative to the image
-            Point windowCenter = new Point(ImageDisplay.ActualWidth / 2, ImageDisplay.ActualHeight / 2);
+            Point windowCenter = new Point(PrimaryWindow.ActualWidth / 2, PrimaryWindow.ActualHeight / 2);
 
             // Zoom factor
             double zoomDelta = zoomIn ? 1.1 : 1 / 1.1;
 
+            Zoom(zoomDelta, windowCenter);
+        }
+
+        private void Zoom(double zoomDelta, Point zoomOrigin)
+        {
             // Calculate new scale
             double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
             double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
@@ -960,20 +942,22 @@ namespace SimpleImageViewer
             newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
             newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
 
-            // Adjust translation to zoom around the center
-            //imageTranslateTransform.X = windowCenter.X - zoomDelta * (windowCenter.X - imageTranslateTransform.X);
-            //imageTranslateTransform.Y = windowCenter.Y - zoomDelta * (windowCenter.Y - imageTranslateTransform.Y);
-            //var originRelativeX = imageTranslateTransform.X / ImageDisplay.Source.Width / imageScaleTransform.ScaleX + 0.5; // pan X / imageScaleTransform.ScaleX
-            //var originRelativeY = imageTranslateTransform.Y / ImageDisplay.Source.Height / imageScaleTransform.ScaleY + 0.5;
-            //ImageDisplay.RenderTransformOrigin = new Point(originRelativeX, originRelativeY);
+            // Adjust translation to zoom around the cursor
+            double offsetX = zoomOrigin.X - imageTranslateTransform.X - (ImageDisplay.ActualWidth / 2);
+            double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (ImageDisplay.ActualHeight / 2);
+
+            ////weaken (where?) the offset by a factor of the window dimension divided by the image render dimension
+            //offsetX /= (PrimaryWindow.ActualWidth / ImageDisplay.ActualWidth);
+            //offsetY /= (PrimaryWindow.ActualHeight / ImageDisplay.ActualHeight);
+
+            imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
+            imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
 
             // Apply new scale
             imageScaleTransform.ScaleX = newScaleX;
             imageScaleTransform.ScaleY = newScaleY;
-
-            //ImageDisplay.RenderTransformOrigin = new Point(0.5,0.5);
         }
-
+        
         private void AdjustZoom(double zoomFactor)
         {
             imageScaleTransform.ScaleX *= zoomFactor;
