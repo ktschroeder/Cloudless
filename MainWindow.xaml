@@ -28,9 +28,22 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    Visibility="Visible" />
+
         
+
         <!-- Image Display -->
         <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+
+        <!-- Debug Info Overlay -->
+        <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" 
+                Margin="10"
+                Background="#AA000000"
+            CornerRadius="5" Padding="5">
+            <TextBlock x:Name="DebugTextBlock" 
+                       Foreground="White" 
+                       FontSize="12" 
+                       TextWrapping="Wrap" />
+        </Border>
 
         <!-- Context Menu -->
         <Grid.ContextMenu>
@@ -50,5 +63,8 @@
                 <MenuItem Header="About" Click="About_Click"/>
             </ContextMenu>
         </Grid.ContextMenu>
+
+        
+        
     </Grid>
 </Window>

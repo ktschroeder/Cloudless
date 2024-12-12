@@ -1,7 +1,6 @@
 # JustView
 
 TODO
-- should not be able to pan "beyond" image, which introduces black space
 - zooming could be more intuitive. right now it zooms from the center of the image. It would be better to zoom from the cursor's position (if ctrl scrolling) or from the center of the window (if using ctrl and plus or minus).
 
 Probably should/will:
@@ -13,6 +12,7 @@ Probably should/will:
 - for zoom/pan, maybe change display style to a best-fit when intuitive/necessary if it was stretch or fill.
 
 Probably should but lower priority:
+- bug: right click to context menu then left click on main window is treated as double-click
 -- Add window for hotkey cheatsheet, also list the less obvious features such as drag-and-drop and double-click for fullscreen
 - hotkey: zoom to fill window with best fit (only during BestFit)
 - extended context window (Secondary?) so that nothing "must" be done with a hotkey. maybe.

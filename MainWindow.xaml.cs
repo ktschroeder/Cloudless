@@ -52,6 +52,7 @@ namespace SimpleImageViewer
 
             NoImageMessage.Visibility = Visibility.Visible;
             ImageDisplay.Visibility = Visibility.Collapsed;
+            CompositionTarget.Rendering += UpdateDebugInfo;
 
             ApplyDisplayMode();
 
@@ -63,6 +64,58 @@ namespace SimpleImageViewer
         
             InitializeZooming();
             InitializePanning();
+
+        }
+
+        private void UpdateDebugInfo(object? sender, EventArgs e)
+        {
+            if (ImageDisplay == null) return;
+
+            // Window dimensions
+            double windowWidth = this.ActualWidth;
+            double windowHeight = this.ActualHeight;
+
+            // Image dimensions
+            double imageWidth = ImageDisplay.ActualWidth;
+            double imageHeight = ImageDisplay.ActualHeight;
+
+            // Image scale
+            double scaleX = imageScaleTransform.ScaleX;
+            double scaleY = imageScaleTransform.ScaleY;
+
+            // Image translation
+            double translateX = imageTranslateTransform.X;
+            double translateY = imageTranslateTransform.Y;
+
+            // Cursor position relative to the window
+            Point cursorPosition = Mouse.GetPosition(this);
+
+            // Cursor position relative to the image
+            Point cursorPositionImage = Mouse.GetPosition(ImageDisplay);
+
+            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+
+            double? imageTrueWidth = null;
+            double? imageTrueHeight = null;
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
+                imageTrueWidth = bitmap.PixelWidth;
+                imageTrueHeight = bitmap.PixelHeight;
+            }
+
+                // Debug text
+                DebugTextBlock.Text =
+                $"Window Dimensions: {windowWidth:F2} x {windowHeight:F2}\n" +
+                $"Image Rendered Dimensions: {imageWidth:F2} x {imageHeight:F2}\n" +
+                (imageTrueWidth.HasValue && imageTrueHeight.HasValue
+                    ? $"Image True Dimensions: {imageTrueWidth:F2} x {imageTrueHeight:F2}\n" 
+                    : "Image True Dimensions: N/A\n"
+                ) +
+                $"Scale: X={scaleX:F2}, Y={scaleY:F2}\n" +
+                $"Translation: X={translateX:F2}, Y={translateY:F2}\n" +
+                $"Cursor (Window): X={cursorPosition.X:F2}, Y={cursorPosition.Y:F2}\n" +
+                $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
+                $"Display mode: {displayMode:F2}";
         }
 
         private void ApplyDisplayMode()
@@ -228,14 +281,25 @@ namespace SimpleImageViewer
         {
             if (isPanningImage)
             {
-                ImageDisplay.ReleaseMouseCapture();
-                isPanningImage = false;
+                StopPanning();
             }
 
             if (isDraggingWindow)
             {
                 isDraggingWindow = false;
             }
+        }
+
+        private void StopPanning()
+        {
+            // Revert to open hand cursor when mouse is released, if still applicable
+            if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
+                this.Cursor = Cursors.Hand;
+            // Otherwise return to default
+            else
+                this.Cursor = Cursors.Arrow;
+            isPanningImage = false;
+            ImageDisplay.ReleaseMouseCapture();
         }
 
 
@@ -431,6 +495,15 @@ namespace SimpleImageViewer
                 return;
             }
 
+            
+            if (e.Key == Key.D && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            }
+
+
             // set window dimensions to image if possible
             if (e.Key == Key.F)
             {
@@ -552,21 +625,23 @@ namespace SimpleImageViewer
             {
                 if (e.Key == Key.OemPlus || e.Key == Key.Add) // Zoom In
                 {
-                    AdjustZoom(1.1);
+                    ZoomFromCenter(true);
                     e.Handled = true;
                 }
                 else if (e.Key == Key.OemMinus || e.Key == Key.Subtract) // Zoom Out
                 {
-                    AdjustZoom(1 / 1.1);
+                    ZoomFromCenter(false);
                     e.Handled = true;
                 }
                 else if (e.Key == Key.D0) // Reset to Best Fit
                 {
+                    ResetPan();
                     ResetZoomToBestFit();
                     e.Handled = true;
                 }
                 else if (e.Key == Key.D9) // True Resolution (100%)
                 {
+                    //ResetPan();
                     ResetZoomToTrueResolution();
                     e.Handled = true;
                 }
@@ -799,20 +874,104 @@ namespace SimpleImageViewer
             this.PreviewMouseWheel += OnMouseWheelZoom;
         }
 
+        // Can add configurablee setting for how much to zoom per scroll event; also for ctrl plus and minus
+        //private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
+        //{
+        //    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+        //    {
+        //        // Get current mouse position relative to the image
+        //        Point cursorPosition = e.GetPosition(ImageDisplay);
+
+        //        // Zoom factor
+        //        double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
+
+        //        // Calculate new scale
+        //        double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
+        //        double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
+
+        //        // Limit zoom levels (optional)
+        //        newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
+        //        newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
+
+        //        // Adjust translation to zoom around the cursor
+        //        imageTranslateTransform.X = cursorPosition.X - zoomDelta * (cursorPosition.X - imageTranslateTransform.X);
+        //        imageTranslateTransform.Y = cursorPosition.Y - zoomDelta * (cursorPosition.Y - imageTranslateTransform.Y);
+
+        //        // Apply new scale
+        //        imageScaleTransform.ScaleX = newScaleX;
+        //        imageScaleTransform.ScaleY = newScaleY;
+
+        //        e.Handled = true;
+        //    }
+        //}
+
         private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
-            if (Keyboard.Modifiers != ModifierKeys.Control)
-                return;
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            {
+                // Get current mouse position relative to the image
+                Point cursorPosition = e.GetPosition(PrimaryWindow);
 
-            double zoomFactor = e.Delta > 0 ? 1.1 : 1 / 1.1;
-            imageScaleTransform.ScaleX *= zoomFactor;
-            imageScaleTransform.ScaleY *= zoomFactor;
+                // Zoom factor
+                double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
 
-            // Optional: Clamp zoom level to a reasonable range (e.g., 10%-500%)
-            imageScaleTransform.ScaleX = Math.Clamp(imageScaleTransform.ScaleX, 0.1, 5.0);
-            imageScaleTransform.ScaleY = Math.Clamp(imageScaleTransform.ScaleY, 0.1, 5.0);
+                // Calculate new scale
+                double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
+                double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
 
-            e.Handled = true;
+                // Limit zoom levels (optional)
+                newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
+                newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
+
+                // Adjust translation to zoom around the cursor
+                double offsetX = cursorPosition.X - imageTranslateTransform.X - (ImageDisplay.ActualWidth/2);
+                double offsetY = cursorPosition.Y - imageTranslateTransform.Y - (ImageDisplay.ActualHeight / 2);
+
+                //offsetX *= newScaleX;
+                //offsetY *= newScaleY;
+
+                imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
+                imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
+
+                // Apply new scale
+                imageScaleTransform.ScaleX = newScaleX;
+                imageScaleTransform.ScaleY = newScaleY;
+
+                e.Handled = true;
+            }
+        }
+
+
+
+
+        private void ZoomFromCenter(bool zoomIn)
+        {
+            // Get window center relative to the image
+            Point windowCenter = new Point(ImageDisplay.ActualWidth / 2, ImageDisplay.ActualHeight / 2);
+
+            // Zoom factor
+            double zoomDelta = zoomIn ? 1.1 : 1 / 1.1;
+
+            // Calculate new scale
+            double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
+            double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
+
+            // Limit zoom levels (optional)
+            newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
+            newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
+
+            // Adjust translation to zoom around the center
+            //imageTranslateTransform.X = windowCenter.X - zoomDelta * (windowCenter.X - imageTranslateTransform.X);
+            //imageTranslateTransform.Y = windowCenter.Y - zoomDelta * (windowCenter.Y - imageTranslateTransform.Y);
+            //var originRelativeX = imageTranslateTransform.X / ImageDisplay.Source.Width / imageScaleTransform.ScaleX + 0.5; // pan X / imageScaleTransform.ScaleX
+            //var originRelativeY = imageTranslateTransform.Y / ImageDisplay.Source.Height / imageScaleTransform.ScaleY + 0.5;
+            //ImageDisplay.RenderTransformOrigin = new Point(originRelativeX, originRelativeY);
+
+            // Apply new scale
+            imageScaleTransform.ScaleX = newScaleX;
+            imageScaleTransform.ScaleY = newScaleY;
+
+            //ImageDisplay.RenderTransformOrigin = new Point(0.5,0.5);
         }
 
         private void AdjustZoom(double zoomFactor)
@@ -836,6 +995,13 @@ namespace SimpleImageViewer
                 imageScaleTransform.ScaleX = 1.0 / ImageDisplay.ActualWidth * bitmap.PixelWidth;
                 imageScaleTransform.ScaleY = 1.0 / ImageDisplay.ActualHeight * bitmap.PixelHeight;
             }
+        }
+
+        private void ResetPan()
+        {
+            StopPanning();
+            imageTranslateTransform.X = 0;
+            imageTranslateTransform.Y = 0;
         }
 
         private TranslateTransform imageTranslateTransform = new TranslateTransform();
@@ -924,14 +1090,7 @@ namespace SimpleImageViewer
         {
             if (isPanningImage)
             {
-                // Revert to open hand cursor when mouse is released, if still applicable
-                if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
-                    this.Cursor = Cursors.Hand;
-                // Otherwise return to default
-                else
-                    this.Cursor = Cursors.Arrow;
-                isPanningImage = false;
-                ImageDisplay.ReleaseMouseCapture();
+                StopPanning();  // TODO can delete this method since we have a similar handle in mouseup?
             }
         }
 
