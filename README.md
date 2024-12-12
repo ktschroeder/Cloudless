@@ -1,9 +1,11 @@
 # JustView
+JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-rich, but visually quiet and minimal.
 
 TODO
 - zooming could be more intuitive. right now it zooms from the center of the image. It would be better to zoom from the cursor's position (if ctrl scrolling) or from the center of the window (if using ctrl and plus or minus).
 
 Probably should/will:
+- ability to quickly load recent images (esp. useful for development/debugging)
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 -- large feature: maybe zooming and panning. ctrl scroll to zoom or ctrl and plus/minus. ctrl 0 and 9 for window fit and true resolution (100%). ctrl click and drag to pan. (click and drag already moves window)
 - odd jitter of window when changing images, such as when navigating through a directory

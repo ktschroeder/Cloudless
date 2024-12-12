@@ -45,6 +45,14 @@
                        TextWrapping="Wrap" />
         </Border>
 
+        <!-- Overlay for Messages -->
+        <Grid x:Name="MessageOverlay" Visibility="Collapsed"
+              HorizontalAlignment="Left" VerticalAlignment="Top"
+              Background="#80000000" Margin="20">
+            <TextBlock x:Name="MessageTextBlock" Foreground="White"
+                       FontSize="18" TextAlignment="Center" />
+        </Grid>
+
         <!-- Context Menu -->
         <Grid.ContextMenu>
             <ContextMenu x:Name="ImageContextMenu">

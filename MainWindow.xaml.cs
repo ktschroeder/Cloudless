@@ -319,6 +319,8 @@ namespace SimpleImageViewer
             {
                 LoadImage(openFileDialog.FileName, true);
             }
+
+            Message("File loaded from dialog.");
         }
 
         private void LoadImage(string imagePath, bool openedThroughApp)
@@ -1072,6 +1074,27 @@ namespace SimpleImageViewer
             {
                 StopPanning();  // TODO can delete this method since we have a similar handle in mouseup?
             }
+        }
+
+        public void Message(string message, TimeSpan? duration = null)
+        {
+            duration ??= TimeSpan.FromSeconds(5);
+            // Set the message text
+            MessageTextBlock.Text = message;
+
+            // Show the overlay
+            MessageOverlay.Opacity = 1;
+            MessageOverlay.Visibility = Visibility.Visible;
+
+            // Create fade-out animation
+            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromMilliseconds(500)))
+            {
+                BeginTime = duration
+            };
+            fadeOut.Completed += (s, e) => MessageOverlay.Visibility = Visibility.Collapsed;
+
+            // Apply the animation
+            MessageOverlay.BeginAnimation(OpacityProperty, fadeOut);
         }
 
 
