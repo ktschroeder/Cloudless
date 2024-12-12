@@ -4,7 +4,6 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-- properly hide debug overlay
 *-* bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size. Other times, can pan more than you should be able to (blackspace around borders)? Maybe a bad order of panning/zooming somewhere in the transition.
 - (fix bug first as it could impact this) similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
 	- Conceptually simple approach may be: if new position would be out of bounds, then nudge back to in-bounds. 
@@ -19,6 +18,7 @@ Probably should/will:
 - bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should but lower priority:
+- Good name may be Cloudless View. Can have start-up screen be simple sky-ish drawing or a solid gentle blue.
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
 - bug: right click to context menu then left click on main window is treated as double-click
 - hotkey: zoom to fill window with best fit (only during BestFit)

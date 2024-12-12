@@ -38,12 +38,12 @@
         <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" 
                 Margin="10"
                 Background="#AA000000"
-            CornerRadius="5" Padding="5">
+            CornerRadius="5" Padding="5" Visibility="{Binding Visibility, ElementName=DebugTextBlock}">
             <TextBlock x:Name="DebugTextBlock" 
                        Foreground="White" 
                        FontSize="12" 
                        TextWrapping="Wrap"
-                       Visibility="Hidden"/>
+                       Visibility="Collapsed"/>
         </Border>
 
         <!-- Messages -->

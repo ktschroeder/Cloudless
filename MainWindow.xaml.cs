@@ -566,7 +566,7 @@ namespace SimpleImageViewer
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
                     DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
-                    ? Visibility.Hidden
+                    ? Visibility.Collapsed
                     : Visibility.Visible;
                 }
                 else
