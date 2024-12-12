@@ -4,16 +4,14 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-- "display mode" and "exploration mode" to distinguish the use of the display modes with the ability to zoom/pan. 
-	- User can reset to return to display mode, and automatically enters exploration mode when zooming/panning. 
-	- Bonus: seamless transition from the stretch and zoom display modes. Possibly just disable exploration in those cases though if it's wacky.
-	- bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
+- bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
 - ability to quickly load recent images (esp. useful for development/debugging). ==> history.
-- messages: copied, copied compressed w/ size, changed view mode, reset view, etc. Maybe loading for GIF.
 
 Probably should/will:
+- messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
 - similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
 - setting to mute messages
+- ability to copy image itself rather than just image file (can we "do both" dynamically?)
 - provide a simple window that can be accessed, showing all messages from this session.
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - odd jitter of window when changing images, such as when navigating through a directory

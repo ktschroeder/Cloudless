@@ -752,6 +752,9 @@ namespace SimpleImageViewer
                 if (ImageDisplay.Source is not BitmapSource bitmapSource)
                     return;
 
+                long finalSizeBytes = -1;
+                long finalQuality = 100;
+
                 // Define maximum size in bytes
                 double maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
@@ -772,6 +775,7 @@ namespace SimpleImageViewer
                         long quality = 75L; // Start at medium quality
                         const long minQuality = 10L; // Minimum quality to avoid over-compression
 
+                        // TODO review this method as it may be possible to increase speed/efficiency. Also iterations should compress the original file, not the result of previous compression.
                         while (true)
                         {
                             using (MemoryStream memoryStream = new())
@@ -788,6 +792,8 @@ namespace SimpleImageViewer
                                 // Check the file size
                                 if (memoryStream.Length <= maxSizeInBytes)
                                 {
+                                    finalSizeBytes = memoryStream.Length;
+                                    finalQuality = quality;
                                     // Save the compressed image to the temporary file
                                     File.WriteAllBytes(tempFilePath, memoryStream.ToArray());
                                     break;
@@ -807,6 +813,7 @@ namespace SimpleImageViewer
                 filePaths.Add(tempFilePath);
                 Clipboard.SetFileDropList(filePaths);
 
+                Message("Copied compressed file to clipboard. Quality: " + finalQuality + "%. Bytes: " + finalSizeBytes);
                 //MessageBox.Show("Compressed image file copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -1173,6 +1180,8 @@ namespace SimpleImageViewer
                 StringCollection filePaths = new();
                 filePaths.Add(currentlyDisplayedImagePath);
                 Clipboard.SetFileDropList(filePaths);
+
+                Message("Copied image file to clipboard.");
 
                 //MessageBox.Show("File reference copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
