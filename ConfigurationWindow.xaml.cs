@@ -13,6 +13,7 @@ namespace SimpleImageViewer
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
         public bool BorderOnMainWindow { get; private set; }
         public bool LoopGifs { get; private set; }
+        public bool MuteMessages { get; private set; }
         public bool AlwaysOnTopByDefault { get; private set; }
 
         public ConfigurationWindow()
@@ -50,6 +51,10 @@ namespace SimpleImageViewer
             var currentLoopGifs = JustView.Properties.Settings.Default.LoopGifs;
             LoopGifsCheckbox.IsChecked = currentLoopGifs;
             LoopGifs = currentLoopGifs;
+            
+            var currentMuteMessages = JustView.Properties.Settings.Default.MuteMessages;
+            MuteMessagesCheckbox.IsChecked = currentMuteMessages;
+            MuteMessages = currentMuteMessages;
 
             var currentAlwaysOnTopByDefault = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
             AlwaysOnTopByDefaultCheckbox.IsChecked = currentAlwaysOnTopByDefault;
@@ -100,6 +105,7 @@ namespace SimpleImageViewer
             BorderOnMainWindow = BorderOnMainWindowCheckbox.IsChecked ?? false;
 
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
+            MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
 
             DialogResult = true;

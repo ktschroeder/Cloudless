@@ -16,6 +16,12 @@ public class OverlayMessageManager
 
     public void ShowOverlayMessage(string message, TimeSpan duration)
     {
+        bool mute = JustView.Properties.Settings.Default.MuteMessages;
+        if (mute)
+        {
+            return;
+        }
+
         // Add the message to the queue
         OverlayMessage overlayMessage = new() { Text = message, Duration = duration };
         _messageQueue.Enqueue(overlayMessage);

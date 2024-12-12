@@ -1340,6 +1340,7 @@ namespace SimpleImageViewer
                 JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
                 JustView.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
                 JustView.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
+                JustView.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
                 JustView.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
 
                 JustView.Properties.Settings.Default.Save();

@@ -117,5 +117,17 @@ namespace JustView.Properties {
                 this["RecentFiles"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool MuteMessages {
+            get {
+                return ((bool)(this["MuteMessages"]));
+            }
+            set {
+                this["MuteMessages"] = value;
+            }
+        }
     }
 }
