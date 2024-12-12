@@ -943,12 +943,8 @@ namespace SimpleImageViewer
             newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
 
             // Adjust translation to zoom around the cursor
-            double offsetX = zoomOrigin.X - imageTranslateTransform.X - (ImageDisplay.ActualWidth / 2);
-            double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (ImageDisplay.ActualHeight / 2);
-
-            ////weaken (where?) the offset by a factor of the window dimension divided by the image render dimension
-            //offsetX /= (PrimaryWindow.ActualWidth / ImageDisplay.ActualWidth);
-            //offsetY /= (PrimaryWindow.ActualHeight / ImageDisplay.ActualHeight);
+            double offsetX = zoomOrigin.X - imageTranslateTransform.X - (PrimaryWindow.ActualWidth / 2);
+            double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (PrimaryWindow.ActualHeight / 2);
 
             imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
             imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
