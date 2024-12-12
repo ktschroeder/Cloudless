@@ -6,6 +6,7 @@ TODO
 Up next:
 - bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size.
 - similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
+	- Conceptually simple approach may be: if new position would be out of bounds, then nudge back to in-bounds. 
 
 Probably should/will:
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
