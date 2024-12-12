@@ -30,6 +30,8 @@ namespace SimpleImageViewer
         private string? currentlyDisplayedImagePath;
         private bool autoResizingSpaceIsToggled;
 
+        private OverlayMessageManager overlayManager;
+
         public MainWindow(string? filePath)
         {
             Setup();
@@ -65,6 +67,7 @@ namespace SimpleImageViewer
             InitializeZooming();
             InitializePanning();
 
+            overlayManager = new OverlayMessageManager(MessageOverlayStack);
         }
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
@@ -607,6 +610,7 @@ namespace SimpleImageViewer
             {
                 if (e.Key == Key.Left)
                 {
+                    Message("Debug: you pressed the left key");
                     // Go to the previous image
                     currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
                     DisplayImage(currentImageIndex, true);
@@ -615,6 +619,7 @@ namespace SimpleImageViewer
                 }
                 else if (e.Key == Key.Right)
                 {
+                    Message("Debug: you pressed the right key");
                     // Go to the next image
                     currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
                     DisplayImage(currentImageIndex, true);
@@ -1079,22 +1084,7 @@ namespace SimpleImageViewer
         public void Message(string message, TimeSpan? duration = null)
         {
             duration ??= TimeSpan.FromSeconds(5);
-            // Set the message text
-            MessageTextBlock.Text = message;
-
-            // Show the overlay
-            MessageOverlay.Opacity = 1;
-            MessageOverlay.Visibility = Visibility.Visible;
-
-            // Create fade-out animation
-            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromMilliseconds(500)))
-            {
-                BeginTime = duration
-            };
-            fadeOut.Completed += (s, e) => MessageOverlay.Visibility = Visibility.Collapsed;
-
-            // Apply the animation
-            MessageOverlay.BeginAnimation(OpacityProperty, fadeOut);
+            overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
         }
 
 
@@ -1415,3 +1405,5 @@ namespace SimpleImageViewer
 //        ApplyAlwaysOnTopSetting();
 //    }
 //}
+
+
