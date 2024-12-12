@@ -1366,7 +1366,7 @@ namespace SimpleImageViewer
             aboutWindow.Owner = this; // Set the owner to the main window
             aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-            var _ = aboutWindow.ShowDialog();
+            aboutWindow.Show();
         }
 
         private void HotkeyRef()
@@ -1375,9 +1375,10 @@ namespace SimpleImageViewer
 
             // Center the window relative to the main application window
             hkrWindow.Owner = this; // Set the owner to the main window
+            // could make this not stay above main window, by not setting the owner.
             hkrWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-            var _ = hkrWindow.ShowDialog();
+            hkrWindow.Show();
         }
 
         private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)

@@ -15,7 +15,6 @@ Probably should/will:
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - odd jitter of window when changing images, such as when navigating through a directory
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
-- allow focus/interaction on main window while secondary windows are open? In particualr may be useful for hotkey reference.
 
 Probably should but lower priority:
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
