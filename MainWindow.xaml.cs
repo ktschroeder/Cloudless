@@ -1039,17 +1039,28 @@ namespace SimpleImageViewer
             double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
             double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
 
-            // Limit zoom levels (optional)
-            newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
-            newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
-
-            // Get current image dimensions including any scaling (zoom)
-            double scaledWidth = ImageDisplay.ActualWidth * newScaleX;
-            double scaledHeight = ImageDisplay.ActualHeight * newScaleY;
-
             // Get bounds of the window or container
             double containerWidth = PrimaryWindow.ActualWidth;
             double containerHeight = PrimaryWindow.ActualHeight;
+
+            // Get the image dimensions at 1.0x scale
+            double imageOriginalWidth = ImageDisplay.ActualWidth;
+            double imageOriginalHeight = ImageDisplay.ActualHeight;
+
+            // Determine the minimum allowable scale based on fitting logic
+            double minScaleX = imageOriginalWidth > containerWidth ? containerWidth / imageOriginalWidth : 1.0;
+            double minScaleY = imageOriginalHeight > containerHeight ? containerHeight / imageOriginalHeight : 1.0;
+
+            // Use the larger of the two minimum scales to prevent simultaneous black bars
+            double minScale = Math.Max(minScaleX, minScaleY);
+
+            // Enforce zoom limits
+            newScaleX = Math.Max(minScale, Math.Min(10, newScaleX));
+            newScaleY = Math.Max(minScale, Math.Min(10, newScaleY));
+
+            // Get current image dimensions including any scaling (zoom)
+            double scaledWidth = imageOriginalWidth * newScaleX;
+            double scaledHeight = imageOriginalHeight * newScaleY;
 
             // Adjust translation to zoom around the cursor
             double offsetX = zoomOrigin.X - imageTranslateTransform.X - (PrimaryWindow.ActualWidth / 2);

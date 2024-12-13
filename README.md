@@ -4,9 +4,16 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-*-* bug: going from display to exploration mode often makes parts of image cut-off (visible when panning), regardless of display type. Seems related to window size. Other times, can pan more than you should be able to (blackspace around borders)? Maybe a bad order of panning/zooming somewhere in the transition.
-- (fix bug first as it could impact this) similar to with panning, prevent zooming out beyond image (i.e. when both X and Y axes would have blackspace at same time)
-	- Conceptually simple approach may be: if new position would be out of bounds, then nudge back to in-bounds. 
+*-* panning/zoom bugs are improving. Notes:
+If, after pressing F, your window is smaller than the image's true dimensions, then we get weirdness upon zooming/panning.
+It's almost like the length you make the window size impose on the image size, is reflected by an addition of blackspace of the same length or double that, 
+    that extends in the opposite direction inward toward the image center.
+Also weirdness if you adjust window size while in exploration mode. ==> maybe only when the above is true too.
+The bug effect is more dramatic when you use an image much larger than the window.
+It seems to zoom in way too much visually, and the resulting cut-off-image has a physical size on the screen that seems otherwise correct: 
+    You can see when panning around that it is just slightly wider and taller than the window, which is appropriate after zooming in once. 
+    But the image's actual contents are very zoomed in, so much of the content is cut off. 
+    Also, we are able to pan into blackspace in a way that would otherwise be prevented.
 
 Probably should/will:
 *-* messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
