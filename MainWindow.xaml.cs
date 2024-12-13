@@ -19,6 +19,8 @@ using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using System.Runtime.InteropServices;
 using System.Collections.Specialized;
 using System.Reflection;
+using System.Drawing.Printing;
+using JustView;
 
 namespace SimpleImageViewer
 {
@@ -82,6 +84,7 @@ namespace SimpleImageViewer
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {
+            // TODO skip if debug window collapsed, for better speed.
             if (ImageDisplay == null) return;
 
             // Window dimensions
@@ -124,11 +127,19 @@ namespace SimpleImageViewer
                     ? $"Image True Dimensions: {imageTrueWidth:F2} x {imageTrueHeight:F2}\n" 
                     : "Image True Dimensions: N/A\n"
                 ) +
+                $"Left Margin: {ImageDisplay.Margin.Left:F2}\n" + 
+                $"Top Margin: {ImageDisplay.Margin.Top:F2}\n" + 
                 $"Scale: X={scaleX:F2}, Y={scaleY:F2}\n" +
                 $"Translation: X={translateX:F2}, Y={translateY:F2}\n" +
                 $"Cursor (Window): X={cursorPosition.X:F2}, Y={cursorPosition.Y:F2}\n" +
                 $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
                 $"Display mode: {displayMode:F2}";
+        }
+
+        private void OpenDebugWindow_Click(object sender, RoutedEventArgs e)
+        {
+            var debugWindow = new DebugWindow(this);
+            debugWindow.Show();
         }
 
         // mode that enables zooming/panning and disables behavior associated with standard display modes and window resizing
@@ -152,7 +163,8 @@ namespace SimpleImageViewer
             }
               
             isExplorationMode = true;
-            ImageDisplay.Stretch = System.Windows.Media.Stretch.None;
+            ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
+            //CenterImageIfNeeded();
 
             //bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
 
@@ -195,6 +207,7 @@ namespace SimpleImageViewer
                     break;
                 case "BestFitWithoutZooming":
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.None; // Prevent automatic stretching
+                    // ^^^ this is undone at the end of CenterImageIfNeeded? Sets to Uniform.
                     CenterImageIfNeeded(); // Center and scale the image as needed
                     break;
                 default:
@@ -233,12 +246,47 @@ namespace SimpleImageViewer
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!isExplorationMode && JustView.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
+            if (!isExplorationMode && JustView.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
             {
                 CenterImageIfNeeded();
             }
+            else
+            {
+                if (ImageDisplay.Source is BitmapSource bitmap)
+                {
+                    double imageWidth = bitmap.PixelWidth;
+                    double imageHeight = bitmap.PixelHeight;
+                    double windowWidth = this.ActualWidth;
+                    double windowHeight = this.ActualHeight;
+
+                    // Calculate scaling factor to fit the image within the window
+                    double scaleX = windowWidth / imageWidth;
+                    double scaleY = windowHeight / imageHeight;
+
+                    // Ensure the image scales down if the window is smaller
+                    double scale = Math.Min(1, Math.Min(scaleX, scaleY)); // No upscaling
+
+                    // Apply scaled dimensions to ImageDisplay
+                    ImageDisplay.Width = imageWidth * scale;
+                    ImageDisplay.Height = imageHeight * scale;
+
+                    // Center the image display
+                    double marginX = (windowWidth - ImageDisplay.Width) / 2;
+                    double marginY = (windowHeight - ImageDisplay.Height) / 2;
+
+
+                    ImageDisplay.Margin = new Thickness(  // black bars
+                        Math.Max(0, marginX),
+                        Math.Max(0, marginY),
+                        Math.Max(0, marginX),
+                        Math.Max(0, marginY)
+                    );
+                }
+            }
         }
 
+        // Method of interest in scale/pan shenanigans
+        // zooming/panning does not hit this method
         private void CenterImageIfNeeded()
         {
             if (ImageDisplay.Source is BitmapSource bitmap)
@@ -263,7 +311,7 @@ namespace SimpleImageViewer
                 double marginX = (windowWidth - ImageDisplay.Width) / 2;
                 double marginY = (windowHeight - ImageDisplay.Height) / 2;
 
-                ImageDisplay.Margin = new Thickness(
+                ImageDisplay.Margin = new Thickness(  // black bars
                     Math.Max(0, marginX),
                     Math.Max(0, marginY),
                     Math.Max(0, marginX),
@@ -271,7 +319,7 @@ namespace SimpleImageViewer
                 );
 
                 // Ensure the image is not clipped by setting Stretch to Uniform
-                ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
+                ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;  //
             }
         }
 
@@ -990,7 +1038,7 @@ namespace SimpleImageViewer
         }
 
 
-        private ScaleTransform imageScaleTransform = new ScaleTransform();
+        public ScaleTransform imageScaleTransform = new ScaleTransform();
 
         private void InitializeZooming()
         {
@@ -1062,7 +1110,7 @@ namespace SimpleImageViewer
             double scaledWidth = imageOriginalWidth * newScaleX;
             double scaledHeight = imageOriginalHeight * newScaleY;
 
-            // Adjust translation to zoom around the cursor
+            // Adjust translation to zoom around the zoom origin (namely the cursor position or center of window)
             double offsetX = zoomOrigin.X - imageTranslateTransform.X - (PrimaryWindow.ActualWidth / 2);
             double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (PrimaryWindow.ActualHeight / 2);
 
@@ -1108,7 +1156,7 @@ namespace SimpleImageViewer
             imageTranslateTransform.Y = 0;
         }
 
-        private TranslateTransform imageTranslateTransform = new TranslateTransform();
+        public TranslateTransform imageTranslateTransform = new TranslateTransform();
         private Point lastMousePosition;
 
         private void InitializePanning()

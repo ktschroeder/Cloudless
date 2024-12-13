@@ -6,7 +6,7 @@ TODO
 Up next:
 *-* panning/zoom bugs are improving. Notes:
 If, after pressing F, your window is smaller than the image's true dimensions, then we get weirdness upon zooming/panning.
-It's almost like the length you make the window size impose on the image size, is reflected by an addition of blackspace of the same length or double that, 
+It's almost like the length you make the window size impose on the image size, is reflected by an addition of blackspace of the same length and perhaps multiplied by the scale, 
     that extends in the opposite direction inward toward the image center.
 Also weirdness if you adjust window size while in exploration mode. ==> maybe only when the above is true too.
 The bug effect is more dramatic when you use an image much larger than the window.
@@ -14,6 +14,11 @@ It seems to zoom in way too much visually, and the resulting cut-off-image has a
     You can see when panning around that it is just slightly wider and taller than the window, which is appropriate after zooming in once. 
     But the image's actual contents are very zoomed in, so much of the content is cut off. 
     Also, we are able to pan into blackspace in a way that would otherwise be prevented.
+
+Normally, in exploration mode, an image with calculated scale 1.0 is displayed at true dimensions. But for images whose dimensions are larger than the window,
+    we still call the best-fit display 1.0x, even though it's really zoomed out compared to the image's true dimensions.
+    It may be that this scale variable actually "kicks in" only in exploration mode, and this very large 1.0x can hugely embiggen, say, a 6000x6000 image,
+    which if rendered at true 1.0x would understandable flwo well farther than the screen/window.
 
 Probably should/will:
 *-* messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
