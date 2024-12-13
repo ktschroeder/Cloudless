@@ -77,7 +77,6 @@
                 <MenuItem Header="Preferences" Click="OpenPreferences_Click"/>
                 <MenuItem Header="About" Click="About_Click"/>
                 <MenuItem Header="Hot Key Reference" Click="HotkeyRef_Click"/>
-                <MenuItem Header="Debug Settings" Click="OpenDebugWindow_Click"/>
             </ContextMenu>
         </Grid.ContextMenu>
 

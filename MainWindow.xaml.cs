@@ -136,12 +136,6 @@ namespace SimpleImageViewer
                 $"Display mode: {displayMode:F2}";
         }
 
-        private void OpenDebugWindow_Click(object sender, RoutedEventArgs e)
-        {
-            var debugWindow = new DebugWindow(this);
-            debugWindow.Show();
-        }
-
         // mode that enables zooming/panning and disables behavior associated with standard display modes and window resizing
         private void EnterExplorationMode()
         {

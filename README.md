@@ -11,12 +11,13 @@ Probably should/will:
 *-* odd jitter of window when changing images, such as when navigating through a directory
 *-* ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.) 
 - provide a simple window that can be accessed, showing all messages from this session.
-- some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
-- implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
 - bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should but lower priority:
 - revisit whether/how image should automatically pan/zoom when resizing window in expl mode.
+- some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
+- implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
+- ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
 - Good name may be Cloudless View. Can have start-up screen be simple sky-ish drawing or a solid gentle blue.
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
 - bug: right click to context menu then left click on main window is treated as double-click
