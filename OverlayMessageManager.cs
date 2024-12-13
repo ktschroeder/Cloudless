@@ -2,12 +2,17 @@
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
+using System.Collections.ObjectModel;
 
 public class OverlayMessageManager
 {
     private readonly StackPanel _messageStack;
     private readonly Queue<OverlayMessage> _messageQueue = new();
     private readonly List<TextBlock> _activeMessages = new();
+
+    private ObservableCollection<string> messageHistory = new ObservableCollection<string>();
+
+    public event Action<string>? MessageAdded;
 
     public OverlayMessageManager(StackPanel messageStack)
     {
@@ -16,7 +21,13 @@ public class OverlayMessageManager
 
     public void ShowOverlayMessage(string message, TimeSpan duration)
     {
+        string timestampedMessage = $"{DateTime.Now:HH:mm:ss} - {message}";
+        messageHistory.Add(timestampedMessage);
+        MessageAdded?.Invoke(timestampedMessage);
+
         bool mute = JustView.Properties.Settings.Default.MuteMessages;
+
+
         if (mute)
         {
             return;
@@ -30,6 +41,8 @@ public class OverlayMessageManager
         if (_activeMessages.Count == 0)
             DisplayNextMessage();
     }
+
+    public ObservableCollection<string> GetMessageHistory() => messageHistory;
 
     private void DisplayNextMessage()
     {

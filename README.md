@@ -7,10 +7,9 @@ Up next:
 clean up the dust from the pan/zoom troubleshooting
 
 Probably should/will:
-*-* messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
-*-* odd jitter of window when changing images, such as when navigating through a directory
-*-* ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.) 
-- provide a simple window that can be accessed, showing all messages from this session.
+- messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
+- odd jitter of window when changing images, such as when navigating through a directory
+- ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.)
 - bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should but lower priority:
@@ -30,7 +29,7 @@ Probably should but lower priority:
 - right click option to set window to typed dimensions
 - customizable hotkeys
 - graceful error handling
-- Clean up code, especially when "done" with everything else
+- Clean up code, especially when "done" with everything else. Organize methods. Address TODOs commented in code.
 - option: snap to best fit when dragging border
 - allow thru-window transparency? option to show transparency as black, or something else (gray checker? see what other apps do), or thru-window. ==> possibility of appearance of entirely floating image, would be neat.
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.

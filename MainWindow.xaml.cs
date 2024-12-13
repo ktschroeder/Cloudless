@@ -82,6 +82,8 @@ namespace SimpleImageViewer
             
         }
 
+
+
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {
             // TODO skip if debug window collapsed, for better speed.
@@ -1208,6 +1210,15 @@ namespace SimpleImageViewer
         {
             duration ??= TimeSpan.FromSeconds(1.5);
             overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
+        }
+
+        // TODO maybe add hotkey for this window
+        private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
+        {
+            var historyWindow = new MessageHistoryWindow(overlayManager);
+            historyWindow.Owner = this; // Set the owner to the main window
+            historyWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            historyWindow.Show();
         }
 
         private void CopyImageFileToClipboard()
