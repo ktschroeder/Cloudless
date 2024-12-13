@@ -252,6 +252,7 @@ namespace SimpleImageViewer
             }
             else
             {
+                // extra probably unwanted code, most but not all of this. its presence alleviated the pan/zoom blackspace weirdness. revisit/clean this. TODO
                 if (ImageDisplay.Source is BitmapSource bitmap)
                 {
                     double imageWidth = bitmap.PixelWidth;
@@ -274,7 +275,9 @@ namespace SimpleImageViewer
                     double marginX = (windowWidth - ImageDisplay.Width) / 2;
                     double marginY = (windowHeight - ImageDisplay.Height) / 2;
 
-
+                    ////debug. may also be good, when in expl mode. TODO.
+                    //marginX = 0;
+                    //marginY = 0;
                     ImageDisplay.Margin = new Thickness(  // black bars
                         Math.Max(0, marginX),
                         Math.Max(0, marginY),
@@ -282,6 +285,8 @@ namespace SimpleImageViewer
                         Math.Max(0, marginY)
                     );
                 }
+
+                ClampCurrentTransformToIntuitiveBounds();
             }
         }
 
@@ -356,6 +361,7 @@ namespace SimpleImageViewer
             }
         }
 
+        // duplicate code in ClampTransform...
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             if (isPanningImage)
@@ -413,6 +419,36 @@ namespace SimpleImageViewer
             {
                 this.Cursor = Cursors.Hand;  // TODO could be better custom cursor
             }
+        }
+
+        // mostly duplicate code in panning method
+        private void ClampCurrentTransformToIntuitiveBounds()
+        {
+            // Get current image dimensions including any scaling (zoom)
+            double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
+            double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
+
+            // Get bounds of the window or container
+            double containerWidth = this.ActualWidth;
+            double containerHeight = this.ActualHeight;
+
+            // Calculate new translate values
+            double newTranslateX = imageTranslateTransform.X;
+            double newTranslateY = imageTranslateTransform.Y;
+
+            // Constrain X-axis translation
+            double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
+            double minTranslateX = -maxTranslateX;
+            newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
+
+            // Constrain Y-axis translation
+            double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
+            double minTranslateY = -maxTranslateY;
+            newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
+
+            // Apply constrained translation
+            imageTranslateTransform.X = newTranslateX;
+            imageTranslateTransform.Y = newTranslateY;
         }
 
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
