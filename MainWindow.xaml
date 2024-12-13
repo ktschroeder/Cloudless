@@ -23,8 +23,10 @@
         <!-- Text displayed when no image is loaded -->
         <TextBlock x:Name="NoImageMessage"
                    Text="No image is loaded. Right click for options."
-                   Foreground="White"
+                   Foreground="Black"
+                   Background="SkyBlue"
                    FontSize="20"
+                   Padding="20"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    Visibility="Visible" />
