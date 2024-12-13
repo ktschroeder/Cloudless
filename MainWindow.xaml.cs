@@ -882,27 +882,27 @@ namespace SimpleImageViewer
             return new Bitmap(ms);
         }
 
-        private Bitmap ResizeImage(Bitmap image, int width, int height)
-        {
-            Bitmap resized = new(width, height);
-            using var g = Graphics.FromImage(resized);
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            g.DrawImage(image, 0, 0, width, height);
-            return resized;
-        }
+        //private Bitmap ResizeImage(Bitmap image, int width, int height)
+        //{
+        //    Bitmap resized = new(width, height);
+        //    using var g = Graphics.FromImage(resized);
+        //    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        //    g.DrawImage(image, 0, 0, width, height);
+        //    return resized;
+        //}
 
         private ImageCodecInfo? GetEncoder(ImageFormat format)
         {
             return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
         }
 
-        private BitmapSource BitmapToBitmapSource(Bitmap bitmap)
-        {
-            using var ms = new MemoryStream();
-            bitmap.Save(ms, ImageFormat.Bmp);
-            ms.Position = 0;
-            return BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-        }
+        //private BitmapSource BitmapToBitmapSource(Bitmap bitmap)
+        //{
+        //    using var ms = new MemoryStream();
+        //    bitmap.Save(ms, ImageFormat.Bmp);
+        //    ms.Position = 0;
+        //    return BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+        //}
 
 
         private void Window_DragOver(object sender, DragEventArgs e)
@@ -1043,6 +1043,14 @@ namespace SimpleImageViewer
             newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
             newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
 
+            // Get current image dimensions including any scaling (zoom)
+            double scaledWidth = ImageDisplay.ActualWidth * newScaleX;
+            double scaledHeight = ImageDisplay.ActualHeight * newScaleY;
+
+            // Get bounds of the window or container
+            double containerWidth = PrimaryWindow.ActualWidth;
+            double containerHeight = PrimaryWindow.ActualHeight;
+
             // Adjust translation to zoom around the cursor
             double offsetX = zoomOrigin.X - imageTranslateTransform.X - (PrimaryWindow.ActualWidth / 2);
             double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (PrimaryWindow.ActualHeight / 2);
@@ -1050,10 +1058,20 @@ namespace SimpleImageViewer
             imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
             imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
 
+            // Constrain translations to keep the image bound within the window
+            double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
+            double minTranslateX = -maxTranslateX;
+            imageTranslateTransform.X = Math.Min(Math.Max(imageTranslateTransform.X, minTranslateX), maxTranslateX);
+
+            double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
+            double minTranslateY = -maxTranslateY;
+            imageTranslateTransform.Y = Math.Min(Math.Max(imageTranslateTransform.Y, minTranslateY), maxTranslateY);
+
             // Apply new scale
             imageScaleTransform.ScaleX = newScaleX;
             imageScaleTransform.ScaleY = newScaleY;
         }
+
 
         private void ResetZoom()
         {
