@@ -39,6 +39,7 @@ Probably should but lower priority:
 
 
 Maybe / ideas:
+- special message or label for filename that either persists or fades after a few seconds. Configurable.
 - WEBM support? Maybe a very basic kind. Certainly not a video player.
 - should window do something else other than move to center of screen when changing image etc.?
 - possibly other z-index shenanigans beyond always-on-top

@@ -141,11 +141,11 @@ namespace SimpleImageViewer
             {
                 case "StretchToFit":
                 case "ZoomToFill":
+                case "BestFit":
                     // To clear out weirdness and prepare for zooming/panning, apply display for zoomless best fit.
                     // This is cleaner than doing nothing, pending future work to make this more seamless (particularly for ZoomToFill).
-                    //ApplyDisplayMode(true);
+                    ApplyDisplayMode(true);
                     break;
-                //case "BestFit":
                 //case "BestFitWithoutZooming":
                 default:
                     break;
@@ -177,8 +177,9 @@ namespace SimpleImageViewer
             ImageDisplay.Height = Double.NaN; // Reset explicit height
             ImageDisplay.Margin = new Thickness(0); // Reset margin
 
-            ResetZoom();
             ResetPan();
+            ResetZoom();
+            
 
             // Apply display mode for stretching
             switch (displayMode)
@@ -288,10 +289,10 @@ namespace SimpleImageViewer
                 {
                     if (!isExplorationMode) EnterExplorationMode();
 
-                    // Enable panning
+                    this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired. TODO
                     isPanningImage = true;
                     lastMousePosition = e.GetPosition(this);
-                    ImageDisplay.CaptureMouse();
+                    ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
                 }
                 else if (WindowState == WindowState.Maximized)
                 {
@@ -311,12 +312,41 @@ namespace SimpleImageViewer
         {
             if (isPanningImage)
             {
-                // Handle panning logic
-                Point currentMousePosition = e.GetPosition(this);
-                Vector delta = currentMousePosition - lastMousePosition;
-                imageTranslateTransform.X += delta.X;
-                imageTranslateTransform.Y += delta.Y;
+                if (!isExplorationMode) EnterExplorationMode();
 
+                // Current mouse position
+                Point currentMousePosition = e.GetPosition(this);
+
+                // Calculate the movement delta
+                Vector delta = currentMousePosition - lastMousePosition;
+
+                // Get current image dimensions including any scaling (zoom)
+                double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
+                double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
+
+                // Get bounds of the window or container
+                double containerWidth = this.ActualWidth;
+                double containerHeight = this.ActualHeight;
+
+                // Calculate new translate values
+                double newTranslateX = imageTranslateTransform.X + delta.X;
+                double newTranslateY = imageTranslateTransform.Y + delta.Y;
+
+                // Constrain X-axis translation
+                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
+                double minTranslateX = -maxTranslateX;
+                newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
+
+                // Constrain Y-axis translation
+                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
+                double minTranslateY = -maxTranslateY;
+                newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
+
+                // Apply constrained translation
+                imageTranslateTransform.X = newTranslateX;
+                imageTranslateTransform.Y = newTranslateY;
+
+                // Update last mouse position
                 lastMousePosition = currentMousePosition;
             }
             else if (isDraggingWindow && WindowState == WindowState.Maximized)
@@ -329,6 +359,11 @@ namespace SimpleImageViewer
                 this.Top = cursorPosition.Y - (this.ActualHeight / 2);
 
                 DragMove();
+            }
+
+            if (!isPanningImage && Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
+            {
+                this.Cursor = Cursors.Hand;  // TODO could be better custom cursor
             }
         }
 
@@ -964,36 +999,6 @@ namespace SimpleImageViewer
             this.PreviewMouseWheel += OnMouseWheelZoom;
         }
 
-        // Can add configurable setting for how much to zoom per scroll event; also for ctrl plus and minus
-        //private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
-        //{
-        //    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-        //    {
-        //        // Get current mouse position relative to the image
-        //        Point cursorPosition = e.GetPosition(ImageDisplay);
-
-        //        // Zoom factor
-        //        double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
-
-        //        // Calculate new scale
-        //        double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
-        //        double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
-
-        //        // Limit zoom levels (optional)
-        //        newScaleX = Math.Max(0.1, Math.Min(10, newScaleX));
-        //        newScaleY = Math.Max(0.1, Math.Min(10, newScaleY));
-
-        //        // Adjust translation to zoom around the cursor
-        //        imageTranslateTransform.X = cursorPosition.X - zoomDelta * (cursorPosition.X - imageTranslateTransform.X);
-        //        imageTranslateTransform.Y = cursorPosition.Y - zoomDelta * (cursorPosition.Y - imageTranslateTransform.Y);
-
-        //        // Apply new scale
-        //        imageScaleTransform.ScaleX = newScaleX;
-        //        imageScaleTransform.ScaleY = newScaleY;
-
-        //        e.Handled = true;
-        //    }
-        //}
 
         private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
@@ -1049,14 +1054,6 @@ namespace SimpleImageViewer
             imageScaleTransform.ScaleX = newScaleX;
             imageScaleTransform.ScaleY = newScaleY;
         }
-        
-        //private void AdjustZoom(double zoomFactor)
-        //{
-        //    imageScaleTransform.ScaleX *= zoomFactor;
-        //    imageScaleTransform.ScaleY *= zoomFactor;
-        //    imageScaleTransform.ScaleX = Math.Clamp(imageScaleTransform.ScaleX, 0.1, 5.0);
-        //    imageScaleTransform.ScaleY = Math.Clamp(imageScaleTransform.ScaleY, 0.1, 5.0);
-        //}
 
         private void ResetZoom()
         {
@@ -1093,97 +1090,18 @@ namespace SimpleImageViewer
 
             ImageDisplay.RenderTransform = transformGroup;
 
-            ImageDisplay.MouseDown += OnMouseDownStartPanning;
-            ImageDisplay.MouseMove += OnMouseMovePan;
-            ImageDisplay.MouseUp += OnMouseUpEndPanning;
+            //ImageDisplay.MouseDown += OnMouseDownStartPanning;
+            //ImageDisplay.MouseMove += OnMouseMovePan;
+            //ImageDisplay.MouseUp += OnMouseUpEndPanning;
         }
 
-        private void OnMouseDownStartPanning(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed && Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                if (!isExplorationMode) EnterExplorationMode();
-
-                this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired. TODO
-                isPanningImage = true;
-                lastMousePosition = e.GetPosition(this);
-                ImageDisplay.CaptureMouse();
-            }
-        }
-
-        private void OnMouseMovePan(object sender, MouseEventArgs e)
-        {
-            //if (isPanningImage)
-            //{
-            //    // Handle panning logic
-            //    Point currentMousePosition = e.GetPosition(this);
-            //    Vector delta = currentMousePosition - lastMousePosition;
-            //    imageTranslateTransform.X += delta.X;
-            //    imageTranslateTransform.Y += delta.Y;
-
-            //    lastMousePosition = currentMousePosition;
-            //}
-            if (isPanningImage)
-            {
-                if (!isExplorationMode) EnterExplorationMode();
-
-                // Current mouse position
-                Point currentMousePosition = e.GetPosition(this);
-
-                // Calculate the movement delta
-                Vector delta = currentMousePosition - lastMousePosition;
-
-                // Get current image dimensions including any scaling (zoom)
-                double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
-                double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
-
-                // Get bounds of the window or container
-                double containerWidth = this.ActualWidth;
-                double containerHeight = this.ActualHeight;
-
-                // Calculate new translate values
-                double newTranslateX = imageTranslateTransform.X + delta.X;
-                double newTranslateY = imageTranslateTransform.Y + delta.Y;
-
-                // Constrain X-axis translation
-                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
-                double minTranslateX = -maxTranslateX;
-                newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
-
-                // Constrain Y-axis translation
-                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
-                double minTranslateY = -maxTranslateY;
-                newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
-
-                // Apply constrained translation
-                imageTranslateTransform.X = newTranslateX;
-                imageTranslateTransform.Y = newTranslateY;
-
-                // Update last mouse position
-                lastMousePosition = currentMousePosition;
-            }
-            else if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
-            {
-                this.Cursor = Cursors.Hand;  // TODO could be better custom cursor
-            }
-        }
-
-        private void OnMouseUpEndPanning(object sender, MouseButtonEventArgs e)
-        {
-            if (isPanningImage)
-            {
-                StopPanning();  // TODO can delete this method since we have a similar handle in mouseup?
-            }
-        }
+        
 
         public void Message(string message, TimeSpan? duration = null)
         {
             duration ??= TimeSpan.FromSeconds(1.5);
             overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
         }
-
-
-
 
         private void CopyImageFileToClipboard()
         {
