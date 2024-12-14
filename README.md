@@ -4,7 +4,8 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-clean up the dust from the pan/zoom troubleshooting
+- address or organize TODOs in code, basic clean-up of code, analysis for issues
+- clean up the dust from the pan/zoom troubleshooting
 
 Probably should/will:
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
@@ -13,6 +14,9 @@ Probably should/will:
 - bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should but lower priority:
+- indicator of current zoom amount upon zooming
+- mouse-friendly controls: scroll when not holding CTRL to navigate directory, maybe.
+- button to reveal in file explorer for current image. could be on context menu or button in image info window.
 - revisit whether/how image should automatically pan/zoom when resizing window in expl mode.
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
@@ -38,6 +42,7 @@ Probably should but lower priority:
 
 
 Maybe / ideas:
+- configurable gestures: hold left and right click, then drag in a direction. 4 options. and/or middle click.
 - special message or label for filename that either persists or fades after a few seconds. Configurable.
 - WEBM support? Maybe a very basic kind. Certainly not a video player.
 - should window do something else other than move to center of screen when changing image etc.?
