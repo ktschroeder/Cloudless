@@ -122,7 +122,7 @@ namespace SimpleImageViewer
                 {
                     if (!isExplorationMode) EnterExplorationMode();
 
-                    this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired. TODO
+                    this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired.
                     isPanningImage = true;
                     lastMousePosition = e.GetPosition(this);
                     ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
@@ -209,7 +209,7 @@ namespace SimpleImageViewer
 
             if (!isPanningImage && Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
             {
-                this.Cursor = Cursors.Hand;  // TODO could be better custom cursor
+                this.Cursor = Cursors.Hand;  // could be better custom cursor
             }
         }
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -302,7 +302,6 @@ namespace SimpleImageViewer
                 }
                 else if ((modifiers & ModifierKeys.Control) != 0)
                 {
-                    // TODO allows paste into file explorer or Discord (file copied) but not, say, MS Paint (image copied)?
                     CopyImageFileToClipboard();
                 }
                 else
@@ -1076,7 +1075,6 @@ namespace SimpleImageViewer
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
-                    // TODO can have RepeatBehavior (whether to loop) be a config
                     var bitmap = new BitmapImage(uri);
                     ImageDisplay.Source = null;
                     ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
@@ -1198,7 +1196,6 @@ namespace SimpleImageViewer
                 MessageBox.Show($"Failed to copy compressed image as file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        //TODO remove pop-ups after debugging
 
 
 
@@ -1395,7 +1392,6 @@ namespace SimpleImageViewer
 
             UpdateRecentFilesMenu();
         }
-        // TODO not yet used. Probably should be a button in Preferences. Consider also adding icons of images (behind a feature flag setting).
         private void ClearRecentFiles()
         {
             recentFiles.Clear();
@@ -1532,8 +1528,8 @@ namespace SimpleImageViewer
         #region Other
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {
-            // TODO skip if debug window collapsed, for better speed.
-            if (ImageDisplay == null) return;
+            if (ImageDisplay == null || DebugTextBlock.Visibility != Visibility.Visible ) 
+                return;
 
             // Window dimensions
             double windowWidth = this.ActualWidth;
