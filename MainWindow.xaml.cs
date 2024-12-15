@@ -12,7 +12,6 @@ using Point = System.Windows.Point;
 using System.Drawing;
 using WebP.Net;
 using System.Windows.Media;
-using System.Net;
 using System.Windows.Media.Animation;
 using System.Drawing.Imaging;
 using System.Collections.Specialized;
@@ -21,6 +20,7 @@ namespace SimpleImageViewer
 {
     public partial class MainWindow : Window
     {
+        #region Fields
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
@@ -41,7 +41,8 @@ namespace SimpleImageViewer
 
         public ScaleTransform imageScaleTransform = new ScaleTransform();
         public TranslateTransform imageTranslateTransform = new TranslateTransform();
-        
+        #endregion
+
 
 
         #region Setup
