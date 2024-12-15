@@ -22,20 +22,72 @@
         Loaded="Window_Loaded"
         Drop="Window_Drop">
     <Window.Resources>
-        <!-- Storyboard for moving dots -->
-        <Storyboard x:Key="MoveDotsStoryboard" RepeatBehavior="Forever">
-            <DoubleAnimation Storyboard.TargetName="dotTransform"
-                             Storyboard.TargetProperty="X"
-                             From="0" To="100" Duration="0:0:5"/>
-            <DoubleAnimation Storyboard.TargetName="dotTransform"
-                             Storyboard.TargetProperty="Y"
-                             From="0" To="100" Duration="0:0:5"/>
+        <Storyboard x:Key="TestStoryboard">
+            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" 
+                         To="0"/>
+
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                         From="0"
+                         To="1" />
+
+            <DoubleAnimation Storyboard.TargetProperty="Offset" 
+                            From="0"
+                            To="1"
+                             Duration="20"
+                             RepeatBehavior="Forever"
+                             AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="Offset" 
+                        From="0.5"
+                        To="1.5"
+                             Duration="5"
+                        RepeatBehavior="Forever"
+                        AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="Offset" 
+                        From="1"
+                        To="2"
+                             Duration="2000"
+                        RepeatBehavior="Forever"
+                        AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+             From="0"
+             To="1" 
+                             RepeatBehavior="Forever"
+AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+             From="0.1"
+             To="0.6" 
+                             RepeatBehavior="Forever"
+AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+             From="0.4"
+             To="1" 
+                             RepeatBehavior="Forever"
+AutoReverse="True"/>
         </Storyboard>
     </Window.Resources>
 
-    <Grid>
-        <!-- Black background -->
-        <Rectangle Fill="Black" />
+
+    <Grid Name="MyGrid">
+
+        <Grid.RenderTransform>
+            <TranslateTransform X="50" Y="0" />
+        </Grid.RenderTransform>
+
+        <Grid.Background>
+            <LinearGradientBrush x:Name="AuroraBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop x:Name="Gradient1" Color="LightBlue" Offset="0" />
+                <GradientStop x:Name="Gradient2" Color="MediumPurple" Offset="0.5" />
+                <GradientStop x:Name="Gradient3" Color="DeepSkyBlue" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+
+
+        <Button VerticalAlignment="Top" 
+    HorizontalAlignment="Left"
+    Margin="10" 
+    Content="Click"
+    Click="Button_Click" />
 
         <!-- Canvas for moving dots -->
         <Canvas x:Name="StarsCanvas" />

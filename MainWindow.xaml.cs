@@ -18,6 +18,8 @@ using System.Collections.Specialized;
 using System.Windows.Shapes;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
+using BrushesIntroduction;
+using GradientStopAnimationExample = BrushesIntroduction.GradientStopAnimationExample;
 
 namespace SimpleImageViewer
 {
@@ -61,6 +63,60 @@ namespace SimpleImageViewer
             {
                 CreateStar();
             }
+
+            // Randomize initial position
+            double startX = 20;
+            double startY = 20;
+
+
+            TranslateTransform moveTransform = new TranslateTransform();
+            StarsCanvas.RenderTransform = moveTransform;
+
+            double endX = startX + 50; // Move right
+            double endY = startY - 50; // Move up
+
+            DoubleAnimation moveX = new DoubleAnimation(0, endX - startX, new Duration(TimeSpan.FromSeconds(2)));
+            DoubleAnimation moveY = new DoubleAnimation(0, endY - startY, new Duration(TimeSpan.FromSeconds(2)));
+
+            // Apply animations
+            Storyboard storyboard = new Storyboard
+            {
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+
+
+            Storyboard.SetTarget(moveX, StarsCanvas);
+            Storyboard.SetTargetProperty(moveX, new PropertyPath(TranslateTransform.XProperty));
+
+            Storyboard.SetTarget(moveY, StarsCanvas);
+            Storyboard.SetTargetProperty(moveY, new PropertyPath(TranslateTransform.YProperty));
+
+            storyboard.Children.Add(moveX);
+            storyboard.Children.Add(moveY);
+
+            // Start the animation
+            storyboard.Begin(this, true);
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Storyboard myStoryboard = (Storyboard)this.Resources["TestStoryboard"];
+            Storyboard.SetTarget(myStoryboard.Children.ElementAt(0) as DoubleAnimation, MyGrid);
+            Storyboard.SetTarget(myStoryboard.Children.ElementAt(1) as DoubleAnimation, MyGrid);
+            Storyboard.SetTarget(myStoryboard.Children.ElementAt(2) as DoubleAnimation, Gradient1);
+            Storyboard.SetTarget(myStoryboard.Children.ElementAt(3) as DoubleAnimation, Gradient2);
+            Storyboard.SetTarget(myStoryboard.Children.ElementAt(4) as DoubleAnimation, Gradient3);
+
+            DoubleAnimation offsetAnimation = new DoubleAnimation();
+            offsetAnimation.From = 0.0;
+            offsetAnimation.To = 1.0;
+            offsetAnimation.Duration = TimeSpan.FromSeconds(1.5);
+            offsetAnimation.AutoReverse = true;
+            Storyboard.SetTargetName(offsetAnimation, "GradientStop1");
+            Storyboard.SetTargetProperty(offsetAnimation,
+                new PropertyPath(GradientStop.OffsetProperty));
+
+            myStoryboard.Begin();
         }
 
         private void CreateStar()
@@ -97,6 +153,9 @@ namespace SimpleImageViewer
             double endX = startX + 50; // Move right
             double endY = startY - 50; // Move up
 
+            DoubleAnimation moveX = new DoubleAnimation(0, endX - startX, new Duration(TimeSpan.FromSeconds(1)));
+            DoubleAnimation moveY = new DoubleAnimation(0, endY - startY, new Duration(TimeSpan.FromSeconds(1)));
+
             // Apply animations
             Storyboard storyboard = new Storyboard
             {
@@ -109,8 +168,16 @@ namespace SimpleImageViewer
             Storyboard.SetTarget(fadeOut, star);
             Storyboard.SetTargetProperty(fadeOut, new PropertyPath(Ellipse.OpacityProperty));
 
+            Storyboard.SetTarget(moveX, star);
+            Storyboard.SetTargetProperty(moveX, new PropertyPath(TranslateTransform.XProperty));
+
+            Storyboard.SetTarget(moveY, star);
+            Storyboard.SetTargetProperty(moveY, new PropertyPath(TranslateTransform.YProperty));
+
             storyboard.Children.Add(fadeIn);
             storyboard.Children.Add(fadeOut);
+            storyboard.Children.Add(moveX);
+            storyboard.Children.Add(moveY);
 
             // Start the animation
             storyboard.Begin(this, true);
@@ -134,6 +201,8 @@ namespace SimpleImageViewer
         {
             Setup();
             CenterWindow();
+
+            
         }
         private void Setup()
         {
@@ -157,6 +226,10 @@ namespace SimpleImageViewer
 
             InitializeZooming();
             InitializePanning();
+
+            // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
+            var testw = new GradientStopAnimationExample();
+            this.Content = testw;
         }
         private void Window_SourceInitialized(object sender, EventArgs e)
         {
