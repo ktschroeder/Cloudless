@@ -85,8 +85,6 @@ namespace SimpleImageViewer
 
             InitializeZooming();
             InitializePanning();
-
-
         }
         private void Window_SourceInitialized(object sender, EventArgs e)
         {
@@ -107,10 +105,6 @@ namespace SimpleImageViewer
             transformGroup.Children.Add(imageTranslateTransform);
 
             ImageDisplay.RenderTransform = transformGroup;
-
-            //ImageDisplay.MouseDown += OnMouseDownStartPanning;
-            //ImageDisplay.MouseMove += OnMouseMovePan;
-            //ImageDisplay.MouseUp += OnMouseUpEndPanning;
         }
         #endregion
 
@@ -133,7 +127,7 @@ namespace SimpleImageViewer
                 else if (WindowState == WindowState.Maximized)
                 {
                     // Dragging window in fullscreen mode
-                    initialCursorPosition = e.GetPosition(this);
+                    initialCursorPosition = e.GetPosition(this);  // TODO not used. relevant to fullscreen drag issue?
                     isDraggingWindow = true;
                 }
                 else
@@ -155,47 +149,15 @@ namespace SimpleImageViewer
                 isDraggingWindow = false;
             }
         }
-
-        // duplicate code in ClampTransform...
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             if (isPanningImage)
             {
                 if (!isExplorationMode) EnterExplorationMode();
 
-                // Current mouse position
                 Point currentMousePosition = e.GetPosition(this);
-
-                // Calculate the movement delta
                 Vector delta = currentMousePosition - lastMousePosition;
-
-                // Get current image dimensions including any scaling (zoom)
-                double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
-                double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
-
-                // Get bounds of the window or container
-                double containerWidth = this.ActualWidth;
-                double containerHeight = this.ActualHeight;
-
-                // Calculate new translate values
-                double newTranslateX = imageTranslateTransform.X + delta.X;
-                double newTranslateY = imageTranslateTransform.Y + delta.Y;
-
-                // Constrain X-axis translation
-                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
-                double minTranslateX = -maxTranslateX;
-                newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
-
-                // Constrain Y-axis translation
-                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
-                double minTranslateY = -maxTranslateY;
-                newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
-
-                // Apply constrained translation
-                imageTranslateTransform.X = newTranslateX;
-                imageTranslateTransform.Y = newTranslateY;
-
-                // Update last mouse position
+                ClampTransformToIntuitiveBounds(delta);
                 lastMousePosition = currentMousePosition;
             }
             else if (isDraggingWindow && WindowState == WindowState.Maximized)
@@ -498,7 +460,6 @@ namespace SimpleImageViewer
                 ToggleFullscreen();
             }
         }
-        // Open context menu on right-click
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             ImageContextMenu.IsOpen = true;
@@ -570,7 +531,6 @@ namespace SimpleImageViewer
 
 
         #region Zoom, Pan, and Window Sizing
-        // mode that enables zooming/panning and disables behavior associated with standard display modes and window resizing
         private void EnterExplorationMode()
         {
             var wasExplorationMode = isExplorationMode;
@@ -676,7 +636,7 @@ namespace SimpleImageViewer
             }
             else
             {
-                // extra probably unwanted code, most but not all of this. its presence alleviated the pan/zoom blackspace weirdness. revisit/clean this. TODO
+                // Alleviate pan/zoom blackspace weirdness that arises when resizing window in expl mode.
                 if (ImageDisplay.Source is BitmapSource bitmap)
                 {
                     double imageWidth = bitmap.PixelWidth;
@@ -694,26 +654,12 @@ namespace SimpleImageViewer
                     // Apply scaled dimensions to ImageDisplay
                     ImageDisplay.Width = imageWidth * scale;
                     ImageDisplay.Height = imageHeight * scale;
-
-                    // Center the image display
-                    double marginX = (windowWidth - ImageDisplay.Width) / 2;
-                    double marginY = (windowHeight - ImageDisplay.Height) / 2;
-
-                    ////debug. may also be good, when in expl mode. TODO.
-                    //marginX = 0;
-                    //marginY = 0;
-                    ImageDisplay.Margin = new Thickness(  // black bars
-                        Math.Max(0, marginX),
-                        Math.Max(0, marginY),
-                        Math.Max(0, marginX),
-                        Math.Max(0, marginY)
-                    );
                 }
 
-                ClampCurrentTransformToIntuitiveBounds();
+                ClampTransformToIntuitiveBounds();
             }
         }
-        // Method of interest in scale/pan shenanigans
+        // Method of interest in scale/pan shenanigans TODO
         // zooming/panning does not hit this method
         private void CenterImageIfNeeded()
         {
@@ -747,7 +693,7 @@ namespace SimpleImageViewer
                 );
 
                 // Ensure the image is not clipped by setting Stretch to Uniform
-                ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;  //
+                ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
             }
         }
         private void StopPanning()
@@ -824,8 +770,7 @@ namespace SimpleImageViewer
             this.Left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
             this.Top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
         }
-        // mostly duplicate code in panning method
-        private void ClampCurrentTransformToIntuitiveBounds()
+        private void ClampTransformToIntuitiveBounds(Vector? delta = null)
         {
             // Get current image dimensions including any scaling (zoom)
             double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
@@ -835,9 +780,9 @@ namespace SimpleImageViewer
             double containerWidth = this.ActualWidth;
             double containerHeight = this.ActualHeight;
 
-            // Calculate new translate values
-            double newTranslateX = imageTranslateTransform.X;
-            double newTranslateY = imageTranslateTransform.Y;
+            // Calculate new translate values. Include translation from delta, if provided.
+            double newTranslateX = imageTranslateTransform.X + delta?.X ?? 0;
+            double newTranslateY = imageTranslateTransform.Y + delta?.Y ?? 0;
 
             // Constrain X-axis translation
             double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
@@ -937,7 +882,6 @@ namespace SimpleImageViewer
             imageTranslateTransform.X = 0;
             imageTranslateTransform.Y = 0;
         }
-        // could consider adding another hotkey for counter-clockwise, or making the rotation direction a toggleable setting.
         private void RotateImage90Degrees()
         {
             if (ImageDisplay.Source is not BitmapSource bitmapSource)
@@ -960,7 +904,7 @@ namespace SimpleImageViewer
         }
         private void ResizeWindowToRemoveBestFitBars()
         {
-            if (isExplorationMode) ApplyDisplayMode(); // TODO possibly just disable/return here
+            if (isExplorationMode) ApplyDisplayMode();
 
             string displayMode = JustView.Properties.Settings.Default.DisplayMode;
 
@@ -1010,7 +954,6 @@ namespace SimpleImageViewer
                 this.InvalidateMeasure();
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
-        // Maximize vertical dimension and align window with it vertically
         private void MaximizeVerticalDimension()
         {
             var wa = SystemParameters.WorkArea;
@@ -1034,15 +977,11 @@ namespace SimpleImageViewer
                 LoadImage(openFileDialog.FileName, true);
                 Message("File loaded from dialog.");
             }
-
-
         }
         private void LoadImage(string imagePath, bool openedThroughApp)
         {
             try
             {
-
-
                 string selectedImagePath = imagePath;
                 currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
                 imageFiles = Directory.GetFiles(currentDirectory, "*.*")
@@ -1055,9 +994,7 @@ namespace SimpleImageViewer
                                                  s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
                                       .ToArray();
 
-                // Find the index of the selected image
                 currentImageIndex = Array.IndexOf(imageFiles, selectedImagePath);
-
                 DisplayImage(currentImageIndex, openedThroughApp);
             }
             catch (Exception ex)
@@ -1123,7 +1060,6 @@ namespace SimpleImageViewer
                 MessageBox.Show($"Failed to display image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
         private void CopyCompressedImageToClipboardAsJpgFile()
         {
             var tempFilePath = "compressed_image.jpg";
@@ -1196,17 +1132,12 @@ namespace SimpleImageViewer
                 Clipboard.SetFileDropList(filePaths);
 
                 Message("Copied compressed file to clipboard. Quality: " + finalQuality + "%. Bytes: " + finalSizeBytes);
-                //MessageBox.Show("Compressed image file copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to copy compressed image as file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
-
-        // Helper methods to convert and resize images
         private Bitmap BitmapSourceToBitmap(BitmapSource source)
         {
             using var ms = new MemoryStream();
@@ -1215,25 +1146,10 @@ namespace SimpleImageViewer
             encoder.Save(ms);
             return new Bitmap(ms);
         }
-        //private Bitmap ResizeImage(Bitmap image, int width, int height)
-        //{
-        //    Bitmap resized = new(width, height);
-        //    using var g = Graphics.FromImage(resized);
-        //    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-        //    g.DrawImage(image, 0, 0, width, height);
-        //    return resized;
-        //}
         private ImageCodecInfo? GetEncoder(ImageFormat format)
         {
             return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
         }
-        //private BitmapSource BitmapToBitmapSource(Bitmap bitmap)
-        //{
-        //    using var ms = new MemoryStream();
-        //    bitmap.Save(ms, ImageFormat.Bmp);
-        //    ms.Position = 0;
-        //    return BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-        //}
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
@@ -1280,32 +1196,15 @@ namespace SimpleImageViewer
                 Clipboard.SetFileDropList(filePaths);
 
                 Message("Copied image file to clipboard.");
-
-                //MessageBox.Show("File reference copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to copy file reference: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-
-            //if (ImageDisplay.Source is BitmapSource bitmapSource)
-            //{
-            //    try
-            //    {
-            //        Clipboard.SetImage(bitmapSource);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    }
-            //}
         }
-        // Handle resizing and edge dragging
-
         private void SaveRecentFiles()
         {
-            System.Collections.Specialized.StringCollection collection = new();
+            StringCollection collection = new();
             collection.AddRange(recentFiles.ToArray());
 
             JustView.Properties.Settings.Default.RecentFiles = collection;
@@ -1374,7 +1273,6 @@ namespace SimpleImageViewer
                 return;
             }
 
-            // Your logic to open the file
             LoadImage(filePath, true);
         }
         private void LoadRecentFiles()
@@ -1455,10 +1353,6 @@ namespace SimpleImageViewer
         {
             About();
         }
-        private void HotkeyRef_Click(object sender, RoutedEventArgs e)
-        {
-            HotkeyRef();
-        }
         private void About()
         {
             var aboutWindow = new AboutWindow();
@@ -1468,6 +1362,10 @@ namespace SimpleImageViewer
             aboutWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             aboutWindow.Show();
+        }
+        private void HotkeyRef_Click(object sender, RoutedEventArgs e)
+        {
+            HotkeyRef();
         }
         private void HotkeyRef()
         {
@@ -1493,7 +1391,6 @@ namespace SimpleImageViewer
                 WindowState = WindowState.Normal;
             }
         }
-        // Handle right-click menu -> Exit
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
