@@ -4,14 +4,12 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-- address or organize TODOs in code, basic clean-up of code, analysis for issues
-- clean up the dust from the pan/zoom troubleshooting
+- (TODOs in code) odd jitter of window when changing images, such as when navigating through a directory
+- (TODOs in code) bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should/will:
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
-- odd jitter of window when changing images, such as when navigating through a directory
 - ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.)
-- bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should but lower priority:
 - indicator of current zoom amount upon zooming
@@ -39,7 +37,6 @@ Probably should but lower priority:
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
 - If you change a config in one window/instance, how should/can it affect other windows that are open?
 - optional online listening for updates.
-
 
 Maybe / ideas:
 - configurable gestures: hold left and right click, then drag in a direction. 4 options. and/or middle click.

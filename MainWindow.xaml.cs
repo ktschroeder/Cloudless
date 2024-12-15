@@ -660,8 +660,6 @@ namespace SimpleImageViewer
                 ClampTransformToIntuitiveBounds();
             }
         }
-        // Method of interest in scale/pan shenanigans TODO
-        // zooming/panning does not hit this method
         private void CenterImageIfNeeded()
         {
             if (ImageDisplay.Source is BitmapSource bitmap)
@@ -694,7 +692,7 @@ namespace SimpleImageViewer
                 );
 
                 // Ensure the image is not clipped by setting Stretch to Uniform
-                ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
+                ImageDisplay.Stretch = Stretch.Uniform;
             }
         }
         private void StopPanning()
@@ -767,7 +765,7 @@ namespace SimpleImageViewer
         }
         private void CenterWindow()
         {
-            var workingArea = System.Windows.SystemParameters.WorkArea;
+            var workingArea = SystemParameters.WorkArea;
             this.Left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
             this.Top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
         }
