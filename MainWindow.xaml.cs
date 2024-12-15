@@ -98,27 +98,6 @@ namespace SimpleImageViewer
             storyboard.Begin(this, true);
         }
 
-        //private void Button_Click(object sender, RoutedEventArgs e)
-        //{
-        //    Storyboard myStoryboard = (Storyboard)this.Resources["TestStoryboard"];
-        //    Storyboard.SetTarget(myStoryboard.Children.ElementAt(0) as DoubleAnimation, MyGrid);
-        //    Storyboard.SetTarget(myStoryboard.Children.ElementAt(1) as DoubleAnimation, MyGrid);
-        //    Storyboard.SetTarget(myStoryboard.Children.ElementAt(2) as DoubleAnimation, Gradient1);
-        //    Storyboard.SetTarget(myStoryboard.Children.ElementAt(3) as DoubleAnimation, Gradient2);
-        //    Storyboard.SetTarget(myStoryboard.Children.ElementAt(4) as DoubleAnimation, Gradient3);
-
-        //    DoubleAnimation offsetAnimation = new DoubleAnimation();
-        //    offsetAnimation.From = 0.0;
-        //    offsetAnimation.To = 1.0;
-        //    offsetAnimation.Duration = TimeSpan.FromSeconds(1.5);
-        //    offsetAnimation.AutoReverse = true;
-        //    Storyboard.SetTargetName(offsetAnimation, "GradientStop1");
-        //    Storyboard.SetTargetProperty(offsetAnimation,
-        //        new PropertyPath(GradientStop.OffsetProperty));
-
-        //    myStoryboard.Begin();
-        //}
-
         private void CreateStar()
         {
             // Create a star (small circle)
@@ -235,7 +214,7 @@ namespace SimpleImageViewer
         private void GradientMagic()
         {
             Title = "GradientStop Animation Example";
-            Background = Brushes.White;
+            Background = Brushes.Black;
 
             // Create a NameScope for the page so that
             // Storyboards can be used.
@@ -246,9 +225,10 @@ namespace SimpleImageViewer
             LinearGradientBrush gradientBrush = new LinearGradientBrush();
 
             // Create gradient stops for the brush.
-            GradientStop stop1 = new GradientStop(Colors.MediumBlue, 0.0);
-            GradientStop stop2 = new GradientStop(Colors.Purple, 0.5);
-            GradientStop stop3 = new GradientStop(Colors.Red, 1.0);
+            GradientStop stop0 = new GradientStop(Colors.DarkMagenta, 0.0);
+            GradientStop stop1 = new GradientStop(Colors.DarkBlue, 0.3);
+            GradientStop stop2 = new GradientStop(Colors.DarkViolet, 0.6);
+            GradientStop stop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
 
             // Register a name for each gradient stop with the
             // page so that they can be animated by a storyboard.
@@ -257,25 +237,46 @@ namespace SimpleImageViewer
             this.RegisterName("GradientStop3", stop3);
 
             // Add the stops to the brush.
+            gradientBrush.GradientStops.Add(stop0);
             gradientBrush.GradientStops.Add(stop1);
             gradientBrush.GradientStops.Add(stop2);
             gradientBrush.GradientStops.Add(stop3);
 
             // Apply the brush to the rectangle.
             this.Background = gradientBrush;
-            //aRectangle.Fill = gradientBrush;
 
             //
             // Animate the first gradient stop's offset from
             // 0.0 to 1.0 and then back to 0.0.
             //
             DoubleAnimation offsetAnimation = new DoubleAnimation();
-            offsetAnimation.From = 0.0;
-            offsetAnimation.To = 1.0;
-            offsetAnimation.Duration = TimeSpan.FromSeconds(1.5);
+            offsetAnimation.From = 0.1;
+            offsetAnimation.To = 0.30;
+            offsetAnimation.Duration = TimeSpan.FromSeconds(17.5);
             offsetAnimation.AutoReverse = true;
+            offsetAnimation.RepeatBehavior = RepeatBehavior.Forever;
             Storyboard.SetTargetName(offsetAnimation, "GradientStop1");
             Storyboard.SetTargetProperty(offsetAnimation,
+                new PropertyPath(GradientStop.OffsetProperty));
+
+            DoubleAnimation offsetAnimation2 = new DoubleAnimation();
+            offsetAnimation2.From = 0.73;
+            offsetAnimation2.To = 0.37;
+            offsetAnimation2.Duration = TimeSpan.FromSeconds(25.3);
+            offsetAnimation2.AutoReverse = true;
+            offsetAnimation2.RepeatBehavior = RepeatBehavior.Forever;
+            Storyboard.SetTargetName(offsetAnimation2, "GradientStop2");
+            Storyboard.SetTargetProperty(offsetAnimation2,
+                new PropertyPath(GradientStop.OffsetProperty));
+
+            DoubleAnimation offsetAnimation3 = new DoubleAnimation();
+            offsetAnimation3.From = 0.97;
+            offsetAnimation3.To = 0.8;
+            offsetAnimation3.Duration = TimeSpan.FromSeconds(15.7);
+            offsetAnimation3.AutoReverse = true;
+            offsetAnimation3.RepeatBehavior = RepeatBehavior.Forever;
+            Storyboard.SetTargetName(offsetAnimation3, "GradientStop3");
+            Storyboard.SetTargetProperty(offsetAnimation3,
                 new PropertyPath(GradientStop.OffsetProperty));
 
             //
@@ -285,40 +286,43 @@ namespace SimpleImageViewer
             ColorAnimation gradientStopColorAnimation = new ColorAnimation();
             gradientStopColorAnimation.From = Colors.Purple;
             gradientStopColorAnimation.To = Colors.Yellow;
-            gradientStopColorAnimation.Duration = TimeSpan.FromSeconds(1.5);
+            gradientStopColorAnimation.Duration = TimeSpan.FromSeconds(4);
             gradientStopColorAnimation.AutoReverse = true;
+            gradientStopColorAnimation.RepeatBehavior = RepeatBehavior.Forever;
             Storyboard.SetTargetName(gradientStopColorAnimation, "GradientStop2");
             Storyboard.SetTargetProperty(gradientStopColorAnimation,
                 new PropertyPath(GradientStop.ColorProperty));
 
             // Set the animation to begin after the first animation
             // ends.
-            gradientStopColorAnimation.BeginTime = TimeSpan.FromSeconds(3);
+            //gradientStopColorAnimation.BeginTime = TimeSpan.FromSeconds(3);
 
             //
             // Animate the third gradient stop's color so
             // that it becomes transparent.
             //
-            ColorAnimation opacityAnimation = new ColorAnimation();
+            //ColorAnimation opacityAnimation = new ColorAnimation();
 
-            // Reduces the target color's alpha value by 1,
-            // making the color transparent.
-            opacityAnimation.By = System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F);
-            opacityAnimation.Duration = TimeSpan.FromSeconds(1.5);
-            opacityAnimation.AutoReverse = true;
-            Storyboard.SetTargetName(opacityAnimation, "GradientStop3");
-            Storyboard.SetTargetProperty(opacityAnimation,
-                new PropertyPath(GradientStop.ColorProperty));
+            //// Reduces the target color's alpha value by 1,
+            //// making the color transparent.
+            //opacityAnimation.By = System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F);
+            //opacityAnimation.Duration = TimeSpan.FromSeconds(1.5);
+            //opacityAnimation.AutoReverse = true;
+            //Storyboard.SetTargetName(opacityAnimation, "GradientStop3");
+            //Storyboard.SetTargetProperty(opacityAnimation,
+            //    new PropertyPath(GradientStop.ColorProperty));
 
-            // Set the animation to begin after the first two
-            // animations have ended.
-            opacityAnimation.BeginTime = TimeSpan.FromSeconds(6);
+            //// Set the animation to begin after the first two
+            //// animations have ended.
+            //opacityAnimation.BeginTime = TimeSpan.FromSeconds(6);
 
             // Create a Storyboard to apply the animations.
             Storyboard gradientStopAnimationStoryboard = new Storyboard();
             gradientStopAnimationStoryboard.Children.Add(offsetAnimation);
-            gradientStopAnimationStoryboard.Children.Add(gradientStopColorAnimation);
-            gradientStopAnimationStoryboard.Children.Add(opacityAnimation);
+            gradientStopAnimationStoryboard.Children.Add(offsetAnimation2);
+            gradientStopAnimationStoryboard.Children.Add(offsetAnimation3);
+            //gradientStopAnimationStoryboard.Children.Add(gradientStopColorAnimation);
+            //gradientStopAnimationStoryboard.Children.Add(opacityAnimation);
 
             // Begin the storyboard when the left mouse button is
             // pressed over the rectangle.
@@ -451,7 +455,7 @@ namespace SimpleImageViewer
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
-                    DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
+                    DebugTextBlockBorder.Visibility = DebugTextBlockBorder.Visibility == Visibility.Visible
                     ? Visibility.Collapsed
                     : Visibility.Visible;
                 }
