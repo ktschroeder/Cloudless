@@ -25,7 +25,6 @@ namespace SimpleImageViewer
         private string[]? imageFiles;
         private int currentImageIndex;
         private string? currentlyDisplayedImagePath;
-        private string? currentlyDisplayedImagePathBackslashes;
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
 
@@ -1076,9 +1075,7 @@ namespace SimpleImageViewer
 
                 var uri = new Uri(imageFiles[index]);
 
-                // TODO currentlyDisplayedImagePath can possibly be replaced with the backslashes version
-                currentlyDisplayedImagePath = WebUtility.UrlDecode(uri.AbsolutePath);
-                currentlyDisplayedImagePathBackslashes = uri.LocalPath;
+                currentlyDisplayedImagePath = uri.LocalPath;
                 AddToRecentFiles(uri.LocalPath);
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
@@ -1161,7 +1158,6 @@ namespace SimpleImageViewer
                         long quality = 100L;
                         const long minQuality = 10L; // Minimum quality to avoid over-compression
 
-                        // TODO review this method as it may be possible to increase speed/efficiency. Also iterations should compress the original file, not the result of previous compression.
                         while (true)
                         {
                             using (MemoryStream memoryStream = new())
@@ -1280,8 +1276,7 @@ namespace SimpleImageViewer
         {
             try
             {
-                StringCollection filePaths = new();
-                filePaths.Add(currentlyDisplayedImagePath);
+                StringCollection filePaths = [currentlyDisplayedImagePath];
                 Clipboard.SetFileDropList(filePaths);
 
                 Message("Copied image file to clipboard.");
@@ -1509,10 +1504,10 @@ namespace SimpleImageViewer
         }
         private void ImageInfo()
         {
-            if (string.IsNullOrEmpty(currentlyDisplayedImagePathBackslashes))
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
                 return;
 
-            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePathBackslashes)
+            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePath)
             {
                 Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
