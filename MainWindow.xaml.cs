@@ -54,11 +54,15 @@ namespace SimpleImageViewer
             {
                 LoadImage(filePath, false);
                 ResizeWindowToImage();
+                CenterWindow();
             }
+
+            CenterWindow();
         }
         public MainWindow()
         {
             Setup();
+            CenterWindow();
         }
         private void Setup()
         {
@@ -266,6 +270,7 @@ namespace SimpleImageViewer
             {
                 autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
                 ResizeWindowToImage();
+                CenterWindow();
                 e.Handled = true;
                 return;
             }
@@ -809,13 +814,16 @@ namespace SimpleImageViewer
                     newHeight = screenHeight;
                 }
 
-
-                // Set the window size and center it  // TODO may want to not center it in some cases
+                // Set the window size
                 this.Width = newWidth;
                 this.Height = newHeight;
-                this.Left = (workingArea.Width - newWidth) / 2 + workingArea.Left;
-                this.Top = (workingArea.Height - newHeight) / 2 + workingArea.Top;
             }
+        }
+        private void CenterWindow()
+        {
+            var workingArea = System.Windows.SystemParameters.WorkArea;
+            this.Left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
+            this.Top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
         }
         // mostly duplicate code in panning method
         private void ClampCurrentTransformToIntuitiveBounds()
@@ -1105,8 +1113,11 @@ namespace SimpleImageViewer
                 NoImageMessage.Visibility = Visibility.Collapsed;
 
                 if (openedThroughApp && JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                {
                     ResizeWindowToImage();
-
+                    CenterWindow();
+                }
+                    
                 ApplyDisplayMode();
                 UpdateContextMenuState();
             }
