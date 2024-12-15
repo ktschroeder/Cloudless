@@ -73,21 +73,21 @@ AutoReverse="True"/>
             <TranslateTransform X="50" Y="0" />
         </Grid.RenderTransform>
 
-        <Grid.Background>
-            <LinearGradientBrush x:Name="AuroraBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+        <!--<Grid.Background>
+            <LinearGradientBrush>
                 <GradientStop x:Name="Gradient1" Color="LightBlue" Offset="0" />
                 <GradientStop x:Name="Gradient2" Color="MediumPurple" Offset="0.5" />
                 <GradientStop x:Name="Gradient3" Color="DeepSkyBlue" Offset="1" />
             </LinearGradientBrush>
-        </Grid.Background>
+        </Grid.Background>-->
 
 
 
-        <Button VerticalAlignment="Top" 
+        <!--<Button VerticalAlignment="Top" 
     HorizontalAlignment="Left"
     Margin="10" 
     Content="Click"
-    Click="Button_Click" />
+    Click="Button_Click" />-->
 
         <!-- Canvas for moving dots -->
         <Canvas x:Name="StarsCanvas" />
