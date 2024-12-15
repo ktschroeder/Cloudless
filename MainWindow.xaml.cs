@@ -48,7 +48,7 @@ namespace SimpleImageViewer
         public TranslateTransform imageTranslateTransform = new TranslateTransform();
         #endregion
 
-        private const int StarCount = 50; // Number of stars
+        private const int StarCount = 1300; // Number of stars
         private const int StarSize = 2;   // Diameter of each star
         private const double AnimationDurationSeconds = 10;
 
@@ -111,8 +111,8 @@ namespace SimpleImageViewer
             };
 
             // Randomize initial position
-            double startX = _random.NextDouble() * StarsCanvas.ActualWidth;
-            double startY = _random.NextDouble() * StarsCanvas.ActualHeight;
+            double startX = _random.NextDouble() * 2000;// StarsCanvas.ActualWidth;
+            double startY = _random.NextDouble() * 2000;// StarsCanvas.ActualHeight;
 
             Canvas.SetLeft(star, startX);
             Canvas.SetTop(star, startY);
@@ -121,10 +121,14 @@ namespace SimpleImageViewer
             StarsCanvas.Children.Add(star);
 
             // Create animations for fade-in, movement, and fade-out
-            DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2)));
-            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2)))
+            var delay = _random.NextDouble() * 3.0;
+            DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + delay)))
             {
-                BeginTime = TimeSpan.FromSeconds(AnimationDurationSeconds / 2) // Start fading out after fading in
+                BeginTime = TimeSpan.FromSeconds(delay)
+            };
+            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + delay)))
+            {
+                BeginTime = TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + 2*delay) // Start fading out after fading in
             };
 
             TranslateTransform moveTransform = new TranslateTransform();
@@ -388,7 +392,7 @@ namespace SimpleImageViewer
             //    gradientStopAnimationStoryboard.Begin(this);
             //};
             gradientStopAnimationStoryboard.Begin(this);
-            MyGrid.Children.Add(aRectangle);
+            //MyGrid.Children.Add(aRectangle);
 
             //StackPanel mainPanel = new StackPanel();
             //mainPanel.Margin = new Thickness(10);
