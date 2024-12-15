@@ -4,7 +4,6 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-- (TODOs in code) bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should/will:
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)

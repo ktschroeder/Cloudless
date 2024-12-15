@@ -33,10 +33,9 @@ namespace SimpleImageViewer
         private const int MaxRecentFiles = 10;
         private readonly List<string> recentFiles = new();
 
-        private Point initialCursorPosition;
         private Point lastMousePosition;
 
-        private bool isDraggingWindow = false;
+        private bool isDraggingWindowFromFullscreen = false;
         private bool isPanningImage = false;
 
         public ScaleTransform imageScaleTransform = new ScaleTransform();
@@ -127,9 +126,7 @@ namespace SimpleImageViewer
                 }
                 else if (WindowState == WindowState.Maximized)
                 {
-                    // Dragging window in fullscreen mode
-                    initialCursorPosition = e.GetPosition(this);  // TODO not used. relevant to fullscreen drag issue?
-                    isDraggingWindow = true;
+                    isDraggingWindowFromFullscreen = true;
                 }
                 else
                 {
@@ -145,10 +142,7 @@ namespace SimpleImageViewer
                 StopPanning();
             }
 
-            if (isDraggingWindow)
-            {
-                isDraggingWindow = false;
-            }
+            isDraggingWindowFromFullscreen = false;
         }
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
@@ -161,14 +155,11 @@ namespace SimpleImageViewer
                 ClampTransformToIntuitiveBounds(delta);
                 lastMousePosition = currentMousePosition;
             }
-            else if (isDraggingWindow && WindowState == WindowState.Maximized)
+            else if (isDraggingWindowFromFullscreen && WindowState == WindowState.Maximized)
             {
                 // Handle dragging window out of fullscreen
                 Point cursorPosition = e.GetPosition(this);
                 ToggleFullscreen();
-
-                this.Left = cursorPosition.X - (this.ActualWidth / 2);
-                this.Top = cursorPosition.Y - (this.ActualHeight / 2);
 
                 DragMove();
             }
