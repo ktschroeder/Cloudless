@@ -53,3 +53,16 @@ Maybe / ideas:
 - maybe option for dropshadow beyond window
 - Automatically rotate images based on the EXIF orientation tag in case the image was taken on a camera or smartphone that stored the rotation information.
 - somewhere list the less obvious features such as drag-and-drop and double-click for fullscreen
+
+Features noted in Windows Photos app:
+- True number displayed for "zoom zmount" where 100% is true resolution, even when best-fit in small window
+- Slider for zoom, and dropdown for common round values like 50%, 500%.
+- "film strip" feature: thumbnails (in directory of current image?) for quickly selecting another image to view
+- favorites feature (?)
+- "delete" feature (with setting for whether to show confirmation dialog first)
+- print feature
+- set as background/wallpaper etc.
+- filename displayed on title
+- additional window with "gallery" "Favorites" (includes search of these)
+- theme: light or dark or system default
+- resizing window behavior when not simply best-fit?

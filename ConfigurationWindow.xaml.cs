@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace SimpleImageViewer
 {
@@ -15,6 +16,7 @@ namespace SimpleImageViewer
         public bool LoopGifs { get; private set; }
         public bool MuteMessages { get; private set; }
         public bool AlwaysOnTopByDefault { get; private set; }
+        public double MaxCompressedCopySizeMB { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -59,6 +61,10 @@ namespace SimpleImageViewer
             var currentAlwaysOnTopByDefault = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
             AlwaysOnTopByDefaultCheckbox.IsChecked = currentAlwaysOnTopByDefault;
             AlwaysOnTopByDefault = currentAlwaysOnTopByDefault;
+            
+            var currentMaxCompressedCopySizeMB = JustView.Properties.Settings.Default.MaxCompressedCopySizeMB;
+            MaxCompressedCopySizeMBTextBox.Text = currentMaxCompressedCopySizeMB.ToString();
+            MaxCompressedCopySizeMB = currentMaxCompressedCopySizeMB;
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
@@ -86,6 +92,9 @@ namespace SimpleImageViewer
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
+
+            var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
+            MaxCompressedCopySizeMB = parsedSize ? size : 10.0;
 
             DialogResult = true;
             Close();

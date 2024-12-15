@@ -129,5 +129,17 @@ namespace JustView.Properties {
                 this["MuteMessages"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public double MaxCompressedCopySizeMB {
+            get {
+                return ((double)(this["MaxCompressedCopySizeMB"]));
+            }
+            set {
+                this["MaxCompressedCopySizeMB"] = value;
+            }
+        }
     }
 }

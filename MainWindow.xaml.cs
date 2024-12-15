@@ -1115,12 +1115,11 @@ namespace SimpleImageViewer
                 MessageBox.Show($"Failed to display image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        // TODO if compression attempts take significant time, show message to user: "Finding best compression..."
+        
         private void CopyCompressedImageToClipboardAsJpgFile()
         {
-            // TODO configure these
-            var tempFilePath = "temp.jpg";
-            double maxSizeInMB = 10;
+            var tempFilePath = "compressed_image.jpg";
+            double maxSizeInMB = JustView.Properties.Settings.Default.MaxCompressedCopySizeMB;
 
             try
             {
@@ -1147,7 +1146,8 @@ namespace SimpleImageViewer
                             g.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
                         }
 
-                        long quality = 75L; // Start at medium quality
+                        const long qualityStep = 5L;
+                        long quality = 100L;
                         const long minQuality = 10L; // Minimum quality to avoid over-compression
 
                         // TODO review this method as it may be possible to increase speed/efficiency. Also iterations should compress the original file, not the result of previous compression.
@@ -1175,7 +1175,7 @@ namespace SimpleImageViewer
                                 }
 
                                 // Reduce quality for further compression
-                                quality -= 5L;
+                                quality -= qualityStep;
                                 if (quality < minQuality)
                                     throw new Exception("Unable to compress image to fit the size limit");
                             }
@@ -1438,6 +1438,7 @@ namespace SimpleImageViewer
                 JustView.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
                 JustView.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
                 JustView.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
+                JustView.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
 
                 JustView.Properties.Settings.Default.Save();
 
