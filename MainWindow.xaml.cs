@@ -15,6 +15,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Drawing.Imaging;
 using System.Collections.Specialized;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
+using Brushes = System.Windows.Media.Brushes;
 
 namespace SimpleImageViewer
 {
@@ -42,7 +45,76 @@ namespace SimpleImageViewer
         public TranslateTransform imageTranslateTransform = new TranslateTransform();
         #endregion
 
+        private const int StarCount = 50; // Number of stars
+        private const int StarSize = 2;   // Diameter of each star
+        private const double AnimationDurationSeconds = 10;
 
+        private Random _random = new Random();
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            GenerateStars();
+        }
+
+        private void GenerateStars()
+        {
+            for (int i = 0; i < StarCount; i++)
+            {
+                CreateStar();
+            }
+        }
+
+        private void CreateStar()
+        {
+            // Create a star (small circle)
+            Ellipse star = new Ellipse
+            {
+                Width = StarSize,
+                Height = StarSize,
+                Fill = Brushes.White,
+                Opacity = 0 // Start fully transparent
+            };
+
+            // Randomize initial position
+            double startX = _random.NextDouble() * StarsCanvas.ActualWidth;
+            double startY = _random.NextDouble() * StarsCanvas.ActualHeight;
+
+            Canvas.SetLeft(star, startX);
+            Canvas.SetTop(star, startY);
+
+            // Add the star to the canvas
+            StarsCanvas.Children.Add(star);
+
+            // Create animations for fade-in, movement, and fade-out
+            DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2)));
+            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2)))
+            {
+                BeginTime = TimeSpan.FromSeconds(AnimationDurationSeconds / 2) // Start fading out after fading in
+            };
+
+            TranslateTransform moveTransform = new TranslateTransform();
+            star.RenderTransform = moveTransform;
+
+            double endX = startX + 50; // Move right
+            double endY = startY - 50; // Move up
+
+            // Apply animations
+            Storyboard storyboard = new Storyboard
+            {
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+
+            Storyboard.SetTarget(fadeIn, star);
+            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Ellipse.OpacityProperty));
+
+            Storyboard.SetTarget(fadeOut, star);
+            Storyboard.SetTargetProperty(fadeOut, new PropertyPath(Ellipse.OpacityProperty));
+
+            storyboard.Children.Add(fadeIn);
+            storyboard.Children.Add(fadeOut);
+
+            // Start the animation
+            storyboard.Begin(this, true);
+        }
 
         #region Setup
         public MainWindow(string? filePath)
@@ -697,7 +769,6 @@ namespace SimpleImageViewer
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
         }
-        // TODO this always sends image to first screen; probably easy fix but does it always get WorkArea from main monitor or what? May be better to be more flexible.
         private void ResizeWindowToImage()
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
@@ -1072,7 +1143,7 @@ namespace SimpleImageViewer
                     {
                         using (Graphics g = Graphics.FromImage(compatibleBitmap))
                         {
-                            g.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
+                            g.DrawImage(bitmap, new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height));
                         }
 
                         const long qualityStep = 5L;
