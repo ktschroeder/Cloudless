@@ -20,6 +20,7 @@ using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 using BrushesIntroduction;
 using GradientStopAnimationExample = BrushesIntroduction.GradientStopAnimationExample;
+using Rectangle = System.Windows.Shapes.Rectangle;
 
 namespace SimpleImageViewer
 {
@@ -220,9 +221,16 @@ namespace SimpleImageViewer
             // Storyboards can be used.
             NameScope.SetNameScope(this, new NameScope());
 
+            Rectangle aRectangle = new Rectangle();  // TODO RotateTransform to rotate?
+            aRectangle.Width = 200;
+            aRectangle.Height = 200;
+            //aRectangle.Stroke = Brushes.Black;
+            //aRectangle.StrokeThickness = 1;
+
             // Create a LinearGradientBrush to paint
             // the rectangle's fill.
             LinearGradientBrush gradientBrush = new LinearGradientBrush();
+            LinearGradientBrush gradientBrush2 = new LinearGradientBrush();
 
             // Create gradient stops for the brush.
             GradientStop stop0 = new GradientStop(Colors.DarkMagenta, 0.0);
@@ -230,11 +238,20 @@ namespace SimpleImageViewer
             GradientStop stop2 = new GradientStop(Colors.DarkViolet, 0.6);
             GradientStop stop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
 
+            GradientStop bstop0 = new GradientStop(Colors.DarkMagenta, 0.0);
+            GradientStop bstop1 = new GradientStop(Colors.DarkBlue, 0.3);
+            GradientStop bstop2 = new GradientStop(Colors.DarkViolet, 0.6);
+            GradientStop bstop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
+
             // Register a name for each gradient stop with the
             // page so that they can be animated by a storyboard.
             this.RegisterName("GradientStop1", stop1);
             this.RegisterName("GradientStop2", stop2);
             this.RegisterName("GradientStop3", stop3);
+
+            this.RegisterName("bGradientStop1", bstop1);
+            this.RegisterName("bGradientStop2", bstop2);
+            this.RegisterName("bGradientStop3", bstop3);
 
             // Add the stops to the brush.
             gradientBrush.GradientStops.Add(stop0);
@@ -242,8 +259,14 @@ namespace SimpleImageViewer
             gradientBrush.GradientStops.Add(stop2);
             gradientBrush.GradientStops.Add(stop3);
 
+            gradientBrush2.GradientStops.Add(bstop0);
+            gradientBrush2.GradientStops.Add(bstop1);
+            gradientBrush2.GradientStops.Add(bstop2);
+            gradientBrush2.GradientStops.Add(bstop3);
+
             // Apply the brush to the rectangle.
             this.Background = gradientBrush;
+            aRectangle.Fill = gradientBrush2;
 
             //
             // Animate the first gradient stop's offset from
@@ -316,11 +339,45 @@ namespace SimpleImageViewer
             //// animations have ended.
             //opacityAnimation.BeginTime = TimeSpan.FromSeconds(6);
 
+            DoubleAnimation boffsetAnimation = new DoubleAnimation();
+            boffsetAnimation.From = 0.1;
+            boffsetAnimation.To = 0.30;
+            boffsetAnimation.Duration = TimeSpan.FromSeconds(17.5);
+            boffsetAnimation.AutoReverse = true;
+            boffsetAnimation.RepeatBehavior = RepeatBehavior.Forever;
+            Storyboard.SetTargetName(boffsetAnimation, "bGradientStop1");
+            Storyboard.SetTargetProperty(boffsetAnimation,
+                new PropertyPath(GradientStop.OffsetProperty));
+
+            DoubleAnimation boffsetAnimation2 = new DoubleAnimation();
+            boffsetAnimation2.From = 0.73;
+            boffsetAnimation2.To = 0.37;
+            boffsetAnimation2.Duration = TimeSpan.FromSeconds(25.3);
+            boffsetAnimation2.AutoReverse = true;
+            boffsetAnimation2.RepeatBehavior = RepeatBehavior.Forever;
+            Storyboard.SetTargetName(boffsetAnimation2, "bGradientStop2");
+            Storyboard.SetTargetProperty(boffsetAnimation2,
+                new PropertyPath(GradientStop.OffsetProperty));
+
+            DoubleAnimation boffsetAnimation3 = new DoubleAnimation();
+            boffsetAnimation3.From = 0.97;
+            boffsetAnimation3.To = 0.8;
+            boffsetAnimation3.Duration = TimeSpan.FromSeconds(15.7);
+            boffsetAnimation3.AutoReverse = true;
+            boffsetAnimation3.RepeatBehavior = RepeatBehavior.Forever;
+            Storyboard.SetTargetName(boffsetAnimation3, "bGradientStop3");
+            Storyboard.SetTargetProperty(boffsetAnimation3,
+                new PropertyPath(GradientStop.OffsetProperty));
+
+
             // Create a Storyboard to apply the animations.
             Storyboard gradientStopAnimationStoryboard = new Storyboard();
             gradientStopAnimationStoryboard.Children.Add(offsetAnimation);
             gradientStopAnimationStoryboard.Children.Add(offsetAnimation2);
             gradientStopAnimationStoryboard.Children.Add(offsetAnimation3);
+            gradientStopAnimationStoryboard.Children.Add(boffsetAnimation);
+            gradientStopAnimationStoryboard.Children.Add(boffsetAnimation2);
+            gradientStopAnimationStoryboard.Children.Add(boffsetAnimation3);
             //gradientStopAnimationStoryboard.Children.Add(gradientStopColorAnimation);
             //gradientStopAnimationStoryboard.Children.Add(opacityAnimation);
 
@@ -331,6 +388,7 @@ namespace SimpleImageViewer
             //    gradientStopAnimationStoryboard.Begin(this);
             //};
             gradientStopAnimationStoryboard.Begin(this);
+            MyGrid.Children.Add(aRectangle);
 
             //StackPanel mainPanel = new StackPanel();
             //mainPanel.Margin = new Thickness(10);
