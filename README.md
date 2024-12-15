@@ -4,7 +4,6 @@ JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-ric
 TODO
 
 Up next:
-- (TODOs in code) odd jitter of window when changing images, such as when navigating through a directory
 - (TODOs in code) bug: fullscreen on secondary monitor, click and drag, image uses cursor location as if on primary monitor
 
 Probably should/will:
@@ -37,6 +36,7 @@ Probably should but lower priority:
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
 - If you change a config in one window/instance, how should/can it affect other windows that are open?
 - optional online listening for updates.
+- odd jitter of window when changing images, such as when navigating through a directory. Possibly a WPF issue; a few attempts did not resolve this.
 
 Maybe / ideas:
 - configurable gestures: hold left and right click, then drag in a direction. 4 options. and/or middle click.

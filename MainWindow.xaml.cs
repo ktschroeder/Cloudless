@@ -939,19 +939,14 @@ namespace SimpleImageViewer
                 }
             }
 
-            // Temporarily disable layout updates by deferring them to the next frame. TODO use this concept to make other things smoother as well.
-            // TODO also this actually does not work (regarding smoother change)
-            this.Dispatcher.Invoke(new Action(() =>
-            {
-                // Apply the calculated size and position adjustments all at once
-                this.Top += (this.Height - newHeight) / 2;
-                this.Left += (this.Width - newWidth) / 2;
+            // Center the window
+            this.Top += (this.Height - newHeight) / 2;
+            this.Left += (this.Width - newWidth) / 2;
 
-                this.Height = newHeight;
-                this.Width = newWidth;
+            // Apply size changes
+            this.Width = newWidth;
+            this.Height = newHeight;
 
-                this.InvalidateMeasure();
-            }), System.Windows.Threading.DispatcherPriority.Background);
         }
         private void MaximizeVerticalDimension()
         {
