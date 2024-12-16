@@ -53,14 +53,16 @@ namespace SimpleImageViewer
         private const double AnimationDurationSeconds = 10;
 
         private TextBlock NoImageMessage;
-        
+        private Canvas StarsCanvas;
 
         private Random _random = new Random();
+        private bool isZen;
+        private bool isWelcome = true;
 
         private void GenerateStars()
         {
             // Create the Canvas for moving dots
-            var starsCanvas = new Canvas
+            StarsCanvas = new Canvas
             {
                 Name = "StarsCanvas"
             };
@@ -84,7 +86,7 @@ namespace SimpleImageViewer
                 Canvas.SetTop(star, startY);
 
                 // Add the star to the canvas
-                starsCanvas.Children.Add(star);
+                StarsCanvas.Children.Add(star);
 
                 // Create animations for fade-in, movement, and fade-out
                 var delay = _random.NextDouble() * 3.0;
@@ -116,7 +118,7 @@ namespace SimpleImageViewer
                 storyboard.Begin(this, true);
             }
 
-            MyGrid.Children.Add(starsCanvas);
+            MyGrid.Children.Add(StarsCanvas);
         }
 
         #region Setup
@@ -183,8 +185,11 @@ namespace SimpleImageViewer
 
         private void Zen(bool includeInfoText)
         {
+            RemoveZen();
+            isZen = true;
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
-            
+
+            ImageDisplay.Visibility = Visibility.Collapsed;
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
             GenerateStars();
             // Create the TextBlock for "No image is loaded" message
@@ -192,13 +197,85 @@ namespace SimpleImageViewer
             {
                 MyGrid.Children.Add(NoImageMessage);
             }
+            else
+            {
+                MyGrid.Children.Remove(NoImageMessage);
+            }
             // for performance be sure to purge all this after loading image TODO
             // TODO probably move all this silliness to separate file.
         }
 
-        private void RemoveZen()
+        private void RemoveZen(bool leaveInfo = false)
         {
-            MyGrid.Children.Remove(NoImageMessage);  // exception if not present? TODO
+            if (!isZen)
+                return;
+
+            if (!leaveInfo)
+                MyGrid.Children.Remove(NoImageMessage);
+
+            // Stop the active Storyboard, if any
+            foreach (var resourceKey in Resources.Keys)
+            {
+                if (Resources[resourceKey] is Storyboard storyboard)
+                {
+                    storyboard.Stop(this);
+                }
+            }
+
+            // Unregister all gradient stops and layers
+            for (int layer = 0; layer <= 3; layer++)
+            {
+                for (int i = 0; i <= 3; i++)
+                {
+                    string gradientStopName = $"GradientStop{i}Layer{layer}";
+                    if (this.FindName(gradientStopName) is GradientStop)
+                    {
+                        this.UnregisterName(gradientStopName);
+                    }
+                }
+
+                string gradientLayerName = $"GradientLayer{layer}";
+                if (this.FindName(gradientLayerName) is Rectangle)
+                {
+                    this.UnregisterName(gradientLayerName);
+                }
+            }
+
+            // Clear the background brush (for layer 0)
+            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 1 });
+
+            // Remove all rectangles added to the Grid
+            for (int i = MyGrid.Children.Count - 1; i >= 0; i--)
+            {
+                if (MyGrid.Children[i] is Rectangle)
+                {
+                    MyGrid.Children.RemoveAt(i);
+                }
+            }
+
+            // Clear the storyboard children to release animations
+            foreach (var resourceKey in Resources.Keys)
+            {
+                if (Resources[resourceKey] is Storyboard storyboard)
+                {
+                    storyboard.Stop(this);//
+                    storyboard.Children.Clear();
+                }
+            }
+
+            // Remove all children (stars) from the canvas
+            StarsCanvas.Children.Clear();
+
+            // Remove the canvas from the parent container
+            if (MyGrid.Children.Contains(StarsCanvas))
+            {
+                MyGrid.Children.Remove(StarsCanvas);
+            }
+
+            // Set StarsCanvas to null to allow garbage collection
+            StarsCanvas = null;
+
+            isZen = false; // TODO check performance and that nothing is missed
         }
 
         private void Zen_Click(object sender, RoutedEventArgs e)
@@ -464,6 +541,13 @@ namespace SimpleImageViewer
             if (e.Key == Key.O)
             {
                 OpenImage();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Z)
+            {
+                RemoveZen(true);
                 e.Handled = true;
                 return;
             }
@@ -1221,6 +1305,7 @@ namespace SimpleImageViewer
         }
         private void DisplayImage(int index, bool openedThroughApp)
         {
+            RemoveZen();
             autoResizingSpaceIsToggled = false;
 
             try
