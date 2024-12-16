@@ -111,8 +111,8 @@ namespace SimpleImageViewer
             };
 
             // Randomize initial position
-            double startX = _random.NextDouble() * 2000;// StarsCanvas.ActualWidth;
-            double startY = _random.NextDouble() * 2000;// StarsCanvas.ActualHeight;
+            double startX = _random.NextDouble() * 1920;// StarsCanvas.ActualWidth;
+            double startY = _random.NextDouble() * 1080;// StarsCanvas.ActualHeight;
 
             Canvas.SetLeft(star, startX);
             Canvas.SetTop(star, startY);
@@ -214,111 +214,93 @@ namespace SimpleImageViewer
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
             //var testw = new GradientStopAnimationExample();
             //this.Content = testw;
-            GradientMagic();
+
+            GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
         }
-        private void GradientMagic()
+
+        private void CreateMagicLayer(int layer, Storyboard storyboard)  // layer is 0 for background
         {
-            Title = "GradientStop Animation Example";
-            Background = Brushes.Black;
-
-            // Create a NameScope for the page so that
-            // Storyboards can be used.
-            NameScope.SetNameScope(this, new NameScope());
-
-            Rectangle aRectangle = new Rectangle();  // TODO RotateTransform to rotate?
-            aRectangle.Width = 200;
-            aRectangle.Height = 200;
-            //aRectangle.Stroke = Brushes.Black;
-            //aRectangle.StrokeThickness = 1;
-
-            // Create a LinearGradientBrush to paint
-            // the rectangle's fill.
-            LinearGradientBrush gradientBrush = new LinearGradientBrush();
-            LinearGradientBrush gradientBrush2 = new LinearGradientBrush();
-
             // Create gradient stops for the brush.
             GradientStop stop0 = new GradientStop(Colors.DarkMagenta, 0.0);
             GradientStop stop1 = new GradientStop(Colors.DarkBlue, 0.3);
             GradientStop stop2 = new GradientStop(Colors.DarkViolet, 0.6);
             GradientStop stop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
 
-            GradientStop bstop0 = new GradientStop(Colors.DarkMagenta, 0.0);
-            GradientStop bstop1 = new GradientStop(Colors.DarkBlue, 0.3);
-            GradientStop bstop2 = new GradientStop(Colors.DarkViolet, 0.6);
-            GradientStop bstop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
+            var gradientAngle = layer == 0 ? 45 : 100;
+            LinearGradientBrush gradientBrush = new LinearGradientBrush(
+                new GradientStopCollection() { stop0, stop1, stop2, stop3 },
+                gradientAngle
+                );
 
             // Register a name for each gradient stop with the
             // page so that they can be animated by a storyboard.
-            this.RegisterName("GradientStop1", stop1);
-            this.RegisterName("GradientStop2", stop2);
-            this.RegisterName("GradientStop3", stop3);
+            this.RegisterName("GradientStop1Layer" + layer, stop1);
+            this.RegisterName("GradientStop2Layer" + layer, stop2);
+            this.RegisterName("GradientStop3Layer" + layer, stop3);
 
-            this.RegisterName("bGradientStop1", bstop1);
-            this.RegisterName("bGradientStop2", bstop2);
-            this.RegisterName("bGradientStop3", bstop3);
+            if (layer == 0)
+            {
+                this.Background = gradientBrush;
+            }
+            else
+            {
+                Rectangle rect = new Rectangle();
+                rect.Width = 1800;
+                rect.Height = 900;
+                rect.Fill = gradientBrush;
+                MyGrid.Children.Add(rect);
+            }
 
-            // Add the stops to the brush.
-            gradientBrush.GradientStops.Add(stop0);
-            gradientBrush.GradientStops.Add(stop1);
-            gradientBrush.GradientStops.Add(stop2);
-            gradientBrush.GradientStops.Add(stop3);
+            Func<int, int, Duration, double, double, DoubleAnimation> CreateOffsetAnimation = (layer, orderIndex, duration, baseFrom, baseTo) =>
+            {
+                DoubleAnimation offsetAnimation = new DoubleAnimation();
+                offsetAnimation.From = baseFrom;
+                offsetAnimation.To = baseTo;
+                offsetAnimation.Duration = duration;
+                offsetAnimation.AutoReverse = true;
+                offsetAnimation.RepeatBehavior = RepeatBehavior.Forever;
+                offsetAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseInOut };
+                Storyboard.SetTargetName(offsetAnimation, $"GradientStop{orderIndex}Layer{layer}");
+                Storyboard.SetTargetProperty(offsetAnimation,
+                    new PropertyPath(GradientStop.OffsetProperty));
+                return offsetAnimation;
+            };
 
-            gradientBrush2.GradientStops.Add(bstop0);
-            gradientBrush2.GradientStops.Add(bstop1);
-            gradientBrush2.GradientStops.Add(bstop2);
-            gradientBrush2.GradientStops.Add(bstop3);
+            // We've intentionally skipped index 0 to not animate that gradient stop.
+            var oa1 = CreateOffsetAnimation(layer, 1, TimeSpan.FromSeconds(17.5), 0.1, 0.30);
+            var oa2 = CreateOffsetAnimation(layer, 2, TimeSpan.FromSeconds(25.3), 0.73, 0.37);
+            var oa3 = CreateOffsetAnimation(layer, 3, TimeSpan.FromSeconds(15.7), 0.97, 0.8);
+            storyboard.Children.Add(oa1);
+            storyboard.Children.Add(oa2);
+            storyboard.Children.Add(oa3);
+        }
 
-            // Apply the brush to the rectangle.
-            this.Background = gradientBrush;
-            aRectangle.Fill = gradientBrush2;
+        private void GradientMagic()
+        {
+            //Title = "GradientStop Animation Example";
+            //Background = Brushes.Black;
 
-            //
-            // Animate the first gradient stop's offset from
-            // 0.0 to 1.0 and then back to 0.0.
-            //
-            DoubleAnimation offsetAnimation = new DoubleAnimation();
-            offsetAnimation.From = 0.1;
-            offsetAnimation.To = 0.30;
-            offsetAnimation.Duration = TimeSpan.FromSeconds(17.5);
-            offsetAnimation.AutoReverse = true;
-            offsetAnimation.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(offsetAnimation, "GradientStop1");
-            Storyboard.SetTargetProperty(offsetAnimation,
-                new PropertyPath(GradientStop.OffsetProperty));
+            // Create a NameScope for the page so that
+            // Storyboards can be used.
+            NameScope.SetNameScope(this, new NameScope());
 
-            DoubleAnimation offsetAnimation2 = new DoubleAnimation();
-            offsetAnimation2.From = 0.73;
-            offsetAnimation2.To = 0.37;
-            offsetAnimation2.Duration = TimeSpan.FromSeconds(25.3);
-            offsetAnimation2.AutoReverse = true;
-            offsetAnimation2.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(offsetAnimation2, "GradientStop2");
-            Storyboard.SetTargetProperty(offsetAnimation2,
-                new PropertyPath(GradientStop.OffsetProperty));
-
-            DoubleAnimation offsetAnimation3 = new DoubleAnimation();
-            offsetAnimation3.From = 0.97;
-            offsetAnimation3.To = 0.8;
-            offsetAnimation3.Duration = TimeSpan.FromSeconds(15.7);
-            offsetAnimation3.AutoReverse = true;
-            offsetAnimation3.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(offsetAnimation3, "GradientStop3");
-            Storyboard.SetTargetProperty(offsetAnimation3,
-                new PropertyPath(GradientStop.OffsetProperty));
+            Storyboard storyboard = new Storyboard();
+            CreateMagicLayer(0, storyboard);
+            CreateMagicLayer(1, storyboard);
 
             //
             // Animate the second gradient stop's color from
             // Purple to Yellow and then back to Purple.
             //
-            ColorAnimation gradientStopColorAnimation = new ColorAnimation();
-            gradientStopColorAnimation.From = Colors.Purple;
-            gradientStopColorAnimation.To = Colors.Yellow;
-            gradientStopColorAnimation.Duration = TimeSpan.FromSeconds(4);
-            gradientStopColorAnimation.AutoReverse = true;
-            gradientStopColorAnimation.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(gradientStopColorAnimation, "GradientStop2");
-            Storyboard.SetTargetProperty(gradientStopColorAnimation,
-                new PropertyPath(GradientStop.ColorProperty));
+            //ColorAnimation gradientStopColorAnimation = new ColorAnimation();
+            //gradientStopColorAnimation.From = Colors.Purple;
+            //gradientStopColorAnimation.To = Colors.Yellow;
+            //gradientStopColorAnimation.Duration = TimeSpan.FromSeconds(4);
+            //gradientStopColorAnimation.AutoReverse = true;
+            //gradientStopColorAnimation.RepeatBehavior = RepeatBehavior.Forever;
+            //Storyboard.SetTargetName(gradientStopColorAnimation, "GradientStop2");
+            //Storyboard.SetTargetProperty(gradientStopColorAnimation,
+            //    new PropertyPath(GradientStop.ColorProperty));
 
             // Set the animation to begin after the first animation
             // ends.
@@ -343,56 +325,12 @@ namespace SimpleImageViewer
             //// animations have ended.
             //opacityAnimation.BeginTime = TimeSpan.FromSeconds(6);
 
-            DoubleAnimation boffsetAnimation = new DoubleAnimation();
-            boffsetAnimation.From = 0.1;
-            boffsetAnimation.To = 0.30;
-            boffsetAnimation.Duration = TimeSpan.FromSeconds(17.5);
-            boffsetAnimation.AutoReverse = true;
-            boffsetAnimation.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(boffsetAnimation, "bGradientStop1");
-            Storyboard.SetTargetProperty(boffsetAnimation,
-                new PropertyPath(GradientStop.OffsetProperty));
-
-            DoubleAnimation boffsetAnimation2 = new DoubleAnimation();
-            boffsetAnimation2.From = 0.73;
-            boffsetAnimation2.To = 0.37;
-            boffsetAnimation2.Duration = TimeSpan.FromSeconds(25.3);
-            boffsetAnimation2.AutoReverse = true;
-            boffsetAnimation2.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(boffsetAnimation2, "bGradientStop2");
-            Storyboard.SetTargetProperty(boffsetAnimation2,
-                new PropertyPath(GradientStop.OffsetProperty));
-
-            DoubleAnimation boffsetAnimation3 = new DoubleAnimation();
-            boffsetAnimation3.From = 0.97;
-            boffsetAnimation3.To = 0.8;
-            boffsetAnimation3.Duration = TimeSpan.FromSeconds(15.7);
-            boffsetAnimation3.AutoReverse = true;
-            boffsetAnimation3.RepeatBehavior = RepeatBehavior.Forever;
-            Storyboard.SetTargetName(boffsetAnimation3, "bGradientStop3");
-            Storyboard.SetTargetProperty(boffsetAnimation3,
-                new PropertyPath(GradientStop.OffsetProperty));
 
 
-            // Create a Storyboard to apply the animations.
-            Storyboard gradientStopAnimationStoryboard = new Storyboard();
-            gradientStopAnimationStoryboard.Children.Add(offsetAnimation);
-            gradientStopAnimationStoryboard.Children.Add(offsetAnimation2);
-            gradientStopAnimationStoryboard.Children.Add(offsetAnimation3);
-            gradientStopAnimationStoryboard.Children.Add(boffsetAnimation);
-            gradientStopAnimationStoryboard.Children.Add(boffsetAnimation2);
-            gradientStopAnimationStoryboard.Children.Add(boffsetAnimation3);
-            //gradientStopAnimationStoryboard.Children.Add(gradientStopColorAnimation);
-            //gradientStopAnimationStoryboard.Children.Add(opacityAnimation);
+            storyboard.Begin(this);
+            //layer2.Opacity = 1.0;
 
-            // Begin the storyboard when the left mouse button is
-            // pressed over the rectangle.
-            //aRectangle.MouseLeftButtonDown += delegate (object sender, MouseButtonEventArgs e)
-            //{
-            //    gradientStopAnimationStoryboard.Begin(this);
-            //};
-            gradientStopAnimationStoryboard.Begin(this);
-            //MyGrid.Children.Add(aRectangle);
+            
 
             //StackPanel mainPanel = new StackPanel();
             //mainPanel.Margin = new Thickness(10);
