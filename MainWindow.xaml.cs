@@ -350,9 +350,9 @@ namespace SimpleImageViewer
                 }
                 else
                 {
-                    var tweak1 = (float)(_random.NextDouble() * 0.2);
-                    var tweak2 = (float)(_random.NextDouble() * 0.2);
-                    var tweak3 = (float)(_random.NextDouble() * 0.2);
+                    var tweak1 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    var tweak2 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    var tweak3 = (float)(0.1 + _random.NextDouble() * 0.25);
                     var colorOA = CreateOpacityOrColorAnimation($"GradientStop{i}Layer{layer}", TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3), TimeSpan.Zero);
                     storyboard.Children.Add(colorOA);
                 }
@@ -387,12 +387,13 @@ namespace SimpleImageViewer
             NameScope.SetNameScope(this, new NameScope());
 
             Storyboard storyboard = new Storyboard();
-            CreateMagicLayer(0, (int)_random.NextInt64(5,55), storyboard);
-            CreateMagicLayer(1, (int)_random.NextInt64(185, 235), storyboard);
-            CreateMagicLayer(2, (int)_random.NextInt64(65, 115), storyboard);
-            CreateMagicLayer(3, (int)_random.NextInt64(245, 295), storyboard);
-            CreateMagicLayer(4, (int)_random.NextInt64(125, 175), storyboard);
-            CreateMagicLayer(5, (int)_random.NextInt64(305, 355), storyboard);
+            var baseRotation = (int)_random.NextInt64(360,720);
+            CreateMagicLayer(0, baseRotation+(int)_random.NextInt64(5,55), storyboard);
+            CreateMagicLayer(1, baseRotation+(int)_random.NextInt64(185, 235), storyboard);
+            CreateMagicLayer(2, baseRotation+(int)_random.NextInt64(65, 115), storyboard);
+            CreateMagicLayer(3, baseRotation+(int)_random.NextInt64(245, 295), storyboard);
+            CreateMagicLayer(4, baseRotation+(int)_random.NextInt64(125, 175), storyboard);
+            CreateMagicLayer(5, baseRotation+(int)_random.NextInt64(305, 355), storyboard);
 
             storyboard.Begin(this);
         }
