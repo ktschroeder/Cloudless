@@ -198,10 +198,11 @@ namespace SimpleImageViewer
         private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)  // layer is 0 for background
         {
             // Create gradient stops for the brush.
-            GradientStop stop0 = new GradientStop(Colors.DarkMagenta, 0.0);
-            GradientStop stop1 = new GradientStop(Colors.DarkBlue, 0.3);
-            GradientStop stop2 = new GradientStop(Colors.DarkViolet, 0.6);
-            GradientStop stop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
+            var tweak = (float)(_random.NextDouble() * 0.1 - 0.05);
+            GradientStop stop0 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F + tweak, 0F, 0.5F - tweak), 0.0);
+            GradientStop stop1 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
+            GradientStop stop2 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F - tweak, 0F, 0.8F + tweak), 0.6);
+            GradientStop stop3 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.7F + tweak, 0.8F - tweak), 1.0);
 
             LinearGradientBrush gradientBrush = new LinearGradientBrush(
                 new GradientStopCollection() { stop0, stop1, stop2, stop3 },
@@ -230,9 +231,9 @@ namespace SimpleImageViewer
             };
 
             // We've intentionally skipped index 0 to not animate that gradient stop.
-            var oa1 = CreateOffsetAnimation(layer, 1, TimeSpan.FromSeconds(17.5), 0.03, 0.30);
-            var oa2 = CreateOffsetAnimation(layer, 2, TimeSpan.FromSeconds(25.3), 0.73, 0.37);
-            var oa3 = CreateOffsetAnimation(layer, 3, TimeSpan.FromSeconds(15.7), 0.97, 0.8);
+            var oa1 = CreateOffsetAnimation(layer, 1, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.03, 0.30);
+            var oa2 = CreateOffsetAnimation(layer, 2, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.73, 0.37);
+            var oa3 = CreateOffsetAnimation(layer, 3, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.97, 0.8);
             storyboard.Children.Add(oa1);
             storyboard.Children.Add(oa2);
             storyboard.Children.Add(oa3);
@@ -249,7 +250,7 @@ namespace SimpleImageViewer
                 rect.Width = 1920;
                 rect.Height = 1080;
                 rect.Fill = gradientBrush;
-                rect.Opacity = 0.3;
+                rect.Opacity = 0.35;
                 MyGrid.Children.Add(rect);
             }
         }
@@ -264,10 +265,10 @@ namespace SimpleImageViewer
             NameScope.SetNameScope(this, new NameScope());
 
             Storyboard storyboard = new Storyboard();
-            CreateMagicLayer(0, 45, storyboard);
-            CreateMagicLayer(1, 280, storyboard);
-            CreateMagicLayer(2, 163, storyboard);
-            CreateMagicLayer(3, 79, storyboard);
+            CreateMagicLayer(0, (int)_random.NextInt64(5,85), storyboard);
+            CreateMagicLayer(1, (int)_random.NextInt64(95, 175), storyboard);
+            CreateMagicLayer(2, (int)_random.NextInt64(185, 265), storyboard);
+            CreateMagicLayer(3, (int)_random.NextInt64(275, 355), storyboard);
 
             //
             // Animate the second gradient stop's color from
