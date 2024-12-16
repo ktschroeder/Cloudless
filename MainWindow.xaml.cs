@@ -201,7 +201,6 @@ namespace SimpleImageViewer
             {
                 MyGrid.Children.Remove(NoImageMessage);
             }
-            // for performance be sure to purge all this after loading image TODO
             // TODO probably move all this silliness to separate file.
         }
 
@@ -286,11 +285,11 @@ namespace SimpleImageViewer
         private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)  // layer is 0 for background
         {
             // Create gradient stops for the brush.
-            var tweak = (float)(_random.NextDouble() * 0.1 - 0.05);
-            GradientStop stop0 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F + tweak, 0F, 0.5F - tweak), 0.0);
+            var tweak = (float)(_random.NextDouble() * 0.2 - 0.1);
+            GradientStop stop0 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F - tweak, 0F, 0.5F + tweak), 0.0);
             GradientStop stop1 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
-            GradientStop stop2 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F - tweak, 0F, 0.8F + tweak), 0.6);
-            GradientStop stop3 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.5F + tweak, 0.6F - tweak), 1.0);
+            GradientStop stop2 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F + tweak, 0F, 0.8F - tweak), 0.6);
+            GradientStop stop3 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.4F + tweak, 0.63F + tweak), 1.0);
 
             LinearGradientBrush gradientBrush = new LinearGradientBrush(
                 new GradientStopCollection() { stop0, stop1, stop2, stop3 },
@@ -369,13 +368,13 @@ namespace SimpleImageViewer
                 rect.Width = 1920;
                 rect.Height = 1080;
                 rect.Fill = gradientBrush;
-                rect.Opacity = 0.35;
+                rect.Opacity = 0.32;
                 
-                if (layer > 1)
+                if (layer > 2)
                 {
                     rect.Opacity = 0;
                     this.RegisterName("GradientLayer" + layer, rect);
-                    var layerOpacityOA = CreateOpacityOrColorAnimation($"GradientLayer{layer}", TimeSpan.FromSeconds(10 + _random.NextDouble() * 30), System.Windows.Media.Color.FromScRgb(0.4F, 0F, 0F, 0F), TimeSpan.FromSeconds((layer-1) * 5));
+                    var layerOpacityOA = CreateOpacityOrColorAnimation($"GradientLayer{layer}", TimeSpan.FromSeconds(10 + _random.NextDouble() * 30), System.Windows.Media.Color.FromScRgb(0.4F, 0F, 0F, 0F), TimeSpan.FromSeconds((layer-2) * 5));
                 }
                 MyGrid.Children.Add(rect);
             }
@@ -388,10 +387,12 @@ namespace SimpleImageViewer
             NameScope.SetNameScope(this, new NameScope());
 
             Storyboard storyboard = new Storyboard();
-            CreateMagicLayer(0, (int)_random.NextInt64(5,85), storyboard);
-            CreateMagicLayer(1, (int)_random.NextInt64(95, 175), storyboard);
-            CreateMagicLayer(2, (int)_random.NextInt64(185, 265), storyboard);
-            CreateMagicLayer(3, (int)_random.NextInt64(275, 355), storyboard);
+            CreateMagicLayer(0, (int)_random.NextInt64(5,55), storyboard);
+            CreateMagicLayer(1, (int)_random.NextInt64(185, 235), storyboard);
+            CreateMagicLayer(2, (int)_random.NextInt64(65, 115), storyboard);
+            CreateMagicLayer(3, (int)_random.NextInt64(245, 295), storyboard);
+            CreateMagicLayer(4, (int)_random.NextInt64(125, 175), storyboard);
+            CreateMagicLayer(5, (int)_random.NextInt64(305, 355), storyboard);
 
             storyboard.Begin(this);
         }
