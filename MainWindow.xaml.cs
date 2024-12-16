@@ -53,12 +53,9 @@ namespace SimpleImageViewer
         private const double AnimationDurationSeconds = 10;
 
         private TextBlock NoImageMessage;
+        
 
         private Random _random = new Random();
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            GenerateStars();
-        }
 
         private void GenerateStars()
         {
@@ -81,7 +78,7 @@ namespace SimpleImageViewer
 
                 // Randomize initial position
                 double startX = _random.NextDouble() * 1920;// StarsCanvas.ActualWidth;
-                double startY = _random.NextDouble() * 1080;// StarsCanvas.ActualHeight;
+                double startY = _random.NextDouble() * 1080;// StarsCanvas.ActualHeight; TODO
 
                 Canvas.SetLeft(star, startX);
                 Canvas.SetTop(star, startY);
@@ -126,25 +123,28 @@ namespace SimpleImageViewer
         public MainWindow(string? filePath)
         {
             bool willLoadImage = filePath != null;
-            Setup(willLoadImage);
+            Setup();
 
             if (willLoadImage)
             {
                 LoadImage(filePath, false);
                 ResizeWindowToImage();
-                CenterWindow();
+            }
+            else
+            {
+                Zen(true);
             }
 
             CenterWindow();
         }
         public MainWindow()
         {
-            Setup(false);
+            Setup();
             CenterWindow();
 
             //TODO not hit?
         }
-        private void Setup(bool willLoadImage)
+        private void Setup()
         {
             InitializeComponent();
 
@@ -167,32 +167,43 @@ namespace SimpleImageViewer
             InitializeZooming();
             InitializePanning();
 
-            // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
-            //var testw = new GradientStopAnimationExample();
-            //this.Content = testw;
-
             NoImageMessage = new TextBlock
             {
                 Name = "NoImageMessage",
-                Text = "No image is loaded. Right click for options.",
+                Text = "Welcome to Cloudless.\n\nNo image is loaded. Right click for options.\n\nPress 'z' to disable Zen.",
                 Foreground = Brushes.White,
                 FontSize = 20,
                 Padding = new Thickness(20),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
                 Visibility = Visibility.Visible
             };
+        }
 
-            if (!willLoadImage)
-            {
-                GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
-                GenerateStars();
-                // Create the TextBlock for "No image is loaded" message
-                MyGrid.Children.Add(NoImageMessage);
-                // for performance be sure to purge all this after loading image TODO
-            }
+        private void Zen(bool includeInfoText)
+        {
+            // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
             
+            GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
+            GenerateStars();
+            // Create the TextBlock for "No image is loaded" message
+            if (includeInfoText)
+            {
+                MyGrid.Children.Add(NoImageMessage);
+            }
+            // for performance be sure to purge all this after loading image TODO
+            // TODO probably move all this silliness to separate file.
+        }
 
+        private void RemoveZen()
+        {
+            MyGrid.Children.Remove(NoImageMessage);  // exception if not present? TODO
+        }
+
+        private void Zen_Click(object sender, RoutedEventArgs e)
+        {
+            Zen(false);
         }
 
         private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)  // layer is 0 for background
@@ -202,7 +213,7 @@ namespace SimpleImageViewer
             GradientStop stop0 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F + tweak, 0F, 0.5F - tweak), 0.0);
             GradientStop stop1 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
             GradientStop stop2 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F - tweak, 0F, 0.8F + tweak), 0.6);
-            GradientStop stop3 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.7F + tweak, 0.8F - tweak), 1.0);
+            GradientStop stop3 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.5F + tweak, 0.6F - tweak), 1.0);
 
             LinearGradientBrush gradientBrush = new LinearGradientBrush(
                 new GradientStopCollection() { stop0, stop1, stop2, stop3 },
@@ -211,6 +222,7 @@ namespace SimpleImageViewer
 
             // Register a name for each gradient stop with the
             // page so that they can be animated by a storyboard.
+            this.RegisterName("GradientStop0Layer" + layer, stop0);
             this.RegisterName("GradientStop1Layer" + layer, stop1);
             this.RegisterName("GradientStop2Layer" + layer, stop2);
             this.RegisterName("GradientStop3Layer" + layer, stop3);
@@ -230,6 +242,21 @@ namespace SimpleImageViewer
                 return offsetAnimation;
             };
 
+            Func<string, Duration, System.Windows.Media.Color, TimeSpan, ColorAnimation> CreateOpacityOrColorAnimation = (targetName, duration, colorBy, beginTime) =>
+            {
+                ColorAnimation opacityOrColorAnimation = new ColorAnimation();
+                opacityOrColorAnimation.By = colorBy;
+                opacityOrColorAnimation.Duration = duration;
+                opacityOrColorAnimation.AutoReverse = true;
+                opacityOrColorAnimation.RepeatBehavior = RepeatBehavior.Forever;
+                opacityOrColorAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseInOut };
+                opacityOrColorAnimation.BeginTime = beginTime;
+                Storyboard.SetTargetName(opacityOrColorAnimation, targetName);
+                Storyboard.SetTargetProperty(opacityOrColorAnimation,
+                    new PropertyPath(GradientStop.ColorProperty));
+                return opacityOrColorAnimation;
+            };
+
             // We've intentionally skipped index 0 to not animate that gradient stop.
             var oa1 = CreateOffsetAnimation(layer, 1, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.03, 0.30);
             var oa2 = CreateOffsetAnimation(layer, 2, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.73, 0.37);
@@ -238,7 +265,22 @@ namespace SimpleImageViewer
             storyboard.Children.Add(oa2);
             storyboard.Children.Add(oa3);
 
-
+            for (int i = 0; i <= 3; i++)
+            {
+                if (layer > 0 && _random.NextDouble() > 0.5)
+                {
+                    var opacityOA = CreateOpacityOrColorAnimation($"GradientStop{i}Layer{layer}", TimeSpan.FromSeconds(15 + _random.NextDouble() * 50), System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F), TimeSpan.Zero);
+                    storyboard.Children.Add(opacityOA);
+                }
+                else
+                {
+                    var tweak1 = (float)(_random.NextDouble() * 0.2);
+                    var tweak2 = (float)(_random.NextDouble() * 0.2);
+                    var tweak3 = (float)(_random.NextDouble() * 0.2);
+                    var colorOA = CreateOpacityOrColorAnimation($"GradientStop{i}Layer{layer}", TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3), TimeSpan.Zero);
+                    storyboard.Children.Add(colorOA);
+                }
+            }
 
             if (layer == 0)
             {
@@ -251,15 +293,19 @@ namespace SimpleImageViewer
                 rect.Height = 1080;
                 rect.Fill = gradientBrush;
                 rect.Opacity = 0.35;
+                
+                if (layer > 1)
+                {
+                    rect.Opacity = 0;
+                    this.RegisterName("GradientLayer" + layer, rect);
+                    var layerOpacityOA = CreateOpacityOrColorAnimation($"GradientLayer{layer}", TimeSpan.FromSeconds(10 + _random.NextDouble() * 30), System.Windows.Media.Color.FromScRgb(0.4F, 0F, 0F, 0F), TimeSpan.FromSeconds((layer-1) * 5));
+                }
                 MyGrid.Children.Add(rect);
             }
         }
 
         private void GradientMagic()
         {
-            //Title = "GradientStop Animation Example";
-            //Background = Brushes.Black;
-
             // Create a NameScope for the page so that
             // Storyboards can be used.
             NameScope.SetNameScope(this, new NameScope());
@@ -269,45 +315,6 @@ namespace SimpleImageViewer
             CreateMagicLayer(1, (int)_random.NextInt64(95, 175), storyboard);
             CreateMagicLayer(2, (int)_random.NextInt64(185, 265), storyboard);
             CreateMagicLayer(3, (int)_random.NextInt64(275, 355), storyboard);
-
-            //
-            // Animate the second gradient stop's color from
-            // Purple to Yellow and then back to Purple.
-            //
-            //ColorAnimation gradientStopColorAnimation = new ColorAnimation();
-            //gradientStopColorAnimation.From = Colors.Purple;
-            //gradientStopColorAnimation.To = Colors.Yellow;
-            //gradientStopColorAnimation.Duration = TimeSpan.FromSeconds(4);
-            //gradientStopColorAnimation.AutoReverse = true;
-            //gradientStopColorAnimation.RepeatBehavior = RepeatBehavior.Forever;
-            //Storyboard.SetTargetName(gradientStopColorAnimation, "GradientStop2");
-            //Storyboard.SetTargetProperty(gradientStopColorAnimation,
-            //    new PropertyPath(GradientStop.ColorProperty));
-
-            // Set the animation to begin after the first animation
-            // ends.
-            //gradientStopColorAnimation.BeginTime = TimeSpan.FromSeconds(3);
-
-            //
-            // Animate the third gradient stop's color so
-            // that it becomes transparent.
-            //
-            //ColorAnimation opacityAnimation = new ColorAnimation();
-
-            //// Reduces the target color's alpha value by 1,
-            //// making the color transparent.
-            //opacityAnimation.By = System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F);
-            //opacityAnimation.Duration = TimeSpan.FromSeconds(1.5);
-            //opacityAnimation.AutoReverse = true;
-            //Storyboard.SetTargetName(opacityAnimation, "GradientStop3");
-            //Storyboard.SetTargetProperty(opacityAnimation,
-            //    new PropertyPath(GradientStop.ColorProperty));
-
-            //// Set the animation to begin after the first two
-            //// animations have ended.
-            //opacityAnimation.BeginTime = TimeSpan.FromSeconds(6);
-
-
 
             storyboard.Begin(this);
         }

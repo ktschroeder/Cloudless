@@ -19,7 +19,6 @@
         SizeChanged="Window_SizeChanged"
         AllowDrop="True"
         DragOver="Window_DragOver"
-        Loaded="Window_Loaded"
         Drop="Window_Drop">
     
 
@@ -65,6 +64,7 @@
                 <MenuItem Header="About" Click="About_Click" />
                 <MenuItem Header="Hot Key Reference" Click="HotkeyRef_Click" />
                 <MenuItem Header="Message History" Click="OpenMessageHistory_Click" />
+                <MenuItem Header="Zen" Click="Zen_Click" />
             </ContextMenu>
         </Grid.ContextMenu>
     </Grid>
