@@ -48,9 +48,11 @@ namespace SimpleImageViewer
         public TranslateTransform imageTranslateTransform = new TranslateTransform();
         #endregion
 
-        private const int StarCount = 1300; // Number of stars
+        private const int StarCount = 600; // Number of stars
         private const int StarSize = 2;   // Diameter of each star
         private const double AnimationDurationSeconds = 10;
+
+        private TextBlock NoImageMessage;
 
         private Random _random = new Random();
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -60,119 +62,73 @@ namespace SimpleImageViewer
 
         private void GenerateStars()
         {
+            // Create the Canvas for moving dots
+            var starsCanvas = new Canvas
+            {
+                Name = "StarsCanvas"
+            };
+
             for (int i = 0; i < StarCount; i++)
             {
-                CreateStar();
+                // Create a star (small circle)
+                Ellipse star = new Ellipse
+                {
+                    Width = StarSize,
+                    Height = StarSize,
+                    Fill = Brushes.White,
+                    Opacity = 0 // Start fully transparent
+                };
+
+                // Randomize initial position
+                double startX = _random.NextDouble() * 1920;// StarsCanvas.ActualWidth;
+                double startY = _random.NextDouble() * 1080;// StarsCanvas.ActualHeight;
+
+                Canvas.SetLeft(star, startX);
+                Canvas.SetTop(star, startY);
+
+                // Add the star to the canvas
+                starsCanvas.Children.Add(star);
+
+                // Create animations for fade-in, movement, and fade-out
+                var delay = _random.NextDouble() * 3.0;
+                DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + delay)))
+                {
+                    BeginTime = TimeSpan.FromSeconds(delay)
+                };
+                DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + delay)))
+                {
+                    BeginTime = TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + 2 * delay) // Start fading out after fading in
+                };
+
+                // Apply animations
+                Storyboard storyboard = new Storyboard
+                {
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+
+                Storyboard.SetTarget(fadeIn, star);
+                Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Ellipse.OpacityProperty));
+
+                Storyboard.SetTarget(fadeOut, star);
+                Storyboard.SetTargetProperty(fadeOut, new PropertyPath(Ellipse.OpacityProperty));
+
+                storyboard.Children.Add(fadeIn);
+                storyboard.Children.Add(fadeOut);
+
+                // Start the animation
+                storyboard.Begin(this, true);
             }
 
-            // Randomize initial position
-            double startX = 20;
-            double startY = 20;
-
-
-            TranslateTransform moveTransform = new TranslateTransform();
-            StarsCanvas.RenderTransform = moveTransform;
-
-            double endX = startX + 50; // Move right
-            double endY = startY - 50; // Move up
-
-            DoubleAnimation moveX = new DoubleAnimation(0, endX - startX, new Duration(TimeSpan.FromSeconds(2)));
-            DoubleAnimation moveY = new DoubleAnimation(0, endY - startY, new Duration(TimeSpan.FromSeconds(2)));
-
-            // Apply animations
-            Storyboard storyboard = new Storyboard
-            {
-                RepeatBehavior = RepeatBehavior.Forever
-            };
-
-
-            Storyboard.SetTarget(moveX, StarsCanvas);
-            Storyboard.SetTargetProperty(moveX, new PropertyPath(TranslateTransform.XProperty));
-
-            Storyboard.SetTarget(moveY, StarsCanvas);
-            Storyboard.SetTargetProperty(moveY, new PropertyPath(TranslateTransform.YProperty));
-
-            storyboard.Children.Add(moveX);
-            storyboard.Children.Add(moveY);
-
-            // Start the animation
-            storyboard.Begin(this, true);
-        }
-
-        private void CreateStar()
-        {
-            // Create a star (small circle)
-            Ellipse star = new Ellipse
-            {
-                Width = StarSize,
-                Height = StarSize,
-                Fill = Brushes.White,
-                Opacity = 0 // Start fully transparent
-            };
-
-            // Randomize initial position
-            double startX = _random.NextDouble() * 1920;// StarsCanvas.ActualWidth;
-            double startY = _random.NextDouble() * 1080;// StarsCanvas.ActualHeight;
-
-            Canvas.SetLeft(star, startX);
-            Canvas.SetTop(star, startY);
-
-            // Add the star to the canvas
-            StarsCanvas.Children.Add(star);
-
-            // Create animations for fade-in, movement, and fade-out
-            var delay = _random.NextDouble() * 3.0;
-            DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + delay)))
-            {
-                BeginTime = TimeSpan.FromSeconds(delay)
-            };
-            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + delay)))
-            {
-                BeginTime = TimeSpan.FromSeconds(AnimationDurationSeconds / 2.0 + 2*delay) // Start fading out after fading in
-            };
-
-            TranslateTransform moveTransform = new TranslateTransform();
-            star.RenderTransform = moveTransform;
-
-            double endX = startX + 50; // Move right
-            double endY = startY - 50; // Move up
-
-            DoubleAnimation moveX = new DoubleAnimation(0, endX - startX, new Duration(TimeSpan.FromSeconds(1)));
-            DoubleAnimation moveY = new DoubleAnimation(0, endY - startY, new Duration(TimeSpan.FromSeconds(1)));
-
-            // Apply animations
-            Storyboard storyboard = new Storyboard
-            {
-                RepeatBehavior = RepeatBehavior.Forever
-            };
-
-            Storyboard.SetTarget(fadeIn, star);
-            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Ellipse.OpacityProperty));
-
-            Storyboard.SetTarget(fadeOut, star);
-            Storyboard.SetTargetProperty(fadeOut, new PropertyPath(Ellipse.OpacityProperty));
-
-            Storyboard.SetTarget(moveX, star);
-            Storyboard.SetTargetProperty(moveX, new PropertyPath(TranslateTransform.XProperty));
-
-            Storyboard.SetTarget(moveY, star);
-            Storyboard.SetTargetProperty(moveY, new PropertyPath(TranslateTransform.YProperty));
-
-            storyboard.Children.Add(fadeIn);
-            storyboard.Children.Add(fadeOut);
-            storyboard.Children.Add(moveX);
-            storyboard.Children.Add(moveY);
-
-            // Start the animation
-            storyboard.Begin(this, true);
+            MyGrid.Children.Add(starsCanvas);
         }
 
         #region Setup
         public MainWindow(string? filePath)
         {
-            Setup();
+            bool willLoadImage = filePath != null;
+            Setup(willLoadImage);
 
-            if (filePath != null)
+            if (willLoadImage)
             {
                 LoadImage(filePath, false);
                 ResizeWindowToImage();
@@ -183,19 +139,19 @@ namespace SimpleImageViewer
         }
         public MainWindow()
         {
-            Setup();
+            Setup(false);
             CenterWindow();
 
             //TODO not hit?
         }
-        private void Setup()
+        private void Setup(bool willLoadImage)
         {
             InitializeComponent();
 
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
 
             isExplorationMode = false;
-            NoImageMessage.Visibility = Visibility.Visible;
+            //NoImageMessage.Visibility = Visibility.Visible;
             ImageDisplay.Visibility = Visibility.Collapsed;
             CompositionTarget.Rendering += UpdateDebugInfo;
 
@@ -215,10 +171,31 @@ namespace SimpleImageViewer
             //var testw = new GradientStopAnimationExample();
             //this.Content = testw;
 
-            GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
+            NoImageMessage = new TextBlock
+            {
+                Name = "NoImageMessage",
+                Text = "No image is loaded. Right click for options.",
+                Foreground = Brushes.White,
+                FontSize = 20,
+                Padding = new Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Visibility = Visibility.Visible
+            };
+
+            if (!willLoadImage)
+            {
+                GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
+                GenerateStars();
+                // Create the TextBlock for "No image is loaded" message
+                MyGrid.Children.Add(NoImageMessage);
+                // for performance be sure to purge all this after loading image TODO
+            }
+            
+
         }
 
-        private void CreateMagicLayer(int layer, Storyboard storyboard)  // layer is 0 for background
+        private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)  // layer is 0 for background
         {
             // Create gradient stops for the brush.
             GradientStop stop0 = new GradientStop(Colors.DarkMagenta, 0.0);
@@ -226,7 +203,6 @@ namespace SimpleImageViewer
             GradientStop stop2 = new GradientStop(Colors.DarkViolet, 0.6);
             GradientStop stop3 = new GradientStop(Colors.DarkTurquoise, 1.0);
 
-            var gradientAngle = layer == 0 ? 45 : 100;
             LinearGradientBrush gradientBrush = new LinearGradientBrush(
                 new GradientStopCollection() { stop0, stop1, stop2, stop3 },
                 gradientAngle
@@ -237,19 +213,6 @@ namespace SimpleImageViewer
             this.RegisterName("GradientStop1Layer" + layer, stop1);
             this.RegisterName("GradientStop2Layer" + layer, stop2);
             this.RegisterName("GradientStop3Layer" + layer, stop3);
-
-            if (layer == 0)
-            {
-                this.Background = gradientBrush;
-            }
-            else
-            {
-                Rectangle rect = new Rectangle();
-                rect.Width = 1800;
-                rect.Height = 900;
-                rect.Fill = gradientBrush;
-                MyGrid.Children.Add(rect);
-            }
 
             Func<int, int, Duration, double, double, DoubleAnimation> CreateOffsetAnimation = (layer, orderIndex, duration, baseFrom, baseTo) =>
             {
@@ -267,12 +230,28 @@ namespace SimpleImageViewer
             };
 
             // We've intentionally skipped index 0 to not animate that gradient stop.
-            var oa1 = CreateOffsetAnimation(layer, 1, TimeSpan.FromSeconds(17.5), 0.1, 0.30);
+            var oa1 = CreateOffsetAnimation(layer, 1, TimeSpan.FromSeconds(17.5), 0.03, 0.30);
             var oa2 = CreateOffsetAnimation(layer, 2, TimeSpan.FromSeconds(25.3), 0.73, 0.37);
             var oa3 = CreateOffsetAnimation(layer, 3, TimeSpan.FromSeconds(15.7), 0.97, 0.8);
             storyboard.Children.Add(oa1);
             storyboard.Children.Add(oa2);
             storyboard.Children.Add(oa3);
+
+
+
+            if (layer == 0)
+            {
+                this.Background = gradientBrush;
+            }
+            else
+            {
+                Rectangle rect = new Rectangle();
+                rect.Width = 1920;
+                rect.Height = 1080;
+                rect.Fill = gradientBrush;
+                rect.Opacity = 0.3;
+                MyGrid.Children.Add(rect);
+            }
         }
 
         private void GradientMagic()
@@ -285,8 +264,10 @@ namespace SimpleImageViewer
             NameScope.SetNameScope(this, new NameScope());
 
             Storyboard storyboard = new Storyboard();
-            CreateMagicLayer(0, storyboard);
-            CreateMagicLayer(1, storyboard);
+            CreateMagicLayer(0, 45, storyboard);
+            CreateMagicLayer(1, 280, storyboard);
+            CreateMagicLayer(2, 163, storyboard);
+            CreateMagicLayer(3, 79, storyboard);
 
             //
             // Animate the second gradient stop's color from
@@ -328,14 +309,6 @@ namespace SimpleImageViewer
 
 
             storyboard.Begin(this);
-            //layer2.Opacity = 1.0;
-
-            
-
-            //StackPanel mainPanel = new StackPanel();
-            //mainPanel.Margin = new Thickness(10);
-            //mainPanel.Children.Add(aRectangle);
-            //Content = mainPanel;
         }
 
         private void Window_SourceInitialized(object sender, EventArgs e)
