@@ -9,9 +9,11 @@ Probably should/will:
 - compare performance of app before and after adding Zen to identify any performance issues
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
 - ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.)
-- possible bug? There may be like 10 pixels fo extra width on the window. Most obvious if fullscreen on one monitor when using multiple.
+- possible bug? There may be like 10 pixels fo extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
 
 Probably should but lower priority:
+- Zen: could have new layers gradually appear and replace old ones so that it's truly dynamic over longer time. notable a particular BG layer can seem to persist ==> go full into the rectangles.
+- option for "darker zen": just make the BG black. due to opacities, overall effect is more mellow, and also occasionally shows space-esque black or near black which can be neat. But I think light by default is good: seems more visually pleasant.
 - indicator of current zoom amount upon zooming
 - mouse-friendly controls: scroll when not holding CTRL to navigate directory, maybe.
 - button to reveal in file explorer for current image. could be on context menu or button in image info window.
