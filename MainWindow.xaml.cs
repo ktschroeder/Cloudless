@@ -21,6 +21,8 @@ using Brushes = System.Windows.Media.Brushes;
 using BrushesIntroduction;
 using GradientStopAnimationExample = BrushesIntroduction.GradientStopAnimationExample;
 using Rectangle = System.Windows.Shapes.Rectangle;
+using System.Diagnostics;
+using System.Windows.Threading;
 
 namespace SimpleImageViewer
 {
@@ -58,14 +60,44 @@ namespace SimpleImageViewer
         private Random _random = new Random();
         private bool isZen;
         private bool isWelcome = true;
+        private DispatcherTimer _resizeStarTimer;
+
+        private void ClearStars()
+        {
+            if (StarsCanvas == null) return;
+            // clear animations to avoid memory leak
+            foreach (UIElement child in StarsCanvas.Children)
+            {
+                if (child is FrameworkElement fe && fe.Tag is Storyboard storyboard)
+                {
+                    storyboard.Stop();
+                    storyboard.Remove(); // Remove storyboard from the clock system
+                    fe.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
+                }
+            }
+
+            StarsCanvas.Children.Clear(); // Clear existing stars
+
+            //Debug.WriteLine($"StarsCanvas.Children.Count: {StarsCanvas.Children.Count}");
+        }
 
         private void GenerateStars()
         {
-            // Create the Canvas for moving dots
-            StarsCanvas = new Canvas
+            if (StarsCanvas == null)
             {
-                Name = "StarsCanvas"
-            };
+                StarsCanvas = new Canvas
+                {
+                    Name = "StarsCanvas"
+                };
+                
+            }
+            else
+            {
+                ClearStars();
+            }
+
+            double width = MyGrid.ActualWidth;
+            double height = MyGrid.ActualHeight;
 
             for (int i = 0; i < StarCount; i++)
             {
@@ -79,8 +111,8 @@ namespace SimpleImageViewer
                 };
 
                 // Randomize initial position
-                double startX = _random.NextDouble() * 1920;// StarsCanvas.ActualWidth;
-                double startY = _random.NextDouble() * 1080;// StarsCanvas.ActualHeight; TODO
+                double startX = _random.NextDouble() * width;// StarsCanvas.ActualWidth;
+                double startY = _random.NextDouble() * height;// StarsCanvas.ActualHeight; TODO
 
                 Canvas.SetLeft(star, startX);
                 Canvas.SetTop(star, startY);
@@ -114,11 +146,14 @@ namespace SimpleImageViewer
                 storyboard.Children.Add(fadeIn);
                 storyboard.Children.Add(fadeOut);
 
+                star.Tag = storyboard;
+                //Debug.WriteLine($"stars storyboard children: {storyboard.Children.Count}");
                 // Start the animation
                 storyboard.Begin(this, true);
             }
 
-            MyGrid.Children.Add(StarsCanvas);
+            if (!MyGrid.Children.Contains(StarsCanvas))
+                MyGrid.Children.Add(StarsCanvas);
         }
 
         #region Setup
@@ -181,6 +216,25 @@ namespace SimpleImageViewer
                 TextAlignment = TextAlignment.Center,
                 Visibility = Visibility.Visible
             };
+
+            //MyGrid.SizeChanged += (s, e) => { if (isZen) GenerateStars(); }; // TODO should wait until mouse up so we don't do this a bunch of  times
+            _resizeStarTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(400) // Adjust delay as needed
+            };
+            _resizeStarTimer.Tick += (s, e) =>
+            {
+                _resizeStarTimer.Stop();
+                if (isZen) GenerateStars(); // Only regenerate stars once resizing stops
+            };
+
+            MyGrid.SizeChanged += (s, e) =>
+            {
+                ClearStars();
+                _resizeStarTimer.Stop(); // Restart the timer on each size change
+                _resizeStarTimer.Start();
+            };
+            _resizeStarTimer.Start();
         }
 
         private void Zen(bool includeInfoText)
@@ -191,7 +245,7 @@ namespace SimpleImageViewer
 
             ImageDisplay.Visibility = Visibility.Collapsed;
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
-            GenerateStars();
+            //GenerateStars();
             // Create the TextBlock for "No image is loaded" message
             if (includeInfoText)
             {
@@ -285,7 +339,7 @@ namespace SimpleImageViewer
         private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)  // layer is 0 for background
         {
             // Create gradient stops for the brush.
-            var tweak = (float)(_random.NextDouble() * 0.2 - 0.1);
+            var tweak = (float)(_random.NextDouble() * 0.3 - 0.1);
             GradientStop stop0 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F - tweak, 0F, 0.5F + tweak), 0.0);
             GradientStop stop1 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
             GradientStop stop2 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F + tweak, 0F, 0.8F - tweak), 0.6);
@@ -365,8 +419,8 @@ namespace SimpleImageViewer
             else
             {
                 Rectangle rect = new Rectangle();
-                rect.Width = 1920;
-                rect.Height = 1080;
+                rect.HorizontalAlignment = HorizontalAlignment.Stretch; // Expand to container width
+                rect.VerticalAlignment = VerticalAlignment.Stretch;     // Expand to container height
                 rect.Fill = gradientBrush;
                 rect.Opacity = 0.32;
                 
