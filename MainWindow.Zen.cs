@@ -10,11 +10,8 @@ namespace SimpleImageViewer
 {
     public partial class MainWindow : Window
     {
-        private const int StarCount = 600; // Number of stars
         private const int StarSize = 2;   // Diameter of each star
         
-
-
         private Canvas StarsCanvas;
 
         private Random _random = new Random();
@@ -46,23 +43,27 @@ namespace SimpleImageViewer
 
         private void Zen(bool includeInfoText)
         {
-            RemoveZen();
+            RemoveZen(true);
             isZen = true;
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
 
             ImageDisplay.Visibility = Visibility.Collapsed;
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
-            //GenerateStars();
+            GenerateStars();
             // Create the TextBlock for "No image is loaded" message
             if (includeInfoText)
             {
-                MyGrid.Children.Add(NoImageMessage);
+                if (!MyGrid.Children.Contains(NoImageMessage))
+                {
+                    MyGrid.Children.Add(NoImageMessage);
+                    Canvas.SetZIndex(NoImageMessage, 99999);  // TODO lazy
+                }
+                    
             }
-            else
+            else if (MyGrid.Children.Contains(NoImageMessage))
             {
                 MyGrid.Children.Remove(NoImageMessage);
             }
-            // TODO probably move all this silliness to separate file.
         }
 
         private void RemoveZen(bool leaveInfo = false)
@@ -123,8 +124,7 @@ namespace SimpleImageViewer
                 }
             }
 
-            // Remove all children (stars) from the canvas
-            StarsCanvas.Children.Clear();
+            ClearStars();
 
             // Remove the canvas from the parent container
             if (MyGrid.Children.Contains(StarsCanvas))
@@ -134,6 +134,9 @@ namespace SimpleImageViewer
 
             // Set StarsCanvas to null to allow garbage collection
             StarsCanvas = null;
+
+            if (currentlyDisplayedImagePath != null)
+                ImageDisplay.Visibility = Visibility.Visible;
 
             isZen = false; // TODO check performance and that nothing is missed
         }
@@ -178,7 +181,7 @@ namespace SimpleImageViewer
 
             double width = MyGrid.ActualWidth;
             double height = MyGrid.ActualHeight;
-            int starCount = 10 + (int)(width * height / 2900);  // 600 for 1920x1080 seemed good
+            int starCount = 10 + (int)(width * height / 2500);  // 600 for 1920x1080 seemed good
 
             for (int i = 0; i < starCount; i++)
             {
@@ -204,7 +207,7 @@ namespace SimpleImageViewer
                 // Create animations for fade-in, movement, and fade-out
                 const double AnimationDurationSeconds = 8;
                 var withDelay = AnimationDurationSeconds + _random.NextDouble() * 10.0;
-                var startingDelay = _random.NextDouble() * 15.0;
+                var startingDelay = _random.NextDouble() * 25.0;
                 var periodDelay = 0.5 + _random.NextDouble() * 8.0;
                 DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(withDelay / 2.0)))
                 {
@@ -240,7 +243,6 @@ namespace SimpleImageViewer
             if (!MyGrid.Children.Contains(StarsCanvas))
                 MyGrid.Children.Add(StarsCanvas);
         }
-
 
         private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)  // layer is 0 for background
         {

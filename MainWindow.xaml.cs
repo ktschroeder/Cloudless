@@ -100,14 +100,14 @@ namespace SimpleImageViewer
             NoImageMessage = new TextBlock
             {
                 Name = "NoImageMessage",
-                Text = "Welcome to Cloudless.\n\nNo image is loaded. Right click for options.\n\nPress 'z' to disable Zen.",
+                Text = "Welcome to Cloudless.\n\nNo image is loaded. Right click for options.\n\nPress 'z' to toggle Zen.",
                 Foreground = Brushes.White,
                 FontSize = 20,
                 Padding = new Thickness(20),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
-                Visibility = Visibility.Visible
+                Visibility = Visibility.Visible,
             };
 
             InitializeZenMode();
@@ -266,7 +266,10 @@ namespace SimpleImageViewer
 
             if (e.Key == Key.Z)
             {
-                RemoveZen(true); // TODO make toggle
+                if (isZen)
+                    RemoveZen(true);
+                else
+                    Zen(currentlyDisplayedImagePath == null);
                 e.Handled = true;
                 return;
             }
