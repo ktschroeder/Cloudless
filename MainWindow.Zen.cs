@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Media;
 //using Rectangle = System.Windows.Shapes.Rectangle;
 
-namespace SimpleImageViewer
+namespace Cloudless
 {
     public partial class MainWindow : Window
     {
@@ -21,7 +21,6 @@ namespace SimpleImageViewer
 
         private void InitializeZenMode()
         {
-            //MyGrid.SizeChanged += (s, e) => { if (isZen) GenerateStars(); }; // TODO should wait until mouse up so we don't do this a bunch of  times
             _resizeStarTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(400) // Adjust delay as needed
@@ -56,7 +55,7 @@ namespace SimpleImageViewer
                 if (!MyGrid.Children.Contains(NoImageMessage))
                 {
                     MyGrid.Children.Add(NoImageMessage);
-                    Canvas.SetZIndex(NoImageMessage, 99999);  // TODO lazy
+                    Canvas.SetZIndex(NoImageMessage, 99999);  // lazy
                 }
                     
             }
@@ -195,8 +194,8 @@ namespace SimpleImageViewer
                 };
 
                 // Randomize initial position
-                double startX = _random.NextDouble() * width;// StarsCanvas.ActualWidth;
-                double startY = _random.NextDouble() * height;// StarsCanvas.ActualHeight; TODO
+                double startX = _random.NextDouble() * width;
+                double startY = _random.NextDouble() * height;
 
                 Canvas.SetLeft(star, startX);
                 Canvas.SetTop(star, startY);

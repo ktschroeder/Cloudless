@@ -25,7 +25,7 @@ public class OverlayMessageManager
         messageHistory.Add(timestampedMessage);
         MessageAdded?.Invoke(timestampedMessage);
 
-        bool mute = JustView.Properties.Settings.Default.MuteMessages;
+        bool mute = Cloudless.Properties.Settings.Default.MuteMessages;
 
 
         if (mute)

@@ -1,13 +1,15 @@
-# JustView
-JustView is a lightweight, minimal-UI image viewer for Windows. It's feature-rich, but visually quiet and minimal.
+# Cloudless
+Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-rich, but visually quiet and minimal.
 
 TODO
 
 Up next:
 
 Probably should/will:
+- compare performance of app before and after adding Zen to identify any performance issues
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
 - ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.)
+- possible bug? There may be like 10 pixels fo extra width on the window. Most obvious if fullscreen on one monitor when using multiple.
 
 Probably should but lower priority:
 - indicator of current zoom amount upon zooming
@@ -17,7 +19,6 @@ Probably should but lower priority:
 - some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
 - ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
-- Good name may be Cloudless View. Can have start-up screen be simple sky-ish drawing or a solid gentle blue.
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
 - bug: right click to context menu then left click on main window is treated as double-click
 - hotkey: zoom to fill window with best fit (only during BestFit)

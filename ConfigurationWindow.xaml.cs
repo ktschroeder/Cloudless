@@ -4,7 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace SimpleImageViewer
+namespace Cloudless
 {
     public partial class ConfigurationWindow : Window
     {
@@ -22,7 +22,7 @@ namespace SimpleImageViewer
         {
             InitializeComponent();
 
-            var currentDisplayMode = JustView.Properties.Settings.Default.DisplayMode;
+            var currentDisplayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             // Set the current selection
             if (currentDisplayMode == "StretchToFit")
                 DisplayModeDropdown.SelectedIndex = 0;
@@ -34,35 +34,35 @@ namespace SimpleImageViewer
                 DisplayModeDropdown.SelectedIndex = 3;
             SelectedDisplayMode = currentDisplayMode;
 
-            var currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+            var currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = Cloudless.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
             ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox.IsChecked = currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
             ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = currentForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
 
-            var currentSpaceAroundBounds = JustView.Properties.Settings.Default.PixelsSpaceAroundBounds;
+            var currentSpaceAroundBounds = Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds;
             SpaceAroundBoundsTextBox.Text = currentSpaceAroundBounds.ToString();
             SpaceAroundBounds = currentSpaceAroundBounds;
 
-            var currentResizeWindowToNewImageWhenOpeningThroughApp = JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp;
+            var currentResizeWindowToNewImageWhenOpeningThroughApp = Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp;
             ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked = currentResizeWindowToNewImageWhenOpeningThroughApp;
             ResizeWindowToNewImageWhenOpeningThroughApp = currentResizeWindowToNewImageWhenOpeningThroughApp;
 
-            var currentBorderOnMainWindow = JustView.Properties.Settings.Default.BorderOnMainWindow;
+            var currentBorderOnMainWindow = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
             BorderOnMainWindowCheckbox.IsChecked = currentBorderOnMainWindow;
             BorderOnMainWindow = currentBorderOnMainWindow;
 
-            var currentLoopGifs = JustView.Properties.Settings.Default.LoopGifs;
+            var currentLoopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             LoopGifsCheckbox.IsChecked = currentLoopGifs;
             LoopGifs = currentLoopGifs;
             
-            var currentMuteMessages = JustView.Properties.Settings.Default.MuteMessages;
+            var currentMuteMessages = Cloudless.Properties.Settings.Default.MuteMessages;
             MuteMessagesCheckbox.IsChecked = currentMuteMessages;
             MuteMessages = currentMuteMessages;
 
-            var currentAlwaysOnTopByDefault = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
+            var currentAlwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
             AlwaysOnTopByDefaultCheckbox.IsChecked = currentAlwaysOnTopByDefault;
             AlwaysOnTopByDefault = currentAlwaysOnTopByDefault;
             
-            var currentMaxCompressedCopySizeMB = JustView.Properties.Settings.Default.MaxCompressedCopySizeMB;
+            var currentMaxCompressedCopySizeMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
             MaxCompressedCopySizeMBTextBox.Text = currentMaxCompressedCopySizeMB.ToString();
             MaxCompressedCopySizeMB = currentMaxCompressedCopySizeMB;
         }

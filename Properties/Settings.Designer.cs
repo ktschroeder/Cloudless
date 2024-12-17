@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace JustView.Properties {
+namespace Cloudless.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
