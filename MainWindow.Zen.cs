@@ -14,6 +14,7 @@ using Brush = System.Windows.Media.Brush;
 using System;
 using Brushes = System.Windows.Media.Brushes;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using static Cloudless.MainWindow;
 //using Rectangle = System.Windows.Shapes.Rectangle;
 
 // ****** The slot approach is overly complicated and unwieldy. Put a random lifespan on each non-bg layer. Upon expiration, fade to 0 opacity, and fade in a new layer (can reuse layer or may be cleaner to start fresh: increment some index).
@@ -34,6 +35,7 @@ namespace Cloudless
         private bool isWelcome = true;
         private DispatcherTimer _resizeStarTimer;
         private int brushKey = 0;
+        private Storyboard orchStoryboard = null;
 
         private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
         private int magicLayersCreated = 0;
@@ -266,93 +268,12 @@ namespace Cloudless
                 MyGrid.Children.Add(StarsCanvas);
         }
 
-        private void AnimateCrossfade(Rectangle rect, Brush fromBrush, Brush toBrush, int layer, bool isOddIteration, List<AnimationTimeline> currentInternalAnimations, Storyboard storyboard)
-        {
-            // Overlay the next brush on top of the current one using OpacityMask.
-            Rectangle overlayRect = new Rectangle
-            {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                Fill = toBrush,
-                Opacity = 0
-            };
-
-            MyGrid.Children.Add(overlayRect); // Add the overlay rectangle.
-
-            // Fade in the new brush and fade out the old one.
-            //DoubleAnimation fadeIn = new DoubleAnimation(0, 0.34, TimeSpan.FromSeconds(2));  // Fade in new.
-            //DoubleAnimation fadeOut = new DoubleAnimation(0.34, 0, TimeSpan.FromSeconds(2)); // Fade out current.
-
-            ColorAnimation fadeIn = new ColorAnimation
-            {
-                By = System.Windows.Media.Color.FromScRgb(0.34F, 0F, 0F, 0F),
-                Duration = TimeSpan.FromSeconds(2),
-                RepeatBehavior = new RepeatBehavior(count:0)
-                //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-                //BeginTime = TimeSpan.FromSeconds(2 * layer - 1),  // expects layer to be at least 1 // TODO maybe only have this be nonzero on first round. getting messy...
-            };
-            string toTarget = "ToRectangleLayer" + layer + (isOddIteration ? "Odd" : "");
-            this.RegisterName(toTarget, toBrush);
-            Storyboard.SetTargetName(fadeIn, toTarget);  // $"GradientStop{i}Layer{layer}" + (isOddIteration ? "Odd" : "")
-            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(GradientStop.ColorProperty));
-            storyboard.Children.Add(fadeIn);  // TODO also clean these up
-
-            ColorAnimation fadeOut = new ColorAnimation
-            {
-                By = System.Windows.Media.Color.FromScRgb(-0.34F, 0F, 0F, 0F),
-                Duration = TimeSpan.FromSeconds(2),
-                RepeatBehavior = new RepeatBehavior(count:0)
-                //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-                //BeginTime = TimeSpan.FromSeconds(2 * layer - 1),  // expects layer to be at least 1 // TODO maybe only have this be nonzero on first round. getting messy...
-            };
-            string fromTarget = "FromRectangleLayer" + layer + (isOddIteration ? "Odd" : "");
-            this.RegisterName(fromTarget, fromBrush);
-            Storyboard.SetTargetName(fadeOut, fromTarget);  // $"GradientStop{i}Layer{layer}" + (isOddIteration ? "Odd" : "")
-            Storyboard.SetTargetProperty(fadeOut, new PropertyPath(GradientStop.ColorProperty));
-            storyboard.Children.Add(fadeOut);
-
-            fadeIn.Changed += (s, e) =>
-            {
-                Debug.Print("asdasd");
-            };
-
-            // Start animations.
-            fadeIn.Completed += (s, e) =>
-            {
-                Debug.WriteLine("Finished fadeIn in AnimateCrossfade.");  // or WriteLine
-
-
-                // After transition, set the main rectangle's fill to the new brush. //TODO the fact this isn't being hit may explain the snappish behavior.
-                rect.Fill = toBrush;
-                rect.Opacity = 0.34;
-
-                // Remove the overlay rectangle.
-                MyGrid.Children.Remove(overlayRect);
-
-                // TODO probably unregister stuff here. may need to invert logic for isOdd.
-                this.UnregisterName("GradientStop0Layer" + layer + (!isOddIteration ? "Odd" : ""));
-                this.UnregisterName("GradientStop1Layer" + layer + (!isOddIteration ? "Odd" : ""));
-                this.UnregisterName("GradientStop2Layer" + layer + (!isOddIteration ? "Odd" : ""));
-                this.UnregisterName("GradientStop3Layer" + layer + (!isOddIteration ? "Odd" : ""));
-                foreach (AnimationTimeline timeline in currentInternalAnimations)
-                {
-                    storyboard.Children.Remove(timeline);  // opacity/color and transform animations. TODO anything more needed to release this resource?
-                }
-
-                this.UnregisterName(toTarget);
-                this.UnregisterName(fromTarget);
-                storyboard.Children.Remove(fadeIn);
-                storyboard.Children.Remove(fadeOut);
-            };
-
-            // TODO maybe issue that these are not in storyboard? putting them in storyboard would also allow cleaner BeginTime.
-            //overlayRect.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-            //rect.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-        }
+        
 
         private Duration DetermineLifespan(int layerIndex)
         {
-            var originalLifespan = new Duration(TimeSpan.FromSeconds(5 + Math.Pow(_random.NextDouble() * 12, 2)));
+            const int lifespanQuadraticBase = 3; // 1 for debug. was 12.
+            var originalLifespan = new Duration(TimeSpan.FromSeconds(2 + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
             var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
             if (prevLayer == null)
             {
@@ -374,7 +295,8 @@ namespace Cloudless
 
             var prevAngle = prevLayer.gradientAngle;
             const double berth = 20;
-            return prevAngle + berth + _random.NextDouble() * (360 - berth + prevAngle); // e.g. berth 20 prev 90 allows range 110 through 430 (430 is 70).
+            var newAngle = prevAngle + berth + _random.NextDouble() * (360 - berth + prevAngle); // e.g. berth 20 prev 90 allows range 110 through 430 (430 is 70).
+            return newAngle % 360;
         }
 
         private void GradientMagic()
@@ -383,16 +305,21 @@ namespace Cloudless
             // Storyboards can be used.
             NameScope.SetNameScope(this, new NameScope());
 
-            Storyboard orchStoryboard = new Storyboard();
+            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 1 });
+
+            orchStoryboard = new Storyboard();
 
             for (int i = 0; i < 6; i++)
             {
-                magicLayers.Enqueue(CreateMagicLayer());
+                var ml = CreateMagicLayer();
+
+                // Adjust timings to overlap or stagger layer animations.
+                //ml.storyboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
+
+                //ml.storyboard.Begin(this, true);
             }
 
-            // Align storyboards here
-
-            orchStoryboard.Begin(this);
+            Debug.WriteLine("Started GradientMagic");
         }
 
         //TODO it seems like every other time I run the app, then every other "layer" that pops into view is just a solid pinkish color. Weird. race condition maybe.
@@ -413,7 +340,7 @@ namespace Cloudless
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Fill = gradientBrush,
-                Opacity = 0
+                Opacity = .34
             };
 
             MyGrid.Children.Add(mlRect);
@@ -425,28 +352,114 @@ namespace Cloudless
                 birth = mlBirth,
                 lifespan = mlLifeSpan,
                 gradientAngle = mlGradientAngle,
-                gscs = mlGscs
+                gscs = mlGscs,
+                rect = mlRect
             };
 
 
             // Storyboard stuff will go here, or it can be done in calling method maybe. must add logic to make layers transition.
             // We have a storyboard for each layer, and we also have an orchestrator storyboar din the calling method that can manipulate the layer-specific storyboards.
-            
+
             // Phases of life for a layer:
             //1.Is created.Paint is defined.starts 0 opacity.
+
             //2.fades in to a middling opacity.say .34.
+            var fadeIn = new DoubleAnimation
+            {
+                From = 0,
+                To = 0.34,//0.34,
+                Duration = TimeSpan.FromSeconds(0.5),
+                BeginTime = TimeSpan.Zero
+
+            };
+
+
+            if (MyGrid.Children.Contains(mlRect))
+            {
+                Debug.WriteLine("Rectangle is part of MyGrid.");
+            }
+            else
+            {
+                Debug.WriteLine("Rectangle is NOT part of MyGrid.");
+            }
+            Debug.WriteLine($"Targeting rectangle for storyboard: {magicLayer.rect == mlRect}");
+            this.RegisterName("MyRect"+mlLayerIndex, mlRect);
+            Storyboard.SetTargetName(fadeIn, "MyRect" + mlLayerIndex);
+            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Rectangle.OpacityProperty));
+
+            //Storyboard.SetTarget(fadeIn, magicLayer.rect);
+            //Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Rectangle.OpacityProperty));
+            mlStoryboard.Children.Add(fadeIn);
+            //fadeIn.Completed += (s, e) =>
+            //{
+            //    Debug.WriteLine("fade in completed layer " + magicLayer.layerIndex);
+            //};
+
             //3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
+            //var fluctuateOpacity = new DoubleAnimationUsingKeyFrames // TODO might overwrite fadeIn? Use BeginTime if so
+            //{
+            //    Duration = new Duration(TimeSpan.FromSeconds(magicLayer.lifespan.TimeSpan.TotalSeconds)),
+            //    RepeatBehavior = RepeatBehavior.Forever
+            //};
+            //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.3, KeyTime.FromPercent(0)));
+            //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.35, KeyTime.FromPercent(0.5)));
+            //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.33, KeyTime.FromPercent(1)));
+
+            //Storyboard.SetTarget(fluctuateOpacity, magicLayer.rect);
+            //Storyboard.SetTargetProperty(fluctuateOpacity, new PropertyPath(Rectangle.OpacityProperty));
+            //mlStoryboard.Children.Add(fluctuateOpacity);
+
+
             //4.After lifespan, transition opacity to 1.0.
+            //var fadeToFull = new DoubleAnimation
+            //{
+            //    From = 0.34,
+            //    To = 1.0,
+            //    Duration = TimeSpan.FromSeconds(2),
+            //    BeginTime = magicLayer.lifespan.TimeSpan
+            //};
+            //Storyboard.SetTarget(fadeToFull, magicLayer.rect);
+            //Storyboard.SetTargetProperty(fadeToFull, new PropertyPath(Rectangle.OpacityProperty));
+            //mlStoryboard.Children.Add(fadeToFull);
+
+
+
             //5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
+            mlStoryboard.Completed += (s, e) =>
+            {
+                Debug.WriteLine("completed fade to 1.0 for layer index " + magicLayer.layerIndex);
+                // Dequeue the old layer and free its resources.
+                if (magicLayers.TryDequeue(out var expiredLayer))
+                {
+                    Debug.WriteLine("freeing layer at index " + expiredLayer.layerIndex);
+                    expiredLayer.Free(this, MyGrid);
+                }
+
+                CreateMagicLayer(); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
+            };
 
 
+            magicLayers.Enqueue(magicLayer);
+            //orchStoryboard.Children.Add(magicLayer.storyboard); // Can we add things to an in-progress SB? TODO
+
+            // mlStoryboard.BeginTime = TimeSpan.FromSeconds(2 * magicLayer.layerIndex); // maybe start first few at once
+            mlStoryboard.BeginTime = TimeSpan.Zero;
+            //mlStoryboard.FillBehavior = FillBehavior.HoldEnd;
+
+            Debug.WriteLine($"Setting storyboard timing for layer {magicLayer.layerIndex}: BeginTime = {mlStoryboard.BeginTime}, FillBehavior = {mlStoryboard.FillBehavior}");
+
+            mlStoryboard.Begin(MyGrid, true);
+
+            Debug.WriteLine($"GradientBrush for layer {magicLayer.layerIndex}: Angle = {mlGradientAngle}, Stops = {mlGscs.Count}");
+            Debug.WriteLine($"Animating Opacity for {magicLayer.layerIndex} from {fadeIn.From} to {fadeIn.To}");
+            Debug.WriteLine("created magic layer with index " + magicLayer.layerIndex + " lifespan " + magicLayer.lifespan);
             return magicLayer;
         }
 
         internal class GradientStopContext
         {
             internal GradientStop stop;
-            internal int? stopIndex;
+            //internal int? stopIndex;
             internal string? name;
             internal AnimationTimeline? offsetAnimation;
             internal AnimationTimeline? colorAnimation;
@@ -533,6 +546,7 @@ namespace Cloudless
                     var tweak1 = (float)(0.1 + _random.NextDouble() * 0.25);
                     var tweak2 = (float)(0.1 + _random.NextDouble() * 0.25);
                     var tweak3 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    if (gsc.name == null) throw new Exception();
                     var colorOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3));
                     gsc.colorAnimation = colorOA;
                     storyboard.Children.Add(colorOA);
