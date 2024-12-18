@@ -13,6 +13,7 @@ using Rectangle = System.Windows.Shapes.Rectangle;
 using Brush = System.Windows.Media.Brush;
 using System;
 using Brushes = System.Windows.Media.Brushes;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 //using Rectangle = System.Windows.Shapes.Rectangle;
 
 // ****** The slot approach is overly complicated and unwieldy. Put a random lifespan on each non-bg layer. Upon expiration, fade to 0 opacity, and fade in a new layer (can reuse layer or may be cleaner to start fresh: increment some index).
@@ -35,6 +36,7 @@ namespace Cloudless
         private int brushKey = 0;
 
         private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
+        private int magicLayersCreated = 0;
 
         private void InitializeZenMode()
         {
@@ -348,128 +350,139 @@ namespace Cloudless
             //rect.BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
+        private Duration DetermineLifespan(int layerIndex)
+        {
+            var originalLifespan = new Duration(TimeSpan.FromSeconds(5 + Math.Pow(_random.NextDouble() * 12, 2)));
+            var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
+            if (prevLayer == null)
+            {
+                return originalLifespan;
+            }
+
+            var prevLayerAge = DateTime.Now - prevLayer.birth;
+            var remaining = prevLayer.lifespan - prevLayerAge;
+            return remaining + originalLifespan;
+        }
+
+        private double DetermineGradientAngle(int layerIndex)  // TODO merely assuming we are talking degrees and not radians. can also be improved: avoid other layers and avoid 180 degrees away.
+        {
+            var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
+            if (prevLayer == null)
+            {
+                return _random.NextDouble() * 360;
+            }
+
+            var prevAngle = prevLayer.gradientAngle;
+            const double berth = 20;
+            return prevAngle + berth + _random.NextDouble() * (360 - berth + prevAngle); // e.g. berth 20 prev 90 allows range 110 through 430 (430 is 70).
+        }
+
+        private void GradientMagic()
+        {
+            // Create a NameScope for the page so that
+            // Storyboards can be used.
+            NameScope.SetNameScope(this, new NameScope());
+
+            Storyboard orchStoryboard = new Storyboard();
+
+            for (int i = 0; i < 6; i++)
+            {
+                magicLayers.Enqueue(CreateMagicLayer());
+            }
+
+            // Align storyboards here
+
+            orchStoryboard.Begin(this);
+        }
+
         //TODO it seems like every other time I run the app, then every other "layer" that pops into view is just a solid pinkish color. Weird. race condition maybe.
         // TODO explore: timings? opacities? incorrect fills? tings being removed from memory or not removed when needed?
-        private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)
+        private MagicLayer CreateMagicLayer()
         {
-            // track whether this is the first/third/fifth/etc. iteration, so we know whether to inform the creation method to use "alt" in resource names.
-            // This approach makes clean-up more efficient. (First will be even: 0-based.)
-            bool isOddIteration = false;
+            var mlStoryboard = new Storyboard();
+            var mlLayerIndex = magicLayersCreated++;
+            var mlBirth = DateTime.Now;
+            var mlLifeSpan = DetermineLifespan(mlLayerIndex);  // Checks lower layer's lifespan to ensure this one lasts beyond it.
+            var mlGradientAngle = DetermineGradientAngle(mlLayerIndex);  // Gets angle not too near to previous angle
+            var mlGscs = CreateGradientStopContexts(mlLayerIndex, mlStoryboard);
 
-            // Create initial brushes
-            (LinearGradientBrush currentBrush, List<AnimationTimeline> currentInternalAnimations) = CreateAnimatedGradientBrush(layer, gradientAngle, storyboard, isOddIteration);
-            LinearGradientBrush nextBrush = null;// CreateAnimatedGradientBrush(layer, gradientAngle, null); // No animations initially
-            List<AnimationTimeline> nextInternalAnimations = null;
+            LinearGradientBrush gradientBrush = new LinearGradientBrush(new GradientStopCollection(mlGscs.Select(gsc => gsc.stop)), mlGradientAngle);
 
-            Rectangle rect = new Rectangle();
-            if (layer == 0)
+            Rectangle mlRect = new Rectangle()
             {
-                this.Background = currentBrush;
-            }
-            else
-            {
-                rect.HorizontalAlignment = HorizontalAlignment.Stretch; // Expand to container width
-                rect.VerticalAlignment = VerticalAlignment.Stretch;     // Expand to container height
-                rect.Fill = currentBrush;
-                rect.Opacity = 0.34;
-
-                // TODO we can replace this with the new opacity magic?
-                //if (layer > 2)
-                //{
-                //    rect.Opacity = 0;
-                //    this.RegisterName("GradientLayer" + layer, rect);
-                //    var layerOpacityOA = CreateOpacityOrColorAnimation($"GradientLayer{layer}", TimeSpan.FromSeconds(10 + _random.NextDouble() * 30), System.Windows.Media.Color.FromScRgb(0.4F, 0F, 0F, 0F), TimeSpan.FromSeconds((layer - 2) * 5));
-                //}
-                MyGrid.Children.Add(rect);
-            }
-
-            if (layer == 0) return; // return to bg case TODO
-
-
-            // DispatcherTimer for periodic brush transitions
-            DispatcherTimer brushTransitionTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(15), // Trigger every 15 seconds (was originally 30)
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Fill = gradientBrush,
+                Opacity = 0
             };
 
-            brushTransitionTimer.Tick += (sender, e) =>
+            MyGrid.Children.Add(mlRect);
+
+            var magicLayer = new MagicLayer()
             {
-                Debug.WriteLine("brushTransitionTimer Tick");
-                isOddIteration = !isOddIteration;
-
-                // Define a new "nextBrush" with random gradient properties
-                (nextBrush, nextInternalAnimations) = CreateAnimatedGradientBrush(layer, _random.Next(0, 360), storyboard, isOddIteration); // TODO null storyboard? can we pass in other storyboard? or new one? with cleaning at each tick if needed?
-
-                // Create animations for opacity transitions
-                //DoubleAnimation fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(10)); // Fade out current brush
-                //DoubleAnimation fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(10));  // Fade in next brush
-
-                //// Create a storyboard for the transition  //TODO clean this too in clean-up
-                //Storyboard transitionStoryboard = new Storyboard();
-                //Storyboard.SetTarget(fadeOut, rect);
-                //Storyboard.SetTargetProperty(fadeOut, new PropertyPath("Opacity"));
-                //Storyboard.SetTarget(fadeIn, rect);
-                //Storyboard.SetTargetProperty(fadeIn, new PropertyPath("Opacity"));
-
-                //transitionStoryboard.Children.Add(fadeOut);
-                //transitionStoryboard.Children.Add(fadeIn);
-
-                //// Replace the current brush after the transition completes
-                //transitionStoryboard.Completed += (s, args) =>
-                //{
-                //    rect.Fill = nextBrush;
-                //    currentBrush = nextBrush; // Update reference
-                //};
-
-                //// Start the transition
-                //transitionStoryboard.Begin();
-
-
-                // Animate the rectangle's brush transition.
-                AnimateCrossfade(rect, currentBrush, nextBrush, layer, isOddIteration, currentInternalAnimations, storyboard);
-
-                // After the crossfade, replace the current brush reference.
-                currentBrush = nextBrush;
-                currentInternalAnimations = nextInternalAnimations;
+                storyboard = mlStoryboard,
+                layerIndex = mlLayerIndex,
+                birth = mlBirth,
+                lifespan = mlLifeSpan,
+                gradientAngle = mlGradientAngle,
+                gscs = mlGscs
             };
 
-            // Start the timer for brush transitions
-            //System.Threading.Thread.Sleep(1000 * layer);  // may cause issues, it's not as if each iteration of this loop is on its own thread
-            //System.Threading.Thread.Sleep(1000);  // may cause issues, it's not as if each iteration of this loop is on its own thread
-            brushTransitionTimer.Start();
+
+            // Storyboard stuff will go here, or it can be done in calling method maybe. must add logic to make layers transition.
+            // We have a storyboard for each layer, and we also have an orchestrator storyboar din the calling method that can manipulate the layer-specific storyboards.
+            
+            // Phases of life for a layer:
+            //1.Is created.Paint is defined.starts 0 opacity.
+            //2.fades in to a middling opacity.say .34.
+            //3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
+            //4.After lifespan, transition opacity to 1.0.
+            //5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
+
+
+            return magicLayer;
         }
 
         internal class GradientStopContext
         {
             internal GradientStop stop;
-            internal int? layer;
-            internal bool? isOddIteration;
             internal int? stopIndex;
             internal string? name;
             internal AnimationTimeline? offsetAnimation;
             internal AnimationTimeline? colorAnimation;
         }
 
-        //private void AddGSC(GradientStop stop, int layer, bool isOddIteration, int stopIndex, string name, AnimationTimeline? animation)
-        private void AddGSC(GradientStopContext gsc)
-        {
-            if (gsc.stop == null || gsc.layer == null || gsc.isOddIteration == null || gsc.stopIndex == null || gsc.name == null)
-                throw new InvalidOperationException("incomplete gsc");
-            if (GetGSC(gsc.name) != null) 
-                throw new InvalidOperationException("GSC already exists: " + gsc.name);
+        private Queue<MagicLayer> magicLayers = new Queue<MagicLayer>();
 
-            gradientStopContexts.Add(gsc);
+        internal class MagicLayer
+        {
+            internal Rectangle rect;  // has opacity and fill
+            internal DateTime birth;
+            internal Duration lifespan;
+            internal Storyboard storyboard;
+            internal int layerIndex;
+            internal List<GradientStopContext> gscs = new List<GradientStopContext>();
+            internal double gradientAngle; 
+
+            internal void Free(MainWindow mainWindow, Grid parentOfRect) // pass in MainWindow ("this") and MyGrid
+            {
+                parentOfRect.Children.Remove(rect);
+
+                foreach (var gsc in gscs)
+                {
+                    mainWindow.UnregisterName(gsc.name);
+                    if (gsc.offsetAnimation != null)
+                        storyboard.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
+                    if (gsc.colorAnimation != null)
+                        storyboard.Children.Remove(gsc.colorAnimation);
+                    storyboard.Stop();
+                    storyboard.Remove();
+                }
+            }
         }
 
-        private GradientStopContext? GetGSC(string name)
+        private List<GradientStopContext> CreateGradientStopContexts(int layer, Storyboard storyboard)
         {
-            return gradientStopContexts.Where(gsc => gsc.name.Equals(name)).FirstOrDefault();     
-        }
-
-        private (LinearGradientBrush, List<AnimationTimeline>) CreateAnimatedGradientBrush(int layer, int gradientAngle, Storyboard storyboard, bool isOddIteration)
-        {
-            var animations = new List<AnimationTimeline>();
-
             GradientStopContext gsc0 = new GradientStopContext();
             GradientStopContext gsc1 = new GradientStopContext();
             GradientStopContext gsc2 = new GradientStopContext();
@@ -482,75 +495,55 @@ namespace Cloudless
             gsc2.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F + tweak, 0F, 0.8F - tweak), 0.6);
             gsc3.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.4F + tweak, 0.63F + tweak), 1.0);
 
-            LinearGradientBrush gradientBrush = new LinearGradientBrush(
-                new GradientStopCollection() { gsc0.stop, gsc1.stop, gsc2.stop, gsc3.stop },
-                gradientAngle
-                );
-
-            gsc0.name = "GradientStop0Layer" + layer + (isOddIteration ? "Odd" : "");
-            gsc1.name = "GradientStop1Layer" + layer + (isOddIteration ? "Odd" : "");
-            gsc2.name = "GradientStop2Layer" + layer + (isOddIteration ? "Odd" : "");
-            gsc3.name = "GradientStop3Layer" + layer + (isOddIteration ? "Odd" : "");
+            gsc0.name = "GradientStop0Layer" + layer;
+            gsc1.name = "GradientStop1Layer" + layer;
+            gsc2.name = "GradientStop2Layer" + layer;
+            gsc3.name = "GradientStop3Layer" + layer;
 
             // Register a name for each gradient stop with the
             // page so that they can be animated by a storyboard.
-            this.RegisterName(gsc0.name, gsc0.stop); // TODO try keeping a list of all these and referencing that based on layer, isOdd, stop index. New object that has these and the targetName and anything else useful.
+            this.RegisterName(gsc0.name, gsc0.stop);
             this.RegisterName(gsc1.name, gsc1.stop);
             this.RegisterName(gsc2.name, gsc2.stop);
             this.RegisterName(gsc3.name, gsc3.stop);
 
+            // We've intentionally skipped index 0 to not animate that gradient stop.
+            var oa1 = CreateOffsetAnimation(gsc1.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.03, 0.30);
+            var oa2 = CreateOffsetAnimation(gsc2.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.73, 0.37);
+            var oa3 = CreateOffsetAnimation(gsc3.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.97, 0.8);
+            storyboard.Children.Add(oa1);
+            storyboard.Children.Add(oa2);
+            storyboard.Children.Add(oa3);
+            gsc1.offsetAnimation = oa1;
+            gsc2.offsetAnimation = oa2;
+            gsc3.offsetAnimation = oa3;
 
-            //TODO possibly weirdness from adding animations to a storyboard that is already playing?
-            if (storyboard != null)
+            Action<GradientStopContext> createOpacityOrColorAnim = gsc => 
             {
-                // We've intentionally skipped index 0 to not animate that gradient stop.
-                var oa1 = CreateOffsetAnimation($"GradientStop1Layer{layer}" + (isOddIteration ? "Odd" : ""), TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.03, 0.30);
-                var oa2 = CreateOffsetAnimation($"GradientStop2Layer{layer}" + (isOddIteration ? "Odd" : ""), TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.73, 0.37);
-                var oa3 = CreateOffsetAnimation($"GradientStop3Layer{layer}" + (isOddIteration ? "Odd" : ""), TimeSpan.FromSeconds(15 + _random.NextDouble() * 15), 0.97, 0.8);
-                storyboard.Children.Add(oa1);
-                storyboard.Children.Add(oa2);
-                storyboard.Children.Add(oa3);
-                animations.Add(oa1);
-                animations.Add(oa2);
-                animations.Add(oa3);
-                gsc1.offsetAnimation = oa1;
-                gsc2.offsetAnimation = oa2;
-                gsc3.offsetAnimation = oa3;
-
-
-                Action<GradientStopContext> createOpacityOrColorAnim = gsc => 
+                if (false && layer > 0 && _random.NextDouble() > 0.5) // TODO debug, disabled
                 {
-                    if (false && layer > 0 && _random.NextDouble() > 0.5) // TODO debug, disabled
-                    {
-                        // opacity anim
-                        var opacityOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 50), System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F));
-                        gsc.colorAnimation = opacityOA;
-                        storyboard.Children.Add(opacityOA);
-                        animations.Add(opacityOA);
-                    }
-                    else
-                    {
-                        //color anim
-                        var tweak1 = (float)(0.1 + _random.NextDouble() * 0.25);
-                        var tweak2 = (float)(0.1 + _random.NextDouble() * 0.25);
-                        var tweak3 = (float)(0.1 + _random.NextDouble() * 0.25);
-                        var colorOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3));
-                        gsc.colorAnimation = colorOA;
-                        storyboard.Children.Add(colorOA);
-                        animations.Add(colorOA);
-                    }
-                };
-                createOpacityOrColorAnim(gsc0);
-                createOpacityOrColorAnim(gsc1);
-                createOpacityOrColorAnim(gsc2);
-                createOpacityOrColorAnim(gsc3);
-            }
+                    // opacity anim
+                    var opacityOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 50), System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F));
+                    gsc.colorAnimation = opacityOA;
+                    storyboard.Children.Add(opacityOA);
+                }
+                else
+                {
+                    //color anim
+                    var tweak1 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    var tweak2 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    var tweak3 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    var colorOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3));
+                    gsc.colorAnimation = colorOA;
+                    storyboard.Children.Add(colorOA);
+                }
+            };
+            createOpacityOrColorAnim(gsc0);
+            createOpacityOrColorAnim(gsc1);
+            createOpacityOrColorAnim(gsc2);
+            createOpacityOrColorAnim(gsc3);
 
-            AddGSC(gsc0);
-            AddGSC(gsc1);
-            AddGSC(gsc2);
-            AddGSC(gsc3);
-            return (gradientBrush, animations);
+            return new List<GradientStopContext>() { gsc0, gsc1, gsc2, gsc3 };  // can be simplified; do this earlier in method and use foreachs
         }
 
         private DoubleAnimation CreateOffsetAnimation(string target, Duration duration, double from, double to)
@@ -584,22 +577,6 @@ namespace Cloudless
             return animation;
         }
 
-        private void GradientMagic()
-        {
-            // Create a NameScope for the page so that
-            // Storyboards can be used.
-            NameScope.SetNameScope(this, new NameScope());
-
-            Storyboard storyboard = new Storyboard();
-            var baseRotation = (int)_random.NextInt64(360, 720);
-            CreateMagicLayer(0, baseRotation + (int)_random.NextInt64(5, 55), storyboard);
-            CreateMagicLayer(1, baseRotation + (int)_random.NextInt64(185, 235), storyboard);
-            CreateMagicLayer(2, baseRotation + (int)_random.NextInt64(65, 115), storyboard);
-            CreateMagicLayer(3, baseRotation + (int)_random.NextInt64(245, 295), storyboard);
-            CreateMagicLayer(4, baseRotation + (int)_random.NextInt64(125, 175), storyboard);
-            CreateMagicLayer(5, baseRotation + (int)_random.NextInt64(305, 355), storyboard);
-
-            storyboard.Begin(this);
-        }
+        
     }
 }
