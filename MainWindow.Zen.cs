@@ -7,7 +7,18 @@ using System.Windows.Media;
 using static System.Formats.Asn1.AsnWriter;
 using System.Reflection.Emit;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using Rectangle = System.Windows.Shapes.Rectangle;
+using Brush = System.Windows.Media.Brush;
+using System;
+using Brushes = System.Windows.Media.Brushes;
 //using Rectangle = System.Windows.Shapes.Rectangle;
+
+// ****** The slot approach is overly complicated and unwieldy. Put a random lifespan on each non-bg layer. Upon expiration, fade to 0 opacity, and fade in a new layer (can reuse layer or may be cleaner to start fresh: increment some index).
+// As for the bg layer: options: 1) can have occasionally fade to opaque black. linger a while, then fade in new paint.
+// 2) bg always solid black. First layer always 100% opacity. layer above becomes 100% at some point, then we remove the now-hidden layer. Keep this layer at 100 till likewise removed. Repeat forever.
+// To ease future issues, from the start maintain a comprehensive state: queue of objects with rectangle layer, gradientstops, animations, etc.
 
 namespace Cloudless
 {
@@ -22,6 +33,8 @@ namespace Cloudless
         private bool isWelcome = true;
         private DispatcherTimer _resizeStarTimer;
         private int brushKey = 0;
+
+        private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
 
         private void InitializeZenMode()
         {
@@ -265,13 +278,49 @@ namespace Cloudless
             MyGrid.Children.Add(overlayRect); // Add the overlay rectangle.
 
             // Fade in the new brush and fade out the old one.
-            DoubleAnimation fadeIn = new DoubleAnimation(0, 0.34, TimeSpan.FromSeconds(10));  // Fade in new.
-            DoubleAnimation fadeOut = new DoubleAnimation(0.34, 0, TimeSpan.FromSeconds(10)); // Fade out current.
+            //DoubleAnimation fadeIn = new DoubleAnimation(0, 0.34, TimeSpan.FromSeconds(2));  // Fade in new.
+            //DoubleAnimation fadeOut = new DoubleAnimation(0.34, 0, TimeSpan.FromSeconds(2)); // Fade out current.
+
+            ColorAnimation fadeIn = new ColorAnimation
+            {
+                By = System.Windows.Media.Color.FromScRgb(0.34F, 0F, 0F, 0F),
+                Duration = TimeSpan.FromSeconds(2),
+                RepeatBehavior = new RepeatBehavior(count:0)
+                //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                //BeginTime = TimeSpan.FromSeconds(2 * layer - 1),  // expects layer to be at least 1 // TODO maybe only have this be nonzero on first round. getting messy...
+            };
+            string toTarget = "ToRectangleLayer" + layer + (isOddIteration ? "Odd" : "");
+            this.RegisterName(toTarget, toBrush);
+            Storyboard.SetTargetName(fadeIn, toTarget);  // $"GradientStop{i}Layer{layer}" + (isOddIteration ? "Odd" : "")
+            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(GradientStop.ColorProperty));
+            storyboard.Children.Add(fadeIn);  // TODO also clean these up
+
+            ColorAnimation fadeOut = new ColorAnimation
+            {
+                By = System.Windows.Media.Color.FromScRgb(-0.34F, 0F, 0F, 0F),
+                Duration = TimeSpan.FromSeconds(2),
+                RepeatBehavior = new RepeatBehavior(count:0)
+                //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                //BeginTime = TimeSpan.FromSeconds(2 * layer - 1),  // expects layer to be at least 1 // TODO maybe only have this be nonzero on first round. getting messy...
+            };
+            string fromTarget = "FromRectangleLayer" + layer + (isOddIteration ? "Odd" : "");
+            this.RegisterName(fromTarget, fromBrush);
+            Storyboard.SetTargetName(fadeOut, fromTarget);  // $"GradientStop{i}Layer{layer}" + (isOddIteration ? "Odd" : "")
+            Storyboard.SetTargetProperty(fadeOut, new PropertyPath(GradientStop.ColorProperty));
+            storyboard.Children.Add(fadeOut);
+
+            fadeIn.Changed += (s, e) =>
+            {
+                Debug.Print("asdasd");
+            };
 
             // Start animations.
             fadeIn.Completed += (s, e) =>
             {
-                // After transition, set the main rectangle's fill to the new brush.
+                Debug.WriteLine("Finished fadeIn in AnimateCrossfade.");  // or WriteLine
+
+
+                // After transition, set the main rectangle's fill to the new brush. //TODO the fact this isn't being hit may explain the snappish behavior.
                 rect.Fill = toBrush;
                 rect.Opacity = 0.34;
 
@@ -287,13 +336,20 @@ namespace Cloudless
                 {
                     storyboard.Children.Remove(timeline);  // opacity/color and transform animations. TODO anything more needed to release this resource?
                 }
+
+                this.UnregisterName(toTarget);
+                this.UnregisterName(fromTarget);
+                storyboard.Children.Remove(fadeIn);
+                storyboard.Children.Remove(fadeOut);
             };
 
-            overlayRect.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-            rect.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            // TODO maybe issue that these are not in storyboard? putting them in storyboard would also allow cleaner BeginTime.
+            //overlayRect.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            //rect.BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
-
+        //TODO it seems like every other time I run the app, then every other "layer" that pops into view is just a solid pinkish color. Weird. race condition maybe.
+        // TODO explore: timings? opacities? incorrect fills? tings being removed from memory or not removed when needed?
         private void CreateMagicLayer(int layer, int gradientAngle, Storyboard storyboard)
         {
             // track whether this is the first/third/fifth/etc. iteration, so we know whether to inform the creation method to use "alt" in resource names.
@@ -333,11 +389,12 @@ namespace Cloudless
             // DispatcherTimer for periodic brush transitions
             DispatcherTimer brushTransitionTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(15) // Trigger every 15 seconds (was originally 30)
+                Interval = TimeSpan.FromSeconds(15), // Trigger every 15 seconds (was originally 30)
             };
 
             brushTransitionTimer.Tick += (sender, e) =>
             {
+                Debug.WriteLine("brushTransitionTimer Tick");
                 isOddIteration = !isOddIteration;
 
                 // Define a new "nextBrush" with random gradient properties
@@ -377,33 +434,70 @@ namespace Cloudless
             };
 
             // Start the timer for brush transitions
+            //System.Threading.Thread.Sleep(1000 * layer);  // may cause issues, it's not as if each iteration of this loop is on its own thread
+            //System.Threading.Thread.Sleep(1000);  // may cause issues, it's not as if each iteration of this loop is on its own thread
             brushTransitionTimer.Start();
         }
 
+        internal class GradientStopContext
+        {
+            internal GradientStop stop;
+            internal int? layer;
+            internal bool? isOddIteration;
+            internal int? stopIndex;
+            internal string? name;
+            internal AnimationTimeline? offsetAnimation;
+            internal AnimationTimeline? colorAnimation;
+        }
 
+        //private void AddGSC(GradientStop stop, int layer, bool isOddIteration, int stopIndex, string name, AnimationTimeline? animation)
+        private void AddGSC(GradientStopContext gsc)
+        {
+            if (gsc.stop == null || gsc.layer == null || gsc.isOddIteration == null || gsc.stopIndex == null || gsc.name == null)
+                throw new InvalidOperationException("incomplete gsc");
+            if (GetGSC(gsc.name) != null) 
+                throw new InvalidOperationException("GSC already exists: " + gsc.name);
+
+            gradientStopContexts.Add(gsc);
+        }
+
+        private GradientStopContext? GetGSC(string name)
+        {
+            return gradientStopContexts.Where(gsc => gsc.name.Equals(name)).FirstOrDefault();     
+        }
 
         private (LinearGradientBrush, List<AnimationTimeline>) CreateAnimatedGradientBrush(int layer, int gradientAngle, Storyboard storyboard, bool isOddIteration)
         {
             var animations = new List<AnimationTimeline>();
 
+            GradientStopContext gsc0 = new GradientStopContext();
+            GradientStopContext gsc1 = new GradientStopContext();
+            GradientStopContext gsc2 = new GradientStopContext();
+            GradientStopContext gsc3 = new GradientStopContext();
+
             // Create gradient stops for the brush.
             var tweak = (float)(_random.NextDouble() * 0.3 - 0.1);
-            GradientStop stop0 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F - tweak, 0F, 0.5F + tweak), 0.0);
-            GradientStop stop1 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
-            GradientStop stop2 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F + tweak, 0F, 0.8F - tweak), 0.6);
-            GradientStop stop3 = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.4F + tweak, 0.63F + tweak), 1.0);
+            gsc0.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F - tweak, 0F, 0.5F + tweak), 0.0);
+            gsc1.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
+            gsc2.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F + tweak, 0F, 0.8F - tweak), 0.6);
+            gsc3.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.4F + tweak, 0.63F + tweak), 1.0);
 
             LinearGradientBrush gradientBrush = new LinearGradientBrush(
-                new GradientStopCollection() { stop0, stop1, stop2, stop3 },
+                new GradientStopCollection() { gsc0.stop, gsc1.stop, gsc2.stop, gsc3.stop },
                 gradientAngle
                 );
 
+            gsc0.name = "GradientStop0Layer" + layer + (isOddIteration ? "Odd" : "");
+            gsc1.name = "GradientStop1Layer" + layer + (isOddIteration ? "Odd" : "");
+            gsc2.name = "GradientStop2Layer" + layer + (isOddIteration ? "Odd" : "");
+            gsc3.name = "GradientStop3Layer" + layer + (isOddIteration ? "Odd" : "");
+
             // Register a name for each gradient stop with the
             // page so that they can be animated by a storyboard.
-            this.RegisterName("GradientStop0Layer" + layer + (isOddIteration ? "Odd" : ""), stop0);
-            this.RegisterName("GradientStop1Layer" + layer + (isOddIteration ? "Odd" : ""), stop1);
-            this.RegisterName("GradientStop2Layer" + layer + (isOddIteration ? "Odd" : ""), stop2);
-            this.RegisterName("GradientStop3Layer" + layer + (isOddIteration ? "Odd" : ""), stop3);
+            this.RegisterName(gsc0.name, gsc0.stop); // TODO try keeping a list of all these and referencing that based on layer, isOdd, stop index. New object that has these and the targetName and anything else useful.
+            this.RegisterName(gsc1.name, gsc1.stop);
+            this.RegisterName(gsc2.name, gsc2.stop);
+            this.RegisterName(gsc3.name, gsc3.stop);
 
 
             //TODO possibly weirdness from adding animations to a storyboard that is already playing?
@@ -419,29 +513,43 @@ namespace Cloudless
                 animations.Add(oa1);
                 animations.Add(oa2);
                 animations.Add(oa3);
+                gsc1.offsetAnimation = oa1;
+                gsc2.offsetAnimation = oa2;
+                gsc3.offsetAnimation = oa3;
 
-                // Register other animations for gradient stops
-                for (int i = 0; i <= 3; i++)
+
+                Action<GradientStopContext> createOpacityOrColorAnim = gsc => 
                 {
-                    string target = $"GradientStop{i}Layer{layer}" + (isOddIteration ? "Odd" : "");
-                    if (layer > 0 && _random.NextDouble() > 0.5)
+                    if (false && layer > 0 && _random.NextDouble() > 0.5) // TODO debug, disabled
                     {
-                        var opacityOA = CreateOpacityOrColorAnimation(target, TimeSpan.FromSeconds(15 + _random.NextDouble() * 50), System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F), TimeSpan.Zero);
+                        // opacity anim
+                        var opacityOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 50), System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F));
+                        gsc.colorAnimation = opacityOA;
                         storyboard.Children.Add(opacityOA);
                         animations.Add(opacityOA);
                     }
                     else
                     {
+                        //color anim
                         var tweak1 = (float)(0.1 + _random.NextDouble() * 0.25);
                         var tweak2 = (float)(0.1 + _random.NextDouble() * 0.25);
                         var tweak3 = (float)(0.1 + _random.NextDouble() * 0.25);
-                        var colorOA = CreateOpacityOrColorAnimation(target, TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3), TimeSpan.Zero);
+                        var colorOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3));
+                        gsc.colorAnimation = colorOA;
                         storyboard.Children.Add(colorOA);
                         animations.Add(colorOA);
                     }
-                }
+                };
+                createOpacityOrColorAnim(gsc0);
+                createOpacityOrColorAnim(gsc1);
+                createOpacityOrColorAnim(gsc2);
+                createOpacityOrColorAnim(gsc3);
             }
 
+            AddGSC(gsc0);
+            AddGSC(gsc1);
+            AddGSC(gsc2);
+            AddGSC(gsc3);
             return (gradientBrush, animations);
         }
 
@@ -455,14 +563,13 @@ namespace Cloudless
                 AutoReverse = true,
                 RepeatBehavior = RepeatBehavior.Forever,
                 EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-                
             };
             Storyboard.SetTargetName(animation, target);
             Storyboard.SetTargetProperty(animation, new PropertyPath(GradientStop.OffsetProperty));
             return animation;
         }
 
-        private ColorAnimation CreateOpacityOrColorAnimation(string targetName, Duration duration, System.Windows.Media.Color colorBy, TimeSpan beginTime)
+        private ColorAnimation CreateOpacityOrColorAnimation(string targetName, Duration duration, System.Windows.Media.Color colorBy)
         {
             ColorAnimation animation = new ColorAnimation
             {
@@ -470,8 +577,7 @@ namespace Cloudless
                 Duration = duration,
                 AutoReverse = true,
                 RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-                BeginTime = beginTime
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
             };
             Storyboard.SetTargetName(animation, targetName);
             Storyboard.SetTargetProperty(animation, new PropertyPath(GradientStop.ColorProperty));
