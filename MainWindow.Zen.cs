@@ -455,10 +455,12 @@ namespace Cloudless
 
             newStoryboard.Completed += (s, e) =>
             {
-                Debug.WriteLine("Got in the completed event! for layer index " + magicLayer.layerIndex);
+                Debug.WriteLine("Got in the completed event! for layer index " + magicLayer.layerIndex + ". Opacity of replacing rect is " + mlRect.Opacity);
                 // Dequeue the old layer and free its resources.
-                if (magicLayers.TryDequeue(out var expiredLayer))
+                if (!isFirst && magicLayers.TryDequeue(out var expiredLayer))
                 {
+                    if (expiredLayer.layerIndex != mlLayerIndex - 1)
+                        throw new Exception("bad");
                     Debug.WriteLine("freeing layer at index " + expiredLayer.layerIndex);
                     expiredLayer.Free(this, MyGrid);
                 }
