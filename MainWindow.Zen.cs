@@ -63,6 +63,8 @@ namespace Cloudless
 
         private void Zen(bool includeInfoText)
         {
+            // TODO wrap zen in a big try/catch and just disable it rather than crashing app
+
             RemoveZen(true);
             isZen = true;
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
@@ -270,17 +272,20 @@ namespace Cloudless
 
         
 
-        private Duration DetermineLifespan(int layerIndex)
+        private Duration DetermineLifespan(int layerIndex, int fadeInDurationSeconds)
         {
-            const int lifespanQuadraticBase = 3; // 1 for debug. was 12.
-            var originalLifespan = new Duration(TimeSpan.FromSeconds(2 + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
+            const int lifespanQuadraticBase = 1; // 1 for debug. was 12.
+            var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + 2 + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
             var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
             if (prevLayer == null)
             {
                 return originalLifespan;
             }
 
-            var prevLayerAge = DateTime.Now - prevLayer.birth;
+            var now = DateTime.Now;
+            var prevLayerAge = now - prevLayer.birth;
+            if (prevLayerAge > prevLayer.lifespan)  // in this case the layer is just waiting to be replaced by another
+                return originalLifespan;
             var remaining = prevLayer.lifespan - prevLayerAge;
             return remaining + originalLifespan;
         }
@@ -309,10 +314,10 @@ namespace Cloudless
 
             orchStoryboard = new Storyboard();
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 3; i++)
             {
-                var ml = CreateMagicLayer();
-
+                var ml = CreateMagicLayer(i == 0);  // TODO: issue in that they all start at the same time (but fixes itself)
+                //Thread.Sleep(1000); // TODO delete this
                 // Adjust timings to overlap or stagger layer animations.
                 //ml.storyboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
 
@@ -322,16 +327,17 @@ namespace Cloudless
             Debug.WriteLine("Started GradientMagic");
         }
 
-        //TODO it seems like every other time I run the app, then every other "layer" that pops into view is just a solid pinkish color. Weird. race condition maybe.
+
         // TODO explore: timings? opacities? incorrect fills? tings being removed from memory or not removed when needed?
-        private MagicLayer CreateMagicLayer()
+        private MagicLayer CreateMagicLayer(bool isFirst)
         {
+            const int fadeInDurationSeconds = 1;
             var mlStoryboard = new Storyboard();
             var mlLayerIndex = magicLayersCreated++;
             var mlBirth = DateTime.Now;
-            var mlLifeSpan = DetermineLifespan(mlLayerIndex);  // Checks lower layer's lifespan to ensure this one lasts beyond it.
-            var mlGradientAngle = DetermineGradientAngle(mlLayerIndex);  // Gets angle not too near to previous angle
-            var mlGscs = CreateGradientStopContexts(mlLayerIndex, mlStoryboard);
+            var mlLifeSpan = DetermineLifespan(mlLayerIndex, isFirst ? 0 : fadeInDurationSeconds);  // Checks lower layer's lifespan to ensure this one lasts beyond it.
+            var mlGradientAngle = DetermineGradientAngle(mlLayerIndex);  // Gets angle not too near to previous angle.
+            var mlGscs = CreateGradientStopContexts(mlLayerIndex, mlStoryboard);  // includes using the MainWindow's RegisterName to register each GradientStop.
 
             LinearGradientBrush gradientBrush = new LinearGradientBrush(new GradientStopCollection(mlGscs.Select(gsc => gsc.stop)), mlGradientAngle);
 
@@ -340,10 +346,11 @@ namespace Cloudless
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Fill = gradientBrush,
-                Opacity = .34
+                Opacity = isFirst ? 1 : 0
             };
 
-            MyGrid.Children.Add(mlRect);
+            MyGrid.Children.Add(mlRect);  //TODO should be under the stars
+            
 
             var magicLayer = new MagicLayer()
             {
@@ -356,78 +363,99 @@ namespace Cloudless
                 rect = mlRect
             };
 
+            //Debug.WriteLine($"Targeting rectangle for storyboard: {magicLayer.rect == mlRect}");
+            this.RegisterName("MyRect" + mlLayerIndex, mlRect);
+            var newStoryboard = new Storyboard(); // notably this is not the one we sent into the gradient stop creation
 
-            // Storyboard stuff will go here, or it can be done in calling method maybe. must add logic to make layers transition.
-            // We have a storyboard for each layer, and we also have an orchestrator storyboar din the calling method that can manipulate the layer-specific storyboards.
 
-            // Phases of life for a layer:
-            //1.Is created.Paint is defined.starts 0 opacity.
-
-            //2.fades in to a middling opacity.say .34.
-            var fadeIn = new DoubleAnimation
+            if (!isFirst)
             {
-                From = 0,
-                To = 0.34,//0.34,
-                Duration = TimeSpan.FromSeconds(0.5),
-                BeginTime = TimeSpan.Zero
+                var fadeIn = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 0.34,
+                    Duration = TimeSpan.FromSeconds(fadeInDurationSeconds)
+                    // BeginTime is 0: correct since we only got here after the previous layer completed
+                };
 
-            };
+                Storyboard.SetTargetName(fadeIn, "MyRect" + mlLayerIndex);
+                Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Rectangle.OpacityProperty));
 
-
-            if (MyGrid.Children.Contains(mlRect))
-            {
-                Debug.WriteLine("Rectangle is part of MyGrid.");
+                newStoryboard.Children.Add(fadeIn);
             }
-            else
-            {
-                Debug.WriteLine("Rectangle is NOT part of MyGrid.");
-            }
-            Debug.WriteLine($"Targeting rectangle for storyboard: {magicLayer.rect == mlRect}");
-            this.RegisterName("MyRect"+mlLayerIndex, mlRect);
-            Storyboard.SetTargetName(fadeIn, "MyRect" + mlLayerIndex);
-            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Rectangle.OpacityProperty));
+            
 
-            //Storyboard.SetTarget(fadeIn, magicLayer.rect);
-            //Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Rectangle.OpacityProperty));
-            mlStoryboard.Children.Add(fadeIn);
-            //fadeIn.Completed += (s, e) =>
+
+            
+
+
+            /////////////////  working toy example where we hit Completed
+            //var rect = new Rectangle
             //{
-            //    Debug.WriteLine("fade in completed layer " + magicLayer.layerIndex);
+            //    Width = 100,
+            //    Height = 100,
+            //    Fill = Brushes.Red,
+            //    Opacity = 0
             //};
+            //MyGrid.Children.Add(rect);
+            //this.RegisterName("aaMyRect"+mlLayerIndex, rect);
+            //var afadeIn = new DoubleAnimation
+            //{
+            //    From = 0,
+            //    To = 1,
+            //    Duration = TimeSpan.FromSeconds(3)
+            //};
+            //var storyboard = new Storyboard();
+            //Storyboard.SetTargetName(afadeIn, "aaMyRect" + mlLayerIndex);
+            //Storyboard.SetTargetProperty(afadeIn, new PropertyPath(Rectangle.OpacityProperty));
+            //storyboard.Children.Add(afadeIn);
+            //storyboard.Completed += (s, e) =>
+            //{
+            //    Debug.WriteLine("Simple storyboard completed.");
+            //};
+            //storyboard.Begin(this);
+            ///////////////// end working toy eample where we hit Completed
 
-            //3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
+            //if (MyGrid.Children.Contains(mlRect))
+            //    Debug.WriteLine("Rectangle is part of MyGrid.");
+            //else
+            //    Debug.WriteLine("Rectangle is NOT part of MyGrid.");
+
+            
+            
+
+
+            ////3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
             //var fluctuateOpacity = new DoubleAnimationUsingKeyFrames // TODO might overwrite fadeIn? Use BeginTime if so
             //{
-            //    Duration = new Duration(TimeSpan.FromSeconds(magicLayer.lifespan.TimeSpan.TotalSeconds)),
-            //    RepeatBehavior = RepeatBehavior.Forever
+            //    Duration = TimeSpan.FromSeconds(magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds),
+            //    RepeatBehavior = RepeatBehavior.Forever,
+            //    BeginTime = TimeSpan.FromSeconds(fadeInDurationSeconds)
             //};
-            //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.3, KeyTime.FromPercent(0)));
+            //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.3, KeyTime.FromPercent(0)));  // TODO is this smooth?
             //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.35, KeyTime.FromPercent(0.5)));
             //fluctuateOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.33, KeyTime.FromPercent(1)));
-
             //Storyboard.SetTarget(fluctuateOpacity, magicLayer.rect);
             //Storyboard.SetTargetProperty(fluctuateOpacity, new PropertyPath(Rectangle.OpacityProperty));
-            //mlStoryboard.Children.Add(fluctuateOpacity);
-
-
-            //4.After lifespan, transition opacity to 1.0.
-            //var fadeToFull = new DoubleAnimation
-            //{
-            //    From = 0.34,
-            //    To = 1.0,
-            //    Duration = TimeSpan.FromSeconds(2),
-            //    BeginTime = magicLayer.lifespan.TimeSpan
-            //};
-            //Storyboard.SetTarget(fadeToFull, magicLayer.rect);
-            //Storyboard.SetTargetProperty(fadeToFull, new PropertyPath(Rectangle.OpacityProperty));
-            //mlStoryboard.Children.Add(fadeToFull);
-
-
-
-            //5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
-            mlStoryboard.Completed += (s, e) =>
+            //newStoryboard.Children.Add(fluctuateOpacity);
+            ////4.After lifespan, transition opacity to 1.0.
+            var fadeToFull = new DoubleAnimation
             {
-                Debug.WriteLine("completed fade to 1.0 for layer index " + magicLayer.layerIndex);
+                From = isFirst ? 1 : 0.34,
+                To = 1.0,
+                Duration = TimeSpan.FromSeconds(7),
+                BeginTime = magicLayer.lifespan.TimeSpan
+            };
+            Storyboard.SetTarget(fadeToFull, magicLayer.rect);
+            Storyboard.SetTargetProperty(fadeToFull, new PropertyPath(Rectangle.OpacityProperty));
+            newStoryboard.Children.Add(fadeToFull);
+            ////5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
+
+
+
+            newStoryboard.Completed += (s, e) =>
+            {
+                Debug.WriteLine("Got in the completed event! for layer index " + magicLayer.layerIndex);
                 // Dequeue the old layer and free its resources.
                 if (magicLayers.TryDequeue(out var expiredLayer))
                 {
@@ -435,23 +463,23 @@ namespace Cloudless
                     expiredLayer.Free(this, MyGrid);
                 }
 
-                CreateMagicLayer(); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
+                CreateMagicLayer(false); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
             };
 
 
             magicLayers.Enqueue(magicLayer);
-            //orchStoryboard.Children.Add(magicLayer.storyboard); // Can we add things to an in-progress SB? TODO
 
-            // mlStoryboard.BeginTime = TimeSpan.FromSeconds(2 * magicLayer.layerIndex); // maybe start first few at once
-            mlStoryboard.BeginTime = TimeSpan.Zero;
+            //mlStoryboard.BeginTime = TimeSpan.Zero;
             //mlStoryboard.FillBehavior = FillBehavior.HoldEnd;
 
-            Debug.WriteLine($"Setting storyboard timing for layer {magicLayer.layerIndex}: BeginTime = {mlStoryboard.BeginTime}, FillBehavior = {mlStoryboard.FillBehavior}");
 
-            mlStoryboard.Begin(MyGrid, true);
+            //Debug.WriteLine($"Setting storyboard timing for layer {magicLayer.layerIndex}: BeginTime = {mlStoryboard.BeginTime}, FillBehavior = {mlStoryboard.FillBehavior}");
 
-            Debug.WriteLine($"GradientBrush for layer {magicLayer.layerIndex}: Angle = {mlGradientAngle}, Stops = {mlGscs.Count}");
-            Debug.WriteLine($"Animating Opacity for {magicLayer.layerIndex} from {fadeIn.From} to {fadeIn.To}");
+            newStoryboard.Begin(this, true);  // "this" here is the MainWindow
+
+            mlStoryboard.Begin(this, true); // clean?
+            //Debug.WriteLine($"GradientBrush for layer {magicLayer.layerIndex}: Angle = {mlGradientAngle}, Stops = {mlGscs.Count}");
+            //Debug.WriteLine($"Animating Opacity for {magicLayer.layerIndex} from {fadeIn.From} to {fadeIn.To}");
             Debug.WriteLine("created magic layer with index " + magicLayer.layerIndex + " lifespan " + magicLayer.lifespan);
             return magicLayer;
         }
@@ -478,7 +506,7 @@ namespace Cloudless
             internal double gradientAngle; 
 
             internal void Free(MainWindow mainWindow, Grid parentOfRect) // pass in MainWindow ("this") and MyGrid
-            {
+            { // TODO should consider both types of storyboard and other recent changes. maybe we can set alerts for memory leaks too.
                 parentOfRect.Children.Remove(rect);
 
                 foreach (var gsc in gscs)

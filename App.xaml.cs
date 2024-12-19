@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Data;
 using System.Windows;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
 namespace Cloudless
@@ -17,6 +18,9 @@ namespace Cloudless
             {
                 filePath = e.Args[0];
             }
+            Timeline.DesiredFrameRateProperty.OverrideMetadata(
+                typeof(Timeline),
+                new FrameworkPropertyMetadata { DefaultValue = 60 });
 
             // Show the main window or a welcome screen
             var mainWindow = new MainWindow(filePath);
