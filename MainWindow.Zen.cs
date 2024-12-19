@@ -268,14 +268,16 @@ namespace Cloudless
 
             if (!MyGrid.Children.Contains(StarsCanvas))
                 MyGrid.Children.Add(StarsCanvas);
+
+            Canvas.SetZIndex(StarsCanvas, 99998);  // lazy
         }
 
         
 
         private Duration DetermineLifespan(int layerIndex, int fadeInDurationSeconds)
         {
-            const int lifespanQuadraticBase = 1; // 1 for debug. was 12.
-            var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + 2 + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
+            const int lifespanQuadraticBase = 7; // 1 for debug. was 12.
+            var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + 4 + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
             var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
             if (prevLayer == null)
             {
@@ -314,7 +316,7 @@ namespace Cloudless
 
             orchStoryboard = new Storyboard();
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 var ml = CreateMagicLayer(i == 0);  // TODO: issue in that they all start at the same time (but fixes itself)
                 //Thread.Sleep(1000); // TODO delete this
@@ -331,7 +333,7 @@ namespace Cloudless
         // TODO explore: timings? opacities? incorrect fills? tings being removed from memory or not removed when needed?
         private MagicLayer CreateMagicLayer(bool isFirst)
         {
-            const int fadeInDurationSeconds = 1;
+            const int fadeInDurationSeconds = 4;
             var mlStoryboard = new Storyboard();
             var mlLayerIndex = magicLayersCreated++;
             var mlBirth = DateTime.Now;
@@ -373,7 +375,7 @@ namespace Cloudless
                 var fadeIn = new DoubleAnimation
                 {
                     From = 0,
-                    To = 0.34,
+                    To = 0.39,
                     Duration = TimeSpan.FromSeconds(fadeInDurationSeconds)
                     // BeginTime is 0: correct since we only got here after the previous layer completed
                 };
@@ -423,7 +425,7 @@ namespace Cloudless
 
             
             
-
+            // TODO about nexcluding below. if you just have a bunch of same-opacity layers not fluctuating in opacity then it looks like mud.
 
             ////3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
             //var fluctuateOpacity = new DoubleAnimationUsingKeyFrames // TODO might overwrite fadeIn? Use BeginTime if so
@@ -441,7 +443,7 @@ namespace Cloudless
             ////4.After lifespan, transition opacity to 1.0.
             var fadeToFull = new DoubleAnimation
             {
-                From = isFirst ? 1 : 0.34,
+                From = isFirst ? 1 : 0.39,
                 To = 1.0,
                 Duration = TimeSpan.FromSeconds(7),
                 BeginTime = magicLayer.lifespan.TimeSpan
