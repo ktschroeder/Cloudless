@@ -351,7 +351,7 @@ namespace Cloudless
                 Opacity = isFirst ? 1 : 0
             };
 
-            MyGrid.Children.Add(mlRect);  //TODO should be under the stars
+            MyGrid.Children.Add(mlRect);
             
 
             var magicLayer = new MagicLayer()
@@ -365,17 +365,18 @@ namespace Cloudless
                 rect = mlRect
             };
 
+            // consider defining random seed for first-time use
             //Debug.WriteLine($"Targeting rectangle for storyboard: {magicLayer.rect == mlRect}");
             this.RegisterName("MyRect" + mlLayerIndex, mlRect);
             var newStoryboard = new Storyboard(); // notably this is not the one we sent into the gradient stop creation
 
-
+            const double simpleOpacity = 0.8;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
             if (!isFirst)
             {
                 var fadeIn = new DoubleAnimation
                 {
                     From = 0,
-                    To = 0.39,
+                    To = simpleOpacity,
                     Duration = TimeSpan.FromSeconds(fadeInDurationSeconds)
                     // BeginTime is 0: correct since we only got here after the previous layer completed
                 };
@@ -443,7 +444,7 @@ namespace Cloudless
             ////4.After lifespan, transition opacity to 1.0.
             var fadeToFull = new DoubleAnimation
             {
-                From = isFirst ? 1 : 0.39,
+                From = isFirst ? 1 : simpleOpacity,
                 To = 1.0,
                 Duration = TimeSpan.FromSeconds(7),
                 BeginTime = magicLayer.lifespan.TimeSpan
