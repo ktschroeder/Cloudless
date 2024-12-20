@@ -525,6 +525,11 @@ namespace Cloudless
                     gradientStopStoryboard.Stop();
                     gradientStopStoryboard.Remove();
                 }
+
+                mainWindow.UnregisterName("MyRect" + layerIndex);
+                rectStoryboard.Children.Clear();
+                rectStoryboard.Stop();
+                rectStoryboard.Remove();
             }
         }
 
@@ -567,21 +572,22 @@ namespace Cloudless
 
             Action<GradientStopContext> createOpacityOrColorAnim = gsc => 
             {
-                if (false && layer > 0 && _random.NextDouble() > 0.5) // TODO debug, disabled
+                if (layer > 0 && _random.NextDouble() > 0.5)
                 {
                     // opacity anim
-                    var opacityOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(15 + _random.NextDouble() * 50), System.Windows.Media.Color.FromScRgb(-1.0F, 0F, 0F, 0F));
+                    if (gsc.name == null) throw new Exception();
+                    var opacityOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 20), System.Windows.Media.Color.FromScRgb(_random.NextDouble()>0.5? -1.0F : 1.0F, 0F, 0F, 0F));
                     gsc.colorAnimation = opacityOA;
                     storyboard.Children.Add(opacityOA);
                 }
                 else
                 {
                     //color anim
-                    var tweak1 = (float)(0.1 + _random.NextDouble() * 0.25);
-                    var tweak2 = (float)(0.1 + _random.NextDouble() * 0.25);
-                    var tweak3 = (float)(0.1 + _random.NextDouble() * 0.25);
+                    var tweak1 = (float)(0.1 + _random.NextDouble() * 0.55);
+                    var tweak2 = (float)(0.1 + _random.NextDouble() * 0.55);
+                    var tweak3 = (float)(0.1 + _random.NextDouble() * 0.55);
                     if (gsc.name == null) throw new Exception();
-                    var colorOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 40), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3));
+                    var colorOA = CreateOpacityOrColorAnimation(gsc.name, TimeSpan.FromSeconds(10 + _random.NextDouble() * 20), System.Windows.Media.Color.FromScRgb(0F, tweak1, tweak2, tweak3));
                     gsc.colorAnimation = colorOA;
                     storyboard.Children.Add(colorOA);
                 }
