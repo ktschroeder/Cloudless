@@ -318,12 +318,10 @@ namespace Cloudless
 
             for (int i = 0; i < 4; i++)
             {
-                var ml = CreateMagicLayer(i == 0);  // TODO: issue in that they all start at the same time (but fixes itself)
-                //Thread.Sleep(1000); // TODO delete this
-                // Adjust timings to overlap or stagger layer animations.
-                //ml.storyboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
+                var ml = CreateMagicLayer(i == 0);
+                ml.rectStoryboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
 
-                //ml.storyboard.Begin(this, true);
+                ml.rectStoryboard.Begin(this, true);
             }
 
             Debug.WriteLine("Started GradientMagic");
@@ -334,12 +332,12 @@ namespace Cloudless
         private MagicLayer CreateMagicLayer(bool isFirst)
         {
             const int fadeInDurationSeconds = 4;
-            var mlStoryboard = new Storyboard();
+            var gradientStopStoryboard = new Storyboard();
             var mlLayerIndex = magicLayersCreated++;
             var mlBirth = DateTime.Now;
             var mlLifeSpan = DetermineLifespan(mlLayerIndex, isFirst ? 0 : fadeInDurationSeconds);  // Checks lower layer's lifespan to ensure this one lasts beyond it.
             var mlGradientAngle = DetermineGradientAngle(mlLayerIndex);  // Gets angle not too near to previous angle.
-            var mlGscs = CreateGradientStopContexts(mlLayerIndex, mlStoryboard);  // includes using the MainWindow's RegisterName to register each GradientStop.
+            var mlGscs = CreateGradientStopContexts(mlLayerIndex, gradientStopStoryboard);  // includes using the MainWindow's RegisterName to register each GradientStop.
 
             LinearGradientBrush gradientBrush = new LinearGradientBrush(new GradientStopCollection(mlGscs.Select(gsc => gsc.stop)), mlGradientAngle);
 
@@ -352,23 +350,24 @@ namespace Cloudless
             };
 
             MyGrid.Children.Add(mlRect);
-            
+            var rectStoryboard = new Storyboard(); // notably this is not the one we sent into the gradient stop creation
 
             var magicLayer = new MagicLayer()
             {
-                storyboard = mlStoryboard,
+                gradientStopStoryboard = gradientStopStoryboard,
                 layerIndex = mlLayerIndex,
                 birth = mlBirth,
                 lifespan = mlLifeSpan,
                 gradientAngle = mlGradientAngle,
                 gscs = mlGscs,
-                rect = mlRect
+                rect = mlRect,
+                rectStoryboard = rectStoryboard
             };
 
             // consider defining random seed for first-time use
             //Debug.WriteLine($"Targeting rectangle for storyboard: {magicLayer.rect == mlRect}");
             this.RegisterName("MyRect" + mlLayerIndex, mlRect);
-            var newStoryboard = new Storyboard(); // notably this is not the one we sent into the gradient stop creation
+            
 
             const double simpleOpacity = 0.8;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
             if (!isFirst)
@@ -384,7 +383,7 @@ namespace Cloudless
                 Storyboard.SetTargetName(fadeIn, "MyRect" + mlLayerIndex);
                 Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Rectangle.OpacityProperty));
 
-                newStoryboard.Children.Add(fadeIn);
+                rectStoryboard.Children.Add(fadeIn);
             }
             
 
@@ -451,12 +450,12 @@ namespace Cloudless
             };
             Storyboard.SetTarget(fadeToFull, magicLayer.rect);
             Storyboard.SetTargetProperty(fadeToFull, new PropertyPath(Rectangle.OpacityProperty));
-            newStoryboard.Children.Add(fadeToFull);
+            rectStoryboard.Children.Add(fadeToFull);
             ////5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
 
 
 
-            newStoryboard.Completed += (s, e) =>
+            rectStoryboard.Completed += (s, e) =>
             {
                 Debug.WriteLine("Got in the completed event! for layer index " + magicLayer.layerIndex + ". Opacity of replacing rect is " + mlRect.Opacity);
                 // Dequeue the old layer and free its resources.
@@ -468,7 +467,8 @@ namespace Cloudless
                     expiredLayer.Free(this, MyGrid);
                 }
 
-                CreateMagicLayer(false); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
+                var ml = CreateMagicLayer(false); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
+                ml.rectStoryboard.Begin(this, true);
             };
 
 
@@ -480,9 +480,9 @@ namespace Cloudless
 
             //Debug.WriteLine($"Setting storyboard timing for layer {magicLayer.layerIndex}: BeginTime = {mlStoryboard.BeginTime}, FillBehavior = {mlStoryboard.FillBehavior}");
 
-            newStoryboard.Begin(this, true);  // "this" here is the MainWindow
+            //newStoryboard.Begin(this, true);  // "this" here is the MainWindow
 
-            mlStoryboard.Begin(this, true); // clean?
+            gradientStopStoryboard.Begin(this, true); // clean?
             //Debug.WriteLine($"GradientBrush for layer {magicLayer.layerIndex}: Angle = {mlGradientAngle}, Stops = {mlGscs.Count}");
             //Debug.WriteLine($"Animating Opacity for {magicLayer.layerIndex} from {fadeIn.From} to {fadeIn.To}");
             Debug.WriteLine("created magic layer with index " + magicLayer.layerIndex + " lifespan " + magicLayer.lifespan);
@@ -505,7 +505,8 @@ namespace Cloudless
             internal Rectangle rect;  // has opacity and fill
             internal DateTime birth;
             internal Duration lifespan;
-            internal Storyboard storyboard;
+            internal Storyboard gradientStopStoryboard;
+            internal Storyboard rectStoryboard;
             internal int layerIndex;
             internal List<GradientStopContext> gscs = new List<GradientStopContext>();
             internal double gradientAngle; 
@@ -518,11 +519,11 @@ namespace Cloudless
                 {
                     mainWindow.UnregisterName(gsc.name);
                     if (gsc.offsetAnimation != null)
-                        storyboard.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
+                        gradientStopStoryboard.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
                     if (gsc.colorAnimation != null)
-                        storyboard.Children.Remove(gsc.colorAnimation);
-                    storyboard.Stop();
-                    storyboard.Remove();
+                        gradientStopStoryboard.Children.Remove(gsc.colorAnimation);
+                    gradientStopStoryboard.Stop();
+                    gradientStopStoryboard.Remove();
                 }
             }
         }
