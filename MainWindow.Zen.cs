@@ -311,13 +311,12 @@ namespace Cloudless
             NameScope.SetNameScope(this, new NameScope());
 
             this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 1 });
-
-            orchStoryboard = new Storyboard();
+            magicLayersCreated = 0;
 
             for (int i = 0; i < CONCURRENT_ZEN_LAYERS; i++)
             {
-                var ml = CreateMagicLayer(i == 0);
-                ml.rectStoryboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
+                var ml = CreateMagicLayer();
+                //ml.rectStoryboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
 
                 ml.rectStoryboard.Begin(this, true);
             }
@@ -327,15 +326,19 @@ namespace Cloudless
 
 
         // TODO explore: timings? opacities? incorrect fills? things being removed from memory or not removed when needed?
-        private MagicLayer CreateMagicLayer(bool isFirst)
+        private MagicLayer CreateMagicLayer()
         {
-            const int fadeInDurationSeconds = 8;
-            var gradientStopStoryboard = new Storyboard();
+            const double baseOpacity = 0.4;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
             var mlLayerIndex = magicLayersCreated++;
+            bool isFirstLayer = mlLayerIndex == 0;
+            bool isFirstRound = mlLayerIndex < CONCURRENT_ZEN_LAYERS;
+            int fadeInDurationSeconds = isFirstRound ? 0 : 8;
+            var gradientStopStoryboard = new Storyboard();
+            
             var mlBirth = DateTime.Now;
             // Checks lower layer's lifespan to ensure this one lasts beyond it.
             // This lifespan includes fade-in time. after this lifespan expires, this layer will transition to full opacity, retire the previous dead layer, and will be retired as soon as the next layer is ready to replace it.
-            var mlLifeSpan = DetermineLifespan(mlLayerIndex, isFirst ? 0 : fadeInDurationSeconds); 
+            var mlLifeSpan = DetermineLifespan(mlLayerIndex, fadeInDurationSeconds); 
             var mlGradientAngle = DetermineGradientAngle(mlLayerIndex);  // Gets angle not too near to previous angle.
             var mlGscs = CreateGradientStopContexts(mlLayerIndex, gradientStopStoryboard);  // includes using the MainWindow's RegisterName to register each GradientStop.
 
@@ -346,7 +349,7 @@ namespace Cloudless
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Fill = gradientBrush,
-                Opacity = isFirst ? 1 : 0
+                Opacity = isFirstLayer ? 1 : isFirstRound ? baseOpacity : 0
             };
 
             MyGrid.Children.Add(mlRect);
@@ -366,8 +369,8 @@ namespace Cloudless
             // consider defining random seed for first-time use
             this.RegisterName("MyRect" + mlLayerIndex, mlRect);
             
-            const double baseOpacity = 0.4;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
-            if (!isFirst)
+            
+            if (!isFirstRound)
             {
                 var fadeIn = new DoubleAnimation
                 {
@@ -388,7 +391,7 @@ namespace Cloudless
             ////3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
             ///
             double finalFluctuationOpacity = -1;
-            if (!isFirst)
+            if (!isFirstLayer)
             {
                 var fluctuationAnimation = new DoubleAnimationUsingKeyFrames
                 {
@@ -431,7 +434,7 @@ namespace Cloudless
             //4.After lifespan, transition opacity to 1.0.
             var fadeToFull = new DoubleAnimation
             {
-                From = isFirst ? 1 : finalFluctuationOpacity,
+                From = isFirstLayer ? 1 : finalFluctuationOpacity,
                 To = 1.0,
                 Duration = TimeSpan.FromSeconds(7),  // making this a constant value is convenient so there is not a possibility of the next layer trying to delete this one before reaching full opacity. Otherwise include in lifespan calculations to not risk occasional flashes.
                 BeginTime = magicLayer.lifespan.TimeSpan,
@@ -445,14 +448,14 @@ namespace Cloudless
             rectStoryboard.Completed += (s, e) =>
             {
                 // Dequeue the old layer and free its resources.
-                if (!isFirst && magicLayers.TryDequeue(out var expiredLayer))
+                if (!isFirstLayer && magicLayers.TryDequeue(out var expiredLayer))
                 {
                     if (expiredLayer.layerIndex != mlLayerIndex - 1)
                         throw new Exception("bad");
                     expiredLayer.Free(this, MyGrid);
                 }
 
-                var ml = CreateMagicLayer(false); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
+                var ml = CreateMagicLayer(); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
                 ml.rectStoryboard.Begin(this, true);
             };
 
