@@ -269,7 +269,7 @@ namespace Cloudless
                 if (isZen)
                     RemoveZen(true);
                 else
-                    Zen(currentlyDisplayedImagePath == null);
+                    Zen(isWelcome);
                 e.Handled = true;
                 return;
             }

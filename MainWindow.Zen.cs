@@ -147,6 +147,7 @@ namespace Cloudless
 
         private void Zen_Click(object sender, RoutedEventArgs e)
         {
+            isWelcome = false;
             Zen(false);
         }
 
