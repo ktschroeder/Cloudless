@@ -273,8 +273,8 @@ namespace Cloudless
 
         private Duration DetermineLifespan(int layerIndex, int fadeInDurationSeconds)
         {
-            const int lifespanQuadraticBase = 7; // 1 for debug. was 12.
-            const int minLifespanSecondsBeyondFadeIn = 7;
+            const int lifespanQuadraticBase = 5; // 1 for debug. was 12.
+            const int minLifespanSecondsBeyondFadeIn = 5;
             var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + minLifespanSecondsBeyondFadeIn + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
             var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
             if (prevLayer == null)
@@ -328,11 +328,11 @@ namespace Cloudless
         // TODO explore: timings? opacities? incorrect fills? things being removed from memory or not removed when needed?
         private MagicLayer CreateMagicLayer()
         {
-            const double baseOpacity = 0.4;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
+            const double baseOpacity = 0.7;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
             var mlLayerIndex = magicLayersCreated++;
             bool isFirstLayer = mlLayerIndex == 0;
             bool isFirstRound = mlLayerIndex < CONCURRENT_ZEN_LAYERS;
-            int fadeInDurationSeconds = isFirstRound ? 0 : 8;
+            int fadeInDurationSeconds = isFirstRound ? 0 : 5;
             var gradientStopStoryboard = new Storyboard();
             
             var mlBirth = DateTime.Now;
@@ -398,10 +398,10 @@ namespace Cloudless
                     Duration = TimeSpan.FromSeconds(magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds),
                     BeginTime = TimeSpan.FromSeconds(fadeInDurationSeconds),
                 };
-                const double MIN_FLUX_SECONDS = 2;
-                const double MAX_FLUX_SECONDS = 20;
+                const double MIN_FLUX_SECONDS = 4;
+                const double MAX_FLUX_SECONDS = 15;
                 const double MIN_FLUX_OPACITY = 0.02;
-                const double MAX_FLUX_OPACITY = 0.5;  // itentionally disobeyed in while-loop for final fluctuation, to align well with other animations
+                const double MAX_FLUX_OPACITY = 0.3;  // itentionally disobeyed in while-loop for final fluctuation, to align well with other animations
                 double timeToFluctuateSeconds = magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds;
                 int fluxCount = 0;
 
@@ -448,12 +448,19 @@ namespace Cloudless
             rectStoryboard.Completed += (s, e) =>
             {
                 // Dequeue the old layer and free its resources.
-                if (!isFirstLayer && magicLayers.TryDequeue(out var expiredLayer))
+                if (!isFirstLayer)
                 {
-                    if (expiredLayer.layerIndex != mlLayerIndex - 1)
+                    if (!magicLayers.TryDequeue(out var expiredLayer))
                         throw new Exception("bad");
+                    if (expiredLayer.layerIndex != mlLayerIndex - 1)
+                        throw new Exception("also bad");
+                    //if (expiredLayer.rect.Opacity)
+                    Debug.Print($"Freed layer with opacity {expiredLayer.rect.Opacity} while new ded layer had opacity {mlRect.Opacity}"); 
                     expiredLayer.Free(this, MyGrid);
                 }
+
+                if (magicLayers.Any(ml => ml.layerIndex < mlLayerIndex))
+                    throw new Exception("also also bad");
 
                 var ml = CreateMagicLayer(); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
                 ml.rectStoryboard.Begin(this, true);
@@ -548,7 +555,7 @@ namespace Cloudless
 
             Action<GradientStopContext> createOpacityOrColorAnim = gsc => 
             {
-                if (layer > 0 && _random.NextDouble() > 0.5)
+                if (false && layer > 0 && _random.NextDouble() > 0.5)  // disabled for debugging TODO. May be cause of flashing when layer is freed.
                 {
                     // opacity anim
                     if (gsc.name == null) throw new Exception();
