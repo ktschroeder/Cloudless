@@ -15,6 +15,7 @@ using System;
 using Brushes = System.Windows.Media.Brushes;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Cloudless.MainWindow;
+using System.Windows.Media.Media3D;
 //using Rectangle = System.Windows.Shapes.Rectangle;
 
 // ****** The slot approach is overly complicated and unwieldy. Put a random lifespan on each non-bg layer. Upon expiration, fade to 0 opacity, and fade in a new layer (can reuse layer or may be cleaner to start fresh: increment some index).
@@ -32,6 +33,7 @@ namespace Cloudless
 
         private Random _random = new Random();
         private bool isZen;
+        private int staticStarSession = -1;  // smelly technique for determining in star child generation whether they should proceed (if in old session, then no).
         private bool isWelcome = true;
         private DispatcherTimer _resizeStarTimer;
         private int brushKey = 0;
@@ -50,7 +52,9 @@ namespace Cloudless
             _resizeStarTimer.Tick += (s, e) =>
             {
                 _resizeStarTimer.Stop();
-                if (isZen) GenerateStars(); // Only regenerate stars once resizing stops
+                if (isZen) {
+                    GenerateStars();
+                }; // Only regenerate stars once resizing stops
             };
 
             MyGrid.SizeChanged += (s, e) =>
@@ -171,6 +175,9 @@ namespace Cloudless
 
         private void GenerateStars()
         {
+            staticStarSession++;
+            var session = staticStarSession;
+
             if (StarsCanvas == null)
             {
                 StarsCanvas = new Canvas
@@ -190,65 +197,92 @@ namespace Cloudless
 
             for (int i = 0; i < starCount; i++)
             {
-                // Create a star (small circle)
-                Ellipse star = new Ellipse
-                {
-                    Width = StarSize,
-                    Height = StarSize,
-                    Fill = Brushes.White,
-                    Opacity = 0 // Start fully transparent
-                };
-
-                // Randomize initial position
-                double startX = _random.NextDouble() * width;
-                double startY = _random.NextDouble() * height;
-
-                Canvas.SetLeft(star, startX);
-                Canvas.SetTop(star, startY);
-
-                // Add the star to the canvas
-                StarsCanvas.Children.Add(star);
-
-                // Create animations for fade-in, movement, and fade-out
-                const double AnimationDurationSeconds = 8;
-                var withDelay = AnimationDurationSeconds + _random.NextDouble() * 10.0;
-                var startingDelay = _random.NextDouble() * 25.0;
-                var periodDelay = 0.5 + _random.NextDouble() * 8.0;
-                DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(withDelay / 2.0)))
-                {
-                    BeginTime = TimeSpan.FromSeconds(periodDelay)
-                };
-                DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(withDelay / 2.0)))
-                {
-                    BeginTime = TimeSpan.FromSeconds(2*periodDelay + withDelay / 2.0) // Start fading out after fading in
-                };
-
-                // Apply animations
-                Storyboard storyboard = new Storyboard
-                {
-                    RepeatBehavior = RepeatBehavior.Forever,
-                    BeginTime = TimeSpan.FromSeconds(startingDelay)
-                };
-
-                Storyboard.SetTarget(fadeIn, star);
-                Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Ellipse.OpacityProperty));
-
-                Storyboard.SetTarget(fadeOut, star);
-                Storyboard.SetTargetProperty(fadeOut, new PropertyPath(Ellipse.OpacityProperty));
-
-                storyboard.Children.Add(fadeIn);
-                storyboard.Children.Add(fadeOut);
-
-                star.Tag = storyboard;
-                //Debug.WriteLine($"stars storyboard children: {storyboard.Children.Count}");
-                // Start the animation
-                storyboard.Begin(this, true);
+                var repeatCount = (int)(Math.Pow(_random.NextInt64(1, 100), 2) + _random.NextInt64(0, 5));
+                CreateStar(width, height, repeatCount, session);
             }
 
             if (!MyGrid.Children.Contains(StarsCanvas))
                 MyGrid.Children.Add(StarsCanvas);
 
             Canvas.SetZIndex(StarsCanvas, 99998);  // lazy
+        }
+
+        // repeatCount is a parameter because if we generate it within and don't reuse it, we will gradually skew toward stars with many more repeats on-screen
+        private void CreateStar(double canvasWidth, double canvasHeight, int repeatCount, int starSession)
+        {
+            // Create a star (small circle)
+            Ellipse star = new Ellipse
+            {
+                Width = StarSize,
+                Height = StarSize,
+                Fill = Brushes.White,
+                Opacity = 0 // Start fully transparent
+            };
+
+            // Randomize initial position
+            double startX = _random.NextDouble() * canvasWidth;
+            double startY = _random.NextDouble() * canvasHeight;
+
+            Canvas.SetLeft(star, startX);
+            Canvas.SetTop(star, startY);
+
+            // Add the star to the canvas
+            StarsCanvas.Children.Add(star);
+
+            // Create animations for fade-in, movement, and fade-out
+            const double AnimationDurationSeconds = 8;
+            var withDelay = AnimationDurationSeconds + _random.NextDouble() * 10.0;
+            var startingDelay = _random.NextDouble() * 25.0;
+            var periodDelay = 0.5 + _random.NextDouble() * 8.0;
+            DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(withDelay / 2.0)))
+            {
+                BeginTime = TimeSpan.FromSeconds(periodDelay)
+            };
+            DoubleAnimation fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(withDelay / 2.0)))
+            {
+                BeginTime = TimeSpan.FromSeconds(2 * periodDelay + withDelay / 2.0) // Start fading out after fading in
+            };
+
+            // Apply animations
+            
+            Storyboard storyboard = new Storyboard
+            {
+                //RepeatBehavior = RepeatBehavior.Forever,
+                RepeatBehavior = new RepeatBehavior(count: repeatCount),
+                BeginTime = TimeSpan.FromSeconds(startingDelay)
+            };
+
+            Storyboard.SetTarget(fadeIn, star);
+            Storyboard.SetTargetProperty(fadeIn, new PropertyPath(Ellipse.OpacityProperty));
+
+            Storyboard.SetTarget(fadeOut, star);
+            Storyboard.SetTargetProperty(fadeOut, new PropertyPath(Ellipse.OpacityProperty));
+
+            storyboard.Children.Add(fadeIn);
+            storyboard.Children.Add(fadeOut);
+
+            star.Tag = storyboard;
+            //Debug.WriteLine($"stars storyboard children: {storyboard.Children.Count}");
+
+            storyboard.Completed += (s, e) =>
+            {
+                // looks like we get here after clearing/freeing star still, similar to rect issue.
+                // temporary band-aid to avoid exceptions
+
+                // must clean/free this one
+                storyboard.Stop();
+                storyboard.Remove(); // Remove storyboard from the clock system
+                star.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
+
+                if (starSession == staticStarSession && isZen)  // if we got here from the completion of a star that is not part of this zen session then just stop.
+                {
+                    StarsCanvas.Children.Remove(star);
+                    CreateStar(canvasWidth, canvasHeight, repeatCount, starSession);
+                }
+            };
+
+            // Start the animation
+            storyboard.Begin(this, true);
         }
 
         
@@ -316,6 +350,7 @@ namespace Cloudless
             bool isFirstRound = mlLayerIndex < CONCURRENT_ZEN_LAYERS;
             int fadeInDurationSeconds = isFirstRound ? 0 : 5;
             var gradientStopStoryboard = new Storyboard();
+            
             
             var mlBirth = DateTime.Now;
             // Checks lower layer's lifespan to ensure this one lasts beyond it.
@@ -501,13 +536,10 @@ namespace Cloudless
                     gradientStopStoryboard.Remove();
                 }
 
-                foreach (var sb in rectStoryboard.Children)
-                {
-                    //sb.
-                }
                 rectStoryboard.Children.Clear();
                 rectStoryboard.Stop();
                 rectStoryboard.Remove();
+                rect.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
                 mainWindow.UnregisterName("MyRect" + layerIndex);
             }
         }
