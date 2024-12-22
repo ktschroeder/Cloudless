@@ -344,12 +344,18 @@ namespace Cloudless
         // TODO explore: timings? opacities? incorrect fills? things being removed from memory or not removed when needed?
         private MagicLayer CreateMagicLayer()
         {
-            const double baseOpacity = 0.7;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
+            double baseOpacity = 0.7;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
             var mlLayerIndex = magicLayersCreated++;
             bool isFirstLayer = mlLayerIndex == 0;
             bool isFirstRound = mlLayerIndex < CONCURRENT_ZEN_LAYERS;
             int fadeInDurationSeconds = isFirstRound ? 0 : 5;
             var gradientStopStoryboard = new Storyboard();
+
+            bool isEmptyLayer = !isFirstRound && _random.NextDouble() < 0;  // occasional empty layer, can create neat effects, especially if there are several
+            if (isEmptyLayer)
+            {
+                baseOpacity = 0;
+            }
             
             
             var mlBirth = DateTime.Now;
@@ -416,9 +422,9 @@ namespace Cloudless
                     BeginTime = TimeSpan.FromSeconds(fadeInDurationSeconds),
                 };
                 const double MIN_FLUX_SECONDS = 4;
-                const double MAX_FLUX_SECONDS = 15;
+                const double MAX_FLUX_SECONDS = 15;  // intentionally disobeyed in while-loop for final fluctuation, to align well with other animations
                 const double MIN_FLUX_OPACITY = 0.02;
-                const double MAX_FLUX_OPACITY = 0.3;  // itentionally disobeyed in while-loop for final fluctuation, to align well with other animations
+                const double MAX_FLUX_OPACITY = 0.3;
                 double timeToFluctuateSeconds = magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds;
                 int fluxCount = 0;
 
