@@ -71,6 +71,7 @@ namespace Cloudless
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
 
             ImageDisplay.Visibility = Visibility.Collapsed;
+            magicLayersCreated = 0;
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
             GenerateStars();
             // Create the TextBlock for "No image is loaded" message
@@ -97,32 +98,9 @@ namespace Cloudless
             if (!leaveInfo)
                 MyGrid.Children.Remove(NoImageMessage);
 
-            // Stop the active Storyboard, if any
-            foreach (var resourceKey in Resources.Keys)
+            foreach (var ml in magicLayers)
             {
-                if (Resources[resourceKey] is Storyboard storyboard)
-                {
-                    storyboard.Stop(this);
-                }
-            }
-
-            // Unregister all gradient stops and layers
-            for (int layer = 0; layer <= CONCURRENT_ZEN_LAYERS; layer++)  // TODO magic number, sync with creation of layers. revisit this for new cleanup following many changes
-            {
-                for (int i = 0; i <= 3; i++)
-                {
-                    string gradientStopName = $"GradientStop{i}Layer{layer}";
-                    if (this.FindName(gradientStopName) is GradientStop)
-                    {
-                        this.UnregisterName(gradientStopName);
-                    }
-                }
-
-                string gradientLayerName = $"GradientLayer{layer}";
-                if (this.FindName(gradientLayerName) is Rectangle)
-                {
-                    this.UnregisterName(gradientLayerName);
-                }
+                ml.Free(this, MyGrid);
             }
 
             // Clear the background brush (for layer 0)
@@ -147,6 +125,8 @@ namespace Cloudless
                 }
             }
 
+            magicLayers.Clear();
+
             ClearStars();
 
             // Remove the canvas from the parent container
@@ -160,6 +140,7 @@ namespace Cloudless
 
             if (currentlyDisplayedImagePath != null)
                 ImageDisplay.Visibility = Visibility.Visible;
+
 
             isZen = false; // TODO check performance and that nothing is missed
         }
@@ -447,6 +428,14 @@ namespace Cloudless
             //5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
             rectStoryboard.Completed += (s, e) =>
             {
+                if (magicLayer.endOfLine)
+                {
+                    //throw new Exception("freed but still got to complete event");
+
+                    // TODO clean this up
+                    return;
+                }
+
                 // Dequeue the old layer and free its resources.
                 if (!isFirstLayer)
                 {
@@ -492,10 +481,12 @@ namespace Cloudless
             internal Storyboard rectStoryboard;
             internal int layerIndex;
             internal List<GradientStopContext> gscs = new List<GradientStopContext>();
-            internal double gradientAngle; 
+            internal double gradientAngle;
+            internal bool endOfLine = false;
 
             internal void Free(MainWindow mainWindow, Grid parentOfRect) // pass in MainWindow ("this") and MyGrid
             { // TODO should consider both types of storyboard and other recent changes. maybe we can set alerts for memory leaks too.
+                endOfLine = true;
                 parentOfRect.Children.Remove(rect);
 
                 foreach (var gsc in gscs)
@@ -509,10 +500,14 @@ namespace Cloudless
                     gradientStopStoryboard.Remove();
                 }
 
-                mainWindow.UnregisterName("MyRect" + layerIndex);
+                foreach (var sb in rectStoryboard.Children)
+                {
+                    //sb.
+                }
                 rectStoryboard.Children.Clear();
                 rectStoryboard.Stop();
                 rectStoryboard.Remove();
+                mainWindow.UnregisterName("MyRect" + layerIndex);
             }
         }
 
