@@ -39,6 +39,7 @@ namespace Cloudless
 
         private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
         private int magicLayersCreated = 0;
+        private const int CONCURRENT_ZEN_LAYERS = 4;
 
         private void InitializeZenMode()
         {
@@ -106,7 +107,7 @@ namespace Cloudless
             }
 
             // Unregister all gradient stops and layers
-            for (int layer = 0; layer <= 5; layer++)  // TODO magic number, sync with creation of layers
+            for (int layer = 0; layer <= CONCURRENT_ZEN_LAYERS; layer++)  // TODO magic number, sync with creation of layers. revisit this for new cleanup following many changes
             {
                 for (int i = 0; i <= 3; i++)
                 {
@@ -114,10 +115,6 @@ namespace Cloudless
                     if (this.FindName(gradientStopName) is GradientStop)
                     {
                         this.UnregisterName(gradientStopName);
-                    }
-                    if (this.FindName(gradientStopName + "Odd") is GradientStop)
-                    {
-                        this.UnregisterName(gradientStopName + "Odd");
                     }
                 }
 
@@ -277,7 +274,8 @@ namespace Cloudless
         private Duration DetermineLifespan(int layerIndex, int fadeInDurationSeconds)
         {
             const int lifespanQuadraticBase = 7; // 1 for debug. was 12.
-            var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + 7 + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
+            const int minLifespanSecondsBeyondFadeIn = 7;
+            var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + minLifespanSecondsBeyondFadeIn + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
             var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
             if (prevLayer == null)
             {
@@ -316,7 +314,7 @@ namespace Cloudless
 
             orchStoryboard = new Storyboard();
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < CONCURRENT_ZEN_LAYERS; i++)
             {
                 var ml = CreateMagicLayer(i == 0);
                 ml.rectStoryboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
@@ -331,11 +329,13 @@ namespace Cloudless
         // TODO explore: timings? opacities? incorrect fills? things being removed from memory or not removed when needed?
         private MagicLayer CreateMagicLayer(bool isFirst)
         {
-            const int fadeInDurationSeconds = 10;
+            const int fadeInDurationSeconds = 8;
             var gradientStopStoryboard = new Storyboard();
             var mlLayerIndex = magicLayersCreated++;
             var mlBirth = DateTime.Now;
-            var mlLifeSpan = DetermineLifespan(mlLayerIndex, isFirst ? 0 : fadeInDurationSeconds);  // Checks lower layer's lifespan to ensure this one lasts beyond it.
+            // Checks lower layer's lifespan to ensure this one lasts beyond it.
+            // This lifespan includes fade-in time. after this lifespan expires, this layer will transition to full opacity, retire the previous dead layer, and will be retired as soon as the next layer is ready to replace it.
+            var mlLifeSpan = DetermineLifespan(mlLayerIndex, isFirst ? 0 : fadeInDurationSeconds); 
             var mlGradientAngle = DetermineGradientAngle(mlLayerIndex);  // Gets angle not too near to previous angle.
             var mlGscs = CreateGradientStopContexts(mlLayerIndex, gradientStopStoryboard);  // includes using the MainWindow's RegisterName to register each GradientStop.
 
@@ -366,15 +366,16 @@ namespace Cloudless
             // consider defining random seed for first-time use
             this.RegisterName("MyRect" + mlLayerIndex, mlRect);
             
-            const double simpleOpacity = 0.86;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
+            const double baseOpacity = 0.4;  // 0.69 was good, up from .49 and .34. Gets more interesting after initial mud phase.
             if (!isFirst)
             {
                 var fadeIn = new DoubleAnimation
                 {
                     From = 0,
-                    To = simpleOpacity,
-                    Duration = TimeSpan.FromSeconds(fadeInDurationSeconds)
+                    To = baseOpacity,
+                    Duration = TimeSpan.FromSeconds(fadeInDurationSeconds),
                     // BeginTime is 0: correct since we only got here after the previous layer completed
+                    //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }  // can consider omitting or using others
                 };
 
                 Storyboard.SetTargetName(fadeIn, "MyRect" + mlLayerIndex);
@@ -383,43 +384,58 @@ namespace Cloudless
                 rectStoryboard.Children.Add(fadeIn);
             }
 
-            // TODO about nexcluding below. if you just have a bunch of same-opacity layers not fluctuating in opacity then it looks like mud.
+            // TODO about excluding below. if you just have a bunch of same-opacity layers not fluctuating in opacity then it looks like mud.
             ////3.remains at this opacity for its lifespan (bonus: also fluctuate layer opacity during this time, some.).
-            //var fluctuations = Enumerable.Range(0, 10)
-            //    .Select(_ => _random.NextDouble() * 0.1 + 0.3) // Range [0.3, 0.4].
-            //    .ToArray();
-            //var fluctuateOpacity = new DoubleAnimationUsingKeyFrames
-            //{
-            //    Duration = TimeSpan.FromSeconds(magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds),
-            //    RepeatBehavior = RepeatBehavior.Forever,
-            //    BeginTime = TimeSpan.FromSeconds(fadeInDurationSeconds)
-            //};
+            ///
+            double finalFluctuationOpacity = -1;
+            if (!isFirst)
+            {
+                var fluctuationAnimation = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = TimeSpan.FromSeconds(magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds),
+                    BeginTime = TimeSpan.FromSeconds(fadeInDurationSeconds),
+                };
+                const double MIN_FLUX_SECONDS = 2;
+                const double MAX_FLUX_SECONDS = 20;
+                const double MIN_FLUX_OPACITY = 0.02;
+                const double MAX_FLUX_OPACITY = 0.5;  // itentionally disobeyed in while-loop for final fluctuation, to align well with other animations
+                double timeToFluctuateSeconds = magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds;
+                int fluxCount = 0;
 
-            //double cumulativeTime = 0;
-            //foreach (var value in fluctuations)
-            //{
-            //    cumulativeTime += _random.NextDouble() * 0.5; // Vary timing slightly.
-            //    fluctuateOpacity.KeyFrames.Add(new SplineDoubleKeyFrame(
-            //        value,
-            //        KeyTime.FromTimeSpan(TimeSpan.FromSeconds(cumulativeTime)),
-            //        new KeySpline(0.25, 0.1, 0.25, 1) // Smooth easing.
-            //    ));
-            //}
-            //double finalFluctuationValue = fluctuations.Last();
+                while (finalFluctuationOpacity == -1) // checking this instead of time in case of epsilon issue
+                {
+                    var thisFluctuationOpacity = MIN_FLUX_OPACITY + _random.NextDouble() * (MAX_FLUX_OPACITY - MIN_FLUX_OPACITY);
+                    var thisFluctuationSeconds = MIN_FLUX_SECONDS + _random.NextDouble() * (MAX_FLUX_SECONDS - MIN_FLUX_SECONDS);
+                    // if this will be so long that the next flux would be shorter than min length... (we are okay going over defined max in this edge case)
+                    if (thisFluctuationSeconds + MIN_FLUX_SECONDS >= timeToFluctuateSeconds)
+                    {
+                        thisFluctuationSeconds = timeToFluctuateSeconds;  // use all remaining time
+                        finalFluctuationOpacity = thisFluctuationOpacity;
+                    }
+                    timeToFluctuateSeconds -= thisFluctuationSeconds;
 
+                    fluctuationAnimation.KeyFrames.Add(new SplineDoubleKeyFrame(
+                        thisFluctuationOpacity,
+                        KeyTime.FromTimeSpan(TimeSpan.FromSeconds(thisFluctuationSeconds)),
+                        new KeySpline(0.25, 0.1, 0.25, 1) // Smooth easing. Can revisit.
+                    ));
+                    fluxCount++;
+                }
 
-            //Storyboard.SetTarget(fluctuateOpacity, magicLayer.rect);
-            //Storyboard.SetTargetProperty(fluctuateOpacity, new PropertyPath(Rectangle.OpacityProperty));
-            //rectStoryboard.Children.Add(fluctuateOpacity);
-
-
+                Debug.Print($"Made a batch of {fluxCount} fluctuations totaling {magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds} seconds");
+                Storyboard.SetTarget(fluctuationAnimation, magicLayer.rect);
+                Storyboard.SetTargetProperty(fluctuationAnimation, new PropertyPath(Rectangle.OpacityProperty));
+                rectStoryboard.Children.Add(fluctuationAnimation);
+            }
+            
             //4.After lifespan, transition opacity to 1.0.
             var fadeToFull = new DoubleAnimation
             {
-                From = isFirst ? 1 : simpleOpacity,  //fluctuations.Last()
+                From = isFirst ? 1 : finalFluctuationOpacity,
                 To = 1.0,
-                Duration = TimeSpan.FromSeconds(7),
-                BeginTime = magicLayer.lifespan.TimeSpan
+                Duration = TimeSpan.FromSeconds(7),  // making this a constant value is convenient so there is not a possibility of the next layer trying to delete this one before reaching full opacity. Otherwise include in lifespan calculations to not risk occasional flashes.
+                BeginTime = magicLayer.lifespan.TimeSpan,
+                //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }  // can consider omitting or using others
             };
             Storyboard.SetTarget(fadeToFull, magicLayer.rect);
             Storyboard.SetTargetProperty(fadeToFull, new PropertyPath(Rectangle.OpacityProperty));
