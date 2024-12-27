@@ -4,6 +4,7 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
+- stop fixating on an unperfectable, purely aesthetic feature and return to functional features
 
 Probably should/will:
 - compare performance of app before and after adding Zen to identify any performance issues

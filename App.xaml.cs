@@ -18,6 +18,8 @@ namespace Cloudless
             {
                 filePath = e.Args[0];
             }
+
+            // TODO may no longer be needed
             Timeline.DesiredFrameRateProperty.OverrideMetadata(
                 typeof(Timeline),
                 new FrameworkPropertyMetadata { DefaultValue = 60 });
