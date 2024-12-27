@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 
-namespace SimpleImageViewer
+namespace Cloudless
 {
     public partial class AboutWindow : Window
     {

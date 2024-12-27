@@ -1,8 +1,9 @@
-﻿<Window x:Class="SimpleImageViewer.MainWindow"
+﻿<Window x:Class="Cloudless.MainWindow"
         x:Name="PrimaryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Image Viewer" 
+        Height="400" Width="400"
         WindowStyle="None" 
         AllowsTransparency="True" 
         Background="Black" 
@@ -19,71 +20,52 @@
         AllowDrop="True"
         DragOver="Window_DragOver"
         Drop="Window_Drop">
-    <Grid>
-        <!-- Text displayed when no image is loaded -->
-        <TextBlock x:Name="NoImageMessage"
-                   Text="No image is loaded. Right click for options."
-                   Foreground="Black"
-                   Background="SkyBlue"
-                   FontSize="20"
-                   Padding="20"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Visibility="Visible" />
+    
 
+    <Grid Name="MyGrid">
         
-
         <!-- Image Display -->
         <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
 
         <!-- Debug Info Overlay -->
-        <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" 
+        <Border x:Name="DebugTextBlockBorder" HorizontalAlignment="Left" VerticalAlignment="Bottom" 
                 Margin="10"
                 Background="#AA000000"
-            CornerRadius="5" Padding="5" Visibility="{Binding Visibility, ElementName=DebugTextBlock}">
+                CornerRadius="5" Padding="5" Visibility="Collapsed">
             <TextBlock x:Name="DebugTextBlock" 
                        Foreground="White" 
                        FontSize="12" 
-                       TextWrapping="Wrap"
-                       Visibility="Collapsed">
-                
+                       TextWrapping="Wrap">
             </TextBlock>
-            
         </Border>
 
         <!-- Messages -->
         <StackPanel x:Name="MessageOverlayStack"
-            Orientation="Vertical"
-            VerticalAlignment="Top"
-            HorizontalAlignment="Left"
-            Margin="10"
-            IsHitTestVisible="False">
+                    Orientation="Vertical"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Left"
+                    Margin="10"
+                    IsHitTestVisible="False">
         </StackPanel>
-
 
         <!-- Context Menu -->
         <Grid.ContextMenu>
             <ContextMenu x:Name="ImageContextMenu">
                 <!-- Unclickable Title -->
-                <MenuItem Header="Just View" IsEnabled="False" 
-                    FontWeight="Bold" Foreground="Gray" />
-
+                <MenuItem Header="Cloudless" IsEnabled="False" FontWeight="Bold" Foreground="Gray" />
                 <!-- Separator -->
                 <Separator />
-                
-                <MenuItem Header="Close" Click="Exit_Click"/>
-                <MenuItem Header="Minimize" Click="Minimize_Click"/>
-                <MenuItem Header="Open Image" Click="OpenImage_Click"/>
+                <MenuItem Header="Close" Click="Exit_Click" />
+                <MenuItem Header="Minimize" Click="Minimize_Click" />
+                <MenuItem Header="Open Image" Click="OpenImage_Click" />
                 <MenuItem Header="Recent Files" x:Name="RecentFilesMenu" />
-                <MenuItem Header="Image Info" Click="ImageInfo_Click"/>
-                <MenuItem Header="Preferences" Click="OpenPreferences_Click"/>
-                <MenuItem Header="About" Click="About_Click"/>
-                <MenuItem Header="Hot Key Reference" Click="HotkeyRef_Click"/>
+                <MenuItem Header="Image Info" Click="ImageInfo_Click" />
+                <MenuItem Header="Preferences" Click="OpenPreferences_Click" />
+                <MenuItem Header="About" Click="About_Click" />
+                <MenuItem Header="Hot Key Reference" Click="HotkeyRef_Click" />
                 <MenuItem Header="Message History" Click="OpenMessageHistory_Click" />
+                <MenuItem Header="Zen" Click="Zen_Click" />
             </ContextMenu>
         </Grid.ContextMenu>
-
-        
-        
     </Grid>
 </Window>

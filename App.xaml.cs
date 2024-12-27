@@ -1,10 +1,11 @@
-﻿using SimpleImageViewer;
+﻿using Cloudless;
 using System.Configuration;
 using System.Data;
 using System.Windows;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
-namespace JustView
+namespace Cloudless
 {
     public partial class App : Application
     {
@@ -17,6 +18,11 @@ namespace JustView
             {
                 filePath = e.Args[0];
             }
+
+            // TODO may no longer be needed
+            Timeline.DesiredFrameRateProperty.OverrideMetadata(
+                typeof(Timeline),
+                new FrameworkPropertyMetadata { DefaultValue = 60 });
 
             // Show the main window or a welcome screen
             var mainWindow = new MainWindow(filePath);

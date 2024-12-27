@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace SimpleImageViewer
+namespace Cloudless
 {
     public partial class ImageInfoWindow : Window
     {

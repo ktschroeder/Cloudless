@@ -1,4 +1,4 @@
-﻿<Window x:Class="SimpleImageViewer.ImageInfoWindow"
+﻿<Window x:Class="Cloudless.ImageInfoWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Image Info" Height="300" Width="400"

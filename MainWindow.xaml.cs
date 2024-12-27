@@ -15,8 +15,11 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Drawing.Imaging;
 using System.Collections.Specialized;
+using Path = System.IO.Path;
+using Brushes = System.Windows.Media.Brushes;
 
-namespace SimpleImageViewer
+
+namespace Cloudless
 {
     public partial class MainWindow : Window
     {
@@ -40,6 +43,8 @@ namespace SimpleImageViewer
 
         public ScaleTransform imageScaleTransform = new ScaleTransform();
         public TranslateTransform imageTranslateTransform = new TranslateTransform();
+
+        private TextBlock NoImageMessage;
         #endregion
 
 
@@ -47,13 +52,17 @@ namespace SimpleImageViewer
         #region Setup
         public MainWindow(string? filePath)
         {
+            bool willLoadImage = filePath != null;
             Setup();
 
-            if (filePath != null)
+            if (willLoadImage)
             {
                 LoadImage(filePath, false);
                 ResizeWindowToImage();
-                CenterWindow();
+            }
+            else
+            {
+                Zen(true);
             }
 
             CenterWindow();
@@ -62,6 +71,8 @@ namespace SimpleImageViewer
         {
             Setup();
             CenterWindow();
+
+            //TODO not hit?
         }
         private void Setup()
         {
@@ -70,7 +81,7 @@ namespace SimpleImageViewer
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
 
             isExplorationMode = false;
-            NoImageMessage.Visibility = Visibility.Visible;
+            //NoImageMessage.Visibility = Visibility.Visible;
             ImageDisplay.Visibility = Visibility.Collapsed;
             CompositionTarget.Rendering += UpdateDebugInfo;
 
@@ -85,7 +96,25 @@ namespace SimpleImageViewer
 
             InitializeZooming();
             InitializePanning();
+
+            NoImageMessage = new TextBlock
+            {
+                Name = "NoImageMessage",
+                Text = "Welcome to Cloudless.\n\nNo image is loaded. Right click for options.\n\nPress 'z' to toggle Zen.",
+                Foreground = Brushes.White,
+                FontSize = 20,
+                Padding = new Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                Visibility = Visibility.Visible,
+            };
+
+            InitializeZenMode();
         }
+
+        
+
         private void Window_SourceInitialized(object sender, EventArgs e)
         {
             IntPtr handle = new WindowInteropHelper(this).Handle;
@@ -203,7 +232,7 @@ namespace SimpleImageViewer
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
-                    DebugTextBlock.Visibility = DebugTextBlock.Visibility == Visibility.Visible
+                    DebugTextBlockBorder.Visibility = DebugTextBlockBorder.Visibility == Visibility.Visible
                     ? Visibility.Collapsed
                     : Visibility.Visible;
                 }
@@ -231,6 +260,16 @@ namespace SimpleImageViewer
             if (e.Key == Key.O)
             {
                 OpenImage();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Z)
+            {
+                if (isZen)
+                    RemoveZen(true);
+                else
+                    Zen(isWelcome);
                 e.Handled = true;
                 return;
             }
@@ -527,7 +566,7 @@ namespace SimpleImageViewer
         {
             var wasExplorationMode = isExplorationMode;
 
-            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             switch (displayMode)
             {
                 case "StretchToFit":
@@ -546,7 +585,7 @@ namespace SimpleImageViewer
             ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
             //CenterImageIfNeeded();
 
-            //bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
+            //bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
 
             if (!wasExplorationMode)
                 Message("Entered Exploration Mode (zoom and pan)");
@@ -556,12 +595,12 @@ namespace SimpleImageViewer
             var wasExplorationMode = isExplorationMode;
             isExplorationMode = false;
 
-            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             if (simulateZoomlessBestFit)
                 displayMode = "BestFitWithoutZooming";
-            bool useBorder = JustView.Properties.Settings.Default.BorderOnMainWindow;
-            bool loopGifs = JustView.Properties.Settings.Default.LoopGifs;
-            bool alwaysOnTopByDefault = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
+            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
+            bool loopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
+            bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
             // Reset Width, Height, and Margin for all modes
             ImageDisplay.Width = Double.NaN; // Reset explicit width
@@ -615,14 +654,14 @@ namespace SimpleImageViewer
                 ImageBehavior.SetRepeatBehavior(ImageDisplay, new RepeatBehavior(1));
             }
 
-            Topmost = JustView.Properties.Settings.Default.AlwaysOnTopByDefault;
+            Topmost = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
             if (wasExplorationMode)
                 Message("Entered Display Mode");
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!isExplorationMode && JustView.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
+            if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
             {
                 CenterImageIfNeeded();
             }
@@ -697,7 +736,6 @@ namespace SimpleImageViewer
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
         }
-        // TODO this always sends image to first screen; probably easy fix but does it always get WorkArea from main monitor or what? May be better to be more flexible.
         private void ResizeWindowToImage()
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
@@ -712,11 +750,11 @@ namespace SimpleImageViewer
                 double screenWidth = workingArea.Width;
                 double screenHeight = workingArea.Height;
 
-                if (JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle)
+                if (Cloudless.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle)
                 {
                     if (!autoResizingSpaceIsToggled)
                     {
-                        int buffer = JustView.Properties.Settings.Default.PixelsSpaceAroundBounds;
+                        int buffer = Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds;
                         screenWidth -= 2 * buffer;
                         screenHeight -= 2 * buffer;
                     }
@@ -896,7 +934,7 @@ namespace SimpleImageViewer
         {
             if (isExplorationMode) ApplyDisplayMode();
 
-            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
 
             switch (displayMode)
             {
@@ -989,6 +1027,7 @@ namespace SimpleImageViewer
         }
         private void DisplayImage(int index, bool openedThroughApp)
         {
+            RemoveZen();
             autoResizingSpaceIsToggled = false;
 
             try
@@ -1031,7 +1070,7 @@ namespace SimpleImageViewer
                 ImageDisplay.Visibility = Visibility.Visible;
                 NoImageMessage.Visibility = Visibility.Collapsed;
 
-                if (openedThroughApp && JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                if (openedThroughApp && Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
                 {
                     ResizeWindowToImage();
                     CenterWindow();
@@ -1048,7 +1087,7 @@ namespace SimpleImageViewer
         private void CopyCompressedImageToClipboardAsJpgFile()
         {
             var tempFilePath = "compressed_image.jpg";
-            double maxSizeInMB = JustView.Properties.Settings.Default.MaxCompressedCopySizeMB;
+            double maxSizeInMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
 
             try
             {
@@ -1072,7 +1111,7 @@ namespace SimpleImageViewer
                     {
                         using (Graphics g = Graphics.FromImage(compatibleBitmap))
                         {
-                            g.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
+                            g.DrawImage(bitmap, new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height));
                         }
 
                         const long qualityStep = 5L;
@@ -1192,8 +1231,8 @@ namespace SimpleImageViewer
             StringCollection collection = new();
             collection.AddRange(recentFiles.ToArray());
 
-            JustView.Properties.Settings.Default.RecentFiles = collection;
-            JustView.Properties.Settings.Default.Save();
+            Cloudless.Properties.Settings.Default.RecentFiles = collection;
+            Cloudless.Properties.Settings.Default.Save();
         }
         private void AddToRecentFiles(string filePath)
         {
@@ -1264,7 +1303,7 @@ namespace SimpleImageViewer
         {
             try
             {
-                var savedFiles = JustView.Properties.Settings.Default.RecentFiles;
+                var savedFiles = Cloudless.Properties.Settings.Default.RecentFiles;
 
                 if (savedFiles != null)
                 {
@@ -1319,17 +1358,17 @@ namespace SimpleImageViewer
             if (configWindow.ShowDialog() == true)
             {
                 // Save the new preference
-                JustView.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
-                JustView.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
-                JustView.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
-                JustView.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
-                JustView.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
-                JustView.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
-                JustView.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
-                JustView.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
-                JustView.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
+                Cloudless.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
+                Cloudless.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+                Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
+                Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
+                Cloudless.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
+                Cloudless.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
+                Cloudless.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
+                Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
+                Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
 
-                JustView.Properties.Settings.Default.Save();
+                Cloudless.Properties.Settings.Default.Save();
 
                 ApplyDisplayMode();
             }
@@ -1442,7 +1481,7 @@ namespace SimpleImageViewer
             // Cursor position relative to the image
             Point cursorPositionImage = Mouse.GetPosition(ImageDisplay);
 
-            string displayMode = JustView.Properties.Settings.Default.DisplayMode;
+            string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
 
             double? imageTrueWidth = null;
             double? imageTrueHeight = null;
