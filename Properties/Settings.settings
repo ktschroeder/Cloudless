@@ -32,5 +32,8 @@
     <Setting Name="MaxCompressedCopySizeMB" Type="System.Double" Scope="User">
       <Value Profile="(Default)">10</Value>
     </Setting>
+    <Setting Name="MakeBackgroundTransparent" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

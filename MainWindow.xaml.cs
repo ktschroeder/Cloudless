@@ -110,6 +110,9 @@ namespace Cloudless
                 Visibility = Visibility.Visible,
             };
 
+            bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
+            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+
             InitializeZenMode();
         }
 
@@ -1365,10 +1368,14 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
                 Cloudless.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
                 Cloudless.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
+                Cloudless.Properties.Settings.Default.MakeBackgroundTransparent = configWindow.MakeBackgroundTransparent;
                 Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
                 Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
 
                 Cloudless.Properties.Settings.Default.Save();
+
+                bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
+                this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
 
                 ApplyDisplayMode();
             }

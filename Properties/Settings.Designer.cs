@@ -141,5 +141,17 @@ namespace Cloudless.Properties {
                 this["MaxCompressedCopySizeMB"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool MakeBackgroundTransparent {
+            get {
+                return ((bool)(this["MakeBackgroundTransparent"]));
+            }
+            set {
+                this["MakeBackgroundTransparent"] = value;
+            }
+        }
     }
 }

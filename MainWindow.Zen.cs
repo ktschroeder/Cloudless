@@ -108,7 +108,8 @@ namespace Cloudless
             }
 
             // Clear the background brush (for layer 0)
-            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 1 });
+            bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
+            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
 
             // Remove all rectangles added to the Grid
             for (int i = MyGrid.Children.Count - 1; i >= 0; i--)

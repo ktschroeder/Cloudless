@@ -15,6 +15,7 @@ namespace Cloudless
         public bool BorderOnMainWindow { get; private set; }
         public bool LoopGifs { get; private set; }
         public bool MuteMessages { get; private set; }
+        public bool MakeBackgroundTransparent { get; private set; }
         public bool AlwaysOnTopByDefault { get; private set; }
         public double MaxCompressedCopySizeMB { get; private set; }
 
@@ -62,6 +63,10 @@ namespace Cloudless
             AlwaysOnTopByDefaultCheckbox.IsChecked = currentAlwaysOnTopByDefault;
             AlwaysOnTopByDefault = currentAlwaysOnTopByDefault;
             
+            var currentMakeBackgroundTransparent = Cloudless.Properties.Settings.Default.MakeBackgroundTransparent;
+            MakeBackgroundTransparentCheckbox.IsChecked = currentMakeBackgroundTransparent;
+            MakeBackgroundTransparent = currentMakeBackgroundTransparent;
+            
             var currentMaxCompressedCopySizeMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
             MaxCompressedCopySizeMBTextBox.Text = currentMaxCompressedCopySizeMB.ToString();
             MaxCompressedCopySizeMB = currentMaxCompressedCopySizeMB;
@@ -91,6 +96,7 @@ namespace Cloudless
 
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
+            MakeBackgroundTransparent = MakeBackgroundTransparentCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
