@@ -303,7 +303,7 @@ namespace Cloudless
                 }
                 else if ((modifiers & ModifierKeys.Control) != 0)
                 {
-                    CopyImageFileToClipboard();
+                    CopyImageToClipboard();
                 }
                 else
                 {
@@ -1093,7 +1093,7 @@ namespace Cloudless
         }
         private void CopyCompressedImageToClipboardAsJpgFile()
         {
-            var tempFilePath = "compressed_image.jpg";
+            string tempFilePath = GetUniqueCompressedFilePath();
             double maxSizeInMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
 
             try
@@ -1107,13 +1107,9 @@ namespace Cloudless
                 // Define maximum size in bytes
                 double maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
-                // Ensure the temp file has a valid path
-                tempFilePath = Path.Combine(Path.GetTempPath(), tempFilePath);
-
                 // Convert BitmapSource to Bitmap
                 using (Bitmap bitmap = BitmapSourceToBitmap(bitmapSource))
                 {
-                    // Ensure Bitmap is in a compatible format
                     using (Bitmap compatibleBitmap = new(bitmap.Width, bitmap.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
                     {
                         using (Graphics g = Graphics.FromImage(compatibleBitmap))
@@ -1125,7 +1121,9 @@ namespace Cloudless
                         long quality = 100L;
                         const long minQuality = 10L; // Minimum quality to avoid over-compression
 
-                        while (true)
+                        bool compressed = false;
+
+                        while (!compressed)
                         {
                             using (MemoryStream memoryStream = new())
                             {
@@ -1143,32 +1141,51 @@ namespace Cloudless
                                 {
                                     finalSizeBytes = memoryStream.Length;
                                     finalQuality = quality;
-                                    // Save the compressed image to the temporary file
-                                    File.WriteAllBytes(tempFilePath, memoryStream.ToArray());
-                                    break;
-                                }
 
-                                // Reduce quality for further compression
-                                quality -= qualityStep;
-                                if (quality < minQuality)
-                                    throw new Exception("Unable to compress image to fit the size limit");
+                                    // Save the compressed image to the temporary file
+                                    // TODO clean these up so they don't accumulate?
+                                    File.WriteAllBytes(tempFilePath, memoryStream.ToArray());
+                                    compressed = true;
+                                }
+                                else
+                                {
+                                    // Reduce quality for further compression
+                                    quality -= qualityStep;
+                                    if (quality < minQuality)
+                                        throw new Exception("Unable to compress image to fit the size limit");
+                                }
                             }
                         }
                     }
                 }
 
-                // Copy file path to clipboard
-                StringCollection filePaths = new();
-                filePaths.Add(tempFilePath);
-                Clipboard.SetFileDropList(filePaths);
+                CopyImageAtPathToClipboard(tempFilePath);
 
-                Message("Copied compressed file to clipboard. Quality: " + finalQuality + "%. Bytes: " + finalSizeBytes);
+                Message($"Copied compressed file to clipboard: {tempFilePath}. Quality: {finalQuality}%. Bytes: {finalSizeBytes}");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to copy compressed image as file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private string GetUniqueCompressedFilePath()
+        {
+            string directory = Path.GetTempPath();
+            string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath);
+            string extension = ".jpg";
+            int index = 0;
+
+            string filePath;
+            do
+            {
+                filePath = Path.Combine(directory, $"{originalFileName}-compressed-{index}{extension}");
+                index++;
+            } while (File.Exists(filePath));
+
+            return filePath;
+        }
+
         private Bitmap BitmapSourceToBitmap(BitmapSource source)
         {
             using var ms = new MemoryStream();
@@ -1219,20 +1236,44 @@ namespace Cloudless
                 MessageBox.Show($"Failed to load image from URL: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private void CopyImageFileToClipboard()
+        private void CopyImageToClipboard()
         {
             try
             {
-                StringCollection filePaths = [currentlyDisplayedImagePath];
-                Clipboard.SetFileDropList(filePaths);
+                if (!File.Exists(currentlyDisplayedImagePath))
+                {
+                    MessageBox.Show("Image file does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                    // could just copy bitmap in this case
+                }
 
+                CopyImageAtPathToClipboard(currentlyDisplayedImagePath);
                 Message("Copied image file to clipboard.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to copy file reference: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void CopyImageAtPathToClipboard(string imagePath)
+        {
+            var bitmap = new Bitmap(imagePath);
+            var dataObject = new DataObject();
+
+            // Add the file path for file-pasting scenarios (e.g., Discord, file explorer)
+            var filePaths = new StringCollection
+                {
+                    imagePath
+                };
+            dataObject.SetFileDropList(filePaths);
+
+            // Add the bitmap for image-pasting scenarios (e.g., MS Paint)
+            dataObject.SetData(DataFormats.Bitmap, bitmap);
+
+            Clipboard.SetDataObject(dataObject, true);
+        }
+
         private void SaveRecentFiles()
         {
             StringCollection collection = new();

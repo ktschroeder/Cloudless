@@ -4,10 +4,9 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.)
+- bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
 
 Probably should/will:
-- bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
 - possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
 
