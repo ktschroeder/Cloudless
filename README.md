@@ -7,9 +7,7 @@ Up next:
 - ability to copy image itself rather than just image file (can we "do both" dynamically? If not, ctrl shift c would be okay.)
 
 Probably should/will:
-- button to reveal in file explorer for current image. could be on context menu or button in image info window.
 - bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
-- maybe option for dropshadow beyond window
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
 - possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
 
@@ -51,6 +49,7 @@ Maybe / ideas:
 - maybe logo for app, other name
 - Automatically rotate images based on the EXIF orientation tag in case the image was taken on a camera or smartphone that stored the rotation information.
 - somewhere list the less obvious features such as drag-and-drop and double-click for fullscreen
+- maybe option for dropshadow beyond window ==> tried this, got messy
 
 Features noted in Windows Photos app:
 - True number displayed for "zoom zmount" where 100% is true resolution, even when best-fit in small window

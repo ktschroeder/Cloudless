@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -69,6 +70,32 @@ namespace Cloudless
                     // Task was canceled, so just return and don't change the text back
                 }
             }
+        }
+
+        private void Reveal_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate that the file path exists
+                if (!File.Exists(_imagePath))
+                {
+                    MessageBox.Show("File does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Use Process.Start to reveal the file in File Explorer
+                string argument = $"/select,\"{_imagePath}\"";
+                Process.Start(new ProcessStartInfo("explorer.exe", argument)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                // Handle unexpected errors
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
         }
     }
 }
