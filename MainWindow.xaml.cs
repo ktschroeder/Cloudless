@@ -18,6 +18,7 @@ using System.Collections.Specialized;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 using System.Windows.Media.Effects;
+using System.Diagnostics.Eventing.Reader;
 
 
 namespace Cloudless
@@ -111,10 +112,17 @@ namespace Cloudless
                 Visibility = Visibility.Visible,
             };
 
-            bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
-            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+            SetBackground();
+
 
             InitializeZenMode();
+        }
+
+        private void SetBackground()
+        {
+            bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
+            //this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+            MyGrid.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
         }
 
         
@@ -154,7 +162,7 @@ namespace Cloudless
 
                     this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired.
                     isPanningImage = true;
-                    lastMousePosition = e.GetPosition(this);
+                    lastMousePosition = e.GetPosition(MyGrid);
                     ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
                 }
                 else if (WindowState == WindowState.Maximized)
@@ -183,7 +191,7 @@ namespace Cloudless
             {
                 if (!isExplorationMode) EnterExplorationMode();
 
-                Point currentMousePosition = e.GetPosition(this);
+                Point currentMousePosition = e.GetPosition(MyGrid);
                 Vector delta = currentMousePosition - lastMousePosition;
                 ClampTransformToIntuitiveBounds(delta);
                 lastMousePosition = currentMousePosition;
@@ -478,7 +486,7 @@ namespace Cloudless
                 if (!isExplorationMode) EnterExplorationMode();
 
                 // Get current mouse position relative to the image
-                Point cursorPosition = e.GetPosition(PrimaryWindow);
+                Point cursorPosition = e.GetPosition(MyGrid);
 
                 // Zoom factor
                 double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
@@ -516,7 +524,7 @@ namespace Cloudless
                 // Get window rectangle
                 Rect windowRect = new Rect(this.Left, this.Top, this.ActualWidth, this.ActualHeight);
 
-                const int edgeThreshold = 10; // Edge detection threshold in pixels
+                const int edgeThreshold = 20; // Edge detection threshold in pixels
 
                 // Left edge
                 if (mousePos.X >= windowRect.Left && mousePos.X < windowRect.Left + edgeThreshold)
@@ -602,7 +610,7 @@ namespace Cloudless
             string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             if (simulateZoomlessBestFit)
                 displayMode = "BestFitWithoutZooming";
-            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
+            
             bool loopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
@@ -637,20 +645,8 @@ namespace Cloudless
                     break;
             }
 
-
-            // Apply border if the flag is set
-            if (useBorder)
-            {
-                MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
-                MainBorder.BorderThickness = new Thickness(2);
-                //MainBorder.Effect = new DropShadowEffect() { ShadowDepth = 30, Opacity = 1 };
-            }
-            else
-            {
-                MainBorder.BorderBrush = null;
-                MainBorder.BorderThickness = new Thickness(0);
-                //MainBorder.Effect = null;
-            }
+            SetBorder();
+            
 
             if (loopGifs)
             {
@@ -666,6 +662,30 @@ namespace Cloudless
             if (wasExplorationMode)
                 Message("Entered Display Mode");
         }
+
+        private void SetBorder()
+        {
+            // Apply border if the flag is set
+            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
+            if (useBorder)
+            {
+                MainBorder.BorderThickness = new Thickness(2);
+                MainBorder.Background = new SolidColorBrush(Colors.White);
+                MainBorder.Effect = new DropShadowEffect
+                {
+                    ShadowDepth = 10,
+                    BlurRadius = 30,
+                    Opacity = 0.95
+                };
+            }
+            else
+            {
+                MainBorder.BorderThickness = new Thickness(0);
+                MainBorder.Background = null;
+                MainBorder.Effect = null;
+            }
+        }
+
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
@@ -795,11 +815,28 @@ namespace Cloudless
                 }
 
                 // Set the window size
-                this.Width = newWidth;
-                this.Height = newHeight;
+                MyGrid.Width = newWidth;
+                MyGrid.Height = newHeight;
+                AlignActualWindowWithGrid();
             }
         }
-        private void CenterWindow()
+
+        private void AlignActualWindowWithGrid()
+        {
+            var useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
+            if (useBorder)
+            {
+                this.Width = MyGrid.Width + 60;
+                this.Height = MyGrid.Height + 60;
+            } 
+            else 
+            {
+                this.Width = MyGrid.Width;
+                this.Height = MyGrid.Height;
+            }
+        }
+
+        private void CenterWindow()//
         {
             var workingArea = SystemParameters.WorkArea;
             this.Left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
@@ -812,8 +849,8 @@ namespace Cloudless
             double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
 
             // Get bounds of the window or container
-            double containerWidth = this.ActualWidth;
-            double containerHeight = this.ActualHeight;
+            double containerWidth = MyGrid.ActualWidth;
+            double containerHeight = MyGrid.ActualHeight;
 
             // Calculate new translate values. Include translation from delta, if provided.
             double newTranslateX = imageTranslateTransform.X + delta?.X ?? 0;
@@ -838,7 +875,7 @@ namespace Cloudless
             if (!isExplorationMode) EnterExplorationMode();
 
             // Get window center relative to the image
-            Point windowCenter = new Point(PrimaryWindow.ActualWidth / 2, PrimaryWindow.ActualHeight / 2);
+            Point windowCenter = new Point(MyGrid.ActualWidth / 2, MyGrid.ActualHeight / 2);
 
             // Zoom factor
             double zoomDelta = zoomIn ? 1.1 : 1 / 1.1;
@@ -854,8 +891,8 @@ namespace Cloudless
             double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
 
             // Get bounds of the window or container
-            double containerWidth = PrimaryWindow.ActualWidth;
-            double containerHeight = PrimaryWindow.ActualHeight;
+            double containerWidth = MyGrid.ActualWidth;
+            double containerHeight = MyGrid.ActualHeight;
 
             // Get the image dimensions at 1.0x scale
             double imageOriginalWidth = ImageDisplay.ActualWidth;
@@ -877,8 +914,8 @@ namespace Cloudless
             double scaledHeight = imageOriginalHeight * newScaleY;
 
             // Adjust translation to zoom around the zoom origin (namely the cursor position or center of window)
-            double offsetX = zoomOrigin.X - imageTranslateTransform.X - (PrimaryWindow.ActualWidth / 2);
-            double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (PrimaryWindow.ActualHeight / 2);
+            double offsetX = zoomOrigin.X - imageTranslateTransform.X - (MyGrid.ActualWidth / 2);
+            double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (MyGrid.ActualHeight / 2);
 
             imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
             imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
@@ -937,7 +974,7 @@ namespace Cloudless
             ApplyDisplayMode();  // could add an option to also ResizeWindowToImage() when rotating, but realistically may be rarely desired
             // No need to reset explicitly when changing images, since Source is just reassigned.
         }
-        private void ResizeWindowToRemoveBestFitBars()
+        private void ResizeWindowToRemoveBestFitBars() //
         {
             if (isExplorationMode) ApplyDisplayMode();
 
@@ -984,7 +1021,7 @@ namespace Cloudless
             this.Height = newHeight;
 
         }
-        private void MaximizeVerticalDimension()
+        private void MaximizeVerticalDimension()//
         {
             var wa = SystemParameters.WorkArea;
             this.Height = wa.Height;
@@ -1378,8 +1415,7 @@ namespace Cloudless
 
                 Cloudless.Properties.Settings.Default.Save();
 
-                bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
-                this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+                SetBackground();
 
                 ApplyDisplayMode();
             }
@@ -1465,7 +1501,7 @@ namespace Cloudless
 
 
         #region Other
-        private void UpdateDebugInfo(object? sender, EventArgs e)
+        private void UpdateDebugInfo(object? sender, EventArgs e)//
         {
             if (ImageDisplay == null || DebugTextBlock.Visibility != Visibility.Visible ) 
                 return;

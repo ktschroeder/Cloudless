@@ -74,8 +74,10 @@ namespace Cloudless
             isZen = true;
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
 
+            
             ImageDisplay.Visibility = Visibility.Collapsed;
             magicLayersCreated = 0;
+            SetBorder();
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
             GenerateStars();
             // Create the TextBlock for "No image is loaded" message
@@ -107,9 +109,7 @@ namespace Cloudless
                 ml.Free(this, MyGrid);
             }
 
-            // Clear the background brush (for layer 0)
-            bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
-            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+            SetBackground();
 
             // Remove all rectangles added to the Grid
             for (int i = MyGrid.Children.Count - 1; i >= 0; i--)
