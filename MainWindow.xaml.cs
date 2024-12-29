@@ -17,6 +17,7 @@ using System.Drawing.Imaging;
 using System.Collections.Specialized;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
+using System.Windows.Media.Effects;
 
 
 namespace Cloudless
@@ -636,16 +637,19 @@ namespace Cloudless
                     break;
             }
 
+
             // Apply border if the flag is set
             if (useBorder)
             {
-                PrimaryWindow.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black); // Set the border color
-                PrimaryWindow.BorderThickness = new Thickness(2); // Set border thickness
+                MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
+                MainBorder.BorderThickness = new Thickness(2);
+                //MainBorder.Effect = new DropShadowEffect() { ShadowDepth = 30, Opacity = 1 };
             }
             else
             {
-                PrimaryWindow.BorderBrush = null; // Remove border
-                PrimaryWindow.BorderThickness = new Thickness(0); // Remove border thickness
+                MainBorder.BorderBrush = null;
+                MainBorder.BorderThickness = new Thickness(0);
+                //MainBorder.Effect = null;
             }
 
             if (loopGifs)
