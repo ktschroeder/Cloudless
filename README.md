@@ -7,8 +7,6 @@ Up next:
 - found some pan/zoom weirdness with black bars again
 - implement: hold ctrl while dragging window to move it exactly horizontally or exactly vertically.
 - possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
-- context menu item to create duplicate instance (same file, directory info, maybe size and dimensions, position)
-- - gifs don't open properly when opened directly. maybe automate a 'f' invocation.
 
 Probably should/will:
 - gif pausing, maybe seeking, restarting

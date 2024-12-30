@@ -59,7 +59,6 @@ namespace Cloudless
             if (willLoadImage)
             {
                 LoadImage(filePath, false);
-                ResizeWindowToImage();
             }
             else
             {
@@ -67,7 +66,7 @@ namespace Cloudless
             }
 
             ResizeWindow((int)windowW, (int)windowH);
-            CenterWindow();
+            CenterWindow();  // maybe redundant call. at some point look for other redundant calls ti improve cleanliness/performance
         }
         public MainWindow(string? filePath)
         {
@@ -77,7 +76,6 @@ namespace Cloudless
             if (willLoadImage)
             {
                 LoadImage(filePath, false);
-                ResizeWindowToImage();
             }
             else
             {
@@ -85,13 +83,6 @@ namespace Cloudless
             }
 
             CenterWindow();
-        }
-        public MainWindow()
-        {
-            Setup();
-            CenterWindow();
-
-            //TODO not hit?
         }
         private void Setup()
         {
@@ -104,7 +95,7 @@ namespace Cloudless
             ImageDisplay.Visibility = Visibility.Collapsed;
             CompositionTarget.Rendering += UpdateDebugInfo;
 
-            ApplyDisplayMode();
+            ApplyDisplayMode();  // mostly not needed here but always-top and border and stuff is relevant
 
             this.KeyDown += Window_KeyDown;
 
@@ -770,7 +761,6 @@ namespace Cloudless
         private void ResizeWindowToImage()
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
-
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 double imageWidth = bitmap.PixelWidth;
@@ -1073,7 +1063,7 @@ namespace Cloudless
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
                     var bitmap = new BitmapImage(uri);
-                    ImageDisplay.Source = null;
+                    ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
                     ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
@@ -1101,7 +1091,7 @@ namespace Cloudless
                 ImageDisplay.Visibility = Visibility.Visible;
                 NoImageMessage.Visibility = Visibility.Collapsed;
 
-                if (openedThroughApp && Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                if (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
                 {
                     ResizeWindowToImage();
                     CenterWindow();
@@ -1473,6 +1463,7 @@ namespace Cloudless
         }
         private void DuplicateWindow()
         {
+            //debugger shows binding errors but may not be real issue, see perhaps https://stackoverflow.com/questions/14526371/menuitem-added-programmatically-causes-binding-error
             var duplicateWindow = new MainWindow(currentlyDisplayedImagePath, this.Width, this.Height);
             // could also include viewing mode, possibly panning/zooming etc. But this can get messy and imperfect unless total state is matched properly (preferences may not be aligned)
 
