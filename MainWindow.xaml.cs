@@ -743,6 +743,12 @@ namespace Cloudless
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
         }
+        private void ResizeWindow(int width, int height)
+        {
+            if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
+            this.Width = width;
+            this.Height = height;
+        }
         private void ResizeWindowToImage()
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
@@ -1423,6 +1429,24 @@ namespace Cloudless
                 this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
 
                 ApplyDisplayMode();
+            }
+        }
+        private void SetDimensions_Click(object sender, RoutedEventArgs e)
+        {
+            SetDimensions();
+        }
+        private void SetDimensions()
+        {
+            var setDimensionsWindow = new SetDimensionsWindow(this.Width, this.Height);
+
+            // Center the window relative to the main application window
+            setDimensionsWindow.Owner = this; // Set the owner to the main window
+            setDimensionsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            if (setDimensionsWindow.ShowDialog() == true)
+            {
+                ResizeWindow(setDimensionsWindow.NewWidth, setDimensionsWindow.NewHeight);
+                CenterWindow();
             }
         }
         private void About_Click(object sender, RoutedEventArgs e)

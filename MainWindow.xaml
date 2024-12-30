@@ -63,6 +63,7 @@
                     <MenuItem Header="Open Image" Click="OpenImage_Click" />
                     <MenuItem Header="Recent Files" x:Name="RecentFilesMenu" />
                     <MenuItem Header="Image Info" Click="ImageInfo_Click" />
+                    <MenuItem Header="Set Dimensions" Click="SetDimensions_Click" />
                     <MenuItem Header="Preferences" Click="OpenPreferences_Click" />
                     <MenuItem Header="About" Click="About_Click" />
                     <MenuItem Header="Hot Key Reference" Click="HotkeyRef_Click" />

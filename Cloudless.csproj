@@ -14,6 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="SetDimensionsWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="HotkeyRefWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -32,6 +35,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="SetDimensionsWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
 </Project>
