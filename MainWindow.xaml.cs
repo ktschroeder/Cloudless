@@ -51,6 +51,24 @@ namespace Cloudless
 
 
         #region Setup
+        public MainWindow(string filePath, double windowW, double windowH)
+        {
+            bool willLoadImage = filePath != null;
+            Setup();
+
+            if (willLoadImage)
+            {
+                LoadImage(filePath, false);
+                ResizeWindowToImage();
+            }
+            else
+            {
+                Zen(true);
+            }
+
+            ResizeWindow((int)windowW, (int)windowH);
+            CenterWindow();
+        }
         public MainWindow(string? filePath)
         {
             bool willLoadImage = filePath != null;
@@ -1448,6 +1466,19 @@ namespace Cloudless
                 ResizeWindow(setDimensionsWindow.NewWidth, setDimensionsWindow.NewHeight);
                 CenterWindow();
             }
+        }
+        private void DuplicateWindow_Click(object sender, RoutedEventArgs e)
+        {
+            DuplicateWindow();
+        }
+        private void DuplicateWindow()
+        {
+            var duplicateWindow = new MainWindow(currentlyDisplayedImagePath, this.Width, this.Height);
+            // could also include viewing mode, possibly panning/zooming etc. But this can get messy and imperfect unless total state is matched properly (preferences may not be aligned)
+
+            //setDimensionsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            duplicateWindow.Show();
         }
         private void About_Click(object sender, RoutedEventArgs e)
         {

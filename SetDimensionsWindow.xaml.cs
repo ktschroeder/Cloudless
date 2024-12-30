@@ -37,8 +37,8 @@ namespace Cloudless
                     throw new Exception("Could not parse width: " + WidthTextBox.Text.Trim() + ". Use an integer such as 500.");
                 if (!int.TryParse(HeightTextBox.Text.Trim(), out int newHeight))
                     throw new Exception("Could not parse height: " + HeightTextBox.Text.Trim() + ". Use an integer such as 500.");
-                if (newWidth < 10 || newHeight < 10)
-                    throw new Exception("Width and height should both be at least 10 pixels.");
+                if (newWidth < 25 || newHeight < 25)
+                    throw new Exception("Width and height should both be at least 25 pixels.");
                 if (newWidth >= 20000 || newHeight >= 20000)
                     throw new Exception("Width and height should both be less than 20000 pixels.");
 
