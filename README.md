@@ -4,22 +4,30 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
+- found some pan/zoom weirdness with black bars again
+- implement: hold ctrl while dragging window to move it exactly horizontally or exactly vertically.
+- right click option to set window to typed dimensions
+- possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
+- context menu item to create duplicate instance (same file, directory info, maybe size and dimensions, position)
+- - gifs don't open properly when opened directly. maybe automate a 'f' invocation.
 
 Probably should/will:
+- gif pausing, maybe seeking, restarting
+- recent files list may get weird and incorrect when using concurrent sessions
 - messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
-- possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
+- ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
+- ^^^ some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
+- implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
+	- when also with alt or shift, pin at center of window. 
 
 Probably should but lower priority:
+- bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
 - Zen: look back at earlier approach (in feature branch), offer both as different styles.
 - Zen: option for "darker zen": just make the BG black. due to opacities, overall effect is more mellow, and also occasionally shows space-esque black or near black which can be neat. But I think light by default is good: seems more visually pleasant.
 - Zen: compare performance of app before and after adding Zen to identify any performance issues. Probably make it off or much easier by default.
 - indicator of current zoom amount upon zooming
 - mouse-friendly controls: scroll when not holding CTRL to navigate directory, maybe.
 - revisit whether/how image should automatically pan/zoom when resizing window in expl mode.
-- some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
-- implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
-- ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
 - For zoom-to-fill ==> exploration mode, could probably make seamless by simulating the zooming in expl mode to match the previous view.
 - hotkey: zoom to fill window with best fit (only during BestFit)
 - extended context window (Secondary?) so that nothing "must" be done with a hotkey. maybe.
@@ -27,7 +35,6 @@ Probably should but lower priority:
 - optionally, recent files, where disabling it also clears the history (or just have button to clear history). Windows natively provides a history function when right clicking on icon on taskbar. Manage and given option to enable/disable this?
 - loading GIF takes a while, may be good to show "Loading..." text or something. User cursor stays weird? Possibly blocks stuff?
 - styling
-- right click option to set window to typed dimensions
 - customizable hotkeys
 - graceful error handling
 - Clean up code, especially when "done" with everything else. Organize methods. Address TODOs commented in code.
