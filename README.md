@@ -11,7 +11,7 @@ Up next:
 Probably should/will:
 - gif pausing, maybe seeking, restarting
 - recent files list may get weird and incorrect when using concurrent sessions
-- messages and blocks for things that cannot be done with GIFs. Messaging about longer load times for GIFs (try opening local vs dragging from web)
+- messages and blocks for things that cannot be done with GIFs (rotating, ...). Messaging about longer load times for GIFs (try opening local vs dragging from web)
 - ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
 - ^^^ some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.

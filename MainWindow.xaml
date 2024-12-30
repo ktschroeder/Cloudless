@@ -23,10 +23,6 @@
 
     <Border x:Name="MainBorder" BorderBrush="Black" BorderThickness="2">
         <Grid Name="MyGrid">
-        
-            
-        
-        
             <!-- Image Display -->
             <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
 
