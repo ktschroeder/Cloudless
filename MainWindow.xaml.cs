@@ -206,7 +206,7 @@ namespace Cloudless
                 Point cursorPosition = e.GetPosition(this);
                 ToggleFullscreen();
 
-                DragMove();
+                DragMove();  // TODO exception here if you click and drag from fullscreen, and without releasing, drag to top of display to again enter fullscreen, then release.
             }
             else if (isDraggingWindow)
             {
@@ -763,6 +763,48 @@ namespace Cloudless
                 ImageDisplay.Height = imageHeight * scale;
             }
         }
+
+
+        private WindowState OldWindowState { get; set; }  // TAG windows_wpf_borders_bad
+        protected override void OnStateChanged(EventArgs e)  // TAG windows_wpf_borders_bad
+        {
+            base.OnStateChanged(e);
+
+            // TODO I guess make this a power user setting with explanation. Windows+WPF is apparently bad at handling border when maximized with AllowsTransparency==true.
+            // Code and more discussion: https://stackoverflow.com/questions/29391063/wpf-maximized-window-bigger-than-screen
+            //const int HACK_BORDER_GARBAGE = 7;  // was SystemParameters.WindowResizeBorderThickness which got 4
+            Thickness HACK_THICKNESS = GetHackBorderSizeWhenFullscreen();
+            // 7. magic number. Good on my system. Calculated as "correct" in that the detected window dimensions vary from the ImageDisplay dimensions by these amounts exactly.
+            // ...on that note, maybe can reliably calculate these numbers dynamically per user/system. Will return to this. TODO
+
+            this.BorderThickness = this.WindowState switch
+            {
+                WindowState.Maximized => InflateBorder(HACK_THICKNESS),
+                WindowState.Normal or WindowState.Minimized when this.OldWindowState == WindowState.Maximized => DeflateBorder(HACK_THICKNESS),
+                _ => this.BorderThickness
+            };
+            this.OldWindowState = this.WindowState;
+        }
+        private Thickness InflateBorder(Thickness thickness)  // TAG windows_wpf_borders_bad
+        {
+            double left = this.BorderThickness.Left + thickness.Left;
+            double top = this.BorderThickness.Top + thickness.Top;
+            double right = this.BorderThickness.Right + thickness.Right;
+            double bottom = this.BorderThickness.Bottom + thickness.Bottom;
+            return new Thickness(left, top, right, bottom);
+        }
+        private Thickness DeflateBorder(Thickness thickness)  // TAG windows_wpf_borders_bad
+        {
+            double left = this.BorderThickness.Left - thickness.Left;
+            double top = this.BorderThickness.Top - thickness.Top;
+            double right = this.BorderThickness.Right - thickness.Right;
+            double bottom = this.BorderThickness.Bottom - thickness.Bottom;
+            return new Thickness(left, top, right, bottom);
+        }
+        private Thickness GetHackBorderSizeWhenFullscreen()  // TAG windows_wpf_borders_bad
+        {
+            return new Thickness(7, 7, 7, 7);
+        }
         private void UpdateMargins()
         {
             if (ImageDisplay.Source is BitmapSource bitmap)
@@ -770,6 +812,14 @@ namespace Cloudless
                 // Center the image display
                 double windowWidth = this.ActualWidth;
                 double windowHeight = this.ActualHeight;
+
+                if (this.WindowState == WindowState.Maximized)
+                {
+                    var hackThickness = GetHackBorderSizeWhenFullscreen();
+                    windowWidth -= hackThickness.Left*2;
+                    windowHeight -= hackThickness.Top*2;
+                }
+
                 double marginX = (windowWidth - ImageDisplay.Width) / 2;
                 double marginY = (windowHeight - ImageDisplay.Height) / 2;
 
@@ -1651,5 +1701,8 @@ namespace Cloudless
             overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
         }
         #endregion
+
+
+
     }
 }
