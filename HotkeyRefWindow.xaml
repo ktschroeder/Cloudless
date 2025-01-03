@@ -69,6 +69,12 @@
         <Run Text="CTRL D:" FontWeight="Bold" /> Toggle debug info window
             </TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+        <Run Text="Space:" FontWeight="Bold" /> Pause/resume a GIF, if one is loaded
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+        <Run Text="CTRL Space:" FontWeight="Bold" /> Restart a GIF, if one is loaded
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
         <Run Text="[Zoom controls]" FontWeight="Bold" />
             </TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">

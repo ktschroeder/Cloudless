@@ -46,6 +46,8 @@ namespace Cloudless
         public TranslateTransform imageTranslateTransform = new TranslateTransform();
 
         private TextBlock NoImageMessage;
+
+        private ImageAnimationController? gifController;
         #endregion
 
 
@@ -416,6 +418,32 @@ namespace Cloudless
             if (e.Key == Key.B)
             {
                 ResizeWindowToRemoveBestFitBars();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Space)
+            {
+                // TODO changing loop preference while a gif is playing causes these controls to stop working until loading another GIF.
+                if (gifController != null)
+                {
+                    ModifierKeys modifiers = Keyboard.Modifiers;
+                    if ((modifiers & ModifierKeys.Control) != 0)
+                    {
+                        gifController.GotoFrame(0);
+                    }
+                    else
+                    {
+                        // play or pause GIF
+                        if (gifController.IsComplete)
+                            gifController.GotoFrame(0);
+                        else if (gifController.IsPaused)
+                            gifController.Play();
+                        else
+                            gifController.Pause();
+                    }
+                }
+                
                 e.Handled = true;
                 return;
             }
@@ -1025,7 +1053,13 @@ namespace Cloudless
         {
             if (ImageDisplay.Source is not BitmapSource bitmapSource)
             {
-                MessageBox.Show("No image is currently loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message("No image is currently loaded for you to rotate.");
+                return;
+            }
+
+            if (currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
+            {
+                Message("This app does not support rotating GIFs.");
                 return;
             }
 
@@ -1150,11 +1184,19 @@ namespace Cloudless
                 currentlyDisplayedImagePath = uri.LocalPath;
                 AddToRecentFiles(uri.LocalPath);
 
+                if (gifController != null)
+                {
+                    gifController.Dispose();
+                    gifController = null;  // can probably more efficiently reuse this. see https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/WpfAnimatedGif.Demo/MainWindow.xaml.cs
+                }
+                
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
                     var bitmap = new BitmapImage(uri);
                     ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
                     ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
+
+                    gifController = ImageBehavior.GetAnimationController(ImageDisplay);
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
@@ -1197,14 +1239,23 @@ namespace Cloudless
         }
         private void CopyCompressedImageToClipboardAsJpgFile()
         {
+            if (ImageDisplay.Source is not BitmapSource bitmapSource)
+            {
+                Message("No image is currently loaded for you to copy.");
+                return;
+            }
+
+            if (currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
+            {
+                Message("This app does not support compressing GIFs.");
+                return;
+            }
+
             string tempFilePath = GetUniqueCompressedFilePath();
             double maxSizeInMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
 
             try
             {
-                if (ImageDisplay.Source is not BitmapSource bitmapSource)
-                    return;
-
                 long finalSizeBytes = -1;
                 long finalQuality = 100;
 
@@ -1342,6 +1393,12 @@ namespace Cloudless
         }
         private void CopyImageToClipboard()
         {
+            if (ImageDisplay.Source is not BitmapSource bitmapSource)
+            {
+                Message("No image is currently loaded for you to copy.");
+                return;
+            }
+
             try
             {
                 if (!File.Exists(currentlyDisplayedImagePath))
