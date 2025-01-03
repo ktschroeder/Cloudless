@@ -4,11 +4,10 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- found some pan/zoom weirdness with black bars again
-	- repro: open 1920x1080 image in best fit view, max size that's not fullscreen. Make window more landscape-ish. Zoom in some. Make window more portrait-ish.
-	- reproducing this in a binary search on past commits starting at the evil fix, culprit commit is "Consolidate duplicate transform/clamp code..."
 - possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
-
+	- always an extra 14 pixels in each dimension. margins are calculated at each 7 pixels.
+	- margin calc depends on window height/width which are too large prior. ImageDisplay dims are correct but window dims are 14 too high each.
+	- this happens even with no image loaded. also when using Windows's native fullscreen (drag to top of display and release). 
 Probably should/will:
 - gif pausing, maybe seeking, restarting
 - recent files list may get weird and incorrect when using concurrent sessions
