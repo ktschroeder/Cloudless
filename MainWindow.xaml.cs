@@ -686,7 +686,11 @@ namespace Cloudless
                 case "BestFitWithoutZooming":
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.None; // Prevent automatic stretching
                     // ^^^ this is undone at the end of CenterImageIfNeeded? Sets to Uniform.
-                    CenterImageIfNeeded(); // Center and scale the image as needed
+                    // Center and scale the image as needed
+                    ScaleImageToWindow();
+                    UpdateMargins(); 
+                    // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too?
+                    ImageDisplay.Stretch = Stretch.Uniform;
                     break;
                 default:
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform; // Default to BestFit
@@ -724,36 +728,21 @@ namespace Cloudless
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            ScaleImageToWindow();
+
             if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
             {
-                CenterImageIfNeeded();
+                UpdateMargins();
+                // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too?
+                ImageDisplay.Stretch = Stretch.Uniform;
             }
             else
             {
-                // Alleviate pan/zoom blackspace weirdness that arises when resizing window in expl mode.
-                if (ImageDisplay.Source is BitmapSource bitmap)
-                {
-                    double imageWidth = bitmap.PixelWidth;
-                    double imageHeight = bitmap.PixelHeight;
-                    double windowWidth = this.ActualWidth;
-                    double windowHeight = this.ActualHeight;
-
-                    // Calculate scaling factor to fit the image within the window
-                    double scaleX = windowWidth / imageWidth;
-                    double scaleY = windowHeight / imageHeight;
-
-                    // Ensure the image scales down if the window is smaller
-                    double scale = Math.Min(1, Math.Min(scaleX, scaleY)); // No upscaling
-
-                    // Apply scaled dimensions to ImageDisplay
-                    ImageDisplay.Width = imageWidth * scale;
-                    ImageDisplay.Height = imageHeight * scale;
-                }
-
+                UpdateMargins();
                 ClampTransformToIntuitiveBounds();
             }
         }
-        private void CenterImageIfNeeded()
+        private void ScaleImageToWindow()
         {
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
@@ -772,8 +761,15 @@ namespace Cloudless
                 // Apply scaled dimensions to ImageDisplay
                 ImageDisplay.Width = imageWidth * scale;
                 ImageDisplay.Height = imageHeight * scale;
-
+            }
+        }
+        private void UpdateMargins()
+        {
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
                 // Center the image display
+                double windowWidth = this.ActualWidth;
+                double windowHeight = this.ActualHeight;
                 double marginX = (windowWidth - ImageDisplay.Width) / 2;
                 double marginY = (windowHeight - ImageDisplay.Height) / 2;
 
@@ -783,9 +779,6 @@ namespace Cloudless
                     Math.Max(0, marginX),
                     Math.Max(0, marginY)
                 );
-
-                // Ensure the image is not clipped by setting Stretch to Uniform
-                ImageDisplay.Stretch = Stretch.Uniform;
             }
         }
         private void StopPanning()

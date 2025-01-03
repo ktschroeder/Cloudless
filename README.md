@@ -5,6 +5,8 @@ TODO
 
 Up next:
 - found some pan/zoom weirdness with black bars again
+	- repro: open 1920x1080 image in best fit view, max size that's not fullscreen. Make window more landscape-ish. Zoom in some. Make window more portrait-ish.
+	- reproducing this in a binary search on past commits starting at the evil fix, culprit commit is "Consolidate duplicate transform/clamp code..."
 - possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
 
 Probably should/will:
