@@ -11,13 +11,16 @@ Probably should/will:
 	- investigate more but one/both of these above may be related to the pan/zoom margin weirdness that is now largely better
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
 	- when also with alt or shift, pin at center of window. 
-	- loking at photoshop: holding shift does this, pinning the opposite corner. The resizing occurs as if there is a tangent line to the corner you started click/dragging, that is a 45 deg angle from either line of the rectangle, and this line keeps its angle and follows the cursor.
+	- looking at photoshop: holding shift does this, pinning the opposite corner. The resizing occurs as if there is a tangent line to the corner you started click/dragging, that is a 45 deg angle from either line of the rectangle, and this line keeps its angle and follows the cursor.
 		- when you also hold alt, this resizing happens pinned from the center of the rectangle.
 
-Probably should but lower priority:
+Lower priority:
+- Windows natively provides a history function when right clicking on icon on taskbar. Manage and give option to enable/disable this? Align with in-app list?
+- consider thumbnails for recent image list if feasible and okay UI/UX
 - bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
-- Messaging about longer load times for GIFs (try opening local vs dragging from web)
+- loading GIF takes a while, may be good to show "Loading..." text or something. User cursor stays weird? Possibly blocks stuff? (try opening local vs dragging from web)
 - make shift-dragging remain smooth visually along axis before releasing, if feasible. If we need to not use DragMove then this could get bad.
+- odd jitter of window when changing images, such as when navigating through a directory. Possibly a WPF issue; a few attempts did not resolve this. Possiubly related, general jitteriness when resizing and similar. Would be good to smoothen out.
 - Zen: look back at earlier approach (in feature branch), offer both as different styles.
 - Zen: option for "darker zen": just make the BG black. due to opacities, overall effect is more mellow, and also occasionally shows space-esque black or near black which can be neat. But I think light by default is good: seems more visually pleasant.
 - Zen: compare performance of app before and after adding Zen to identify any performance issues. Probably make it off or much easier by default.
@@ -28,17 +31,14 @@ Probably should but lower priority:
 - hotkey: zoom to fill window with best fit (only during BestFit)
 - extended context window (Secondary?) so that nothing "must" be done with a hotkey. maybe.
 - other filetypes that MAY be simple to add/handle: TIFF, HEIF, HEIC, SVG, ICO
-- optionally, recent files, where disabling it also clears the history (or just have button to clear history). Windows natively provides a history function when right clicking on icon on taskbar. Manage and given option to enable/disable this?
-- loading GIF takes a while, may be good to show "Loading..." text or something. User cursor stays weird? Possibly blocks stuff?
 - styling
 - customizable hotkeys
 - graceful error handling
 - Clean up code, especially when "done" with everything else. Organize methods. Address TODOs commented in code.
-- option: snap to best fit when dragging border
+- option: snap to best fit when dragging border (related to other feature: resizing while maintaining aspect ratio of window)
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
 - If you change a config in one window/instance, how should/can it affect other windows that are open?
 - optional online listening for updates.
-- odd jitter of window when changing images, such as when navigating through a directory. Possibly a WPF issue; a few attempts did not resolve this.
 
 Maybe / ideas:
 - configurable gestures: hold left and right click, then drag in a direction. 4 options. and/or middle click.
@@ -54,7 +54,7 @@ Maybe / ideas:
 - maybe option for dropshadow beyond window ==> tried this, got messy
 
 Features noted in Windows Photos app:
-- True number displayed for "zoom zmount" where 100% is true resolution, even when best-fit in small window
+- True number displayed for "zoom amount" where 100% is true resolution, even when best-fit in small window
 - Slider for zoom, and dropdown for common round values like 50%, 500%.
 - "film strip" feature: thumbnails (in directory of current image?) for quickly selecting another image to view
 - favorites feature (?)
