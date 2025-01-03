@@ -4,7 +4,6 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- recent files list may get weird and incorrect when using concurrent sessions
 
 Probably should/will:
 - ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line

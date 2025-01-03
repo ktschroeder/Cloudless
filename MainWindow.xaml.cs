@@ -25,6 +25,12 @@ namespace Cloudless
     public partial class MainWindow : Window
     {
         #region Fields
+        private static readonly Mutex recentFilesMutex = new(false, "CloudlessRecentFilesMutex");
+        private static readonly string recentFilesPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Cloudless",
+            "recent_files.json");
+
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
@@ -35,7 +41,7 @@ namespace Cloudless
         private OverlayMessageManager overlayManager;
 
         private const int MaxRecentFiles = 10;
-        private readonly List<string> recentFiles = new();
+        private List<string> recentFiles = new();
 
         private Point lastMousePosition;
 
@@ -103,6 +109,7 @@ namespace Cloudless
 
             LoadRecentFiles();
             UpdateContextMenuState();
+            UpdateRecentFilesMenu();
 
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
@@ -1435,14 +1442,6 @@ namespace Cloudless
             Clipboard.SetDataObject(dataObject, true);
         }
 
-        private void SaveRecentFiles()
-        {
-            StringCollection collection = new();
-            collection.AddRange(recentFiles.ToArray());
-
-            Cloudless.Properties.Settings.Default.RecentFiles = collection;
-            Cloudless.Properties.Settings.Default.Save();
-        }
         private void AddToRecentFiles(string filePath)
         {
             // Avoid duplicates
@@ -1453,15 +1452,18 @@ namespace Cloudless
             if (recentFiles.Count > MaxRecentFiles)
                 recentFiles.RemoveAt(recentFiles.Count - 1);
 
-            UpdateRecentFilesMenu();
             SaveRecentFiles();
+            UpdateRecentFilesMenu();
+            
         }
-        private void UpdateRecentFilesMenu()
+        private void UpdateRecentFilesMenu() // no side effects beyond instance. Reads from static file at this time, does not write to it.
         {
+            LoadRecentFiles(); // Always fetch the latest list
+
             // Clear the existing items
             RecentFilesMenu.Items.Clear();
 
-            // Add recent files
+            // Populate the menu
             foreach (string file in recentFiles)
             {
                 MenuItem fileItem = new MenuItem
@@ -1474,12 +1476,11 @@ namespace Cloudless
                 RecentFilesMenu.Items.Add(fileItem);
             }
 
-            // Add a separator if there are recent files
+            // Add additional menu items
             if (recentFiles.Count > 0)
             {
                 RecentFilesMenu.Items.Add(new Separator());
 
-                // Add "Clear History" item
                 MenuItem clearHistoryItem = new MenuItem
                 {
                     Header = "Clear History",
@@ -1498,6 +1499,7 @@ namespace Cloudless
                 RecentFilesMenu.Items.Add(noRecentFilesItem);
             }
         }
+
         private void OpenRecentFile(string filePath)
         {
             if (!File.Exists(filePath))
@@ -1508,27 +1510,60 @@ namespace Cloudless
 
             LoadImage(filePath, true);
         }
-        private void LoadRecentFiles()
+        private void SaveRecentFiles()
         {
-            try
+            if (recentFilesMutex.WaitOne(2000)) // Wait for up to 2 seconds
             {
-                var savedFiles = Cloudless.Properties.Settings.Default.RecentFiles;
-
-                if (savedFiles != null)
+                try
                 {
-                    recentFiles.Clear();
-                    recentFiles.AddRange(savedFiles.Cast<string>().ToList());
+                    // Ensure the directory exists
+                    Directory.CreateDirectory(Path.GetDirectoryName(recentFilesPath));
+
+                    File.WriteAllText(recentFilesPath, System.Text.Json.JsonSerializer.Serialize(recentFiles));
+                }
+                finally
+                {
+                    recentFilesMutex.ReleaseMutex();
                 }
             }
-            catch
+            else
             {
-                // Log or handle the error, e.g., recreate the list
-                recentFiles.Clear();
-                throw;
+                MessageBox.Show("Unable to write to recent files. Another instance may be busy.");
             }
-
+        }
+        private void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            LoadRecentFiles();
             UpdateRecentFilesMenu();
         }
+
+        private void LoadRecentFiles() // TODO handle exceptions: file corruption, access issues, launching with empty or missing list, manually deleting file outside of or inside of session(s).
+        {
+            if (recentFilesMutex.WaitOne(2000)) // Wait for up to 2 seconds
+            {
+                try
+                {
+                    if (File.Exists(recentFilesPath))
+                    {
+                        string json = File.ReadAllText(recentFilesPath);
+                        recentFiles = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+                    }
+                    else
+                    {
+                        recentFiles = new List<string>();
+                    }
+                }
+                finally
+                {
+                    recentFilesMutex.ReleaseMutex();
+                }
+            }
+            else
+            {
+                MessageBox.Show("Unable to access recent files. Another instance may be busy.");
+            }
+        }
+
         private void ClearRecentFiles()
         {
             recentFiles.Clear();
