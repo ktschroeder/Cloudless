@@ -44,7 +44,8 @@
                         VerticalAlignment="Top"
                         HorizontalAlignment="Left"
                         Margin="10"
-                        IsHitTestVisible="False">
+                        IsHitTestVisible="False"
+                        Panel.ZIndex="99999999">
             </StackPanel>
 
             <!-- Context Menu -->

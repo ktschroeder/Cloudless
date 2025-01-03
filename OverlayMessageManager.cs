@@ -61,7 +61,7 @@ public class OverlayMessageManager
             Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)), // Semi-transparent black
             Padding = new Thickness(10),
             Margin = new Thickness(0, 0, 0, 5), // Space between messages
-            Opacity = 0 // Start hidden
+            Opacity = 0, // Start hidden
         };
 
         // Add to the stack and active list

@@ -4,10 +4,9 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- allow messages to display when in zen or when an image is not loaded (e.g. rotate nothing)
+- recent files list may get weird and incorrect when using concurrent sessions
 
 Probably should/will:
-- recent files list may get weird and incorrect when using concurrent sessions
 - ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
 	- maybe related to above: some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 	- investigate more but one/both of these above may be related to the pan/zoom margin weirdness that is now largely better
