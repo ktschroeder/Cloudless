@@ -5,7 +5,6 @@ TODO
 
 Up next:
 - found some pan/zoom weirdness with black bars again
-- implement: hold ctrl while dragging window to move it exactly horizontally or exactly vertically.
 - possible bug? There may be like 10 pixels of extra width on the window. Most obvious if fullscreen on one monitor when using multiple. ==> was this a thing before zen feature?
 
 Probably should/will:
@@ -16,9 +15,12 @@ Probably should/will:
 - ^^^ some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
 	- when also with alt or shift, pin at center of window. 
+	- loking at photoshop: holding shift does this, pinning the opposite corner. The resizing occurs as if there is a tangent line to the corner you started click/dragging, that is a 45 deg angle from either line of the rectangle, and this line keeps its angle and follows the cursor.
+		- when you also hold alt, this resizing happens pinned from the center of the rectangle.
 
 Probably should but lower priority:
 - bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
+- make shift-dragging remain smooth visually along axis before releasing, if feasible. If we need to not use DragMove then this could get bad.
 - Zen: look back at earlier approach (in feature branch), offer both as different styles.
 - Zen: option for "darker zen": just make the BG black. due to opacities, overall effect is more mellow, and also occasionally shows space-esque black or near black which can be neat. But I think light by default is good: seems more visually pleasant.
 - Zen: compare performance of app before and after adding Zen to identify any performance issues. Probably make it off or much easier by default.
