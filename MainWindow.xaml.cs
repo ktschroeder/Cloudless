@@ -78,6 +78,8 @@ namespace Cloudless
         }
         public MainWindow(string? filePath)
         {
+            //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
+
             bool willLoadImage = filePath != null;
             Setup();
 
@@ -431,6 +433,10 @@ namespace Cloudless
 
             if (e.Key == Key.Space)
             {
+                // bandaid fix for issue where controller gets null upon opening app directly for a GIF
+                if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
+                    gifController = ImageBehavior.GetAnimationController(ImageDisplay);
+
                 // TODO changing loop preference while a gif is playing causes these controls to stop working until loading another GIF.
                 if (gifController != null)
                 {
@@ -1203,7 +1209,7 @@ namespace Cloudless
                     ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
                     ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
 
-                    gifController = ImageBehavior.GetAnimationController(ImageDisplay);
+                    gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {

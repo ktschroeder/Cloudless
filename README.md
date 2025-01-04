@@ -4,6 +4,7 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
+- Allow hotkey reference window to go behind main window if focus changes (but should still close if main window closes)
 
 Probably should/will:
 - ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
@@ -13,6 +14,7 @@ Probably should/will:
 	- when also with alt or shift, pin at center of window. 
 	- looking at photoshop: holding shift does this, pinning the opposite corner. The resizing occurs as if there is a tangent line to the corner you started click/dragging, that is a 45 deg angle from either line of the rectangle, and this line keeps its angle and follows the cursor.
 		- when you also hold alt, this resizing happens pinned from the center of the rectangle.
+
 
 Lower priority:
 - Windows natively provides a history function when right clicking on icon on taskbar. Manage and give option to enable/disable this? Align with in-app list?
