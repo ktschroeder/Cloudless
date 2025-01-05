@@ -168,6 +168,13 @@ namespace Cloudless
         private Point initialMouseScreenPosition;
         private Point initialWindowPosition;
 
+        //Window snapping preference:
+        // TODO make this a configurable setting (an advanced setting)
+        //- option 1 (fluid & snapless): Native Windows snapping is disabled. When starting to drag window, regardless of whether you are holding SHIFT, you may press/release SHIFT at-will during the drag and the window will intuitively switch between constrained drag and free drag modes.
+        //- option 2 (default): When you start dragging, you will enter one of two paths during the drag: If you were not initially holding Shift, native Windows snapping will be enabled, but you cannot enter constrained drag mode by then pressing SHIFT. If you were initially holding Shift, you will see behavior as described in option 1 above.
+        private bool fluidSnaplessDragPreference = false;
+        // It isn't feasible to dynamically switch between DragMove (needed for Windows's native snapping) and constrained movement in the same drag. DragMove prevents hitting Window_MouseMove.
+
         // MouseDown: Start Dragging
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -196,7 +203,11 @@ namespace Cloudless
                     isDraggingWindow = true;
                     initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
                     initialWindowPosition = new Point(Left, Top);
-                    Mouse.Capture(this);  // Capture mouse for consistent dragging
+
+                    if (fluidSnaplessDragPreference || Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                        Mouse.Capture(this);  // Capture mouse for consistent dragging
+                    else
+                        DragMove();
                 }
             }
         }
@@ -227,6 +238,8 @@ namespace Cloudless
             
             if (isDraggingWindow && e.LeftButton == MouseButtonState.Pressed)
             {
+                Mouse.Capture(this);  // Capture mouse for consistent dragging
+
                 Point currentMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Screen coordinates
                 Vector mouseDelta = currentMouseScreenPosition - initialMouseScreenPosition;
 

@@ -4,8 +4,6 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- see if we can easily restore Window's inherent corner and top snapping functionality (was lost in recent fix to replace DragMove)
-
 - implement ratio-preserving resizing when click-dragging corner, described more below. Pinning at side, and at center, are not very applicable to image viewing on desktop, so never mind those.
 
 Probably should/will:
@@ -58,6 +56,7 @@ Maybe / ideas:
 - Automatically rotate images based on the EXIF orientation tag in case the image was taken on a camera or smartphone that stored the rotation information.
 - somewhere list the less obvious features such as drag-and-drop and double-click for fullscreen
 - maybe option for dropshadow beyond window ==> tried this, got messy
+- option to use Zen as "background" instead of black or transparent. Then, option to zoom out beyond normal image limit (to create a frame around the image).
 
 Features noted in Windows Photos app:
 - True number displayed for "zoom amount" where 100% is true resolution, even when best-fit in small window
