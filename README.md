@@ -4,7 +4,7 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-
+- implement ratio-preserving resizing when click-dragging corner, described more below. Pinning at side, and at center, are not very applicable to image viewing on desktop, so never mind those.
 
 Probably should/will:
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
@@ -12,13 +12,13 @@ Probably should/will:
 	- looking at photoshop: holding shift does this, pinning the opposite corner. The resizing occurs as if there is a tangent line to the corner you started click/dragging, that is a 45 deg angle from either line of the rectangle, and this line keeps its angle and follows the cursor.
 		- when you also hold alt, this resizing happens pinned from the center of the rectangle.
 		- when dragging from a side instead of corner, object is pinned at the center of the opposite edge.
+- odd jitter of window when changing images, such as when navigating through a directory. Possibly a WPF issue; a few attempts did not resolve this. Possiubly related, general jitteriness when resizing and similar. Would be good to smoothen out.
 
 Lower priority:
 - Windows natively provides a history function when right clicking on icon on taskbar. Manage and give option to enable/disable this? Align with in-app list?
 - consider thumbnails for recent image list if feasible and okay UI/UX
 - bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
 - loading GIF takes a while, may be good to show "Loading..." text or something. User cursor stays weird? Possibly blocks stuff? (try opening local vs dragging from web)
-- odd jitter of window when changing images, such as when navigating through a directory. Possibly a WPF issue; a few attempts did not resolve this. Possiubly related, general jitteriness when resizing and similar. Would be good to smoothen out.
 - Zen: look back at earlier approach (in feature branch), offer both as different styles.
 - Zen: option for "darker zen": just make the BG black. due to opacities, overall effect is more mellow, and also occasionally shows space-esque black or near black which can be neat. But I think light by default is good: seems more visually pleasant.
 - Zen: compare performance of app before and after adding Zen to identify any performance issues. Probably make it off or much easier by default.
