@@ -622,6 +622,7 @@ namespace Cloudless
             const int HTCLIENT = 1, HTCAPTION = 2;
             const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTBOTTOM = 15;
             const int HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+            const int WM_NCLBUTTONDOWN = 0x00A1;
 
             if (msg == WM_NCHITTEST)
             {
@@ -674,6 +675,18 @@ namespace Cloudless
                 // Default behavior for client area
                 handled = false; // Allow propagation for right-click menu
                 return (IntPtr)HTCLIENT;
+            }
+
+            if (msg == WM_NCLBUTTONDOWN)
+            {
+                int hitTest = wParam.ToInt32();
+                if (hitTest == HTTOPLEFT || hitTest == HTTOPRIGHT || hitTest == HTBOTTOMLEFT || hitTest == HTBOTTOMRIGHT)
+                {
+                    initialAspectRatio = (double)Width / Height;
+                    resizeOrigin = new Point(Left + (hitTest == HTTOPLEFT || hitTest == HTBOTTOMLEFT ? Width : 0),
+                                             Top + (hitTest == HTTOPLEFT || hitTest == HTTOPRIGHT ? Height : 0));
+                    isResizingWithAspectRatio = true;
+                }
             }
 
             return IntPtr.Zero;
@@ -787,8 +800,58 @@ namespace Cloudless
             if (wasExplorationMode)
                 Message("Entered Display Mode");
         }
+
+        private bool isResizingWithAspectRatio = false;
+        private double initialAspectRatio;
+        private Point resizeOrigin; // Opposite corner for proportional scaling
+
+        private bool isUpdatingSize = false;  // Prevents recursive updates
+
+        private bool isWidthDominantResize = false;
+        private bool isTrackingResizeDirection = false;
+
+        private DateTime lastResizeHandled = DateTime.MinValue;
+        private readonly TimeSpan resizeThrottle = TimeSpan.FromMilliseconds(16); // About 60 updates per second
+
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            if (!isResizingWithAspectRatio) return;
+
+            if ((DateTime.Now - lastResizeHandled) < resizeThrottle) return; // Throttle excessive events
+
+            lastResizeHandled = DateTime.Now;
+            bool isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+            if (isShiftPressed)
+            {
+                if (!isTrackingResizeDirection)
+                {
+                    initialAspectRatio = Width / Height;
+                    isWidthDominantResize = Math.Abs(e.NewSize.Width - e.PreviousSize.Width) >
+                                            Math.Abs(e.NewSize.Height - e.PreviousSize.Height);
+                    isTrackingResizeDirection = true;
+                }
+
+                double newWidth = e.NewSize.Width;
+                double newHeight = e.NewSize.Height;
+
+                if (isWidthDominantResize)
+                {
+                    newHeight = newWidth / initialAspectRatio;
+                }
+                else
+                {
+                    newWidth = newHeight * initialAspectRatio;
+                }
+
+                Width = newWidth;
+                Height = newHeight;
+            }
+            else
+            {
+                isTrackingResizeDirection = false;
+            }
+
             ScaleImageToWindow();
 
             if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
