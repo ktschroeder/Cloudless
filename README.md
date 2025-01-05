@@ -4,24 +4,20 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- Allow hotkey reference window to go behind main window if focus changes (but should still close if main window closes)
+
 
 Probably should/will:
-- ClampCurrentTransformToIntuitiveBounds sometimes apparently leaves a thin black line
-	- maybe related to above: some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
-	- investigate more but one/both of these above may be related to the pan/zoom margin weirdness that is now largely better
 - implement: holding ctrl while dragging corner of window keeps ratio. This actually has some complications, such as where the window should be "pinned". See what other apps do for intuitive UX.
 	- when also with alt or shift, pin at center of window. 
 	- looking at photoshop: holding shift does this, pinning the opposite corner. The resizing occurs as if there is a tangent line to the corner you started click/dragging, that is a 45 deg angle from either line of the rectangle, and this line keeps its angle and follows the cursor.
 		- when you also hold alt, this resizing happens pinned from the center of the rectangle.
-
+		- when dragging from a side instead of corner, object is pinned at the center of the opposite edge.
 
 Lower priority:
 - Windows natively provides a history function when right clicking on icon on taskbar. Manage and give option to enable/disable this? Align with in-app list?
 - consider thumbnails for recent image list if feasible and okay UI/UX
 - bug: when fullscreen, right click to context menu then left click on main window is treated as double-click
 - loading GIF takes a while, may be good to show "Loading..." text or something. User cursor stays weird? Possibly blocks stuff? (try opening local vs dragging from web)
-- make shift-dragging remain smooth visually along axis before releasing, if feasible. If we need to not use DragMove then this could get bad.
 - odd jitter of window when changing images, such as when navigating through a directory. Possibly a WPF issue; a few attempts did not resolve this. Possiubly related, general jitteriness when resizing and similar. Would be good to smoothen out.
 - Zen: look back at earlier approach (in feature branch), offer both as different styles.
 - Zen: option for "darker zen": just make the BG black. due to opacities, overall effect is more mellow, and also occasionally shows space-esque black or near black which can be neat. But I think light by default is good: seems more visually pleasant.
@@ -40,6 +36,12 @@ Lower priority:
 - option: snap to best fit when dragging border (related to other feature: resizing while maintaining aspect ratio of window)
 - consider whether/what features should be behind feature flags users can configure in settings (to keep app/UI cleaner if they like). Also consider some kind of power user mode for this.
 - If you change a config in one window/instance, how should/can it affect other windows that are open?
+- ClampCurrentTransformToIntuitiveBounds (or something else) sometimes apparently leaves a thin black line
+	- maybe related to above: some images leave a small black bar on window, maybe off-by-one from math/rounding. see double-monitor screencap as example of an image that does this.
+	- investigate more but one/both of these above may be related to the pan/zoom margin weirdness that is now largely better
+	- repro: double monitor screenshot with 10 pixel bugger setting enabled, best fit no zoom.
+	- Look at debug info: fractional pixels?
+	- mismatch between ImageDisplay.Height or Width and the true ActualHeight. WPF pixel/unit nuance. At least, the black is just BG, so transparent is an option.
 - optional online listening for updates.
 
 Maybe / ideas:

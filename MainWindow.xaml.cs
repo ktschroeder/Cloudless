@@ -165,6 +165,7 @@ namespace Cloudless
 
         #region Sensing
         private bool isDraggingWindow = false;
+        private Point initialMouseScreenPosition;
         private Point initialWindowPosition;
 
         // MouseDown: Start Dragging
@@ -187,19 +188,17 @@ namespace Cloudless
                     // TODO weirdness here that is new? or maybe not.
                     // may help: when going fullscreen and dragging out of it, set tracked "window position" to middle of screen instead of real last position that it would otherwise return to.
                 }
-                else
+                else if (WindowState == WindowState.Normal)
                 {
-                    // Record the initial mouse position for snapping logic
                     isDraggingWindow = true;
+                    initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
                     initialWindowPosition = new Point(Left, Top);
-
-                    // Normal drag logic
-                    DragMove();
+                    Mouse.Capture(this);  // Capture mouse for consistent dragging
                 }
             }
         }
 
-        
+        // MouseMove: Handle Dragging with Axis Constraining
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             if (isPanningImage)
@@ -216,38 +215,38 @@ namespace Cloudless
                 // Handle dragging window out of fullscreen
                 Point cursorPosition = e.GetPosition(this);
                 ToggleFullscreen();
+                isDraggingWindow = true;  // this will then hit the below if-block
 
-                DragMove();  // TODO exception here if you click and drag from fullscreen, and without releasing, drag to top of display to again enter fullscreen, then release.
+                // TODO center window on cursor
+
+                //DragMove();  // TODO exception here if you click and drag from fullscreen, and without releasing, drag to top of display to again enter fullscreen, then release.
             }
-            else if (isDraggingWindow)
+            
+            if (isDraggingWindow && e.LeftButton == MouseButtonState.Pressed)
             {
-                // Custom dragging logic with snapping
-                Point currentPosition = new Point(Left, Top); ;
-                Vector delta = currentPosition - initialWindowPosition;
+                Point currentMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Screen coordinates
+                Vector mouseDelta = currentMouseScreenPosition - initialMouseScreenPosition;
+
+                double newLeft = initialWindowPosition.X + mouseDelta.X;
+                double newTop = initialWindowPosition.Y + mouseDelta.Y;
 
                 if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
                 {
-                    // This is only hit when user releases the click (captured by DragMove probably).
-                    // It works well, except that the snapping is not visual while dragging, but rather only once done dragging.
-
-                    // Constrain movement to horizontal or vertical
-                    if (Math.Abs(delta.X) > Math.Abs(delta.Y))
+                    if (Math.Abs(mouseDelta.X) > Math.Abs(mouseDelta.Y))
                     {
-                        // Horizontal movement
-                        Left = initialWindowPosition.X + delta.X;
-                        Top = initialWindowPosition.Y; // Ignore vertical changes
+                        Left = newLeft;  // Horizontal movement only
+                        Top = initialWindowPosition.Y;
                     }
                     else
                     {
-                        // Vertical movement
-                        Left = initialWindowPosition.X; // Ignore horizontal changes
-                        Top = initialWindowPosition.Y + delta.Y;
+                        Left = initialWindowPosition.X;
+                        Top = newTop;    // Vertical movement only
                     }
                 }
-                else if (e.LeftButton == MouseButtonState.Pressed)
+                else
                 {
-                    // Free movement. This might not be necessary
-                    DragMove();
+                    Left = newLeft;
+                    Top = newTop;
                 }
             }
 
@@ -263,6 +262,11 @@ namespace Cloudless
             if (isPanningImage)
             {
                 StopPanning();
+            }
+
+            if (isDraggingWindow)
+            {
+                Mouse.Capture(null);  // Release mouse capture
             }
 
             isDraggingWindow = false;
