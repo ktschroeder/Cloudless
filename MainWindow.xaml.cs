@@ -184,7 +184,10 @@ namespace Cloudless
                 }
                 else if (WindowState == WindowState.Maximized)
                 {
-                    isDraggingWindowFromFullscreen = true;
+                    // TODO avoided some grief by just disabling this functionality until it works fully.
+                    // Frankly not needed functionality anyway
+                    //isDraggingWindowFromFullscreen = true;
+
                     // TODO weirdness here that is new? or maybe not.
                     // may help: when going fullscreen and dragging out of it, set tracked "window position" to middle of screen instead of real last position that it would otherwise return to.
                 }

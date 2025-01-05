@@ -4,6 +4,8 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
+- see if we can easily restore Window's inherent corner and top snapping functionality (was lost in recent fix to replace DragMove)
+
 - implement ratio-preserving resizing when click-dragging corner, described more below. Pinning at side, and at center, are not very applicable to image viewing on desktop, so never mind those.
 
 Probably should/will:
