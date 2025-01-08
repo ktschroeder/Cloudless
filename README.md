@@ -4,6 +4,7 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
+- look for instances of repeated/unwanted render/UI method calls which may contribute to jittery behavior
 
 
 Probably should/will:

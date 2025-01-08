@@ -73,7 +73,7 @@ namespace Cloudless
                 Zen(true);
             }
 
-            ResizeWindow((int)windowW, (int)windowH);
+            ResizeWindow(windowW, windowH);
             CenterWindow();  // maybe redundant call. at some point look for other redundant calls ti improve cleanliness/performance
         }
         public MainWindow(string? filePath)
@@ -202,7 +202,7 @@ namespace Cloudless
                 {
                     isDraggingWindow = true;
                     initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
-                    initialWindowPosition = new Point(Left, Top);
+                    initialWindowPosition = new Point(this.Left, this.Top);
 
                     if (fluidSnaplessDragPreference || Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
                         Mouse.Capture(this);  // Capture mouse for consistent dragging
@@ -250,19 +250,18 @@ namespace Cloudless
                 {
                     if (Math.Abs(mouseDelta.X) > Math.Abs(mouseDelta.Y))
                     {
-                        Left = newLeft;  // Horizontal movement only
-                        Top = initialWindowPosition.Y;
+                        // Horizontal movement only
+                        RepositionWindow(newLeft, initialWindowPosition.Y);
                     }
                     else
                     {
-                        Left = initialWindowPosition.X;
-                        Top = newTop;    // Vertical movement only
+                        // Vertical movement only
+                        RepositionWindow(initialWindowPosition.X, newTop);
                     }
                 }
                 else
                 {
-                    Left = newLeft;
-                    Top = newTop;
+                    RepositionWindow(newLeft, newTop);
                 }
             }
 
@@ -342,8 +341,9 @@ namespace Cloudless
             if (e.Key == Key.F)
             {
                 autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
-                ResizeWindowToImage();
-                CenterWindow();
+                (var newWidth, var newHeight) = GetDimensionsToResizeWindowToImage();
+                CenterWindowGivenDimensions(newWidth, newHeight);
+                ResizeWindow(newWidth, newHeight);
                 e.Handled = true;
                 return;
             }
@@ -724,9 +724,9 @@ namespace Cloudless
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
             // Reset Width, Height, and Margin for all modes
-            ImageDisplay.Width = Double.NaN; // Reset explicit width
-            ImageDisplay.Height = Double.NaN; // Reset explicit height
-            ImageDisplay.Margin = new Thickness(0); // Reset margin
+            //ImageDisplay.Width = Double.NaN; // Reset explicit width
+            //ImageDisplay.Height = Double.NaN; // Reset explicit height
+            //ImageDisplay.Margin = new Thickness(0); // Reset margin
 
             ResetPan();
             ResetZoom();
@@ -787,21 +787,29 @@ namespace Cloudless
             if (wasExplorationMode)
                 Message("Entered Display Mode");
         }
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        private bool disableSizeChangeListener = false;  // hacky garbage for debugging, can get locked TODO
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e) // TODO gets hit twice on left/right arrow keys, 3 times on first image load
         {
-            ScaleImageToWindow();
+            if (disableSizeChangeListener)
+                return;
+            using (Dispatcher.DisableProcessing())
+            {
+                ScaleImageToWindow();
 
-            if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
-            {
-                UpdateMargins();
-                // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too?
-                ImageDisplay.Stretch = Stretch.Uniform;
+                if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
+                {
+                    UpdateMargins();
+                    // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too?
+                    ImageDisplay.Stretch = Stretch.Uniform;
+                }
+                else
+                {
+                    UpdateMargins();
+                    ClampTransformToIntuitiveBounds();
+                }
             }
-            else
-            {
-                UpdateMargins();
-                ClampTransformToIntuitiveBounds();
-            }
+
+                
         }
         private void ScaleImageToWindow()
         {
@@ -903,15 +911,19 @@ namespace Cloudless
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
         }
-        private void ResizeWindow(int width, int height)
+        private void ResizeWindow(double width, double height)
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
-            this.Width = width;
+            this.Width = width;  // each of these lines may result in an invocation of window_sizeChanged ==> may be good to contain this stuff in particular method
             this.Height = height;
         }
-        private void ResizeWindowToImage()
+        private void RepositionWindow(double left, double top)
         {
-            if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
+            this.Left = left;
+            this.Top = top;
+        }
+        private (double, double) GetDimensionsToResizeWindowToImage()
+        {
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 double imageWidth = bitmap.PixelWidth;
@@ -959,16 +971,23 @@ namespace Cloudless
                     newHeight = screenHeight;
                 }
 
-                // Set the window size
-                this.Width = newWidth;
-                this.Height = newHeight;
+                return (newWidth, newHeight);
             }
+            return (300, 300); // TODO cleanup
         }
         private void CenterWindow()
         {
             var workingArea = SystemParameters.WorkArea;
-            this.Left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
-            this.Top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
+            var left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
+            var top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
+            RepositionWindow(left, top);
+        }
+        private void CenterWindowGivenDimensions(double width, double height)
+        {
+            var workingArea = SystemParameters.WorkArea;
+            var left = (workingArea.Width - width) / 2 + workingArea.Left;
+            var top = (workingArea.Height - height) / 2 + workingArea.Top;
+            RepositionWindow(left, top);
         }
         private void ClampTransformToIntuitiveBounds(Vector? delta = null)
         {
@@ -1146,20 +1165,26 @@ namespace Cloudless
                 }
             }
 
-            // Center the window
-            this.Top += (this.Height - newHeight) / 2;
-            this.Left += (this.Width - newWidth) / 2;
+            using (Dispatcher.DisableProcessing())
+            {
+                // Do work while the dispatcher processing is disabled.
+                // Center the window
+                var top = this.Top + (this.Height - newHeight) / 2;
+                var left = this.Left + (this.Width - newWidth) / 2;
+                RepositionWindow(top, left);
 
-            // Apply size changes
-            this.Width = newWidth;
-            this.Height = newHeight;
+                // Apply size changes
+                ResizeWindow(newWidth, newHeight);
+            }
+
+            
 
         }
         private void MaximizeVerticalDimension()
         {
             var wa = SystemParameters.WorkArea;
-            this.Height = wa.Height;
-            this.Top = wa.Top;
+            ResizeWindow(this.Width, wa.Height);
+            RepositionWindow(this.Left, wa.Top);
         }
         #endregion
 
@@ -1208,7 +1233,7 @@ namespace Cloudless
             RemoveZen();
             autoResizingSpaceIsToggled = false;
 
-            try
+            using (Dispatcher.DisableProcessing()) try
             {
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
 
@@ -1247,7 +1272,17 @@ namespace Cloudless
                 }
                 else
                 {
-                    var bitmap = new BitmapImage(uri);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = uri;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;  // Forces synchronous load into memory
+                    bitmap.EndInit();
+
+                    bitmap.DownloadCompleted += (s, e) =>
+                    {
+                        // This code runs when the image finishes loading
+                        Console.WriteLine("Image loaded successfully.");
+                    };
                     ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                     ImageDisplay.Source = bitmap;
                 }
@@ -1258,8 +1293,16 @@ namespace Cloudless
 
                 if (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
                 {
-                    ResizeWindowToImage();
-                    CenterWindow();
+                    
+                    (var newWidth, var newHeight) = GetDimensionsToResizeWindowToImage();
+                    using (Dispatcher.DisableProcessing())
+                    {
+                        CenterWindowGivenDimensions(newWidth, newHeight);
+                        disableSizeChangeListener = true;
+                        ResizeWindow(newWidth, newHeight);
+                        disableSizeChangeListener = false;
+                    }
+                        
                 }
                     
                 ApplyDisplayMode();
