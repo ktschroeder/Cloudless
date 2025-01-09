@@ -17,7 +17,6 @@ using System.Drawing.Imaging;
 using System.Collections.Specialized;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
-using System.Windows.Media.Effects;
 
 
 namespace Cloudless
@@ -73,7 +72,7 @@ namespace Cloudless
                 Zen(true);
             }
 
-            ResizeWindow((int)windowW, (int)windowH);
+            ResizeWindow(windowW, windowH);
             CenterWindow();  // maybe redundant call. at some point look for other redundant calls ti improve cleanliness/performance
         }
         public MainWindow(string? filePath)
@@ -202,7 +201,7 @@ namespace Cloudless
                 {
                     isDraggingWindow = true;
                     initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
-                    initialWindowPosition = new Point(Left, Top);
+                    initialWindowPosition = new Point(this.Left, this.Top);
 
                     if (fluidSnaplessDragPreference || Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
                         Mouse.Capture(this);  // Capture mouse for consistent dragging
@@ -250,19 +249,18 @@ namespace Cloudless
                 {
                     if (Math.Abs(mouseDelta.X) > Math.Abs(mouseDelta.Y))
                     {
-                        Left = newLeft;  // Horizontal movement only
-                        Top = initialWindowPosition.Y;
+                        // Horizontal movement only
+                        RepositionWindow(newLeft, initialWindowPosition.Y);
                     }
                     else
                     {
-                        Left = initialWindowPosition.X;
-                        Top = newTop;    // Vertical movement only
+                        // Vertical movement only
+                        RepositionWindow(initialWindowPosition.X, newTop);
                     }
                 }
                 else
                 {
-                    Left = newLeft;
-                    Top = newTop;
+                    RepositionWindow(newLeft, newTop);
                 }
             }
 
@@ -724,9 +722,9 @@ namespace Cloudless
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
             // Reset Width, Height, and Margin for all modes
-            ImageDisplay.Width = Double.NaN; // Reset explicit width
-            ImageDisplay.Height = Double.NaN; // Reset explicit height
-            ImageDisplay.Margin = new Thickness(0); // Reset margin
+            //ImageDisplay.Width = Double.NaN; // Reset explicit width
+            //ImageDisplay.Height = Double.NaN; // Reset explicit height
+            //ImageDisplay.Margin = new Thickness(0); // Reset margin
 
             ResetPan();
             ResetZoom();
@@ -903,11 +901,16 @@ namespace Cloudless
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
         }
-        private void ResizeWindow(int width, int height)
+        private void ResizeWindow(double width, double height)
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
-            this.Width = width;
+            this.Width = width;  // each of these lines may result in an invocation of window_sizeChange
             this.Height = height;
+        }
+        private void RepositionWindow(double left, double top)
+        {
+            this.Left = left;
+            this.Top = top;
         }
         private void ResizeWindowToImage()
         {
@@ -967,8 +970,9 @@ namespace Cloudless
         private void CenterWindow()
         {
             var workingArea = SystemParameters.WorkArea;
-            this.Left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
-            this.Top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
+            var left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
+            var top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
+            RepositionWindow(left, top);
         }
         private void ClampTransformToIntuitiveBounds(Vector? delta = null)
         {
@@ -1147,19 +1151,18 @@ namespace Cloudless
             }
 
             // Center the window
-            this.Top += (this.Height - newHeight) / 2;
-            this.Left += (this.Width - newWidth) / 2;
-
+            var top = this.Top + (this.Height - newHeight) / 2;
+            var left = this.Left + (this.Width - newWidth) / 2;
+            RepositionWindow(top, left);
             // Apply size changes
-            this.Width = newWidth;
-            this.Height = newHeight;
+            ResizeWindow(newWidth, newHeight);
 
         }
         private void MaximizeVerticalDimension()
         {
             var wa = SystemParameters.WorkArea;
-            this.Height = wa.Height;
-            this.Top = wa.Top;
+            ResizeWindow(this.Width, wa.Height);
+            RepositionWindow(this.Left, wa.Top);
         }
         #endregion
 
