@@ -8,7 +8,7 @@
             <TextBlock Text="You are using Cloudless, a lightweight, minimal-UI image viewing app. It was created by ktschroeder." 
                    TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-            <TextBlock Text="Version 0.0.0" TextWrapping="Wrap" Margin="0,0,0,10"/>
+            <TextBlock Text="Version 0.1.0" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
             <TextBlock Text="This app was designed to provide a visually simple, efficient image viewing experience, along with quiet but plentiful features. Some configurations are available in the preferences window." 
                    TextWrapping="Wrap" Margin="0,0,0,10"/>

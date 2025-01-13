@@ -4,13 +4,23 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows. It's feature-ri
 TODO
 
 Up next:
-- indicator of current zoom amount upon zooming
 
 
-Probably should/will:
+Do before release:
+- messages window: make it possible to copy a message. Add label when there are no messages explaining what the window is (or just always)
 - loading GIF takes a while, may be good to show "Loading..." text or something. User cursor stays weird? Possibly blocks stuff? (try opening local vs dragging from web)
 - styling
 - more zen below
+- code and UI clean-up
+- create actual README and improve contents of secondary windows. List features and hotkeys in README. e.g. ability to drag onto window.
+- create new public repo, Cloudless.
+- check TODOs in code
+- look into optional online listening for updates.
+- look again into drop shadow (see notes elsewhere)
+- logo? e.g. for taskbar. Cloud outline or aurora borealis shapes or starry sky maybe.
+- True number displayed for "zoom amount" where 100% is true resolution, even when best-fit in small window. Show briefly and fade after changing zoom.
+- Options in context menu (Secondary?) for common round values like 50%, 500%.
+- thorough testing
 
 
 Lower priority:
@@ -47,7 +57,7 @@ Lower priority:
 	- repro: double monitor screenshot with 10 pixel bugger setting enabled, best fit no zoom.
 	- Look at debug info: fractional pixels?
 	- mismatch between ImageDisplay.Height or Width and the true ActualHeight. WPF pixel/unit nuance. At least, the black is just BG, so transparent is an option.
-- optional online listening for updates.
+
 
 Maybe / ideas:
 - configurable gestures: hold left and right click, then drag in a direction. 4 options. and/or middle click.
