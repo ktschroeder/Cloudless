@@ -8,8 +8,6 @@ using System.Windows.Media;
 namespace Cloudless
 {
 
-
-
     public partial class MessageHistoryWindow : Window
     {
         private readonly ObservableCollection<string> messageHistory;

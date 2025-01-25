@@ -4,40 +4,25 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Windows;
 using System.Windows.Media;
-using static System.Formats.Asn1.AsnWriter;
-using System.Reflection.Emit;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using Rectangle = System.Windows.Shapes.Rectangle;
-using Brush = System.Windows.Media.Brush;
-using System;
 using Brushes = System.Windows.Media.Brushes;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using static Cloudless.MainWindow;
-using System.Windows.Media.Media3D;
-//using Rectangle = System.Windows.Shapes.Rectangle;
-
-// ****** The slot approach is overly complicated and unwieldy. Put a random lifespan on each non-bg layer. Upon expiration, fade to 0 opacity, and fade in a new layer (can reuse layer or may be cleaner to start fresh: increment some index).
-// As for the bg layer: options: 1) can have occasionally fade to opaque black. linger a while, then fade in new paint.
-// 2) bg always solid black. First layer always 100% opacity. layer above becomes 100% at some point, then we remove the now-hidden layer. Keep this layer at 100 till likewise removed. Repeat forever.
-// To ease future issues, from the start maintain a comprehensive state: queue of objects with rectangle layer, gradientstops, animations, etc.
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        private const int StarSize = 2;   // Diameter of each star
+        private const int StarSize = 2;
         
-        private Canvas StarsCanvas;
+        private Canvas? StarsCanvas;
 
-        private Random _random = new Random();
+        private Random? _random = new Random();
         private bool isZen;
         private int staticStarSession = -1;  // smelly technique for determining in star child generation whether they should proceed (if in old session, then no).
         private bool isWelcome = true;
-        private DispatcherTimer _resizeStarTimer;
+        private DispatcherTimer? _resizeStarTimer;
         private int brushKey = 0;
-        private Storyboard orchStoryboard = null;
+        private Storyboard? orchStoryboard;
 
         private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
         private int magicLayersCreated = 0;
@@ -47,7 +32,7 @@ namespace Cloudless
         {
             _resizeStarTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(400) // Adjust delay as needed
+                Interval = TimeSpan.FromMilliseconds(400)
             };
             _resizeStarTimer.Tick += (s, e) =>
             {
@@ -78,7 +63,6 @@ namespace Cloudless
             magicLayersCreated = 0;
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
             GenerateStars();
-            // Create the TextBlock for "No image is loaded" message
             if (includeInfoText)
             {
                 if (!MyGrid.Children.Contains(NoImageMessage))
@@ -146,7 +130,6 @@ namespace Cloudless
             if (currentlyDisplayedImagePath != null)
                 ImageDisplay.Visibility = Visibility.Visible;
 
-
             isZen = false; // TODO check performance and that nothing is missed
         }
 
@@ -194,7 +177,7 @@ namespace Cloudless
 
             double width = MyGrid.ActualWidth;
             double height = MyGrid.ActualHeight;
-            int starCount = 10 + (int)(width * height / 2500);  // 600 for 1920x1080 seemed good
+            int starCount = 10 + (int)(width * height / 2500);
 
             for (int i = 0; i < starCount; i++)
             {
@@ -244,11 +227,8 @@ namespace Cloudless
                 BeginTime = TimeSpan.FromSeconds(2 * periodDelay + withDelay / 2.0) // Start fading out after fading in
             };
 
-            // Apply animations
-            
             Storyboard storyboard = new Storyboard
             {
-                //RepeatBehavior = RepeatBehavior.Forever,
                 RepeatBehavior = new RepeatBehavior(count: repeatCount),
                 BeginTime = TimeSpan.FromSeconds(startingDelay)
             };
@@ -263,7 +243,6 @@ namespace Cloudless
             storyboard.Children.Add(fadeOut);
 
             star.Tag = storyboard;
-            //Debug.WriteLine($"stars storyboard children: {storyboard.Children.Count}");
 
             storyboard.Completed += (s, e) =>
             {
@@ -290,7 +269,7 @@ namespace Cloudless
 
         private Duration DetermineLifespan(int layerIndex, int fadeInDurationSeconds)
         {
-            const int lifespanQuadraticBase = 5; // 1 for debug. was 12.
+            const int lifespanQuadraticBase = 5;
             const int minLifespanSecondsBeyondFadeIn = 5;
             var originalLifespan = new Duration(TimeSpan.FromSeconds(fadeInDurationSeconds + minLifespanSecondsBeyondFadeIn + Math.Pow(_random.NextDouble() * lifespanQuadraticBase, 2)));
             var prevLayer = magicLayers.Where(ml => ml.layerIndex == layerIndex - 1).FirstOrDefault();
@@ -323,8 +302,6 @@ namespace Cloudless
 
         private void GradientMagic()
         {
-            // Create a NameScope for the page so that
-            // Storyboards can be used.
             NameScope.SetNameScope(this, new NameScope());
 
             this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 1 });
@@ -333,8 +310,6 @@ namespace Cloudless
             for (int i = 0; i < CONCURRENT_ZEN_LAYERS; i++)
             {
                 var ml = CreateMagicLayer();
-                //ml.rectStoryboard.BeginTime = TimeSpan.FromSeconds(i * 2); // Stagger start times by 2 seconds.
-
                 ml.rectStoryboard.Begin(this, true);
             }
 
@@ -357,7 +332,6 @@ namespace Cloudless
             {
                 baseOpacity = 0;
             }
-            
             
             var mlBirth = DateTime.Now;
             // Checks lower layer's lifespan to ensure this one lasts beyond it.
@@ -393,7 +367,6 @@ namespace Cloudless
             // consider defining random seed for first-time use
             this.RegisterName("MyRect" + mlLayerIndex, mlRect);
             
-            
             if (!isFirstRound)
             {
                 var fadeIn = new DoubleAnimation
@@ -401,7 +374,6 @@ namespace Cloudless
                     From = 0,
                     To = baseOpacity,
                     Duration = TimeSpan.FromSeconds(fadeInDurationSeconds),
-                    // BeginTime is 0: correct since we only got here after the previous layer completed
                     //EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }  // can consider omitting or using others
                 };
 
@@ -468,13 +440,11 @@ namespace Cloudless
             Storyboard.SetTargetProperty(fadeToFull, new PropertyPath(Rectangle.OpacityProperty));
             rectStoryboard.Children.Add(fadeToFull);
 
-            //5.Once at 1.0, delete and free the layer that was previously at 1.0(it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
+            //5.Once at 1.0, delete and free the layer that was previously at 1.0 (it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
             rectStoryboard.Completed += (s, e) =>
             {
                 if (magicLayer.endOfLine)
                 {
-                    //throw new Exception("freed but still got to complete event");
-
                     // TODO clean this up
                     return;
                 }
@@ -486,7 +456,6 @@ namespace Cloudless
                         throw new Exception("bad");
                     if (expiredLayer.layerIndex != mlLayerIndex - 1)
                         throw new Exception("also bad");
-                    //if (expiredLayer.rect.Opacity)
                     Debug.Print($"Freed layer with opacity {expiredLayer.rect.Opacity} while new ded layer had opacity {mlRect.Opacity}"); 
                     expiredLayer.Free(this, MyGrid);
                 }
@@ -507,7 +476,6 @@ namespace Cloudless
         internal class GradientStopContext
         {
             internal GradientStop stop;
-            //internal int? stopIndex;
             internal string? name;
             internal AnimationTimeline? offsetAnimation;
             internal AnimationTimeline? colorAnimation;
@@ -570,8 +538,7 @@ namespace Cloudless
             gsc2.name = "GradientStop2Layer" + layer;
             gsc3.name = "GradientStop3Layer" + layer;
 
-            // Register a name for each gradient stop with the
-            // page so that they can be animated by a storyboard.
+            // Register a name for each gradient stop with the page so that they can be animated by a storyboard.
             this.RegisterName(gsc0.name, gsc0.stop);
             this.RegisterName(gsc1.name, gsc1.stop);
             this.RegisterName(gsc2.name, gsc2.stop);
@@ -600,7 +567,7 @@ namespace Cloudless
                 }
                 else
                 {
-                    //color anim
+                    // color anim
                     var tweak1 = (float)(0.1 + _random.NextDouble() * 0.55);
                     var tweak2 = (float)(0.1 + _random.NextDouble() * 0.55);
                     var tweak3 = (float)(0.1 + _random.NextDouble() * 0.55);
@@ -648,7 +615,5 @@ namespace Cloudless
             Storyboard.SetTargetProperty(animation, new PropertyPath(GradientStop.ColorProperty));
             return animation;
         }
-
-        
     }
 }

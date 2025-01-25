@@ -104,7 +104,7 @@ public class OverlayMessageManager
 
     private class OverlayMessage
     {
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
         public TimeSpan Duration { get; set; }
     }
 }

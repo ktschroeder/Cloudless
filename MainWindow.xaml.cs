@@ -37,7 +37,7 @@ namespace Cloudless
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
 
-        private OverlayMessageManager overlayManager;
+        private OverlayMessageManager? overlayManager;
 
         private const int MaxRecentFiles = 10;
         private List<string> recentFiles = new();
@@ -47,10 +47,10 @@ namespace Cloudless
         private bool isDraggingWindowFromFullscreen = false;
         private bool isPanningImage = false;
 
-        public ScaleTransform imageScaleTransform = new ScaleTransform();
-        public TranslateTransform imageTranslateTransform = new TranslateTransform();
+        public ScaleTransform? imageScaleTransform = new ScaleTransform();
+        public TranslateTransform? imageTranslateTransform = new TranslateTransform();
 
-        private TextBlock NoImageMessage;
+        private TextBlock? NoImageMessage;
 
         private ImageAnimationController? gifController;
         #endregion
@@ -73,7 +73,7 @@ namespace Cloudless
             }
 
             ResizeWindow(windowW, windowH);
-            CenterWindow();  // maybe redundant call. at some point look for other redundant calls ti improve cleanliness/performance
+            CenterWindow();  // maybe redundant call. at some point look for other redundant calls to improve cleanliness/performance
         }
         public MainWindow(string? filePath)
         {
@@ -183,7 +183,7 @@ namespace Cloudless
                 {
                     if (!isExplorationMode) EnterExplorationMode();
 
-                    this.Cursor = Cursors.SizeAll; // Replace with a custom gripping hand cursor if desired.
+                    this.Cursor = Cursors.SizeAll;
                     isPanningImage = true;
                     lastMousePosition = e.GetPosition(this);
                     ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
@@ -332,8 +332,6 @@ namespace Cloudless
                 e.Handled = true;
                 return;
             }
-
-
 
 
             // set window dimensions to image if possible
@@ -617,7 +615,7 @@ namespace Cloudless
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             const int WM_NCHITTEST = 0x0084;
-            const int HTCLIENT = 1, HTCAPTION = 2;
+            const int HTCLIENT = 1;
             const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTBOTTOM = 15;
             const int HTTOPLEFT = 13, HTTOPRIGHT = 14, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
 
@@ -695,16 +693,12 @@ namespace Cloudless
                     // This is cleaner than doing nothing, pending future work to make this more seamless (particularly for ZoomToFill).
                     ApplyDisplayMode(true);
                     break;
-                //case "BestFitWithoutZooming":
                 default:
                     break;
             }
 
             isExplorationMode = true;
             ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
-            //CenterImageIfNeeded();
-
-            //bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
 
             if (!wasExplorationMode)
                 Message("Entered Exploration Mode (zoom and pan)");
@@ -721,14 +715,8 @@ namespace Cloudless
             bool loopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
-            // Reset Width, Height, and Margin for all modes
-            //ImageDisplay.Width = Double.NaN; // Reset explicit width
-            //ImageDisplay.Height = Double.NaN; // Reset explicit height
-            //ImageDisplay.Margin = new Thickness(0); // Reset margin
-
             ResetPan();
             ResetZoom();
-
 
             // Apply display mode for stretching
             switch (displayMode)
@@ -744,11 +732,11 @@ namespace Cloudless
                     break;
                 case "BestFitWithoutZooming":
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.None; // Prevent automatic stretching
-                    // ^^^ this is undone at the end of CenterImageIfNeeded? Sets to Uniform.
+                    // ^^^ this is undone at the end of CenterImageIfNeeded? Sets to Uniform. TODO.
                     // Center and scale the image as needed
                     ScaleImageToWindow();
                     UpdateMargins(); 
-                    // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too?
+                    // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too.
                     ImageDisplay.Stretch = Stretch.Uniform;
                     break;
                 default:
@@ -756,19 +744,16 @@ namespace Cloudless
                     break;
             }
 
-
             // Apply border if the flag is set
             if (useBorder)
             {
                 MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
                 MainBorder.BorderThickness = new Thickness(2);
-                //MainBorder.Effect = new DropShadowEffect() { ShadowDepth = 30, Opacity = 1 };
             }
             else
             {
                 MainBorder.BorderBrush = null;
                 MainBorder.BorderThickness = new Thickness(0);
-                //MainBorder.Effect = null;
             }
 
             if (loopGifs)
@@ -789,10 +774,10 @@ namespace Cloudless
         {
             ScaleImageToWindow();
 
-            if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")// session for image became maybe good after entering this despite isExplorationMode
+            if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
             {
                 UpdateMargins();
-                // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too?
+                // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too.
                 ImageDisplay.Stretch = Stretch.Uniform;
             }
             else
@@ -1182,10 +1167,12 @@ namespace Cloudless
                 Message("File loaded from dialog.");
             }
         }
-        private void LoadImage(string imagePath, bool openedThroughApp)
+        private void LoadImage(string? imagePath, bool openedThroughApp)
         {
             try
             {
+                if (imagePath == null)
+                    throw new Exception("Path not specified for image.");
                 string selectedImagePath = imagePath;
                 currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
                 imageFiles = Directory.GetFiles(currentDirectory, "*.*")
