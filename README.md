@@ -9,6 +9,4 @@ Cloudless is a lightweight, minimal-UI image viewer for Windows, built on Window
 - Utilize various hotkeys to quickly change preferences such as zoom, window dimensions, whether always-on-top, and many more.
 - A bunch of other stuff.
 - Zen.
-
-# Version 0.1.0
-- No release note.
+  
