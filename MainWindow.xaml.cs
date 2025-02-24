@@ -110,6 +110,7 @@ namespace Cloudless
 
             LoadRecentFiles();
             UpdateContextMenuState();
+            PrepareZoomMenu();
             UpdateRecentFilesMenu();
 
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
@@ -602,7 +603,7 @@ namespace Cloudless
                 // Zoom factor
                 double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
 
-                Zoom(zoomDelta, cursorPosition);
+                Zoom(cursorPosition, zoomDelta: zoomDelta);
 
                 e.Handled = true;
             }
@@ -1003,15 +1004,32 @@ namespace Cloudless
             // Zoom factor
             double zoomDelta = zoomIn ? 1.1 : 1 / 1.1;
 
-            Zoom(zoomDelta, windowCenter);
+            Zoom(windowCenter, zoomDelta: zoomDelta);
         }
-        private void Zoom(double zoomDelta, Point zoomOrigin)
+
+        private void ZoomFromCenterToGivenScale(double scale)
         {
             if (!isExplorationMode) EnterExplorationMode();
 
+            // Get window center relative to the image
+            Point windowCenter = new Point(PrimaryWindow.ActualWidth / 2, PrimaryWindow.ActualHeight / 2);
+
+            Zoom(windowCenter, zoomFinal: scale);
+        }
+        private void Zoom(Point zoomOrigin, double? zoomDelta = null, double? zoomFinal = null)
+        {
+            if (zoomDelta == null && zoomFinal == null)
+                throw new ArgumentException("Cannot zoom with null delta and null final");
+            if (zoomDelta != null && zoomFinal != null)
+                throw new ArgumentException("Cannot zoom with both a delta and a final");
+
+            if (!isExplorationMode) EnterExplorationMode();
+
+            double derivedDelta = zoomDelta != null ? (double)zoomDelta : ((double)zoomFinal / imageScaleTransform.ScaleX);
+
             // Calculate new scale
-            double newScaleX = imageScaleTransform.ScaleX * zoomDelta;
-            double newScaleY = imageScaleTransform.ScaleY * zoomDelta;
+            double newScaleX = imageScaleTransform.ScaleX * derivedDelta;
+            double newScaleY = imageScaleTransform.ScaleY * derivedDelta;
 
             // Get bounds of the window or container
             double containerWidth = PrimaryWindow.ActualWidth;
@@ -1040,8 +1058,8 @@ namespace Cloudless
             double offsetX = zoomOrigin.X - imageTranslateTransform.X - (PrimaryWindow.ActualWidth / 2);
             double offsetY = zoomOrigin.Y - imageTranslateTransform.Y - (PrimaryWindow.ActualHeight / 2);
 
-            imageTranslateTransform.X -= offsetX * (zoomDelta - 1);
-            imageTranslateTransform.Y -= offsetY * (zoomDelta - 1);
+            imageTranslateTransform.X -= offsetX * (derivedDelta - 1);
+            imageTranslateTransform.Y -= offsetY * (derivedDelta - 1);
 
             // Constrain translations to keep the image bound within the window
             double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
@@ -1055,6 +1073,8 @@ namespace Cloudless
             // Apply new scale
             imageScaleTransform.ScaleX = newScaleX;
             imageScaleTransform.ScaleY = newScaleY;
+
+            UpdateContextMenuState();
         }
         private void ResetZoom()
         {
@@ -1478,6 +1498,34 @@ namespace Cloudless
             UpdateRecentFilesMenu();
             
         }
+        private void PrepareZoomMenu()
+        {
+            int[] roundZooms = { 100, 200, 400, 800 };
+
+            // Clear the existing items
+            ZoomMenu.Items.Clear();
+
+            // TODO could add things like "fit window" here
+
+            // Populate the menu
+            foreach (int zoom in roundZooms)
+            {
+                MenuItem zoomItem = new MenuItem
+                {
+                    Header = $"{zoom}%",
+                    ToolTip = zoom,
+                    Tag = zoom
+                };
+                zoomItem.Click += (s, e) => 
+                {
+                    var tag = ((MenuItem)s).Tag;
+                    int zoom = (int)tag;
+                    double scale = (double)zoom / 100d;
+                    ZoomFromCenterToGivenScale(scale); 
+                };
+                ZoomMenu.Items.Add(zoomItem);
+            }
+        }
         private void UpdateRecentFilesMenu() // no side effects beyond instance. Reads from static file at this time, does not write to it.
         {
             LoadRecentFiles(); // Always fetch the latest list
@@ -1759,6 +1807,18 @@ namespace Cloudless
             var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Image Info");
             if (imageInfoMenuItem != null)
                 imageInfoMenuItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
+
+            var zoomMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString().StartsWith("Zoom"));
+            var scaleX = imageScaleTransform?.ScaleX;
+            var scaleY = imageScaleTransform?.ScaleY; // TODO do math to show user a user-friendly effective zoom level
+            if (zoomMenuItem != null)
+            {
+                if (scaleX != null && scaleY != null)
+                    zoomMenuItem.Header = $"Zoom ({(int)double.Round(scaleX * 100 ?? 0)}%)";
+                else
+                    zoomMenuItem.Header = "Zoom";
+            }
+            
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {

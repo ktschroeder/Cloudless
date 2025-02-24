@@ -58,6 +58,9 @@
                     <MenuItem Header="Close" Click="Exit_Click" />
                     <MenuItem Header="Minimize" Click="Minimize_Click" />
                     <MenuItem Header="Open Image" Click="OpenImage_Click" />
+                    <MenuItem x:Name="ZoomMenu" Header="Zoom">
+                        <!-- Items will be populated dynamically -->
+                    </MenuItem>
                     <MenuItem x:Name="RecentFilesMenu" Header="Recent Files" SubmenuOpened="RecentFilesMenu_SubmenuOpened">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
