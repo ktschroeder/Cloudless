@@ -130,8 +130,7 @@ namespace Cloudless
                 Visibility = Visibility.Visible,
             };
 
-            bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
-            this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+            SetBackground();
 
             InitializeZenMode();
         }
@@ -1625,18 +1624,34 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
                 Cloudless.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
                 Cloudless.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
-                Cloudless.Properties.Settings.Default.MakeBackgroundTransparent = configWindow.MakeBackgroundTransparent;
                 Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
                 Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
+                Cloudless.Properties.Settings.Default.Background = configWindow.SelectedBackground;
 
                 Cloudless.Properties.Settings.Default.Save();
 
-                bool transparent = Properties.Settings.Default.MakeBackgroundTransparent;
-                this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = transparent ? 0 : 1 });
+                SetBackground();
 
                 ApplyDisplayMode();
             }
         }
+        public void SetBackground()
+        {
+            string selectedBackground = Properties.Settings.Default.Background;
+            if (selectedBackground == "white")
+            {
+                this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScR = 1, ScG = 1, ScB = 1, ScA = 1 });
+            }
+            else if (selectedBackground == "transparent")
+            {
+                this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 0 });
+            }
+            else  // "black"
+            {
+                this.Background = new SolidColorBrush(new System.Windows.Media.Color() { ScA = 1 });
+            }
+        }
+
         private void SetDimensions_Click(object sender, RoutedEventArgs e)
         {
             SetDimensions();

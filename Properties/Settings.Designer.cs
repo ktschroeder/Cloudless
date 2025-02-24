@@ -144,13 +144,13 @@ namespace Cloudless.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool MakeBackgroundTransparent {
+        [global::System.Configuration.DefaultSettingValueAttribute("\"black\"")]
+        public string Background {
             get {
-                return ((bool)(this["MakeBackgroundTransparent"]));
+                return ((string)(this["Background"]));
             }
             set {
-                this["MakeBackgroundTransparent"] = value;
+                this["Background"] = value;
             }
         }
     }

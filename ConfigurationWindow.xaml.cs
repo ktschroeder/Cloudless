@@ -9,13 +9,13 @@ namespace Cloudless
     public partial class ConfigurationWindow : Window
     {
         public string SelectedDisplayMode { get; private set; }
+        public string SelectedBackground { get; private set; }
         public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle { get; private set; }
         public int SpaceAroundBounds {  get; private set; }
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
         public bool BorderOnMainWindow { get; private set; }
         public bool LoopGifs { get; private set; }
         public bool MuteMessages { get; private set; }
-        public bool MakeBackgroundTransparent { get; private set; }
         public bool AlwaysOnTopByDefault { get; private set; }
         public double MaxCompressedCopySizeMB { get; private set; }
 
@@ -62,11 +62,17 @@ namespace Cloudless
             var currentAlwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
             AlwaysOnTopByDefaultCheckbox.IsChecked = currentAlwaysOnTopByDefault;
             AlwaysOnTopByDefault = currentAlwaysOnTopByDefault;
-            
-            var currentMakeBackgroundTransparent = Cloudless.Properties.Settings.Default.MakeBackgroundTransparent;
-            MakeBackgroundTransparentCheckbox.IsChecked = currentMakeBackgroundTransparent;
-            MakeBackgroundTransparent = currentMakeBackgroundTransparent;
-            
+
+            var currentBackground = Cloudless.Properties.Settings.Default.Background;
+            // Set the current selection
+            if (currentBackground == "black")
+                BackgroundDropdown.SelectedIndex = 0;
+            else if (currentBackground == "white")
+                BackgroundDropdown.SelectedIndex = 1;
+            else if (currentBackground == "transparent")
+                BackgroundDropdown.SelectedIndex = 2;
+            SelectedBackground = currentBackground;
+
             var currentMaxCompressedCopySizeMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
             MaxCompressedCopySizeMBTextBox.Text = currentMaxCompressedCopySizeMB.ToString();
             MaxCompressedCopySizeMB = currentMaxCompressedCopySizeMB;
@@ -85,6 +91,14 @@ namespace Cloudless
             else if (DisplayModeDropdown.SelectedIndex == 3)
                 SelectedDisplayMode = "BestFitWithoutZooming";
 
+            if (BackgroundDropdown.SelectedIndex == 0)
+                SelectedBackground = "black";
+            if (BackgroundDropdown.SelectedIndex == 1)
+                SelectedBackground = "white";
+            if (BackgroundDropdown.SelectedIndex == 2)
+                SelectedBackground = "transparent";
+
+
             ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox.IsChecked ?? false;
 
             var parsed = int.TryParse(SpaceAroundBoundsTextBox.Text.Trim(), out int space);
@@ -96,7 +110,6 @@ namespace Cloudless
 
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
-            MakeBackgroundTransparent = MakeBackgroundTransparentCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
