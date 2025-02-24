@@ -1164,7 +1164,7 @@ namespace Cloudless
             // Center the window
             var top = this.Top + (this.Height - newHeight) / 2;
             var left = this.Left + (this.Width - newWidth) / 2;
-            RepositionWindow(top, left);
+            RepositionWindow(left, top);
             // Apply size changes
             ResizeWindow(newWidth, newHeight);
 
