@@ -446,6 +446,13 @@ namespace Cloudless
                 return;
             }
 
+            if (e.Key == Key.G)
+            {
+                NextBackground();
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.Space)
             {
                 // bandaid fix for issue where controller gets null upon opening app directly for a GIF
@@ -1825,7 +1832,26 @@ namespace Cloudless
         }
         #endregion
 
+        public void NextBackground()
+        {
+            string selectedBackground = Properties.Settings.Default.Background;
+            string nextBackground;
+            if (selectedBackground == "white")
+            {
+                nextBackground = "transparent";
+            }
+            else if (selectedBackground == "transparent")
+            {
+                nextBackground = "black";
+            }
+            else  // "black"
+            {
+                nextBackground = "white";
+            }
+            Properties.Settings.Default.Background = nextBackground;
 
+            SetBackground();
+        }
 
     }
 }
