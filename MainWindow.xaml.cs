@@ -1090,6 +1090,8 @@ namespace Cloudless
                 imageScaleTransform.ScaleX = 1.0 / ImageDisplay.ActualWidth * bitmap.PixelWidth;
                 imageScaleTransform.ScaleY = 1.0 / ImageDisplay.ActualHeight * bitmap.PixelHeight;
             }
+            //UpdateMargins();
+            ClampTransformToIntuitiveBounds();
         }
         private void ResetPan()
         {
