@@ -17,6 +17,8 @@ using System.Drawing.Imaging;
 using System.Collections.Specialized;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
+using System.IO.Pipes;
+using System.Text;
 
 
 namespace Cloudless
@@ -95,7 +97,10 @@ namespace Cloudless
         }
         private void Setup()
         {
+            
             InitializeComponent();
+            //Task.Run(() => { StartServer(); });  // not awaited TODO
+            StartServer();
 
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
 
@@ -407,6 +412,13 @@ namespace Cloudless
             if (e.Key == Key.A)
             {
                 About();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.S)
+            {
+                Task.Run(() => { RequestAllWindowStates(); });
                 e.Handled = true;
                 return;
             }
@@ -1810,7 +1822,164 @@ namespace Cloudless
         }
         #endregion
 
+        private string pipeName;
+        public void StartServer()
+        {
+            var instanceGuid = Guid.NewGuid();
+            pipeName = $"JustViewPipe_{instanceGuid.ToString()}";
+            RegisterInstance(pipeName); // Store this instance for discovery
 
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    using (NamedPipeServerStream server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Message))
+                    {
+                        await server.WaitForConnectionAsync();
+                        using (StreamReader reader = new StreamReader(server, Encoding.UTF8))
+                        {
+                            string request = await reader.ReadLineAsync();
+                            if (request == "GET_STATE")
+                            {
+                                string response = GetWindowStateJson();
+                                using (StreamWriter writer = new StreamWriter(server, Encoding.UTF8) { AutoFlush = true })
+                                {
+                                    await writer.WriteLineAsync(response);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        private static readonly string registryPath = Path.Combine(Path.GetTempPath(), "JustViewInstances.txt");
+
+        private void RegisterInstance(string pipeName)
+        {
+            lock (registryPath) // Prevent race conditions
+            {
+                File.AppendAllLines(registryPath, new[] { pipeName });
+            }
+        }
+
+        private static List<string> GetRegisteredInstances()
+        {
+            if (!File.Exists(registryPath))
+                return new List<string>();
+
+            return File.ReadAllLines(registryPath).Distinct().ToList();
+        }
+
+        private async void RequestAllWindowStates()
+        {
+            List<string> instances = GetRegisteredInstances();
+            List<string> responses = new List<string>();
+
+            foreach (string instancePipeName in instances)
+            {
+                using (NamedPipeClientStream client = new NamedPipeClientStream(".", instancePipeName, PipeDirection.InOut))
+                {
+                    try
+                    {
+                        await client.ConnectAsync(500); // Timeout in case an instance is unresponsive
+                        using (StreamWriter writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
+                        using (StreamReader reader = new StreamReader(client, Encoding.UTF8))
+                        {
+                            await writer.WriteLineAsync("GET_STATE");
+                            string response = await reader.ReadLineAsync();
+
+                            // Store or process response
+                            responses.Add(response);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to contact instance {instancePipeName}: {ex.Message}");
+                    }
+                }
+            }
+
+            // Display results
+            Dispatcher.Invoke(() =>
+            {
+                MessageBox.Show("Received from instances:\n" + string.Join("\n", responses));
+            });
+        }
+
+
+        public string RequestInvokeGetWindowState()
+        {
+            return Dispatcher.Invoke(() =>
+            {
+                return GetWindowStateJson();
+            });
+        }
+
+        public string GetWindowStateJson()
+        {
+            // Example: Get window state as JSON
+            // Window dimensions
+            double windowWidth = this.ActualWidth;
+            double windowHeight = this.ActualHeight;
+
+            // Image dimensions
+            double imageWidth = ImageDisplay.ActualWidth;
+            double imageHeight = ImageDisplay.ActualHeight;
+
+            // Image scale
+            double? scaleX = imageScaleTransform?.ScaleX;
+            double? scaleY = imageScaleTransform?.ScaleY;
+
+            // Image translation
+            double? translateX = imageTranslateTransform?.X;
+            double? translateY = imageTranslateTransform?.Y;
+
+            string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
+
+            double? imageTrueWidth = null;
+            double? imageTrueHeight = null;
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
+                imageTrueWidth = bitmap.PixelWidth;
+                imageTrueHeight = bitmap.PixelHeight;
+            }
+
+            var json = new
+            {
+                WindowWidth = windowWidth,
+                WindowHeight = windowHeight,
+                WindowTop = this.Top,
+                WindowLeft = this.Left,
+                DisplayMode = displayMode,
+                ImagePath = currentlyDisplayedImagePath
+            };
+
+            return System.Text.Json.JsonSerializer.Serialize(json);
+        }
+
+        public async Task<string> RequestStatesElsewhere()
+        {
+            using (NamedPipeClientStream client = new NamedPipeClientStream(".", "JustViewPipe", PipeDirection.InOut))
+            {
+                await client.ConnectAsync();
+                using (StreamWriter writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true })
+                using (StreamReader reader = new StreamReader(client, Encoding.UTF8))
+                {
+                    writer.WriteLine("GET_STATE");
+                    string response = await reader.ReadLineAsync();
+
+                    // Update UI elements safely using Dispatcher
+                    Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show("Received: " + response);
+                        return response;
+                    });
+                }
+            }
+            return "none";
+            
+        }
 
     }
 }
