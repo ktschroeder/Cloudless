@@ -285,6 +285,7 @@ namespace Cloudless
 
             isDraggingWindow = false;
             isDraggingWindowFromFullscreen = false;
+            UpdateContextMenuState();  // for zoom amount, which may change when window is resized
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -1014,6 +1015,15 @@ namespace Cloudless
             // Get window center relative to the image
             Point windowCenter = new Point(PrimaryWindow.ActualWidth / 2, PrimaryWindow.ActualHeight / 2);
 
+            // consider scenario where scale is unintuitive due to window resizing
+            if (ImageDisplay != null && ImageDisplay.Source is BitmapSource bitmap)
+            {
+                double imageWidth = ImageDisplay.ActualWidth;
+                double imageTrueWidth = bitmap.PixelWidth;
+
+                scale *= imageTrueWidth / imageWidth;
+            }
+                
             Zoom(windowCenter, zoomFinal: scale);
         }
         private void Zoom(Point zoomOrigin, double? zoomDelta = null, double? zoomFinal = null)
@@ -1502,7 +1512,7 @@ namespace Cloudless
         }
         private void PrepareZoomMenu()
         {
-            int[] roundZooms = { 100, 200, 400, 800 };
+            int[] roundZooms = { 10, 25, 50, 75, 100, 150, 200, 400, 800 };
 
             // Clear the existing items
             ZoomMenu.Items.Clear();
@@ -1815,12 +1825,17 @@ namespace Cloudless
             var scaleY = imageScaleTransform?.ScaleY; // TODO do math to show user a user-friendly effective zoom level
             if (zoomMenuItem != null)
             {
-                if (scaleX != null && scaleY != null)
-                    zoomMenuItem.Header = $"Zoom ({(int)double.Round(scaleX * 100 ?? 0)}%)";
-                else
-                    zoomMenuItem.Header = "Zoom";
+                zoomMenuItem.Header = "Zoom";  // TODO maybe disable here, e.g. cannot use in zen mode
+
+                if (ImageDisplay != null && ImageDisplay.Source is BitmapSource bitmap && scaleX != null && scaleY != null)
+                {
+                    double imageWidth = ImageDisplay.ActualWidth;
+                    double imageTrueWidth = bitmap.PixelWidth;
+                    var realScale = imageWidth / (double)imageTrueWidth * (double)scaleX;  // ignores nuance if x and y scales don't match, i.e. stretching
+
+                    zoomMenuItem.Header = $"Zoom ({(int)double.Round(realScale * 100)}%)";
+                }
             }
-            
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {
