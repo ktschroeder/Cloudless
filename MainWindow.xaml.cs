@@ -1538,6 +1538,25 @@ namespace Cloudless
                 ZoomMenu.Items.Add(zoomItem);
             }
         }
+        private System.Windows.Controls.Image GetImageThumbnail(string filePath, int width, int height)
+        {
+            try  // called 10 times every time context menu is used/updated. Could be more efficient.
+            {
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(filePath);
+                bitmap.DecodePixelWidth = width;
+                bitmap.DecodePixelHeight = height;
+                bitmap.EndInit();
+
+                return new System.Windows.Controls.Image { Source = bitmap, Width = width, Height = height };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load thumbnail: {ex.Message}");
+                return null; // Return null if there's an issue loading the image
+            }
+        }
         private void UpdateRecentFilesMenu() // no side effects beyond instance. Reads from static file at this time, does not write to it.
         {
             LoadRecentFiles(); // Always fetch the latest list
@@ -1552,7 +1571,8 @@ namespace Cloudless
                 {
                     Header = System.IO.Path.GetFileName(file),
                     ToolTip = file,
-                    Tag = file
+                    Tag = file,
+                    Icon = GetImageThumbnail(file, 16, 16)
                 };
                 fileItem.Click += (s, e) => OpenRecentFile((string)((MenuItem)s).Tag);
                 RecentFilesMenu.Items.Add(fileItem);
