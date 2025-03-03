@@ -1253,10 +1253,10 @@ namespace Cloudless
             // getting an updated index prevents awkward jumps when navigating directory
             if (currentlyDisplayedImagePath != null)
             {
-                currentImageIndex = Array.IndexOf(imageFiles, currentlyDisplayedImagePath);
-                if (currentImageIndex == -1)  // failed to find path in array
+                var newIndex = Array.IndexOf(imageFiles, currentlyDisplayedImagePath);
+                if (newIndex != -1)  // -1 case is when current image isn't in new directory. Let ancestors handle those cases.
                 {
-                    throw new Exception("Bad. TODO");
+                    currentImageIndex = newIndex;
                 }
             }
         }
