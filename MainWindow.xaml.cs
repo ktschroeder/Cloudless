@@ -329,7 +329,7 @@ namespace Cloudless
                 }
                 else
                 {
-                    ApplyDisplayMode();
+                    DuplicateWindow();
                 }
                 e.Handled = true;
                 return;
