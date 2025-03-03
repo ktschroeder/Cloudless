@@ -17,6 +17,7 @@ using System.Drawing.Imaging;
 using System.Collections.Specialized;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
+using System.Runtime.InteropServices;
 
 
 namespace Cloudless
@@ -1205,6 +1206,60 @@ namespace Cloudless
                 Message("File loaded from dialog.");
             }
         }
+        private class NaturalStringComparer : IComparer<string>
+        {
+            // incorporate the "numerical sorting" used by Windows file explorer, to match the order shown there
+            // could also have an option for the pure alphabetization
+            // more info: https://www.elevenforum.com/t/enable-or-disable-numerical-sorting-in-file-explorer-in-windows-11.9030/
+            [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            private static extern int StrCmpLogicalW(string x, string y);
+
+            public int Compare(string? x, string? y)
+            {
+                if (x == null || y == null) return 0;
+                return StrCmpLogicalW(x, y);
+            }
+        }
+        private IComparer<string>? GetComparerForFileNameSorting()
+        {
+            try  // try/catch in case of issues importing the DLL used for the natural comparer
+            {
+                return new NaturalStringComparer();
+            }
+            catch (Exception e)
+            {  // TODO handle
+                return null;
+            }
+        }
+        private void SortImageFilesArray()
+        {
+            if (imageFiles == null)
+                return;
+
+            string sort = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
+
+            if (sort.Equals("DateModifiedAscending"))
+                imageFiles = imageFiles.OrderBy(s => File.GetLastWriteTime(s)).ToArray();
+            else if (sort.Equals("DateModifiedDescending"))
+                imageFiles = imageFiles.OrderByDescending(s => File.GetLastWriteTime(s)).ToArray();
+            else if (sort.Equals("FileNameAscending"))
+                imageFiles = imageFiles.OrderBy(s => s, GetComparerForFileNameSorting()).ToArray();
+            else if (sort.Equals("FileNameDescending"))
+                imageFiles = imageFiles.OrderByDescending(s => s, GetComparerForFileNameSorting()).ToArray();
+            else
+                imageFiles = imageFiles.ToArray();
+
+            // loaded image's index may change if sort order changes.
+            // getting an updated index prevents awkward jumps when navigating directory
+            if (currentlyDisplayedImagePath != null)
+            {
+                currentImageIndex = Array.IndexOf(imageFiles, currentlyDisplayedImagePath);
+                if (currentImageIndex == -1)  // failed to find path in array
+                {
+                    throw new Exception("Bad. TODO");
+                }
+            }
+        }
         private void LoadImage(string? imagePath, bool openedThroughApp)
         {
             try
@@ -1212,16 +1267,19 @@ namespace Cloudless
                 if (imagePath == null)
                     throw new Exception("Path not specified for image.");
                 string selectedImagePath = imagePath;
+                
                 currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
-                imageFiles = Directory.GetFiles(currentDirectory, "*.*")
+                var retrievedImageFiles = Directory.GetFiles(currentDirectory, "*.*")
                                       .Where(s => s.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
-                                      .ToArray();
+                                                 s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
+                imageFiles = retrievedImageFiles.ToArray();
+
+                SortImageFilesArray();
 
                 currentImageIndex = Array.IndexOf(imageFiles, selectedImagePath);
                 DisplayImage(currentImageIndex, openedThroughApp);
@@ -1714,8 +1772,15 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
                 Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
                 Cloudless.Properties.Settings.Default.Background = configWindow.SelectedBackground;
-
+                var previousSortOrder = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
+                Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
+                
                 Cloudless.Properties.Settings.Default.Save();
+
+                if (!previousSortOrder.Equals(configWindow.SelectedSortOrder))
+                {
+                    SortImageFilesArray();
+                }
 
                 SetBackground();
 

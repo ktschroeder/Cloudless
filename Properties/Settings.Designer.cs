@@ -144,13 +144,25 @@ namespace Cloudless.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\"black\"")]
+        [global::System.Configuration.DefaultSettingValueAttribute("black")]
         public string Background {
             get {
                 return ((string)(this["Background"]));
             }
             set {
                 this["Background"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("FileNameAscending")]
+        public string ImageDirectorySortOrder {
+            get {
+                return ((string)(this["ImageDirectorySortOrder"]));
+            }
+            set {
+                this["ImageDirectorySortOrder"] = value;
             }
         }
     }

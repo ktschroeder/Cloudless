@@ -33,7 +33,10 @@
       <Value Profile="(Default)">10</Value>
     </Setting>
     <Setting Name="Background" Type="System.String" Scope="User">
-      <Value Profile="(Default)">"black"</Value>
+      <Value Profile="(Default)">black</Value>
+    </Setting>
+    <Setting Name="ImageDirectorySortOrder" Type="System.String" Scope="User">
+      <Value Profile="(Default)">FileNameAscending</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -10,6 +10,7 @@ namespace Cloudless
     {
         public string SelectedDisplayMode { get; private set; }
         public string SelectedBackground { get; private set; }
+        public string SelectedSortOrder { get; private set; }
         public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle { get; private set; }
         public int SpaceAroundBounds {  get; private set; }
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
@@ -73,6 +74,18 @@ namespace Cloudless
                 BackgroundDropdown.SelectedIndex = 2;
             SelectedBackground = currentBackground;
 
+            var currentSortOrder = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
+            // Set the current selection
+            if (currentSortOrder == "FileNameAscending")
+                SortDropdown.SelectedIndex = 0;
+            else if (currentSortOrder == "FileNameDescending")
+                SortDropdown.SelectedIndex = 1;
+            else if (currentSortOrder == "DateModifiedAscending")
+                SortDropdown.SelectedIndex = 2;
+            else if (currentSortOrder == "DateModifiedDescending")
+                SortDropdown.SelectedIndex = 3;
+            SelectedSortOrder = currentSortOrder;
+
             var currentMaxCompressedCopySizeMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
             MaxCompressedCopySizeMBTextBox.Text = currentMaxCompressedCopySizeMB.ToString();
             MaxCompressedCopySizeMB = currentMaxCompressedCopySizeMB;
@@ -97,6 +110,15 @@ namespace Cloudless
                 SelectedBackground = "white";
             if (BackgroundDropdown.SelectedIndex == 2)
                 SelectedBackground = "transparent";
+
+            if (SortDropdown.SelectedIndex == 0)
+                SelectedSortOrder = "FileNameAscending";
+            else if (SortDropdown.SelectedIndex == 1)
+                SelectedSortOrder = "FileNameDescending";
+            else if (SortDropdown.SelectedIndex == 2)
+                SelectedSortOrder = "DateModifiedAscending";
+            else if (SortDropdown.SelectedIndex == 3)
+                SelectedSortOrder = "DateModifiedDescending";
 
 
             ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox.IsChecked ?? false;
