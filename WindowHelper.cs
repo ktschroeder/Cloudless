@@ -15,7 +15,7 @@ public static class WindowHelper
 
     public static void HandleKeyDown(Window window, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape || e.Key == Key.C)
+        if (Keyboard.Modifiers != ModifierKeys.Control && (e.Key == Key.Escape || e.Key == Key.C))
         {
             window.Close();
             e.Handled = true;

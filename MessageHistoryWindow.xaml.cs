@@ -35,5 +35,16 @@ namespace Cloudless
             // Ensure UI updates on the UI thread
             Dispatcher.Invoke(() => MessageListBox.ScrollIntoView(message));
         }
+
+        private void MessageListBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                if (MessageListBox.SelectedItem is string selectedText)
+                {
+                    Clipboard.SetText(selectedText);
+                }
+            }
+        }
     }
 }
