@@ -11,6 +11,7 @@
             <TextBlock x:Name="DimensionsText" Text="Dimensions: " Margin="0,5" />
             <TextBlock x:Name="SizeText" Text="Size: " Margin="0,5" />
             <TextBlock x:Name="FormatText" Text="Format: " Margin="0,5" />
+            <TextBlock x:Name="LastModifiedText" Text="Last Modified: " Margin="0,5" />
 
             <!-- Buttons Section -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">

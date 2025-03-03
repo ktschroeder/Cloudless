@@ -40,6 +40,9 @@ namespace Cloudless
             var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
             DimensionsText.Text = $"Dimensions: {bitmap.PixelWidth} x {bitmap.PixelHeight}";
             FormatText.Text = $"Format: {fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
+
+            var lastModTime = File.GetLastWriteTime(_imagePath);
+            LastModifiedText.Text = $"Last Modified: {lastModTime.ToString()}";
         }
 
         private async void CopyPath_Click(object sender, RoutedEventArgs e)
