@@ -709,18 +709,20 @@ namespace Cloudless
             var wasExplorationMode = isExplorationMode;
 
             string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
-            switch (displayMode)
-            {
-                case "StretchToFit":
-                case "ZoomToFill":
-                case "BestFit":
-                    // To clear out weirdness and prepare for zooming/panning, apply display for zoomless best fit.
-                    // This is cleaner than doing nothing, pending future work to make this more seamless (particularly for ZoomToFill).
-                    ApplyDisplayMode(true);
-                    break;
-                default:
-                    break;
-            }
+
+            if (!isCropMode)
+                switch (displayMode)
+                {
+                    case "StretchToFit":
+                    case "ZoomToFill":
+                    case "BestFit":
+                        // To clear out weirdness and prepare for zooming/panning, apply display for zoomless best fit.
+                        // This is cleaner than doing nothing, pending future work to make this more seamless (particularly for ZoomToFill).
+                        ApplyDisplayMode(true);
+                        break;
+                    default:
+                        break;
+                }
 
             isExplorationMode = true;
             ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
@@ -926,6 +928,8 @@ namespace Cloudless
                 this.Cursor = Cursors.Arrow;
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
+
+            UpdateCropModeInfo();
         }
         private void ResizeWindow(double width, double height)
         {
@@ -1027,6 +1031,8 @@ namespace Cloudless
             // Apply constrained translation
             imageTranslateTransform.X = newTranslateX;
             imageTranslateTransform.Y = newTranslateY;
+
+            UpdateCropModeInfo();
         }
         private void ZoomFromCenter(bool zoomIn)
         {
@@ -1118,6 +1124,8 @@ namespace Cloudless
             imageScaleTransform.ScaleY = newScaleY;
 
             UpdateContextMenuState();
+
+            UpdateCropModeInfo();
         }
         private void ResetZoom()
         {
@@ -2047,16 +2055,8 @@ namespace Cloudless
             SetBackground();
         }
 
-        private void ToggleCropMode(bool? setTo = null)
+        private void UpdateCropModeInfo()
         {
-            if (setTo.HasValue) {
-                if (setTo == isCropMode)
-                    return;
-                isCropMode = setTo.Value;
-            }
-            else
-                isCropMode = !isCropMode;
-            // TODO visual indication such as red border
             if (isCropMode)
             {
                 if (imageTranslateTransform != null)
@@ -2069,6 +2069,19 @@ namespace Cloudless
                     cropModeStartingWindowLeft = this.Left;
                 }
             }
+        }
+
+        private void ToggleCropMode(bool? setTo = null)
+        {
+            if (setTo.HasValue) {
+                if (setTo == isCropMode)
+                    return;
+                isCropMode = setTo.Value;
+            }
+            else
+                isCropMode = !isCropMode;
+
+            UpdateCropModeInfo();
             UpdateBorderColor();
             string message = isCropMode ? "Entered Cropping Mode" : "Exited Cropping Mode";
             Message(message);
@@ -2081,10 +2094,12 @@ namespace Cloudless
             {
                 this.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
                 this.BorderThickness = new Thickness(2);
+                // TODO for this to have the most ideal effect (red border always visible despite zoom/pan), there needs to be
+                // a new window layer that is the image itself being resized etc. but not the top-level window which will have the red border.
+                // This could result in some hairy bugs, and is low-priority. Return to this later.
             }
             else
             {
-                //PrimaryWindow.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
                 this.BorderThickness = new Thickness(0);
             }
 
