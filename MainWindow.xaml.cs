@@ -621,6 +621,10 @@ namespace Cloudless
                 // Zoom factor
                 double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
 
+                if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)) {
+                    zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;  // finer zooming for greater precision
+                }
+
                 Zoom(cursorPosition, zoomDelta: zoomDelta);
 
                 e.Handled = true;

@@ -27,6 +27,9 @@
         <Run Text="V:" FontWeight="Bold" /> maximize vertical dimension and align window
             </TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+        <Run Text="Q:" FontWeight="Bold" /> toggle crop mode. In this mode, you can resize the window without the image moving.
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
         <Run Text="CTRL C:" FontWeight="Bold" /> copy displayed image file to clipboard
             </TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
@@ -93,7 +96,7 @@
         <Run Text="CTRL 9:" FontWeight="Bold" /> set zoom to image's true resolution
             </TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-        <Run Text="Holding CTRL:" FontWeight="Bold" /> enables panning (click and drag)
+        <Run Text="Holding CTRL:" FontWeight="Bold" /> enables panning (click and drag) and zooming (scroll). For fine zooming, hold ALT as well.
             </TextBlock>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
