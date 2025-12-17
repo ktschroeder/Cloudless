@@ -38,6 +38,12 @@ namespace Cloudless
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
 
+        private bool isCropMode;
+        private double cropModeStartingImagePosX = 0;
+        private double cropModeStartingImagePosY = 0;
+        private double cropModeStartingWindowWidth = 0;
+        private double cropModeStartingWindowHeight = 0;
+
         private OverlayMessageManager? overlayManager;
 
         private const int MaxRecentFiles = 10;
@@ -101,6 +107,7 @@ namespace Cloudless
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
 
             isExplorationMode = false;
+            ToggleCropMode(false);
             //NoImageMessage.Visibility = Visibility.Visible;
             ImageDisplay.Visibility = Visibility.Collapsed;
             CompositionTarget.Rendering += UpdateDebugInfo;
@@ -428,6 +435,13 @@ namespace Cloudless
                 return;
             }
 
+            if (e.Key == Key.Q)
+            {
+                ToggleCropMode();
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.M)
             {
                 MinimizeWindow();
@@ -720,7 +734,6 @@ namespace Cloudless
             string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             if (simulateZoomlessBestFit)
                 displayMode = "BestFitWithoutZooming";
-            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
             bool loopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
@@ -753,17 +766,7 @@ namespace Cloudless
                     break;
             }
 
-            // Apply border if the flag is set
-            if (useBorder)
-            {
-                MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
-                MainBorder.BorderThickness = new Thickness(2);
-            }
-            else
-            {
-                MainBorder.BorderBrush = null;
-                MainBorder.BorderThickness = new Thickness(0);
-            }
+            UpdateBorderColor();
 
             if (loopGifs)
             {
@@ -781,7 +784,18 @@ namespace Cloudless
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            ScaleImageToWindow();
+            if (!isCropMode)
+                ScaleImageToWindow();
+            else if (imageTranslateTransform != null)
+            {
+                var heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
+                var widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
+
+                imageTranslateTransform.X = cropModeStartingImagePosX + widthDiff/2.0;
+                imageTranslateTransform.Y = cropModeStartingImagePosY + heightDiff/2.0;
+                //return;
+            }
+
 
             if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
             {
@@ -792,7 +806,10 @@ namespace Cloudless
             else
             {
                 UpdateMargins();
-                ClampTransformToIntuitiveBounds();
+                if (!isCropMode)
+                {
+                    ClampTransformToIntuitiveBounds();
+                }
             }
         }
         private void ScaleImageToWindow()
@@ -876,12 +893,22 @@ namespace Cloudless
                 double marginX = (windowWidth - ImageDisplay.Width) / 2;
                 double marginY = (windowHeight - ImageDisplay.Height) / 2;
 
-                ImageDisplay.Margin = new Thickness(  // black bars
-                    Math.Max(0, marginX),
-                    Math.Max(0, marginY),
-                    Math.Max(0, marginX),
-                    Math.Max(0, marginY)
-                );
+                if (isCropMode)
+                {
+                    ImageDisplay.Margin = new Thickness(  // black bars
+                    marginX,
+                    marginY,
+                    marginX,
+                    marginY
+                    );
+                }
+                else
+                    ImageDisplay.Margin = new Thickness(  // black bars
+                        Math.Max(0, marginX),
+                        Math.Max(0, marginY),
+                        Math.Max(0, marginX),
+                        Math.Max(0, marginY)
+                    );
             }
         }
         private void StopPanning()
@@ -2015,5 +2042,50 @@ namespace Cloudless
             SetBackground();
         }
 
-    }
+        private void ToggleCropMode(bool? setTo = null)
+        {
+            if (setTo.HasValue) {
+                if (setTo == isCropMode)
+                    return;
+                isCropMode = setTo.Value;
+            }
+            else
+                isCropMode = !isCropMode;
+            // TODO visual indication such as red border
+            if (isCropMode)
+            {
+                if (imageTranslateTransform != null)
+                {
+                    cropModeStartingImagePosX = imageTranslateTransform.X;
+                    cropModeStartingImagePosY = imageTranslateTransform.Y;
+                    cropModeStartingWindowHeight = this.ActualHeight;
+                    cropModeStartingWindowWidth = this.ActualWidth;
+                }
+            }
+            UpdateBorderColor();
+            string message = isCropMode ? "Entered Cropping Mode" : "Exited Cropping Mode";
+            Message(message);
+        }
+
+        private void UpdateBorderColor()
+        {
+            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
+            if (isCropMode)
+            {
+                MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
+                MainBorder.BorderThickness = new Thickness(2);
+            }
+            else if (useBorder)
+            {
+                MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
+                MainBorder.BorderThickness = new Thickness(2);
+            }
+            else
+            {
+                MainBorder.BorderBrush = null;
+                MainBorder.BorderThickness = new Thickness(0);
+            }
+        }
+
+    }   
 }
