@@ -43,6 +43,8 @@ namespace Cloudless
         private double cropModeStartingImagePosY = 0;
         private double cropModeStartingWindowWidth = 0;
         private double cropModeStartingWindowHeight = 0;
+        private double cropModeStartingWindowTop = 0;
+        private double cropModeStartingWindowLeft = 0;
 
         private OverlayMessageManager? overlayManager;
 
@@ -791,8 +793,11 @@ namespace Cloudless
                 var heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
                 var widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
 
-                imageTranslateTransform.X = cropModeStartingImagePosX + widthDiff/2.0;
-                imageTranslateTransform.Y = cropModeStartingImagePosY + heightDiff/2.0;
+                var topDiff = cropModeStartingWindowTop - this.Top;
+                var leftDiff = cropModeStartingWindowLeft - this.Left;
+
+                imageTranslateTransform.Y = cropModeStartingImagePosY + heightDiff/2.0 + topDiff;
+                imageTranslateTransform.X = cropModeStartingImagePosX + widthDiff / 2.0 + leftDiff;
                 //return;
             }
 
@@ -2060,6 +2065,8 @@ namespace Cloudless
                     cropModeStartingImagePosY = imageTranslateTransform.Y;
                     cropModeStartingWindowHeight = this.ActualHeight;
                     cropModeStartingWindowWidth = this.ActualWidth;
+                    cropModeStartingWindowTop = this.Top;
+                    cropModeStartingWindowLeft = this.Left;
                 }
             }
             UpdateBorderColor();
@@ -2072,10 +2079,16 @@ namespace Cloudless
             bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
             if (isCropMode)
             {
-                MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
-                MainBorder.BorderThickness = new Thickness(2);
+                this.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
+                this.BorderThickness = new Thickness(2);
             }
-            else if (useBorder)
+            else
+            {
+                //PrimaryWindow.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
+                this.BorderThickness = new Thickness(0);
+            }
+
+            if (useBorder)
             {
                 MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
                 MainBorder.BorderThickness = new Thickness(2);
