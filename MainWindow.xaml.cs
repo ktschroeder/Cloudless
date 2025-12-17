@@ -1022,16 +1022,19 @@ namespace Cloudless
             double newTranslateX = imageTranslateTransform.X + delta?.X ?? 0;
             double newTranslateY = imageTranslateTransform.Y + delta?.Y ?? 0;
 
-            // Constrain X-axis translation
-            double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
-            double minTranslateX = -maxTranslateX;
-            newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
+            if (!Cloudless.Properties.Settings.Default.DisableSmartZoom)
+            {
+                // Constrain X-axis translation
+                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
+                double minTranslateX = -maxTranslateX;
+                newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
 
-            // Constrain Y-axis translation
-            double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
-            double minTranslateY = -maxTranslateY;
-            newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
-
+                // Constrain Y-axis translation
+                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
+                double minTranslateY = -maxTranslateY;
+                newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
+            }
+            
             // Apply constrained translation
             imageTranslateTransform.X = newTranslateX;
             imageTranslateTransform.Y = newTranslateY;
@@ -1099,9 +1102,12 @@ namespace Cloudless
             // Use the larger of the two minimum scales to prevent simultaneous black bars
             double minScale = Math.Max(minScaleX, minScaleY);
 
-            // Enforce zoom limits
-            newScaleX = Math.Max(minScale, Math.Min(10, newScaleX));
-            newScaleY = Math.Max(minScale, Math.Min(10, newScaleY));
+            if (!Cloudless.Properties.Settings.Default.DisableSmartZoom)
+            {
+                // Enforce zoom limits
+                newScaleX = Math.Max(minScale, Math.Min(10, newScaleX));
+                newScaleY = Math.Max(minScale, Math.Min(10, newScaleY));
+            }
 
             // Get current image dimensions including any scaling (zoom)
             double scaledWidth = imageOriginalWidth * newScaleX;
@@ -1114,14 +1120,17 @@ namespace Cloudless
             imageTranslateTransform.X -= offsetX * (derivedDelta - 1);
             imageTranslateTransform.Y -= offsetY * (derivedDelta - 1);
 
-            // Constrain translations to keep the image bound within the window
-            double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
-            double minTranslateX = -maxTranslateX;
-            imageTranslateTransform.X = Math.Min(Math.Max(imageTranslateTransform.X, minTranslateX), maxTranslateX);
+            if (!Cloudless.Properties.Settings.Default.DisableSmartZoom)
+            {
+                // Constrain translations to keep the image bound within the window
+                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
+                double minTranslateX = -maxTranslateX;
+                imageTranslateTransform.X = Math.Min(Math.Max(imageTranslateTransform.X, minTranslateX), maxTranslateX);
 
-            double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
-            double minTranslateY = -maxTranslateY;
-            imageTranslateTransform.Y = Math.Min(Math.Max(imageTranslateTransform.Y, minTranslateY), maxTranslateY);
+                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
+                double minTranslateY = -maxTranslateY;
+                imageTranslateTransform.Y = Math.Min(Math.Max(imageTranslateTransform.Y, minTranslateY), maxTranslateY);
+            }
 
             // Apply new scale
             imageScaleTransform.ScaleX = newScaleX;
@@ -1818,6 +1827,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.Background = configWindow.SelectedBackground;
                 var previousSortOrder = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
                 Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
+                Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
                 
                 Cloudless.Properties.Settings.Default.Save();
 

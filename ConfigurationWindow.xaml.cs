@@ -19,6 +19,7 @@ namespace Cloudless
         public bool MuteMessages { get; private set; }
         public bool AlwaysOnTopByDefault { get; private set; }
         public double MaxCompressedCopySizeMB { get; private set; }
+        public bool DisableSmartZoom { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -63,6 +64,10 @@ namespace Cloudless
             var currentAlwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
             AlwaysOnTopByDefaultCheckbox.IsChecked = currentAlwaysOnTopByDefault;
             AlwaysOnTopByDefault = currentAlwaysOnTopByDefault;
+
+            var currentDisableSmartZoom = Cloudless.Properties.Settings.Default.DisableSmartZoom;
+            DisableSmartZoomCheckbox.IsChecked = currentDisableSmartZoom;
+            DisableSmartZoom = currentDisableSmartZoom;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -133,6 +138,7 @@ namespace Cloudless
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
+            DisableSmartZoom = DisableSmartZoomCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

@@ -165,5 +165,17 @@ namespace Cloudless.Properties {
                 this["ImageDirectorySortOrder"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DisableSmartZoom {
+            get {
+                return ((bool)(this["DisableSmartZoom"]));
+            }
+            set {
+                this["DisableSmartZoom"] = value;
+            }
+        }
     }
 }

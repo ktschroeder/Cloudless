@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Cloudless.ConfigurationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Preferences" Height="500" Width="600"
+        Title="Preferences" Height="550" Width="600"
         WindowStyle="None" ResizeMode="NoResize" MouseDown="Window_MouseDown" KeyDown="Window_KeyDown">
     <Border BorderBrush="Black" BorderThickness="2" Background="White">
         <StackPanel Margin="10">
@@ -43,6 +43,10 @@
 
             <CheckBox x:Name="MuteMessagesCheckbox" 
                 Content="Prevent non-critical messages from being displayed on the main window" 
+                Margin="0,5"/>
+
+            <CheckBox x:Name="DisableSmartZoomCheckbox" 
+                Content="Disable smart zoom/pan corrections (disabling this is only recommended if you have a specific reason)" 
                 Margin="0,5"/>
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5">
