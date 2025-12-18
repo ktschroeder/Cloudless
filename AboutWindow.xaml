@@ -58,12 +58,14 @@
                     <Button Content="View on GitHub"
                             Style="{StaticResource CloudlessButton}"
                             Click="GitHub_Click"
-                            Margin="0,0,8,0"/>
+                            Margin="0,0,8,0"
+                            Width="110"/>
 
                     <Button Content="Close"
                             Style="{StaticResource CloudlessPrimaryButton}"
                             Click="Close_Click"
-                            FontWeight="SemiBold"/>
+                            FontWeight="SemiBold"
+                            Width="50"/>
                 </StackPanel>
 
             </StackPanel>
