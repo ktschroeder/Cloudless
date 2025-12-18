@@ -19,6 +19,8 @@ using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 using System.Runtime.InteropServices;
 using System.Windows.Controls.Primitives;
+using System.Net.Http;
+using System.Text.Json;
 
 
 
@@ -27,6 +29,8 @@ namespace Cloudless
     public partial class MainWindow : Window
     {
         #region Fields
+        public const string CURRENT_VERION = "0.2.1"; //."0.2.1";
+
         private static readonly Mutex recentFilesMutex = new(false, "CloudlessRecentFilesMutex");
         private static readonly string recentFilesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -146,6 +150,8 @@ namespace Cloudless
             SetBackground();
 
             InitializeZenMode();
+
+            _ = CheckForUpdatesAsync();  // fire and forget check for newer app version
         }
 
         
@@ -1905,7 +1911,7 @@ namespace Cloudless
         }
         private void About()
         {
-            var aboutWindow = new AboutWindow();
+            var aboutWindow = new AboutWindow(CURRENT_VERION);
 
             // Center the window relative to the main application window
             aboutWindow.Owner = this; // Set the owner to the main window
@@ -2146,6 +2152,69 @@ namespace Cloudless
             menu.IsOpen = true;
         }
 
+        async Task<GitHubRelease?> GetLatestReleaseAsync(bool allowPrerelease)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Cloudless");
+
+            var json = await client.GetStringAsync(
+                "https://api.github.com/repos/ktschroeder/Cloudless/releases");
+
+            var releases = JsonSerializer.Deserialize<List<GitHubRelease>>(json);
+
+            return releases?
+                .Where(r => !r.draft)
+                .Where(r => allowPrerelease || !r.prerelease)
+                .OrderByDescending(r => r.published_at)
+                .FirstOrDefault();
+        }
+
+
+        public static bool IsNewerVersion(string latestTag, string currentVersion)
+        {
+            latestTag = latestTag.TrimStart('v', 'V');
+
+            if (!Version.TryParse(latestTag, out var latest))
+                return false;
+
+            if (!Version.TryParse(currentVersion, out var current))
+                return false;
+
+            return latest > current;
+        }
+
+        public async Task CheckForUpdatesAsync()
+        {
+            try
+            {
+                var release = await GetLatestReleaseAsync(true);
+                if (release == null)
+                    return;
+
+                string currentVersion = CURRENT_VERION;
+
+                if (IsNewerVersion(release.tag_name, currentVersion))
+                {
+                    //ShowUpdateAvailable(release);
+                    Message($"A newer version of Cloudless ({Version.Parse(release.tag_name.TrimStart('v', 'V')).ToString()}) is available!");
+                }
+            }
+            catch (Exception e)
+            {
+                //Message(e.ToString());
+                // Fail silently — update checks should NEVER crash the app
+            }
+        }
 
     }
+
+    public class GitHubRelease
+    {
+        public string tag_name { get; set; } = "";
+        public string html_url { get; set; } = "";
+        public bool prerelease { get; set; }
+        public bool draft { get; set; }
+        public DateTime published_at { get; set; }
+    }
+
 }
