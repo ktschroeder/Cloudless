@@ -1,86 +1,115 @@
 ﻿<Window x:Class="Cloudless.ConfigurationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Preferences" Height="550" Width="600"
-        WindowStyle="None" ResizeMode="NoResize" MouseDown="Window_MouseDown" KeyDown="Window_KeyDown">
-    <Border BorderBrush="Black" BorderThickness="2" Background="White">
-        <StackPanel Margin="10">
-            <TextBlock Text="Image Display Mode:" FontWeight="Bold" Margin="0,0,0,10"/>
+        Title="Preferences"
+        Height="550"
+        Width="600"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        MouseDown="Window_MouseDown"
+        KeyDown="Window_KeyDown">
 
-            <!-- Dropdown for display modes -->
-            <ComboBox x:Name="DisplayModeDropdown" SelectedIndex="0" Margin="0,5">
-                <ComboBoxItem Content="Stretch to Fit" />
-                <ComboBoxItem Content="Zoom to Fill" />
-                <ComboBoxItem Content="Best Fit; Zoom to Window" />
-                <ComboBoxItem Content="Best Fit; Never Zoom" />
-            </ComboBox>
+    <Border Background="#FAFAFA"
+            CornerRadius="6"
+            Padding="0">
 
-            <TextBlock Text="Window Resizing Options:" FontWeight="Bold" Margin="10,20,0,10"/>
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.15"/>
+        </Border.Effect>
 
-            <!-- New Checkboxes -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5">
-                <CheckBox x:Name="ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox" 
-                      Content="Leave space around window bounds when near screen size" />
-                <TextBox x:Name="SpaceAroundBoundsTextBox" Width="50" Margin="10,0,0,0" 
-                     VerticalAlignment="Center" 
-                     ToolTip="# pixels space around window"/>
+        <DockPanel>
+
+            <!-- Header -->
+            <Border Background="#F0F0F0"
+                    Padding="8"
+                    DockPanel.Dock="Top"
+                    CornerRadius="6,6,0,0">
+                <TextBlock Text="Preferences"
+                           FontWeight="SemiBold"
+                           Foreground="#333"/>
+            </Border>
+
+            <!-- Content -->
+            <StackPanel Margin="12" VerticalAlignment="Top">
+
+                <TextBlock Text="Image Display Mode:" FontWeight="SemiBold" Foreground="#555" Margin="0,0,0,6"/>
+
+                <ComboBox x:Name="DisplayModeDropdown" SelectedIndex="0" Margin="0,0,0,10">
+                    <ComboBoxItem Content="Stretch to Fit" />
+                    <ComboBoxItem Content="Zoom to Fill" />
+                    <ComboBoxItem Content="Best Fit; Zoom to Window" />
+                    <ComboBoxItem Content="Best Fit; Never Zoom" />
+                </ComboBox>
+
+                <TextBlock Text="Window Resizing Options:" FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">
+                    <CheckBox x:Name="ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox" 
+                              Content="Leave space around window bounds when near screen size"/>
+                    <TextBox x:Name="SpaceAroundBoundsTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center" 
+                             ToolTip="# pixels space around window"/>
+                </StackPanel>
+
+                <CheckBox x:Name="ResizeWindowToNewImageWhenOpeningThroughAppCheckbox" 
+                          Content="Resize window to match new image when opening in app" Margin="0,2"/>
+                <CheckBox x:Name="BorderOnMainWindowCheckbox" 
+                          Content="Show a border around the main window" Margin="0,2"/>
+                <CheckBox x:Name="LoopGifsCheckbox" Content="Loop GIFs" Margin="0,2"/>
+                <CheckBox x:Name="AlwaysOnTopByDefaultCheckbox" 
+                          Content="This window and all new windows have always-on-top enabled. (Toggle per-window with T.)" 
+                          Margin="0,2"/>
+                <CheckBox x:Name="MuteMessagesCheckbox" 
+                          Content="Prevent non-critical messages from being displayed on the main window" 
+                          Margin="0,2"/>
+                <CheckBox x:Name="DisableSmartZoomCheckbox" 
+                          Content="Disable smart zoom/pan corrections (only recommended for specific reasons)" 
+                          Margin="0,2"/>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
+                    <TextBlock Text="Max size (MBs) when compressed copying image:" VerticalAlignment="Center" Foreground="#555"/>
+                    <TextBox x:Name="MaxCompressedCopySizeMBTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Text="Background:" FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
+                <ComboBox x:Name="BackgroundDropdown" SelectedIndex="0" Margin="0,0,0,10">
+                    <ComboBoxItem Content="Black" />
+                    <ComboBoxItem Content="White" />
+                    <ComboBoxItem Content="Transparent through window (may impact clicking/resizing)"/>
+                </ComboBox>
+
+                <TextBlock Text="Directory sort order when navigating with left/right arrow keys:" 
+                           FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
+                <ComboBox x:Name="SortDropdown" SelectedIndex="0" Margin="0,0,0,10">
+                    <ComboBoxItem Content="File Name (Ascending)" />
+                    <ComboBoxItem Content="File Name (Descending)" />
+                    <ComboBoxItem Content="Date Modified (Ascending)" />
+                    <ComboBoxItem Content="Date Modified (Descending)" />
+                </ComboBox>
+
+                <Button Content="Open Windows settings to manually configure Cloudless as default image viewer"
+                        Click="SetDefaultButton_Click" 
+                        Margin="0,6,0,6"
+                        Style="{StaticResource CloudlessButton}"/>
+
+                <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .webp, .jfif" 
+                           Foreground="#666" Margin="0,0,0,10"/>
+
+                <!-- Buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                    <Button Content="Cancel"
+                            Style="{StaticResource CloudlessButton}"
+                            Click="Cancel_Click"
+                            Width="60" Margin="0,0,8,0"/>
+                    <Button Content="OK"
+                            Style="{StaticResource CloudlessPrimaryButton}"
+                            Click="Save_Click"
+                            FontWeight="SemiBold"
+                            Width="60"/>
+                </StackPanel>
+
             </StackPanel>
-            <CheckBox x:Name="ResizeWindowToNewImageWhenOpeningThroughAppCheckbox" 
-                Content="Resize window to match new image when opening in app" 
-                Margin="0,5"/>
 
-            <CheckBox x:Name="BorderOnMainWindowCheckbox" 
-                Content="Show a border around the main window" 
-                Margin="0,5"/>
-
-            <CheckBox x:Name="LoopGifsCheckbox" 
-                Content="Loop GIFs" 
-                Margin="0,5"/>
-
-            <CheckBox x:Name="AlwaysOnTopByDefaultCheckbox" 
-                Content="This window and all new windows have always-on-top enabled. (Regardless, toggle per-window with T.)" 
-                Margin="0,5"/>
-
-            <CheckBox x:Name="MuteMessagesCheckbox" 
-                Content="Prevent non-critical messages from being displayed on the main window" 
-                Margin="0,5"/>
-
-            <CheckBox x:Name="DisableSmartZoomCheckbox" 
-                Content="Disable smart zoom/pan corrections (disabling this is only recommended if you have a specific reason)" 
-                Margin="0,5"/>
-
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5">
-                <TextBlock Text="Max size (MBs) when compressed copying image:" Margin="0,0,0,10"/>
-                <TextBox x:Name="MaxCompressedCopySizeMBTextBox" Width="50" Margin="10,0,0,0" 
-                        VerticalAlignment="Center" />
-            </StackPanel>
-
-            <TextBlock Text="Background:" FontWeight="Bold" Margin="0,0,0,10"/>
-            <!-- Dropdown for display modes -->
-            <ComboBox x:Name="BackgroundDropdown" SelectedIndex="0" Margin="0,5">
-                <ComboBoxItem Content="Black" />
-                <ComboBoxItem Content="White" />
-                <ComboBoxItem Content="Transparent through window (This may impact clicking/resizing the window)" />
-            </ComboBox>
-
-            <TextBlock Text="Directory sort order when navigating with left/right arrow keys:" FontWeight="Bold" Margin="0,0,0,10"/>
-            <!-- Dropdown for display modes -->
-            <ComboBox x:Name="SortDropdown" SelectedIndex="0" Margin="0,5">
-                <ComboBoxItem Content="File Name (Ascending)" />
-                <ComboBoxItem Content="File Name (Descending)" />
-                <ComboBoxItem Content="Date Modified (Ascending)" />
-                <ComboBoxItem Content="Date Modified (Descending)" />
-            </ComboBox>
-
-            <Button
-                Content="Open Windows settings to manually configure Cloudless as default image viewer"
-                Click="SetDefaultButton_Click" />
-            <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .webp, .jfif" Margin="0,0,0,10"/>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
-                <Button Content="Cancel" Click="Cancel_Click" Margin="0,5"/>
-                <Button Content="OK" Click="Save_Click" Margin="0,5"/>
-            </StackPanel>
-        </StackPanel>
+        </DockPanel>
     </Border>
 </Window>

@@ -4,6 +4,58 @@
              xmlns:local="clr-namespace:Cloudless"
             >
     <Application.Resources>
-         
+
+        <!-- Base button style -->
+        <Style x:Key="CloudlessButton"
+           TargetType="Button">
+            <Setter Property="Padding" Value="140,60"/>
+            <Setter Property="Background" Value="#EDEDED"/>
+            <Setter Property="BorderBrush" Value="#D0D0D0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#222"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4">
+                            <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#E0E0E0"/>
+                            </Trigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#D6D6D6"/>
+                            </Trigger>
+
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Primary action -->
+        <Style x:Key="CloudlessPrimaryButton"
+           TargetType="Button"
+           BasedOn="{StaticResource CloudlessButton}">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="#DDE6F3"/>
+            <Setter Property="BorderBrush" Value="#B5C7E3"/>
+        </Style>
+
     </Application.Resources>
+    
+    
 </Application>

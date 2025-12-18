@@ -1,112 +1,147 @@
 ﻿<Window x:Class="Cloudless.HotkeyRefWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Hot Key Reference" Height="800" Width="700"
-        WindowStyle="None" ResizeMode="NoResize" MouseDown="Window_MouseDown" KeyDown="Window_KeyDown">
-    <Border BorderBrush="Black" BorderThickness="2" Background="White">
-        <StackPanel Margin="10">
-            <TextBlock Text="Hotkey Reference" 
-               FontWeight="Bold" 
-               FontSize="16" 
-               Margin="0,0,0,10" />
+        Title="Hotkey Reference"
+        Height="800"
+        Width="700"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        MouseDown="Window_MouseDown"
+        KeyDown="Window_KeyDown">
 
-            <!-- Hotkey List -->
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="X:" FontWeight="Bold" /> Show the context menu (as if you've right-clicked)
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="F11:" FontWeight="Bold" /> toggle fullscreen
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="Esc:" FontWeight="Bold" /> exit fullscreen, or close a secondary window such as Preferences
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="F:" FontWeight="Bold" /> set window size to image's true dimensions if possible, not exceeding the screen size. If the setting to leave a buffer is enabled, then pressing F subsequently will toggle between the buffer size and the bufferless size.
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="O:" FontWeight="Bold" /> open an image
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="V:" FontWeight="Bold" /> maximize vertical dimension and align window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="Q:" FontWeight="Bold" /> toggle crop mode. In this mode, you can resize the window without the image moving.
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="CTRL C:" FontWeight="Bold" /> copy displayed image file to clipboard
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="CTRL ALT C:" FontWeight="Bold" /> convert displayed image to JPG, and compress iteratively until it is below a configured max file size, then copy the resulting image file to clipboard
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="C:" FontWeight="Bold" /> close window or secondary window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="P:" FontWeight="Bold" /> open Preferences window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="A:" FontWeight="Bold" /> open About window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="H:" FontWeight="Bold" /> open Hot Key Reference window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="G:" FontWeight="Bold" /> switch to next background selection, between black, white, and transparent
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="I:" FontWeight="Bold" /> open Image Info window if an image is loaded
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="M:" FontWeight="Bold" /> Minimize window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="R:" FontWeight="Bold" /> Rotate image 90 degrees clockwise
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="Left and Right:" FontWeight="Bold" /> Load adjacent respective images in the directory of the currently loaded image
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="B:" FontWeight="Bold" /> Resize window to remove best-fit bars
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="T:" FontWeight="Bold" /> Toggle always-on-top for the focused window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="D:" FontWeight="Bold" /> Create a duplicate window with the currently loaded image (if any)
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="CTRL D:" FontWeight="Bold" /> Toggle debug info window
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="Space:" FontWeight="Bold" /> Pause/resume a GIF, if one is loaded
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="CTRL Space:" FontWeight="Bold" /> Restart a GIF, if one is loaded
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-        <Run Text="[Zoom controls]" FontWeight="Bold" />
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-        <Run Text="CTRL +:" FontWeight="Bold" /> zoom in
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-        <Run Text="CTRL -:" FontWeight="Bold" /> zoom out
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-        <Run Text="CTRL 0:" FontWeight="Bold" /> reset zoom and pan
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-        <Run Text="CTRL 9:" FontWeight="Bold" /> set zoom to image's true resolution
-            </TextBlock>
-            <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-        <Run Text="Holding CTRL:" FontWeight="Bold" /> enables panning (click and drag) and zooming (scroll). For fine zooming, hold ALT as well.
-            </TextBlock>
+    <Border Background="#FAFAFA"
+            CornerRadius="6"
+            Padding="0">
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
-                <Button Content="Close" Click="Close_Click" Margin="0,5"/>
-            </StackPanel>
-        </StackPanel>
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.15"/>
+        </Border.Effect>
 
-        
+        <DockPanel>
+
+            <!-- Header -->
+            <Border Background="#F0F0F0"
+                    Padding="8"
+                    DockPanel.Dock="Top"
+                    CornerRadius="6,6,0,0">
+                <TextBlock Text="Hotkey Reference"
+                           FontWeight="SemiBold"
+                           Foreground="#333"/>
+            </Border>
+
+            <!-- Content with ScrollViewer -->
+            <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+
+                    <!-- Hotkey List -->
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="X:" FontWeight="Bold"/> Show the context menu (as if you've right-clicked)
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="F11:" FontWeight="Bold"/> Toggle fullscreen
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Esc:" FontWeight="Bold"/> Exit fullscreen or close a secondary window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="F:" FontWeight="Bold"/> Set window size to image's true dimensions
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="O:" FontWeight="Bold"/> Open an image
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="V:" FontWeight="Bold"/> Maximize vertical dimension
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Q:" FontWeight="Bold"/> Toggle crop mode
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="CTRL C:" FontWeight="Bold"/> Copy displayed image file to clipboard
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="CTRL ALT C:" FontWeight="Bold"/> Convert displayed image to JPG, and compress iteratively until it is below a configured max file size, then copy the resulting image file to clipboard
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="C:" FontWeight="Bold"/> Close window or secondary window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="P:" FontWeight="Bold"/> Open Preferences window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="A:" FontWeight="Bold"/> Open About window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="H:" FontWeight="Bold"/> Open Hot Key Reference window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="G:" FontWeight="Bold"/> Switch background (black, white, transparent)
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="I:" FontWeight="Bold"/> Open Image Info window (if one is loaded)
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="M:" FontWeight="Bold"/> Minimize window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="R:" FontWeight="Bold"/> Rotate image 90° clockwise
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Left and Right:" FontWeight="Bold"/> Load adjacent images in directory of current image
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="B:" FontWeight="Bold"/> Resize window to remove best-fit bars
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="T:" FontWeight="Bold"/> Toggle always-on-top
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="D:" FontWeight="Bold"/> Duplicate window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="CTRL D:" FontWeight="Bold"/> Toggle debug info window
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Space:" FontWeight="Bold"/> Pause/resume GIF
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="CTRL Space:" FontWeight="Bold"/> Restart GIF
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="[Zoom controls]" FontWeight="Bold"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="CTRL +:" FontWeight="Bold"/> Zoom in
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="CTRL -:" FontWeight="Bold"/> Zoom out
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="CTRL 0:" FontWeight="Bold"/> Reset zoom/pan
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="CTRL 9:" FontWeight="Bold"/> Set zoom to true resolution
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="Holding CTRL:" FontWeight="Bold"/> Enables panning (click and drag) and zooming (scroll). For fine zooming, hold ALT as well.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Close Button -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,10,0,0">
+                        <Button Content="Close"
+                                Style="{StaticResource CloudlessPrimaryButton}"
+                                Click="Close_Click"
+                                FontWeight="SemiBold"
+                                Width="60"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </DockPanel>
     </Border>
 </Window>

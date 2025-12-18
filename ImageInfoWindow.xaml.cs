@@ -32,17 +32,17 @@ namespace Cloudless
 
             // Set file info
             var fileInfo = new FileInfo(_imagePath);
-            FilenameText.Text = $"Filename: {Path.GetFileName(_imagePath)}";
-            PathText.Text = $"Path: {_imagePath}";
-            SizeText.Text = $"Size: {fileInfo.Length / 1024.0:0.##} KB";
+            FilenameText.Text = $"{Path.GetFileName(_imagePath)}";
+            PathText.Text = $"{_imagePath}";
+            SizeText.Text = $"{fileInfo.Length / 1024.0:0.##} KB";
 
             // Set format and dimensions
             var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
-            DimensionsText.Text = $"Dimensions: {bitmap.PixelWidth} x {bitmap.PixelHeight}";
-            FormatText.Text = $"Format: {fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
+            DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
+            FormatText.Text = $"{fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
 
             var lastModTime = File.GetLastWriteTime(_imagePath);
-            LastModifiedText.Text = $"Last Modified: {lastModTime.ToString()}";
+            LastModifiedText.Text = $"{lastModTime.ToString()}";
         }
 
         private async void CopyPath_Click(object sender, RoutedEventArgs e)
