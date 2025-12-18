@@ -1,8 +1,10 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using Microsoft.Win32;
 
 namespace Cloudless
 {
@@ -145,6 +147,20 @@ namespace Cloudless
 
             DialogResult = true;
             Close();
+        }
+
+        private void SetDefaultButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenDefaultAppsSettings();
+        }
+
+        private void OpenDefaultAppsSettings()
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "ms-settings:defaultapps",
+                UseShellExecute = true
+            });
         }
     }
 }

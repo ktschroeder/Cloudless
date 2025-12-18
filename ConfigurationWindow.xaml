@@ -72,6 +72,11 @@
                 <ComboBoxItem Content="Date Modified (Descending)" />
             </ComboBox>
 
+            <Button
+                Content="Open Windows settings to manually configure Cloudless as default image viewer"
+                Click="SetDefaultButton_Click" />
+            <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .webp, .jfif" Margin="0,0,0,10"/>
+
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
                 <Button Content="Cancel" Click="Cancel_Click" Margin="0,5"/>
                 <Button Content="OK" Click="Save_Click" Margin="0,5"/>

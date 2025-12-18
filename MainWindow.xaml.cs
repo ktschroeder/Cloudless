@@ -20,6 +20,7 @@ using Brushes = System.Windows.Media.Brushes;
 using System.Runtime.InteropServices;
 
 
+
 namespace Cloudless
 {
     public partial class MainWindow : Window
@@ -2128,6 +2129,8 @@ namespace Cloudless
                 MainBorder.BorderThickness = new Thickness(0);
             }
         }
+
+        
 
     }   
 }
