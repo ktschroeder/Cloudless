@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Cloudless.HotkeyRefWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Hot Key Reference" Height="750" Width="700"
+        Title="Hot Key Reference" Height="800" Width="700"
         WindowStyle="None" ResizeMode="NoResize" MouseDown="Window_MouseDown" KeyDown="Window_KeyDown">
     <Border BorderBrush="Black" BorderThickness="2" Background="White">
         <StackPanel Margin="10">
@@ -11,6 +11,9 @@
                Margin="0,0,0,10" />
 
             <!-- Hotkey List -->
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+        <Run Text="X:" FontWeight="Bold" /> Show the context menu (as if you've right-clicked)
+            </TextBlock>
             <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
         <Run Text="F11:" FontWeight="Bold" /> toggle fullscreen
             </TextBlock>

@@ -18,6 +18,7 @@ using System.Collections.Specialized;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 using System.Runtime.InteropServices;
+using System.Windows.Controls.Primitives;
 
 
 
@@ -132,7 +133,7 @@ namespace Cloudless
             NoImageMessage = new TextBlock
             {
                 Name = "NoImageMessage",
-                Text = "Welcome to Cloudless.\n\nNo image is loaded. Right click for options.\n\nPress 'z' to toggle Zen.",
+                Text = "Welcome to Cloudless.\n\nNo image is loaded.\nRight click or press 'x' for options.\n\nPress 'z' to toggle Zen.",
                 Foreground = Brushes.White,
                 FontSize = 20,
                 Padding = new Thickness(20),
@@ -412,6 +413,13 @@ namespace Cloudless
             if (e.Key == Key.P)
             {
                 OpenPreferences();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.X)
+            {
+                ShowContextMenu();
                 e.Handled = true;
                 return;
             }
@@ -2130,7 +2138,14 @@ namespace Cloudless
             }
         }
 
-        
+        private void ShowContextMenu()
+        {
+            ContextMenu menu = ImageContextMenu;
+           // menu.PlacementTarget = target; // UIElement
+            menu.Placement = PlacementMode.MousePoint;
+            menu.IsOpen = true;
+        }
 
-    }   
+
+    }
 }
