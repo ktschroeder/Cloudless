@@ -15,12 +15,6 @@
             CornerRadius="6"
             Padding="0">
 
-        <!-- Optional subtle shadow -->
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="12"
-                              ShadowDepth="0"
-                              Opacity="0.15"/>
-        </Border.Effect>
 
         <DockPanel>
 

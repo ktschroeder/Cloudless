@@ -8,15 +8,13 @@
         ResizeMode="NoResize"
         Background="Transparent"
         MouseDown="Window_MouseDown"
-        KeyDown="Window_KeyDown">
+        KeyDown="Window_KeyDown"
+        AllowsTransparency="True">
 
     <Border Background="#FAFAFA"
             CornerRadius="6"
             Padding="0">
 
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.15"/>
-        </Border.Effect>
 
         <DockPanel>
 
