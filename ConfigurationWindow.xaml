@@ -102,6 +102,7 @@
                     <Button Content="OK"
                             Style="{StaticResource CloudlessPrimaryButton}"
                             Click="Save_Click"
+                            IsDefault="True"
                             FontWeight="SemiBold"
                             Width="60"/>
                 </StackPanel>
