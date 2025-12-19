@@ -760,6 +760,11 @@ namespace Cloudless
             bool loopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
+            // These lines allow the non-best fit display modes to render properly.
+            ImageDisplay.Width = Double.NaN; // Reset explicit width
+            ImageDisplay.Height = Double.NaN; // Reset explicit height
+            ImageDisplay.Margin = new Thickness(0); // Reset margin
+
             ResetPan();
             ResetZoom();
 
@@ -807,7 +812,7 @@ namespace Cloudless
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!isCropMode)
+            if (!isCropMode && Cloudless.Properties.Settings.Default.DisplayMode.StartsWith("Best"))
                 ScaleImageToWindow();
             else if (imageTranslateTransform != null)
             {
@@ -918,10 +923,12 @@ namespace Cloudless
 
                 double marginX = (windowWidth - ImageDisplay.Width) / 2;
                 double marginY = (windowHeight - ImageDisplay.Height) / 2;
+                marginX = Double.IsNaN(marginX) ? 0 : marginX;
+                marginY = Double.IsNaN(marginY) ? 0 : marginY;
 
                 if (isCropMode)
                 {
-                    ImageDisplay.Margin = new Thickness(  // black bars
+                    ImageDisplay.Margin = new Thickness(
                     marginX,
                     marginY,
                     marginX,
@@ -929,7 +936,7 @@ namespace Cloudless
                     );
                 }
                 else
-                    ImageDisplay.Margin = new Thickness(  // black bars
+                    ImageDisplay.Margin = new Thickness(
                         Math.Max(0, marginX),
                         Math.Max(0, marginY),
                         Math.Max(0, marginX),
