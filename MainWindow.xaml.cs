@@ -19,17 +19,14 @@ using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 using System.Runtime.InteropServices;
 using System.Windows.Controls.Primitives;
-using System.Net.Http;
 using System.Text.Json;
-
-
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
         #region Fields
-        public const string CURRENT_VERION = "0.3.0";
+        public const string CURRENT_VERION = "0.3.1";
 
         private static readonly Mutex recentFilesMutex = new(false, "CloudlessRecentFilesMutex");
         private static readonly string recentFilesPath = Path.Combine(
