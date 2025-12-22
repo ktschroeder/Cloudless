@@ -1,5 +1,6 @@
 # Cloudless
-Cloudless is a lightweight, minimal-UI image viewer for Windows, built on Windows Presentation Foundation. It's feature-rich, but visually quiet and minimal.
+Cloudless is a lightweight, minimal-UI image viewer and arranger for Windows, built on Windows Presentation Foundation. It's feature-rich, but visually quiet and minimal.
+Its advanced features are suited to advanced users and image/UI enthusiasts. It has been called "the vim of image viewers" (by me).
 
 - Load images from inside the app, or directly via filetype association. Navigate through images in the current directory. View and open recent images.
 - Smoothly zoom and pan in images.

@@ -1668,7 +1668,7 @@ namespace Cloudless
                 ZoomMenu.Items.Add(zoomItem);
             }
         }
-        private System.Windows.Controls.Image GetImageThumbnail(string filePath, int width, int height)
+        public static System.Windows.Controls.Image GetImageThumbnail(string filePath, int width, int height)
         {
             try  // called 10 times every time context menu is used/updated. Could be more efficient.
             {
@@ -1711,6 +1711,21 @@ namespace Cloudless
             // Add additional menu items
             if (recentFiles.Count > 0)
             {
+                MenuItem openGalleryItem = new()
+                {
+                    Header = "Open Recent Images…"
+                };
+                openGalleryItem.Click += (s, e) =>
+                {
+                    var win = new RecentImagesWindow(recentFiles);
+                    win.Owner = this;
+                    win.Show();
+                };
+
+                RecentFilesMenu.Items.Insert(0, openGalleryItem);
+                RecentFilesMenu.Items.Insert(1, new Separator());
+
+
                 RecentFilesMenu.Items.Add(new Separator());
 
                 MenuItem clearHistoryItem = new MenuItem
@@ -1732,7 +1747,7 @@ namespace Cloudless
             }
         }
 
-        private void OpenRecentFile(string filePath)
+        public void OpenRecentFile(string filePath)
         {
             if (!File.Exists(filePath))
             {
