@@ -50,6 +50,7 @@ namespace Cloudless
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
+        private void Close_Click(object sender, RoutedEventArgs e) { WindowHelper.Close_Click(this, e); }
     }
 
 }
