@@ -465,7 +465,15 @@ namespace Cloudless
 
             if (e.Key == Key.R)
             {
-                RotateImage90Degrees();
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    OpenRecentImagesWindow();
+                }
+                else
+                {
+                    RotateImage90Degrees();
+                }
+
                 e.Handled = true;
                 return;
             }
@@ -1717,9 +1725,7 @@ namespace Cloudless
                 };
                 openGalleryItem.Click += (s, e) =>
                 {
-                    var win = new RecentImagesWindow(recentFiles);
-                    win.Owner = this;
-                    win.Show();
+                    OpenRecentImagesWindow();
                 };
 
                 RecentFilesMenu.Items.Insert(0, openGalleryItem);
@@ -1874,6 +1880,12 @@ namespace Cloudless
 
                 ApplyDisplayMode();
             }
+        }
+        private void OpenRecentImagesWindow()
+        {
+            var win = new RecentImagesWindow(recentFiles);
+            win.Owner = this;
+            win.Show();
         }
         public void SetBackground()
         {
