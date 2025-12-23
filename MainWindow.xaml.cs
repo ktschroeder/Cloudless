@@ -51,7 +51,7 @@ namespace Cloudless
 
         private OverlayMessageManager? overlayManager;
 
-        private const int MaxRecentFiles = 10;
+        private const int MaxRecentFiles = 15;
         private List<string> recentFiles = new();
 
         private Point lastMousePosition;
@@ -1721,7 +1721,7 @@ namespace Cloudless
             {
                 MenuItem openGalleryItem = new()
                 {
-                    Header = "Open Recent Images…"
+                    Header = "Open Recent Images Gallery"
                 };
                 openGalleryItem.Click += (s, e) =>
                 {
@@ -1885,6 +1885,7 @@ namespace Cloudless
         {
             var win = new RecentImagesWindow(recentFiles);
             win.Owner = this;
+            win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             win.Show();
         }
         public void SetBackground()
