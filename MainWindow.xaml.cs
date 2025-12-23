@@ -2307,6 +2307,15 @@ namespace Cloudless
             if (string.IsNullOrEmpty(command))
                 return;
 
+            if (command.ToLower().Equals("p"))  // load most recently opened image
+            {
+                string path = recentFiles?.FirstOrDefault();
+                if (path != null) {
+                    OpenRecentFile(path);
+                }
+                return;
+            }
+
             int targetIndex;
 
             if (command.StartsWith("+") || command.StartsWith("-"))
