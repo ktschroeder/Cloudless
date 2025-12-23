@@ -380,7 +380,10 @@ namespace Cloudless
 
             if (e.Key == Key.H)
             {
-                HotkeyRef();
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                    CommandPaletteRef();
+                else
+                    HotkeyRef();
                 e.Handled = true;
                 return;
             }
@@ -2003,6 +2006,21 @@ namespace Cloudless
 
             hkrWindow.Show();
         }
+        private void CommandPaletteRef_Click(object sender, RoutedEventArgs e)
+        {
+            CommandPaletteRef();
+        }
+        private void CommandPaletteRef()
+        {
+            var cprWindow = new CommandRefWindow();
+
+            // Center the window relative to the main application window
+            cprWindow.Owner = this; // Set the owner to the main window
+            // could make this not stay above main window, by not setting the owner.
+            cprWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            cprWindow.Show();
+        }
         private void ToggleFullscreen()
         {
             ToggleCropMode(false);
@@ -2345,7 +2363,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("first"))  // load most recently opened image
+            if (command.ToLower().Equals("first"))
             {
                 if (imageFiles == null)
                     return true;
@@ -2354,7 +2372,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("last"))  // load most recently opened image
+            if (command.ToLower().Equals("last"))
             {
                 if (imageFiles == null)
                     return true;
@@ -2365,12 +2383,55 @@ namespace Cloudless
 
             if (command.ToLower().StartsWith("sort"))
             {
-                // TODO set sort type: "sort name asc", name desc, date asc, date desc.
+                if (command.ToLower().Equals("sort name asc"))
+                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "FileNameAscending";
+                else if (command.ToLower().Equals("sort name desc"))
+                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "FileNameDescending";
+                else if(command.ToLower().Equals("sort date asc"))
+                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedAscending";
+                else if (command.ToLower().Equals("sort date desc"))
+                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedDescending";
+                else
+                {
+                    Message("Invalid sort type");
+                    return false;
+                }
+
+                Cloudless.Properties.Settings.Default.Save();
+                SortImageFilesArray();
+                return true;
+            }
+
+            if (command.ToLower().StartsWith("dm"))
+            {
+                if (command.ToLower().Equals("dm stretch") || command.ToLower().Equals("dm 1"))
+                    Cloudless.Properties.Settings.Default.DisplayMode = "StretchToFit";
+                else if (command.ToLower().Equals("dm zoom") || command.ToLower().Equals("dm 2"))
+                    Cloudless.Properties.Settings.Default.DisplayMode = "ZoomToFill";
+                else if (command.ToLower().Equals("dm best") || command.ToLower().Equals("dm 3"))
+                    Cloudless.Properties.Settings.Default.DisplayMode = "BestFit";
+                else if (command.ToLower().Equals("dm bestnozoom") || command.ToLower().Equals("dm 4"))
+                    Cloudless.Properties.Settings.Default.DisplayMode = "BestFitWithoutZooming";
+                else
+                {
+                    Message("Invalid display mode");
+                    return false;
+                }
+
+                Cloudless.Properties.Settings.Default.Save();
+                ApplyDisplayMode();
+                return true;
             }
 
             if (command.ToLower().StartsWith("o "))
             {
                 // TODO open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
+            }
+
+            if (command.ToLower().Equals("cip"))  // copy image path
+            {
+                Clipboard.SetText(currentlyDisplayedImagePath);
+                Message("Copied image path to clipboard");
             }
 
             if (command.ToLower().Equals("rev"))  // reveal current image in file explorer

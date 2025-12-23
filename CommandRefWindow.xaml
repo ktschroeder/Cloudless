@@ -1,0 +1,108 @@
+﻿<Window x:Class="Cloudless.CommandRefWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Command Palette Reference"
+        Height="460"
+        Width="700"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        MouseDown="Window_MouseDown"
+        KeyDown="Window_KeyDown"
+        AllowsTransparency="True">
+
+    <Border Background="#FAFAFA"
+            CornerRadius="6"
+            Padding="0">
+
+
+        <DockPanel>
+
+            <!-- Header -->
+            <Border Background="#F0F0F0"
+                    Padding="8"
+                    DockPanel.Dock="Top"
+                    CornerRadius="6,6,0,0">
+                <TextBlock Text="Command Palette Reference"
+                           FontWeight="SemiBold"
+                           Foreground="#333"/>
+            </Border>
+
+            <!-- Content with ScrollViewer -->
+            <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+
+                    <!-- Hotkey List -->
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Esc:" FontWeight="Bold"/> Cancel/exit the command palette
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Enter:" FontWeight="Bold"/> Submit command
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="Up and Down:" FontWeight="Bold"/> Traverse through history of valid commands
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="[Integer] (e.g. '3'):" FontWeight="Bold"/> Jump to the image with this index in the current directory
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="+[Integer]" FontWeight="Bold"/> Jump [int] images forward in directory
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="-[Integer]" FontWeight="Bold"/> Jump [int] images backward in directory
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="p:" FontWeight="Bold"/> Open most recently loaded image (only useful if no image is loaded)
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="first | last:" FontWeight="Bold"/> Open first or last image in current directory
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="/[query]:" FontWeight="Bold"/> Open the next image in current directory whose filename contains [query], case insensitive. Wraps around at end.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="sort ['name' | 'date'] ['asc' | 'desc'] (e.g. 'sort date asc'):" FontWeight="Bold"/> Set directory sort order
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="dm [stretch | zoom | best| bestnozoom] (e.g. 'sort date asc':" FontWeight="Bold"/> Set display mode. Numbers 1-4 can also be used, e.g. 'dm 2'.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="cip:" FontWeight="Bold"/> Copy image path to clipboard
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="rev:" FontWeight="Bold"/> Reveal current image in File Explorer
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="o [path]:" FontWeight="Bold"/> Open the image at [path], which may be relative or absolute
+                        </TextBlock>
+
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="[Relevant hotkeys outside of command palette]" FontWeight="Bold"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="':' or ';':" FontWeight="Bold"/> Open command palette
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
+                            <Run Text="CTRL ';':" FontWeight="Bold"/> Execute the most recent valid command
+                        </TextBlock>
+
+                    </StackPanel>
+
+                    <!-- Close Button -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,10,0,0">
+                        <Button Content="Close"
+                                Style="{StaticResource CloudlessPrimaryButton}"
+                                Click="Close_Click"
+                                FontWeight="SemiBold"
+                                Width="60"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </DockPanel>
+    </Border>
+</Window>
