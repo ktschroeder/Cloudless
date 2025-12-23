@@ -305,6 +305,12 @@ namespace Cloudless
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            if (CommandPalette.IsVisible && CommandTextBox.IsFocused)
+            {
+                // Let the command palette handle this key; prevent main window hotkeys
+                return;
+            }
+
             if (e.Key == Key.F11)
             {
                 ToggleFullscreen();
@@ -512,6 +518,12 @@ namespace Cloudless
                 
                 e.Handled = true;
                 return;
+            }
+
+            if (e.Key == Key.OemSemicolon && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':'
+            {
+                OpenCommandPalette();
+                e.Handled = true;
             }
 
             // navigating in directory
@@ -2251,6 +2263,59 @@ namespace Cloudless
             }
         }
 
+        private void OpenCommandPalette()
+        {
+            CommandPalette.Visibility = Visibility.Visible;
+            CommandTextBox.Text = ":";
+            CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            CommandTextBox.Focus();
+        }
+
+        private void CloseCommandPalette()
+        {
+            CommandPalette.Visibility = Visibility.Collapsed;
+
+            // Restore focus to the main window
+            FocusManager.SetFocusedElement(this, this);
+            Keyboard.Focus(this);
+        }
+
+        private void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                CloseCommandPalette();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter)
+            {
+                ExecuteCommand(CommandTextBox.Text.Trim());
+                CloseCommandPalette();
+                e.Handled = true;
+            }
+        }
+
+        private void ExecuteCommand(string command)
+        {
+            if (command.StartsWith(":"))
+                command = command[1..];
+
+            // Jump to index in directory
+            if (int.TryParse(command, out int index))
+            {
+                JumpToImageIndex(index - 1); // user-facing is 1-based
+            }
+        }
+
+        private void JumpToImageIndex(int index)
+        {
+            if (index < 0 || imageFiles == null || index >= imageFiles.Count())
+                return;
+
+            DisplayImage(index, true);
+        }
     }
 
     public class GitHubRelease
@@ -2261,5 +2326,4 @@ namespace Cloudless
         public bool draft { get; set; }
         public DateTime published_at { get; set; }
     }
-
 }
