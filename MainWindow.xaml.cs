@@ -307,16 +307,7 @@ namespace Cloudless
         {
             if (e.Key == Key.F11)
             {
-                if (WindowState == WindowState.Normal)
-                {
-                    WindowStyle = WindowStyle.None;
-                    WindowState = WindowState.Maximized;
-                }
-                else
-                {
-                    WindowStyle = WindowStyle.None;
-                    WindowState = WindowState.Normal;
-                }
+                ToggleFullscreen();
                 e.Handled = true;
                 return;
             }
@@ -451,7 +442,8 @@ namespace Cloudless
 
             if (e.Key == Key.Q)
             {
-                ToggleCropMode();
+                if (WindowState != WindowState.Maximized)
+                    ToggleCropMode();
                 e.Handled = true;
                 return;
             }
@@ -1968,6 +1960,7 @@ namespace Cloudless
         }
         private void ToggleFullscreen()
         {
+            ToggleCropMode(false);
             if (WindowState == WindowState.Normal)
             {
                 WindowStyle = WindowStyle.None;
