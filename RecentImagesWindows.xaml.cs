@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -8,12 +9,28 @@ using Path = System.IO.Path;
 
 namespace Cloudless
 {
-    public class RecentImageItem
+    public class RecentImageItem : INotifyPropertyChanged
     {
         public string FilePath { get; init; }
         public string FileName => Path.GetFileName(FilePath);
-        public ImageSource Thumbnail { get; init; }
+
+        private ImageSource _thumbnail;
+        public ImageSource Thumbnail
+        {
+            get => _thumbnail;
+            set
+            {
+                if (_thumbnail != value)
+                {
+                    _thumbnail = value;
+                    PropertyChanged?.Invoke(this, new(nameof(Thumbnail)));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
+
 
     public partial class RecentImagesWindow : Window
     {
@@ -26,14 +43,54 @@ namespace Cloudless
 
             foreach (var file in recentFiles)
             {
-                if (!File.Exists(file)) continue;
-
                 RecentImages.Add(new RecentImageItem
                 {
                     FilePath = file,
-                    Thumbnail = MainWindow.GetImageThumbnail(file, 128, 128).Source
+                    Thumbnail = null  // placeholder, pending loading image. Could add an actual placeholder graphic if desired.
                 });
             }
+
+            LoadThumbnailsAsync();
+        }
+
+        private async void LoadThumbnailsAsync()
+        {
+            foreach (var item in RecentImages)
+            {
+                if (!File.Exists(item.FilePath))
+                    continue;
+
+                var thumb = await RunStaAsync(() =>
+                    MainWindow.GetImageThumbnail(item.FilePath, 128, 128).Source);
+
+                if (thumb != null)
+                    item.Thumbnail = thumb;
+            }
+        }
+
+
+        private static Task<ImageSource> RunStaAsync(Func<ImageSource> func)  // "Single Thread Apartment". Tragic WPF shenanigans.
+        {
+            var tcs = new TaskCompletionSource<ImageSource>();
+
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    var result = func();
+                    tcs.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.IsBackground = true;
+            thread.Start();
+
+            return tcs.Task;
         }
 
         private void Thumbnail_Click(object sender, MouseButtonEventArgs e)

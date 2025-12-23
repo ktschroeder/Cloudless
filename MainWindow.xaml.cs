@@ -1668,26 +1668,47 @@ namespace Cloudless
                 ZoomMenu.Items.Add(zoomItem);
             }
         }
-        public static System.Windows.Controls.Image GetImageThumbnail(string filePath, int width, int height)
+
+        public static System.Windows.Controls.Image GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false)
         {
-            try  // called 10 times every time context menu is used/updated. Could be more efficient.
+            try  // called 10+ times every time context menu is used/updated. Could be more efficient.
             {
-                BitmapImage bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(filePath);
-                bitmap.DecodePixelWidth = width;
-                bitmap.DecodePixelHeight = height;
-                bitmap.EndInit();
+                using var stream = File.OpenRead(filePath);
+
+                var bitmap = new BitmapImage();
+
+                // The former below is faster for the context window, and the latter is more compatible with the secondary window thumbnails.
+                // If we only use the latter, then it seriously slows down normal image loading since it hits slower paths. This could be improved
+                // with more async re-working in the future, but for now this works well.
+                if (isContextWindow)
+                {
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(filePath);
+                    bitmap.DecodePixelWidth = width;
+                    bitmap.DecodePixelHeight = height;
+                    bitmap.EndInit();
+                } 
+                else
+                {
+                    bitmap.BeginInit();
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.DecodePixelWidth = width;
+                    bitmap.DecodePixelHeight = height;  // can remove this line to get preserved aspect ratio with image cut off
+                    bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                    bitmap.StreamSource = stream;
+                    bitmap.EndInit();
+                    bitmap.Freeze();  // CRITICAL
+                }
 
                 return new System.Windows.Controls.Image { Source = bitmap, Width = width, Height = height };
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to load thumbnail: {ex.Message}");
-                return null; // Return null if there's an issue loading the image
+                return null;  // Return null if there's an issue loading the image
             }
         }
-        private void UpdateRecentFilesMenu() // no side effects beyond instance. Reads from static file at this time, does not write to it.
+        private void UpdateRecentFilesMenu()  // no side effects beyond instance. Reads from static file at this time, does not write to it.
         {
             LoadRecentFiles(); // Always fetch the latest list
 
@@ -1702,7 +1723,7 @@ namespace Cloudless
                     Header = System.IO.Path.GetFileName(file),
                     ToolTip = file,
                     Tag = file,
-                    Icon = GetImageThumbnail(file, 16, 16)
+                    Icon = GetImageThumbnail(file, 16, 16, true)
                 };
                 fileItem.Click += (s, e) => OpenRecentFile((string)((MenuItem)s).Tag);
                 RecentFilesMenu.Items.Add(fileItem);
