@@ -61,7 +61,7 @@
                     <MenuItem x:Name="ZoomMenu" Header="Zoom">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
-                    <MenuItem x:Name="RecentFilesMenu" Header="Recent Files" SubmenuOpened="RecentFilesMenu_SubmenuOpened">
+                    <MenuItem x:Name="RecentFilesMenu" Header="Recent Images" SubmenuOpened="RecentFilesMenu_SubmenuOpened">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
 
