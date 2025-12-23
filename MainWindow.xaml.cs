@@ -2299,17 +2299,55 @@ namespace Cloudless
 
         private void ExecuteCommand(string command)
         {
+            command = command.Trim();
+
             if (command.StartsWith(":"))
                 command = command[1..];
 
-            // Jump to index in directory
-            if (int.TryParse(command, out int index))
+            if (string.IsNullOrEmpty(command))
+                return;
+
+            int targetIndex;
+
+            if (command.StartsWith("+") || command.StartsWith("-"))
             {
-                JumpToImageIndex(index - 1); // user-facing is 1-based
+                if (imageFiles == null)
+                    return;
+
+                // Relative jump
+                if (int.TryParse(command, out int offset))
+                {
+                    targetIndex = currentImageIndex + offset;
+                }
+                else
+                {
+                    Message("Invalid relative index");
+                    return;
+                }
             }
+            else
+            {
+                if (imageFiles == null)
+                    return;
+
+                // Absolute jump
+                if (int.TryParse(command, out targetIndex) == false)
+                {
+                    Message("Invalid index");
+                    return;
+                }
+                // Convert from 1-based user input to 0-based internal index
+                targetIndex -= 1;
+            }
+
+            // Clamp to valid range
+            targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
+
+            JumpToIndex(targetIndex);
         }
 
-        private void JumpToImageIndex(int index)
+
+        private void JumpToIndex(int index)
         {
             if (index < 0 || imageFiles == null || index >= imageFiles.Count())
                 return;
