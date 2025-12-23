@@ -2426,10 +2426,12 @@ namespace Cloudless
             if (command.ToLower().StartsWith("o "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
-                // TODO add support for relative paths
-                string path = command.Substring(2);
+                string relativeOrAbsolutePath = command.Substring(2);
+                string resolvedPath = relativeOrAbsolutePath;
+                if (currentDirectory != null)
+                    Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
 
-                LoadImage(path, true);
+                LoadImage(resolvedPath, true);
                 return true;
             }
 
