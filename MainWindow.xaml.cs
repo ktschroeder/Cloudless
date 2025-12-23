@@ -1637,7 +1637,6 @@ namespace Cloudless
                 recentFiles.RemoveAt(recentFiles.Count - 1);
 
             SaveRecentFiles();
-            UpdateRecentFilesMenu();
             
         }
         private void PrepareZoomMenu()
