@@ -20,6 +20,7 @@ using Brushes = System.Windows.Media.Brushes;
 using System.Runtime.InteropServices;
 using System.Windows.Controls.Primitives;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace Cloudless
 {
@@ -53,6 +54,9 @@ namespace Cloudless
 
         private const int MaxRecentFiles = 15;
         private List<string> recentFiles = new();
+
+        private readonly List<string> _commandHistory = new();
+        private int _historyIndex = -1;
 
         private Point lastMousePosition;
 
@@ -520,9 +524,18 @@ namespace Cloudless
                 return;
             }
 
-            if (e.Key == Key.OemSemicolon && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':'
+            if (e.Key == Key.OemSemicolon) // && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':' but allow semicolon for convenience
             {
-                OpenCommandPalette();
+                if (Keyboard.Modifiers != ModifierKeys.Control)
+                {
+                    OpenCommandPalette();
+                }
+                else
+                {
+                    // Repeat previous command when CTRL is held
+                    ExecuteCommand(_commandHistory.LastOrDefault() ?? "");
+                }
+                
                 e.Handled = true;
             }
 
@@ -2268,6 +2281,7 @@ namespace Cloudless
             CommandPalette.Visibility = Visibility.Visible;
             CommandTextBox.Text = ":";
             CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            _historyIndex = _commandHistory.Count;
             CommandTextBox.Focus();
         }
 
@@ -2299,13 +2313,28 @@ namespace Cloudless
 
         private void ExecuteCommand(string command)
         {
+            if (ExecuteCommandInner(command))
+            {
+                CommitCommand(command);
+            }
+        }
+
+        // returns whether successful (i.e. valid) command
+        private bool ExecuteCommandInner(string command)
+        {
             command = command.Trim();
 
             if (command.StartsWith(":"))
                 command = command[1..];
 
             if (string.IsNullOrEmpty(command))
-                return;
+                return false;
+
+            if (command.StartsWith("/"))
+            {
+                ExecuteFilenameSearch(command.Substring(1));
+                return true;
+            }
 
             if (command.ToLower().Equals("p"))  // load most recently opened image
             {
@@ -2313,7 +2342,49 @@ namespace Cloudless
                 if (path != null) {
                     OpenRecentFile(path);
                 }
-                return;
+                return true;
+            }
+
+            if (command.ToLower().Equals("first"))  // load most recently opened image
+            {
+                if (imageFiles == null)
+                    return true;
+
+                JumpToIndex(0);
+                return true;
+            }
+
+            if (command.ToLower().Equals("last"))  // load most recently opened image
+            {
+                if (imageFiles == null)
+                    return true;
+
+                JumpToIndex(imageFiles.Length - 1);
+                return true;
+            }
+
+            if (command.ToLower().StartsWith("sort"))
+            {
+                // TODO set sort type: "sort name asc", name desc, date asc, date desc.
+            }
+
+            if (command.ToLower().StartsWith("o "))
+            {
+                // TODO open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
+            }
+
+            if (command.ToLower().Equals("rev"))  // reveal current image in file explorer
+            {
+                string path = currentlyDisplayedImagePath;
+                if (path == null)
+                {
+                    Message("Cannot reveal image in Explorer because no image is loaded");
+                }
+                else
+                {
+                    RevealImageInExplorer(path);
+                }
+                return true;
             }
 
             int targetIndex;
@@ -2321,7 +2392,7 @@ namespace Cloudless
             if (command.StartsWith("+") || command.StartsWith("-"))
             {
                 if (imageFiles == null)
-                    return;
+                    return true;
 
                 // Relative jump
                 if (int.TryParse(command, out int offset))
@@ -2331,28 +2402,89 @@ namespace Cloudless
                 else
                 {
                     Message("Invalid relative index");
-                    return;
+                    return true;
                 }
+
+                // Clamp to valid range
+                var clampedIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
+                if (clampedIndex != targetIndex)
+                {
+                    if (clampedIndex == 0)
+                        Message("Relative jump was clamped to first image in directory");
+                    else
+                        Message("Relative jump was clamped to final image in directory");
+                }
+
+                JumpToIndex(clampedIndex);
+                return true;
             }
-            else
+            else if (int.TryParse(command, out targetIndex))  // Absolute jump
             {
                 if (imageFiles == null)
-                    return;
+                    return true;
 
-                // Absolute jump
-                if (int.TryParse(command, out targetIndex) == false)
-                {
-                    Message("Invalid index");
-                    return;
-                }
                 // Convert from 1-based user input to 0-based internal index
                 targetIndex -= 1;
+
+                if (targetIndex == -1)  // user input "0"
+                {
+                    Message("You are in 1-indexing mode, so the first image has index 1, not 0.");
+                }
+
+                // Clamp to valid range
+                targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
+                JumpToIndex(targetIndex);
+                return true;
             }
 
-            // Clamp to valid range
-            targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
+            Message("Command not recognized");
+            return false;
+        }
 
-            JumpToIndex(targetIndex);
+        private void CommitCommand(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command))
+                return;
+
+            // Avoid duplicate consecutive entries
+            if (_commandHistory.Count == 0 || _commandHistory[^1] != command)
+                _commandHistory.Add(command);
+
+            _historyIndex = _commandHistory.Count; // reset position
+        }
+
+        private void CommandPaletteTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (_commandHistory.Count == 0)
+                return;
+
+            if (e.Key == Key.Up)
+            {
+                e.Handled = true;
+
+                if (_historyIndex > 0)
+                    _historyIndex--;
+
+                CommandTextBox.Text = _commandHistory[_historyIndex];
+                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            }
+            else if (e.Key == Key.Down)
+            {
+                e.Handled = true;
+
+                if (_historyIndex < _commandHistory.Count - 1)
+                {
+                    _historyIndex++;
+                    CommandTextBox.Text = _commandHistory[_historyIndex];
+                }
+                else
+                {
+                    _historyIndex = _commandHistory.Count;
+                    CommandTextBox.Text = ":";
+                }
+
+                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            }
         }
 
 
@@ -2361,8 +2493,80 @@ namespace Cloudless
             if (index < 0 || imageFiles == null || index >= imageFiles.Count())
                 return;
 
+            currentImageIndex = index;
             DisplayImage(index, true);
         }
+
+        private void ExecuteFilenameSearch(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                Message("Search string is empty");
+                return;
+            }
+
+            var files = imageFiles ?? Array.Empty<string>();
+            int count = files.Count();
+
+            if (count == 0)
+                return;
+
+            string lowerQuery = query.ToLowerInvariant();
+
+            // Start searching *after* the current image
+            for (int offset = 1; offset < count - currentImageIndex; offset++)
+            {
+                int index = currentImageIndex + offset;
+                string fileName = Path.GetFileName(files[index]).ToLowerInvariant();
+
+                if (fileName.Contains(lowerQuery))
+                {
+                    JumpToIndex(index);
+                    return;
+                }
+            }
+
+            // ...and if not found then check from the beginning of the list until the current image
+            for (int index = 0; index < currentImageIndex; index++)
+            {
+                string fileName = Path.GetFileName(files[index]).ToLowerInvariant();
+
+                if (fileName.Contains(lowerQuery))
+                {
+                    JumpToIndex(index);
+                    Message("Continuing search from start of directory");
+                    return;
+                }
+            }
+
+            Message($"No match for \"{query}\"");
+        }
+
+        public static void RevealImageInExplorer(string imagePath)
+        {
+            try
+            {
+                // Validate that the file path exists
+                if (!File.Exists(imagePath))
+                {
+                    MessageBox.Show("File does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Use Process.Start to reveal the file in File Explorer
+                string argument = $"/select,\"{imagePath}\"";
+                Process.Start(new ProcessStartInfo("explorer.exe", argument)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                // Handle unexpected errors
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
     }
 
     public class GitHubRelease

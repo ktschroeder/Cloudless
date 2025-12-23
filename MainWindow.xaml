@@ -56,7 +56,8 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Bottom"
                 Margin="12"
-                Focusable="True">
+                Focusable="True"
+                Panel.ZIndex="99999999">
 
                 <TextBox x:Name="CommandTextBox"
                      Background="Transparent"
@@ -66,7 +67,8 @@
                      FontSize="14"
                      CaretBrush="White"
                      MinWidth="160"
-                     KeyDown="CommandTextBox_KeyDown"/>
+                     KeyDown="CommandTextBox_KeyDown"
+                         PreviewKeyDown="CommandPaletteTextBox_PreviewKeyDown"/>
                     </Border>
 
 
