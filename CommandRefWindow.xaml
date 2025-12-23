@@ -74,7 +74,7 @@
                             <Run Text="rev:" FontWeight="Bold"/> Reveal current image in File Explorer
                         </TextBlock>
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="o [path]:" FontWeight="Bold"/> Open the image at [path], which may be relative or absolute
+                            <Run Text="o [path]:" FontWeight="Bold"/> Open the image at [path], which may be relative (not yet implemented) or absolute
                         </TextBlock>
 
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">

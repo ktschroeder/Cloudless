@@ -2425,7 +2425,12 @@ namespace Cloudless
 
             if (command.ToLower().StartsWith("o "))
             {
-                // TODO open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
+                // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
+                // TODO add support for relative paths
+                string path = command.Substring(2);
+
+                LoadImage(path, true);
+                return true;
             }
 
             if (command.ToLower().Equals("cip"))  // copy image path
