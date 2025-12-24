@@ -27,7 +27,7 @@ namespace Cloudless
     public partial class MainWindow : Window
     {
         #region Fields
-        public const string CURRENT_VERION = "0.3.2";
+        public const string CURRENT_VERION = "0.4.0";
 
         private static readonly Mutex recentFilesMutex = new(false, "CloudlessRecentFilesMutex");
         private static readonly string recentFilesPath = Path.Combine(
