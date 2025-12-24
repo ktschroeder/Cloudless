@@ -1382,6 +1382,12 @@ namespace Cloudless
                 SortImageFilesArray();
 
                 currentImageIndex = Array.IndexOf(imageFiles, selectedImagePath);
+                if (currentImageIndex == -1)
+                {
+                    Message("Image not found at path: " + imagePath);
+                    return;
+                }
+
                 DisplayImage(currentImageIndex, openedThroughApp);
             }
             catch (Exception ex)
@@ -2429,7 +2435,7 @@ namespace Cloudless
                 string relativeOrAbsolutePath = command.Substring(2);
                 string resolvedPath = relativeOrAbsolutePath;
                 if (currentDirectory != null)
-                    Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
+                    resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
 
                 LoadImage(resolvedPath, true);
                 return true;
