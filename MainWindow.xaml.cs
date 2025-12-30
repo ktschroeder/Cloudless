@@ -2684,6 +2684,10 @@ namespace Cloudless
                 Height = Height,
                 CloudlessAppVersion = GetVersion(),
                 IsMaximized = this.WindowState == WindowState.Maximized,
+                DisplayMode = Cloudless.Properties.Settings.Default.DisplayMode,
+                Zoom = imageScaleTransform.ScaleX,  // Y would be the same as X regardless
+                PanX = imageTranslateTransform.X,
+                PanY = imageTranslateTransform.Y
             };
 
             return state;
@@ -2768,16 +2772,26 @@ namespace Cloudless
 
         public void ApplyWindowState(CloudlessWindowState state)
         {
+            //Cloudless.Properties.Settings.Default.DisplayMode = state.DisplayMode;
+            //ApplyDisplayMode();
+            // This gets weird and complicated since all instances share the same config file. It might make sense to just default all windows to a best fit mode.
+            // Anyway, it's hard to imagine a use case where someone would really want a workstation with mixed modes.
+
             ResizeWindow(state.Width, state.Height);
             RepositionWindow(state.Left, state.Top);
             if (state.IsMaximized)
                 ToggleFullscreen();
 
-            // TODO: apply display mode if stretch/zoomtofill, otherwise (best fit) apply zoom and pan X/Y.
-            //    This is especially important for cropping. May take a bit of puzzling out.
+            if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
+            {
+                imageScaleTransform.ScaleX = state.Zoom;
+                imageScaleTransform.ScaleY = state.Zoom;
+                imageTranslateTransform.X = state.PanX;
+                imageTranslateTransform.Y = state.PanY;
+            }
+            
 
             // TODO: zOrder via win32 shenanigans probably. Not super important; savvy users can crop anyway
-
 
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
@@ -2801,6 +2815,7 @@ namespace Cloudless
         public double Height { get; set; }
 
         // Image view state
+        public string DisplayMode { get; set; }  // TODO convert this to an enum, here and elsewhere.
         public double Zoom { get; set; }
         public double PanX { get; set; }
         public double PanY { get; set; }
