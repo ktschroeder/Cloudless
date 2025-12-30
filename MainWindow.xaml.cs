@@ -35,6 +35,10 @@ namespace Cloudless
             "Cloudless",
             "recent_files.json");
 
+        private static readonly string workspaceFilesPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Cloudless");
+
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
@@ -76,7 +80,7 @@ namespace Cloudless
         #region Setup
         public MainWindow(string filePath, double windowW, double windowH)
         {
-            bool willLoadImage = filePath != null;
+            bool willLoadImage = filePath != null && filePath.Length > 0;
             Setup();
 
             if (willLoadImage)
@@ -2429,6 +2433,29 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().StartsWith("ws "))
+            {
+                if (command.ToLower().StartsWith("ws save ") && command.Length > 8)
+                {
+                    string name = command.Substring(8);
+                    SaveWorkspace(name);
+                    Message("Saved workspace: " + name);
+                }
+                else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
+                {
+                    string name = command.Substring(8);
+                    LoadWorkspace(name);
+                    Message("Loaded workspace: " + name);
+                }
+                else
+                {
+                    Message("Could not parse your ws command: " + command);
+                    return false;
+                }
+
+                return true;
+            }
+
             if (command.ToLower().StartsWith("o "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
@@ -2641,7 +2668,150 @@ namespace Cloudless
             }
         }
 
+        public string GetVersion()
+        {
+            return CURRENT_VERION;
+        }
+
+        public CloudlessWindowState GetWindowState()
+        {
+            var state = new CloudlessWindowState()
+            {
+                ImagePath = currentlyDisplayedImagePath,
+                Left = Left,
+                Top = Top,
+                Width = Width,
+                Height = Height,
+                CloudlessAppVersion = GetVersion(),
+                IsMaximized = this.WindowState == WindowState.Maximized,
+            };
+
+            return state;
+        }
+
+        public static void SaveWorkspace(string workspaceName = "MainWorkspace")
+        {
+            try
+            {
+                var workspace = new CloudlessWorkspace();
+                string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
+
+                foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+                {
+                    workspace.CloudlessWindows.Add(window.GetWindowState());
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+
+                string json = JsonSerializer.Serialize(workspace, options);
+                File.WriteAllText(workspaceFilePath, json);
+            }
+            catch (Exception e) 
+            {
+                // TODO does this need to be static? We could message failure here and return a bool to caller for success. Similar for the load function.
+                //Message("Failed to load workspace " + workspaceName + " at path " + workspaceFilesPath);
+            }
+        }
+
+        private void CloseAllOtherInstances()
+        {
+            var windowsToClose = Application.Current.Windows
+                .OfType<Window>()
+                .Where(w => w != this)
+                .ToList();
+
+            foreach (var w in windowsToClose)
+            {
+                w.Close();
+            }
+        }
+
+        public void LoadWorkspace(string workspaceName = "MainWorkspace")
+        {
+            try
+            {
+                string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
+                // TODO I think this fails if user has the file open for reading in a text editor?
+                string json = File.ReadAllText(workspaceFilePath);
+
+                var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+                
+                if (workspace == null)
+                    throw new InvalidDataException("Invalid workspace file.");
+
+                //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                this.CloseAllOtherInstances();
+                Thread.Sleep(150); // brief grace period (optional but helps UX)
+
+                CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
+
+                this.Close();
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        public static void CreateWindowsForWorkspace(CloudlessWorkspace workspace)
+        {
+            foreach (var state in workspace.CloudlessWindows)
+            {
+                var window = new MainWindow(state.ImagePath, state.Width, state.Height);
+                window.ApplyWindowState(state);
+                window.Show();
+            }
+        }
+
+        public void ApplyWindowState(CloudlessWindowState state)
+        {
+            ResizeWindow(state.Width, state.Height);
+            RepositionWindow(state.Left, state.Top);
+            if (state.IsMaximized)
+                ToggleFullscreen();
+
+            // TODO: apply display mode if stretch/zoomtofill, otherwise (best fit) apply zoom and pan X/Y.
+            //    This is especially important for cropping. May take a bit of puzzling out.
+
+            // TODO: zOrder via win32 shenanigans probably. Not super important; savvy users can crop anyway
+
+
+            // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
+        }
     }
+
+    public class CloudlessWorkspace
+    {
+        public int SchemaVersion { get; set; } = 1;
+        public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
+    }
+
+
+    public class CloudlessWindowState
+    {
+        public string ImagePath { get; set; } = "";
+
+        // Window placement
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+
+        // Image view state
+        public double Zoom { get; set; }
+        public double PanX { get; set; }
+        public double PanY { get; set; }
+
+        // Optional but useful
+        public bool IsMaximized { get; set; }
+        public int ZOrder { get; set; }
+
+        public string CloudlessAppVersion { get; set; }
+    }
+
 
     public class GitHubRelease
     {
