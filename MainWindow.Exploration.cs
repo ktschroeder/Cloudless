@@ -649,6 +649,31 @@ namespace Cloudless
             }
         }
 
+        public static void RevealWorkstationDirectoryInExplorer(string path)
+        {
+            try
+            {
+                // Validate that the file path exists
+                if (!Directory.Exists(path))
+                {
+                    MessageBox.Show("Directory does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Use Process.Start to reveal the file in File Explorer
+                string argument = $"\"{path}\"";
+                Process.Start(new ProcessStartInfo("explorer.exe", argument)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                // Handle unexpected errors
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         public static void RevealImageInExplorer(string imagePath)
         {
             try

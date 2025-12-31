@@ -171,6 +171,11 @@ namespace Cloudless
                     if (success)
                         Message("Loaded workspace: " + name);
                 }
+                else if (command.ToLower().Equals("ws rev"))
+                {
+                    RevealWorkstationDirectoryInExplorer(workspaceFilesPath);
+                    return true;
+                }
                 else
                 {
                     Message("Could not parse your ws command: " + command);
@@ -213,7 +218,6 @@ namespace Cloudless
             }
 
             int targetIndex;
-
             if (command.StartsWith("+") || command.StartsWith("-"))
             {
                 if (imageFiles == null)
@@ -312,7 +316,6 @@ namespace Cloudless
             }
         }
 
-
         private void JumpToIndex(int index)
         {
             if (index < 0 || imageFiles == null || index >= imageFiles.Count())
@@ -366,6 +369,5 @@ namespace Cloudless
 
             Message($"No match for \"{query}\"");
         }
-
     }
 }
