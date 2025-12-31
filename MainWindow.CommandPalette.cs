@@ -83,6 +83,12 @@ namespace Cloudless
                 return true;  // should be essentially unreachable
             }
 
+            if (command.ToLower().Equals("c others"))  // close all other instances
+            {
+                CloseAllOtherInstances();
+                return true;  // should be essentially unreachable
+            }
+
             if (command.ToLower().Equals("first"))
             {
                 if (imageFiles == null)
