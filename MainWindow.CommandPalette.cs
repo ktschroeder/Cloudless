@@ -148,14 +148,20 @@ namespace Cloudless
                 if (command.ToLower().StartsWith("ws save ") && command.Length > 8)
                 {
                     string name = command.Substring(8);
-                    SaveWorkspace(name);
-                    Message("Saved workspace: " + name);
+                    int windowCount = SaveWorkspace(name);
+                    if (windowCount == -1)
+                        Message("Failed to save workspace due to unexpected error");
+                    else
+                        Message($"Saved workspace {name} with {windowCount} windows");
                 }
                 else if (command.ToLower().StartsWith("ws s ") && command.Length > 5)
                 {
                     string name = command.Substring(5);
-                    SaveWorkspace(name);
-                    Message("Saved workspace: " + name);
+                    int windowCount = SaveWorkspace(name);
+                    if (windowCount == -1)
+                        Message("Failed to save workspace due to unexpected error");
+                    else
+                        Message($"Saved workspace {name} with {windowCount} windows");
                 }
                 else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
                 {

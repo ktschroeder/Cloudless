@@ -40,7 +40,7 @@ namespace Cloudless
             return state;
         }
 
-        public static void SaveWorkspace(string workspaceName = "MainWorkspace")
+        public static int SaveWorkspace(string workspaceName = "MainWorkspace")
         {
             try
             {
@@ -61,11 +61,14 @@ namespace Cloudless
 
                 string json = JsonSerializer.Serialize(workspace, options);
                 File.WriteAllText(workspaceFilePath, json);
+
+                return workspace.CloudlessWindows.Count;
             }
             catch (Exception e)
             {
                 // TODO does this need to be static? We could message failure here and return a bool to caller for success. Similar for the load function.
                 //Message("Failed to load workspace " + workspaceName + " at path " + workspaceFilesPath);
+                return -1;
             }
         }
 
