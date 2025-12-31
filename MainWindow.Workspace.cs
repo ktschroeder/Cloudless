@@ -40,12 +40,17 @@ namespace Cloudless
             return state;
         }
 
-        public static int SaveWorkspace(string workspaceName = "MainWorkspace")
+        public static int SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false)
         {
             try
             {
                 var workspace = new CloudlessWorkspace();
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
+
+                if (!allowOverwrite && File.Exists(workspaceFilePath)) 
+                {
+                    return -2;
+                }
 
                 var zOrderMap = GetZOrderForCurrentProcessWindows();
 
