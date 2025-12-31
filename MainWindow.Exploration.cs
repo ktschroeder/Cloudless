@@ -104,15 +104,19 @@ namespace Cloudless
                 ScaleImageToWindow();
             else if (imageTranslateTransform != null)
             {
-                var heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
-                var widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
+                // The lines in this block mess with the image panning upon loading from a workspace (different scenario), so just skip these initially if that's the case.
+                if (!WorkspaceLoadInProgress)
+                {
+                    var heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
+                    var widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
 
-                var topDiff = cropModeStartingWindowTop - this.Top;
-                var leftDiff = cropModeStartingWindowLeft - this.Left;
+                    var topDiff = cropModeStartingWindowTop - this.Top;
+                    var leftDiff = cropModeStartingWindowLeft - this.Left;
 
-                imageTranslateTransform.Y = cropModeStartingImagePosY + heightDiff / 2.0 + topDiff;
-                imageTranslateTransform.X = cropModeStartingImagePosX + widthDiff / 2.0 + leftDiff;
-                //return;
+                    imageTranslateTransform.Y = cropModeStartingImagePosY + heightDiff / 2.0 + topDiff;
+                    imageTranslateTransform.X = cropModeStartingImagePosX + widthDiff / 2.0 + leftDiff;
+                    //return;
+                }
             }
 
 
@@ -590,7 +594,7 @@ namespace Cloudless
             }
         }
 
-        private void ToggleCropMode(bool? setTo = null)
+        private void ToggleCropMode(bool? setTo = null, bool silent = false)
         {
             if (setTo.HasValue)
             {
@@ -602,9 +606,13 @@ namespace Cloudless
                 isCropMode = !isCropMode;
 
             UpdateCropModeInfo();
-            UpdateBorderColor();
-            string message = isCropMode ? "Entered Cropping Mode" : "Exited Cropping Mode";
-            Message(message);
+
+            if (!silent)
+            {
+                UpdateBorderColor();
+                string message = isCropMode ? "Entered Cropping Mode" : "Exited Cropping Mode";
+                Message(message);
+            }
         }
 
         private void UpdateBorderColor()

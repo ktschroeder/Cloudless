@@ -33,6 +33,8 @@ namespace Cloudless
                 PanX = imageTranslateTransform.X,
                 PanY = imageTranslateTransform.Y,
                 ZOrder = zOrder,
+                RenderWidth = ImageDisplay.Width,  // if really wrong try ActualWidth etc.
+                RenderHeight = ImageDisplay.Height
             };
 
             return state;
@@ -115,11 +117,14 @@ namespace Cloudless
                 var window = new MainWindow(state.ImagePath, state.Width, state.Height);
                 window.ApplyWindowState(state);
                 window.Show();
+                window.PostProcessLoadedWindow();
             }
         }
 
         public void ApplyWindowState(CloudlessWindowState state)
         {
+            WorkspaceLoadInProgress = true;
+
             //Cloudless.Properties.Settings.Default.DisplayMode = state.DisplayMode;
             //ApplyDisplayMode();
             // This gets weird and complicated since all instances share the same config file. It might make sense to just default all windows to a best fit mode.
@@ -132,13 +137,26 @@ namespace Cloudless
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
             {
+                // This essentially applies cropping
+                ToggleCropMode(true, true);
+                ImageDisplay.Width = state.RenderWidth;
+                ImageDisplay.Height = state.RenderHeight;
+                
                 imageScaleTransform.ScaleX = state.Zoom;
                 imageScaleTransform.ScaleY = state.Zoom;
                 imageTranslateTransform.X = state.PanX;
                 imageTranslateTransform.Y = state.PanY;
+
+                //ToggleCropMode(false, true);  // toggling this here is too early and causes the image to be resized undesirably.
             }
 
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
+        }
+
+        public void PostProcessLoadedWindow()
+        {
+            ToggleCropMode(false, true);
+            WorkspaceLoadInProgress = false;
         }
 
         static Dictionary<IntPtr, int> GetZOrderForCurrentProcessWindows()
@@ -186,6 +204,8 @@ namespace Cloudless
         public double Zoom { get; set; }
         public double PanX { get; set; }
         public double PanY { get; set; }
+        public double RenderWidth { get; set; }  // width of image rendering including "beyond what is visible in the window". Useful for cropping.
+        public double RenderHeight { get; set; }  // similar to above
 
         // Optional but useful
         public bool IsMaximized { get; set; }

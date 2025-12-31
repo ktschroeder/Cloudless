@@ -535,7 +535,7 @@ namespace Cloudless
         }
         private void SaveRecentFiles()
         {
-            if (recentFilesMutex.WaitOne(2000)) // Wait for up to 2 seconds
+            if (recentFilesMutex.WaitOne(2000))  // Wait for up to 2 seconds
             {
                 try
                 {
@@ -551,7 +551,7 @@ namespace Cloudless
             }
             else
             {
-                MessageBox.Show("Unable to write to recent files. Another instance may be busy.");
+                MessageBox.Show("Unable to write to recent files. Another instance may be busy.");  // TODO should this and other similar lines be replaced with Message()? These might be outdated.
             }
         }
         private void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
