@@ -230,6 +230,23 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().StartsWith("rec "))
+            {
+                if (int.TryParse(command.Substring(4), out int count) && count > 0)
+                {
+                    var paths = recentFiles?.Take(count) ?? new List<string>();
+                    foreach (var path in paths)
+                    {
+                        var newWindow = new MainWindow(path);
+                        newWindow.Show();
+                        //OpenRecentFile(path);
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+
             if (command.ToLower().Equals("cip"))  // copy image path
             {
                 Clipboard.SetText(currentlyDisplayedImagePath);
