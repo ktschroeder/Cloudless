@@ -188,10 +188,13 @@ namespace Cloudless
         }
         private Thickness DeflateBorder(Thickness thickness)  // TAG windows_wpf_borders_bad
         {
-            double left = this.BorderThickness.Left - thickness.Left;
-            double top = this.BorderThickness.Top - thickness.Top;
-            double right = this.BorderThickness.Right - thickness.Right;
-            double bottom = this.BorderThickness.Bottom - thickness.Bottom;
+            // We are maxing against 0 because negative borders are forbidden and cause exceptions deeper in WPF.
+            // This would happen specifically when the user enters fullscreen while in display mode, then enters exploration mode, then leaves fullscreen. I didn't dig deeper into why.
+            // The resulting inner WPF exception in one instance of the app crashes all open instances.
+            double left = Math.Max(0, this.BorderThickness.Left - thickness.Left);
+            double top = Math.Max(0, this.BorderThickness.Top - thickness.Top);
+            double right = Math.Max(0, this.BorderThickness.Right - thickness.Right);
+            double bottom = Math.Max(0, this.BorderThickness.Bottom - thickness.Bottom);
             return new Thickness(left, top, right, bottom);
         }
         private Thickness GetHackBorderSizeWhenFullscreen()  // TAG windows_wpf_borders_bad
