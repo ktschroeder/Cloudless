@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="About Cloudless"
         Height="285"
-        Width="300"
+        Width="340"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -30,7 +30,7 @@
             <!-- Content -->
             <StackPanel Margin="12">
 
-                <TextBlock Text="You are using Cloudless, a lightweight, minimal-UI image viewing app. It was created by ktschroeder."
+                <TextBlock Text="You are using Cloudless, a lightweight, minimal-UI image viewing and arranging app. It was created by ktschroeder."
                            TextWrapping="Wrap"
                            Foreground="#666"
                            Margin="0,0,0,10"/>
