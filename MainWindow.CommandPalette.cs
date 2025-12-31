@@ -45,6 +45,7 @@ namespace Cloudless
         {
             bool validCommand = ExecuteCommandInner(command);
             // Originally it seemed better to oonly commit valid commands, but I find it more convenient to commit all commands, at least for now.
+            // ...especially when the user makes a sllight typo and would rather not fully re-type a longer command.
             CommitCommand(command);
         }
 
@@ -150,18 +151,25 @@ namespace Cloudless
                     SaveWorkspace(name);
                     Message("Saved workspace: " + name);
                 }
+                else if (command.ToLower().StartsWith("ws s ") && command.Length > 5)
+                {
+                    string name = command.Substring(5);
+                    SaveWorkspace(name);
+                    Message("Saved workspace: " + name);
+                }
                 else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
                 {
                     string name = command.Substring(8);
                     bool success = LoadWorkspace(name);
                     if (success)
-                    {
                         Message("Loaded workspace: " + name);
-                    }
-                    else
-                    {
-                        // Already sent error messages inside LoadWorkspace().
-                    }
+                }
+                else if (command.ToLower().StartsWith("ws l ") && command.Length > 5)
+                {
+                    string name = command.Substring(5);
+                    bool success = LoadWorkspace(name);
+                    if (success)
+                        Message("Loaded workspace: " + name);
                 }
                 else
                 {
