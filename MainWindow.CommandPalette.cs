@@ -43,10 +43,9 @@ namespace Cloudless
 
         private void ExecuteCommand(string command)
         {
-            if (ExecuteCommandInner(command))
-            {
-                CommitCommand(command);
-            }
+            bool validCommand = ExecuteCommandInner(command);
+            // Originally it seemed better to oonly commit valid commands, but I find it more convenient to commit all commands, at least for now.
+            CommitCommand(command);
         }
 
         // returns whether successful (i.e. valid) command
@@ -154,8 +153,15 @@ namespace Cloudless
                 else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
                 {
                     string name = command.Substring(8);
-                    LoadWorkspace(name);
-                    Message("Loaded workspace: " + name);
+                    bool success = LoadWorkspace(name);
+                    if (success)
+                    {
+                        Message("Loaded workspace: " + name);
+                    }
+                    else
+                    {
+                        // Already sent error messages inside LoadWorkspace().
+                    }
                 }
                 else
                 {

@@ -82,7 +82,8 @@ namespace Cloudless
             }
         }
 
-        public void LoadWorkspace(string workspaceName = "MainWorkspace")
+        // returns whether successful
+        public bool LoadWorkspace(string workspaceName = "MainWorkspace")
         {
             try
             {
@@ -93,7 +94,10 @@ namespace Cloudless
                 var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
 
                 if (workspace == null)
-                    throw new InvalidDataException("Invalid workspace file.");
+                {
+                    Message("Invalid workspace file.");
+                    return false;
+                }
 
                 //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 this.CloseAllOtherInstances();
@@ -102,10 +106,17 @@ namespace Cloudless
                 CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
 
                 this.Close();
+                return true;
+            }
+            catch (FileNotFoundException e)
+            {
+                Message("Workspace file not found.");
+                return false;
             }
             catch (Exception e)
             {
-
+                Message("Unexpected error loading workspace.");
+                return false;
             }
         }
 
