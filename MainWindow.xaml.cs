@@ -2376,6 +2376,13 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().Equals("c all"))  // close all instances
+            {
+                CloseAllOtherInstances();
+                this.Close();
+                return true;  // should be essentially unreachable
+            }
+
             if (command.ToLower().Equals("first"))
             {
                 if (imageFiles == null)
@@ -2799,9 +2806,6 @@ namespace Cloudless
                 imageTranslateTransform.X = state.PanX;
                 imageTranslateTransform.Y = state.PanY;
             }
-            
-
-            // TODO: zOrder via win32 shenanigans probably. Not super important; savvy users can crop anyway
 
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
