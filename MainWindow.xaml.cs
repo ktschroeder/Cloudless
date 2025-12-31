@@ -39,6 +39,9 @@ namespace Cloudless
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Cloudless");
 
+        public IntPtr WindowHandle =>
+            new WindowInteropHelper(this).Handle;
+
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
@@ -2673,8 +2676,11 @@ namespace Cloudless
             return CURRENT_VERION;
         }
 
-        public CloudlessWindowState GetWindowState()
+        public CloudlessWindowState GetWindowState(Dictionary<IntPtr, int> zOrderMap)
         {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            int zOrder = zOrderMap.TryGetValue(hwnd, out int z) ? z : int.MaxValue;
+
             var state = new CloudlessWindowState()
             {
                 ImagePath = currentlyDisplayedImagePath,
@@ -2687,7 +2693,8 @@ namespace Cloudless
                 DisplayMode = Cloudless.Properties.Settings.Default.DisplayMode,
                 Zoom = imageScaleTransform.ScaleX,  // Y would be the same as X regardless
                 PanX = imageTranslateTransform.X,
-                PanY = imageTranslateTransform.Y
+                PanY = imageTranslateTransform.Y,
+                ZOrder = zOrder,
             };
 
             return state;
@@ -2700,9 +2707,11 @@ namespace Cloudless
                 var workspace = new CloudlessWorkspace();
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
 
+                var zOrderMap = GetZOrderForCurrentProcessWindows();
+
                 foreach (var window in Application.Current.Windows.OfType<MainWindow>())
                 {
-                    workspace.CloudlessWindows.Add(window.GetWindowState());
+                    workspace.CloudlessWindows.Add(window.GetWindowState(GetZOrderForCurrentProcessWindows()));
                 }
 
                 var options = new JsonSerializerOptions
@@ -2762,7 +2771,8 @@ namespace Cloudless
 
         public static void CreateWindowsForWorkspace(CloudlessWorkspace workspace)
         {
-            foreach (var state in workspace.CloudlessWindows)
+            var zOrderedWindows = workspace.CloudlessWindows.OrderByDescending(w => w.ZOrder).ToList();
+            foreach (var state in zOrderedWindows)
             {
                 var window = new MainWindow(state.ImagePath, state.Width, state.Height);
                 window.ApplyWindowState(state);
@@ -2795,6 +2805,29 @@ namespace Cloudless
 
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
+
+        static Dictionary<IntPtr, int> GetZOrderForCurrentProcessWindows()
+        {
+            var result = new Dictionary<IntPtr, int>();
+            uint currentPid = (uint)Process.GetCurrentProcess().Id;
+
+            int z = 0;
+            IntPtr hwnd = NativeMethods.GetTopWindow(IntPtr.Zero);
+
+            while (hwnd != IntPtr.Zero)
+            {
+                NativeMethods.GetWindowThreadProcessId(hwnd, out uint pid);
+
+                if (pid == currentPid)
+                {
+                    result[hwnd] = z++;
+                }
+
+                hwnd = NativeMethods.GetWindow(hwnd, NativeMethods.GW_HWNDNEXT);
+            }
+
+            return result;
+        }
     }
 
     public class CloudlessWorkspace
@@ -2802,7 +2835,6 @@ namespace Cloudless
         public int SchemaVersion { get; set; } = 1;
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
     }
-
 
     public class CloudlessWindowState
     {
@@ -2822,9 +2854,23 @@ namespace Cloudless
 
         // Optional but useful
         public bool IsMaximized { get; set; }
-        public int ZOrder { get; set; }
+        public int ZOrder { get; set; }  // relative order among Cloudless windows
 
         public string CloudlessAppVersion { get; set; }
+    }
+
+    internal static class NativeMethods
+    {
+        public const int GW_HWNDNEXT = 2;
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetTopWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindow(IntPtr hWnd, int uCmd);
+
+        [DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
     }
 
 
