@@ -154,9 +154,9 @@ namespace Cloudless
                 if (command.ToLower().StartsWith("ws save ") && command.Length > 8)  // TODO clean up this nonsense
                 {
                     string name = command.Substring(8);
-                    int windowCount = SaveWorkspace(name);
+                    (int windowCount, string? error) = SaveWorkspace(name);
                     if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error");
+                        Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -2)
                         Message("A workstation by that name already exists. To overwrite it, use command 'ws save! [name]'");
                     else
@@ -165,9 +165,9 @@ namespace Cloudless
                 else if (command.ToLower().StartsWith("ws s ") && command.Length > 5)
                 {
                     string name = command.Substring(5);
-                    int windowCount = SaveWorkspace(name);
+                    (int windowCount, string? error) = SaveWorkspace(name);
                     if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error");
+                        Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -2)
                         Message("A workstation by that name already exists. To overwrite it, use command 'ws s! [name]'");
                     else
@@ -176,18 +176,18 @@ namespace Cloudless
                 else if (command.ToLower().StartsWith("ws save! ") && command.Length > 9)
                 {
                     string name = command.Substring(9);
-                    int windowCount = SaveWorkspace(name, true);
+                    (int windowCount, string? error) = SaveWorkspace(name, true);
                     if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error");
+                        Message("Failed to save workspace due to unexpected error: " + error);
                     else
                         Message($"Saved workspace {name} with {windowCount} windows");
                 }
                 else if (command.ToLower().StartsWith("ws s! ") && command.Length > 6)
                 {
                     string name = command.Substring(6);
-                    int windowCount = SaveWorkspace(name, true);
+                    (int windowCount, string? error) = SaveWorkspace(name, true);
                     if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error");
+                        Message("Failed to save workspace due to unexpected error: " + error);
                     else
                         Message($"Saved workspace {name} with {windowCount} windows");
                 }
@@ -204,6 +204,20 @@ namespace Cloudless
                     bool success = LoadWorkspace(name);
                     if (success)
                         Message("Loaded workspace: " + name);
+                }
+                else if (command.ToLower().StartsWith("ws merge ") && command.Length > 9)
+                {
+                    string name = command.Substring(9);
+                    bool success = LoadWorkspace(name, true);
+                    if (success)
+                        Message("Merged workspace: " + name);
+                }
+                else if (command.ToLower().StartsWith("ws m ") && command.Length > 5)
+                {
+                    string name = command.Substring(5);
+                    bool success = LoadWorkspace(name, true);
+                    if (success)
+                        Message("Merged workspace: " + name);
                 }
                 else if (command.ToLower().Equals("ws rev"))
                 {

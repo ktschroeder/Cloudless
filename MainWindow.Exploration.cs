@@ -50,7 +50,7 @@ namespace Cloudless
 
             // These lines allow the non-best fit display modes to render properly.
             ImageDisplay.Width = Double.NaN; // Reset explicit width
-            ImageDisplay.Height = Double.NaN; // Reset explicit height
+            ImageDisplay.Height = Double.NaN; // Reset explicit height  // TODO some weirdness here sometimes?
             ImageDisplay.Margin = new Thickness(0); // Reset margin
 
             ResetPan();

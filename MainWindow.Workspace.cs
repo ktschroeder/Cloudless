@@ -19,6 +19,9 @@ namespace Cloudless
             IntPtr hwnd = new WindowInteropHelper(this).Handle;
             int zOrder = zOrderMap.TryGetValue(hwnd, out int z) ? z : int.MaxValue;
 
+            var renderWidth = Double.IsNaN(ImageDisplay.Width) ? ImageDisplay.ActualWidth : ImageDisplay.Width;
+            var renderHeight = Double.IsNaN(ImageDisplay.Height) ? ImageDisplay.ActualHeight : ImageDisplay.Height;
+
             var state = new CloudlessWindowState()
             {
                 ImagePath = currentlyDisplayedImagePath,
@@ -33,14 +36,14 @@ namespace Cloudless
                 PanX = imageTranslateTransform.X,
                 PanY = imageTranslateTransform.Y,
                 ZOrder = zOrder,
-                RenderWidth = ImageDisplay.Width,  // if really wrong try ActualWidth etc.
-                RenderHeight = ImageDisplay.Height
+                RenderWidth = renderWidth,
+                RenderHeight = renderHeight
             };
 
             return state;
         }
 
-        public static int SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false)
+        public static (int, string?) SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false)
         {
             try
             {
@@ -49,7 +52,7 @@ namespace Cloudless
 
                 if (!allowOverwrite && File.Exists(workspaceFilePath)) 
                 {
-                    return -2;
+                    return (-2, null);
                 }
 
                 var zOrderMap = GetZOrderForCurrentProcessWindows();
@@ -67,13 +70,13 @@ namespace Cloudless
                 string json = JsonSerializer.Serialize(workspace, options);
                 File.WriteAllText(workspaceFilePath, json);
 
-                return workspace.CloudlessWindows.Count;
+                return (workspace.CloudlessWindows.Count, null);
             }
             catch (Exception e)
             {
                 // TODO does this need to be static? We could message failure here and return a bool to caller for success. Similar for the load function.
-                //Message("Failed to load workspace " + workspaceName + " at path " + workspaceFilesPath);
-                return -1;
+                //Message(e.Message);
+                return (-1, e.Message);
             }
         }
 
@@ -91,7 +94,7 @@ namespace Cloudless
         }
 
         // returns whether successful
-        public bool LoadWorkspace(string workspaceName = "MainWorkspace")
+        public bool LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
             try
             {
@@ -107,13 +110,19 @@ namespace Cloudless
                     return false;
                 }
 
-                //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-                this.CloseAllOtherInstances();
-                Thread.Sleep(150); // brief grace period (optional but helps UX)
-
-                CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
-
-                this.Close();
+                if (!merge)
+                {
+                    //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                    this.CloseAllOtherInstances();
+                    Thread.Sleep(150); // brief grace period (optional but helps UX)
+                    CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
+                    this.Close();
+                }
+                else
+                {
+                    CreateWindowsForWorkspace(workspace);
+                }
+                
                 return true;
             }
             catch (FileNotFoundException e)
