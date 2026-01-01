@@ -177,5 +177,16 @@ namespace Cloudless.Properties {
                 this["DisableSmartZoom"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection UserCommands {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["UserCommands"]));
+            }
+            set {
+                this["UserCommands"] = value;
+            }
+        }
     }
 }

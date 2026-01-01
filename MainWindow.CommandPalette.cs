@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using System.IO;
+using System.Collections.Specialized;
 
 namespace Cloudless
 {
@@ -232,6 +233,26 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().StartsWith("c") && int.TryParse(command.Substring(1,2), out int cIndex))
+            {
+                string param = command.ToLower().Substring(3);
+                if (param.StartsWith("set ") && param.Length > 4)
+                {
+                    SetUserCommand(cIndex, param.Substring(4));
+                    return true;
+                }
+                else if (param.Equals("view"))
+                {
+                    ViewUserCommand(cIndex);
+                    return true;
+                }
+                else if (param.Equals("run"))
+                {
+                    RunUserCommand(cIndex);
+                    return true;
+                }
+            }
+
             if (command.ToLower().StartsWith("o "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
@@ -432,6 +453,62 @@ namespace Cloudless
             }
 
             Message($"No match for \"{query}\"");
+        }
+
+        private void SetUserCommand(int cIndex, string command)
+        {
+            LoadUserCommands();
+            UserCommands[cIndex] = command;
+            SaveUserCommands();
+        }
+
+        private void ViewUserCommand(int cIndex)
+        {
+            LoadUserCommands();
+            string command = UserCommands[cIndex];
+            if (string.IsNullOrEmpty(command))
+            {
+                Message($"No command found at index {cIndex}.");
+            }
+            else
+            {
+                Message($"{command}");
+            }
+        }
+
+        private void RunUserCommand(int cIndex)
+        {
+            LoadUserCommands();
+            string command = UserCommands[cIndex];
+            if (string.IsNullOrEmpty(command))
+            {
+                Message($"No command found at index {cIndex}.");
+            }
+            else
+            {
+                ExecuteCommand(command);
+            }
+        }
+
+        private void LoadUserCommands()
+        {
+            var stringCollection = Cloudless.Properties.Settings.Default.UserCommands;
+            if (stringCollection == null)
+            {
+                UserCommands = new List<string>() {"","","","","","","",""};
+            }
+            else
+            {
+                var list = stringCollection.Cast<string>().ToList();
+                UserCommands = list;
+            }
+        }
+
+        private void SaveUserCommands()
+        {
+            StringCollection stringCollection = [.. UserCommands.ToArray()];
+            Cloudless.Properties.Settings.Default.UserCommands = stringCollection;
+            Cloudless.Properties.Settings.Default.Save();
         }
     }
 }

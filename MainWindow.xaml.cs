@@ -52,6 +52,7 @@ namespace Cloudless
 
         private readonly List<string> _commandHistory = new();
         private int _historyIndex = -1;
+        public List<string> UserCommands = new List<string>(8);
 
         private Point lastMousePosition;
 
