@@ -238,17 +238,17 @@ namespace Cloudless
                 string param = command.ToLower().Substring(3);
                 if (param.StartsWith("set ") && param.Length > 4)
                 {
-                    SetUserCommand(cIndex, param.Substring(4));
+                    SetUserCommand(cIndex-1, param.Substring(4));
                     return true;
                 }
                 else if (param.Equals("view"))
                 {
-                    ViewUserCommand(cIndex);
+                    ViewUserCommand(cIndex-1);
                     return true;
                 }
                 else if (param.Equals("run"))
                 {
-                    RunUserCommand(cIndex);
+                    RunUserCommand(cIndex-1);
                     return true;
                 }
             }

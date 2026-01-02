@@ -415,14 +415,14 @@ namespace Cloudless
                 {
                     switch (e.Key)
                     {
-                        case Key.D1: RunUserCommand(1); break;
-                        case Key.D2: RunUserCommand(2); break;
-                        case Key.D3: RunUserCommand(3); break;
-                        case Key.D4: RunUserCommand(4); break;
-                        case Key.D5: RunUserCommand(5); break;
-                        case Key.D6: RunUserCommand(6); break;
-                        case Key.D7: RunUserCommand(7); break;
-                        case Key.D8: RunUserCommand(8); break;
+                        case Key.D1: RunUserCommand(0); break;
+                        case Key.D2: RunUserCommand(1); break;
+                        case Key.D3: RunUserCommand(2); break;
+                        case Key.D4: RunUserCommand(3); break;
+                        case Key.D5: RunUserCommand(4); break;
+                        case Key.D6: RunUserCommand(5); break;
+                        case Key.D7: RunUserCommand(6); break;
+                        case Key.D8: RunUserCommand(7); break;
                     }
                     e.Handled = true;
                 }
