@@ -261,7 +261,32 @@ namespace Cloudless
                 if (currentDirectory != null)
                     resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
 
-                LoadImage(resolvedPath, true);
+                if (Directory.Exists(resolvedPath))
+                {
+                    LoadImagesInDirectory(resolvedPath);
+                }
+                else if (File.Exists(resolvedPath)) 
+                {
+                    LoadImage(resolvedPath, true);
+                }
+                return true;
+            }
+            if (command.ToLower().StartsWith("o! "))
+            {
+                // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
+                string relativeOrAbsolutePath = command.Substring(3);
+                string resolvedPath = relativeOrAbsolutePath;
+                if (currentDirectory != null)
+                    resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
+
+                if (Directory.Exists(resolvedPath))
+                {
+                    LoadImagesInDirectory(resolvedPath, true);
+                }
+                else if (File.Exists(resolvedPath))
+                {
+                    LoadImage(resolvedPath, true);
+                }
                 return true;
             }
 
@@ -286,6 +311,7 @@ namespace Cloudless
             {
                 Clipboard.SetText(currentlyDisplayedImagePath);
                 Message("Copied image path to clipboard");
+                return true;
             }
 
             if (command.ToLower().Equals("rev"))  // reveal current image in file explorer

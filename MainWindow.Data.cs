@@ -84,6 +84,34 @@ namespace Cloudless
                 }
             }
         }
+        private void LoadImagesInDirectory(string directoryPath, bool permitLargeCount = false)
+        {
+            string[] imageExtensions = { ".JPG", ".JPEG", ".PNG", ".BMP", ".GIF", ".WEBP", ".JFIF" };  // TODO move this and similar lists to a consistent source
+            try
+            {
+                DirectoryInfo di = new DirectoryInfo(directoryPath);
+                // Get all files, filter them in-memory, and select their full names
+                var files = di.GetFiles()
+                              .Where(f => imageExtensions.Contains(f.Extension.ToUpperInvariant()))
+                              .Select(f => f.FullName)
+                              .ToList();
+
+                if (files.Count > 10 && !permitLargeCount)
+                {
+                    Message($"Your command would open more than 10 images ({files.Count}) and was stopped. To override this, use: 'o! [directory]'");
+                    return;
+                }
+                foreach (string file in files)
+                {
+                    var newWindow = new MainWindow(file);
+                    newWindow.Show();
+                }
+            }
+            catch (Exception ex)
+            {
+                Message($"An error occurred: {ex.Message}");
+            }
+        }
         private void LoadImage(string? imagePath, bool openedThroughApp)
         {
             try
