@@ -181,7 +181,7 @@ namespace Cloudless
 
                     gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
                 }
-                if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
+                else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
                 {
                     var ffmpeg = new FFMpegConverter();
                     try
