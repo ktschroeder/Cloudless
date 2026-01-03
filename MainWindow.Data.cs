@@ -12,6 +12,11 @@ using System.Windows.Media.Imaging;
 using WebP.Net;
 using System.Collections.Specialized;
 using System.Text.Json;
+using NReco.VideoConverter;
+using Newtonsoft.Json;
+using Path = System.IO.Path;
+using Image = System.Drawing.Image;
+
 
 namespace Cloudless
 {
@@ -21,7 +26,7 @@ namespace Cloudless
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif"
+                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -128,6 +133,7 @@ namespace Cloudless
                                                  s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".webm", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
                 imageFiles = retrievedImageFiles.ToArray();
 
@@ -174,6 +180,68 @@ namespace Cloudless
                     ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
 
                     gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
+                }
+                if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
+                {
+                    var ffmpeg = new FFMpegConverter();
+                    try
+                    {
+                        var path = uri.OriginalString;
+                        if (!File.Exists(path))
+                            return;
+
+                        string convertedGifPath = GetFilePathForWebmGifConversion();
+
+                        if (!File.Exists(convertedGifPath))
+                        {
+                            var settings = new ConvertSettings();
+                            //settings.VideoFrameSize
+                            // via https://superuser.com/questions/1049606/reduce-generated-gif-size-using-ffmpeg
+                            //settings.CustomOutputArgs = "fps=5,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=32[p];[s1][p]paletteuse=dither=bayer";
+
+                            string directory = Path.GetTempPath();
+                            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+                            string tempThumbPath = Path.Combine(cloudlessTempPath, "ThumbTemp.jpg");
+
+                            int height = -1;
+                            int width = -1;
+
+                            using (FileStream stream = new FileStream(tempThumbPath, FileMode.Create))
+                            {
+                                ffmpeg.GetVideoThumbnail(path, stream);
+
+                                using (var image = Image.FromStream(stream, false, false))
+                                {
+                                    height = image.Height;
+                                    width = image.Width;
+                                }
+                            }
+
+                            File.Delete(tempThumbPath);
+
+                            if (height > 500)
+                            {
+                                double shrinkMultiplier = 500d / (double)height;
+                                settings.SetVideoFrameSize((int)(width * shrinkMultiplier), (int)(height * shrinkMultiplier));
+                            }
+
+                            ffmpeg.ConvertMedia(path, null, convertedGifPath, null, settings);
+
+                            // Optional: Customize conversion settings (e.g., lower frame rate for smaller size)
+                            // var settings = new ConvertSettings();
+                            // settings.SetVideoFrameRate(10); // set frame rate to 10 fps
+                            // ffmpeg.ConvertMedia(inputFile, null, "output_low_fps.gif", null, settings);
+                        }
+                        var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
+                        ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);
+
+                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
+                    }
+                    catch (Exception ex)
+                    {
+                        Message($"An error occurred: {ex.Message}");
+                    }
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
@@ -304,6 +372,10 @@ namespace Cloudless
         private string GetUniqueCompressedFilePath()
         {
             string directory = Path.GetTempPath();
+            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+            if (!Directory.Exists(cloudlessTempPath))
+                Directory.CreateDirectory(cloudlessTempPath);
+
             string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath);
             string extension = ".jpg";
             int index = 0;
@@ -311,11 +383,66 @@ namespace Cloudless
             string filePath;
             do
             {
-                filePath = Path.Combine(directory, $"{originalFileName}-compressed-{index}{extension}");
+                filePath = Path.Combine(cloudlessTempPath, $"{originalFileName}-compressed-{index}{extension}");
                 index++;
             } while (File.Exists(filePath));
 
             return filePath;
+        }
+
+        private string GetFilePathForWebmGifConversion()
+        {
+            string directory = Path.GetTempPath();
+            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+            if (!Directory.Exists(cloudlessTempPath))
+                Directory.CreateDirectory(cloudlessTempPath);
+
+            var webmGifDict = GetWebmGifConversionMap();
+            if (webmGifDict.TryGetValue(currentlyDisplayedImagePath, out string gifName))
+                return Path.Combine(cloudlessTempPath, gifName);
+
+            string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath);
+            string extension = ".gif";
+            int index = 0;
+
+            string filePath;
+            do
+            {
+                filePath = Path.Combine(cloudlessTempPath, $"{originalFileName}_{index}{extension}");
+                index++;
+            } while (File.Exists(filePath));
+
+            webmGifDict.Add(currentlyDisplayedImagePath, Path.GetFileNameWithoutExtension(filePath) + ".gif");
+            UpdateWebmGifConversionMap(webmGifDict);
+
+            return filePath;
+        }
+
+        private Dictionary<string, string> GetWebmGifConversionMap()  // (WEBM full path, GIF filename)
+        {
+            string directory = Path.GetTempPath();
+            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+            string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
+
+            var dict = new Dictionary<string, string>();
+
+            if (File.Exists(mapFile))
+            {
+                string text = File.ReadAllText(mapFile);
+                dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
+            }
+
+            return dict;
+        }
+
+        private void UpdateWebmGifConversionMap(Dictionary<string, string> map)
+        {
+            string directory = Path.GetTempPath();
+            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+            string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
+
+            var str = JsonConvert.SerializeObject(map);
+            File.WriteAllText(mapFile, str);
         }
 
         private Bitmap BitmapSourceToBitmap(BitmapSource source)
@@ -333,12 +460,12 @@ namespace Cloudless
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
         }
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
         }
         private async void DownloadAndLoadImage(Uri uri)
         {
@@ -630,7 +757,7 @@ namespace Cloudless
             var json = await client.GetStringAsync(
                 "https://api.github.com/repos/ktschroeder/Cloudless/releases");
 
-            var releases = JsonSerializer.Deserialize<List<GitHubRelease>>(json);
+            var releases = System.Text.Json.JsonSerializer.Deserialize<List<GitHubRelease>>(json);
 
             return releases?
                 .Where(r => !r.draft)
