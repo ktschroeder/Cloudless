@@ -13,6 +13,7 @@ namespace Cloudless
             CommandTextBox.Text = ":";
             CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
             _historyIndex = _commandHistory.Count;
+            TabScroll = false;
             CommandTextBox.Focus();
         }
 
@@ -27,6 +28,16 @@ namespace Cloudless
 
         private void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Key == Key.Tab)
+            {
+                TabPressed();
+                e.Handled = true;
+                return;
+            }
+            
+            if (e.Key != Key.Left && e.Key != Key.Right)
+                TabScroll = false;
+
             if (e.Key == Key.Escape)
             {
                 CloseCommandPalette();
@@ -39,6 +50,7 @@ namespace Cloudless
                 ExecuteCommand(CommandTextBox.Text.Trim());
                 CloseCommandPalette();
                 e.Handled = true;
+                return;
             }
         }
 
@@ -48,6 +60,44 @@ namespace Cloudless
             // Originally it seemed better to oonly commit valid commands, but I find it more convenient to commit all commands, at least for now.
             // ...especially when the user makes a sllight typo and would rather not fully re-type a longer command.
             CommitCommand(command);
+        }
+
+        private bool TabScroll;  // whether next tab should try to find another autocomplete candidate
+        private Queue<string> AutocompleteCandidates = new Queue<string>();
+        private string PreviousTabScrollText = null;
+        private void TabPressed()
+        {
+            if (PreviousTabScrollText != CommandTextBox.Text)
+                TabScroll = false;
+
+            if (CommandTextBox.Text.ToLower().StartsWith(":ws l ") || CommandTextBox.Text.ToLower().StartsWith(":ws s "))
+            {
+                string commandBase = CommandTextBox.Text.Substring(0,6);
+                if (!TabScroll)
+                {
+                    string query = CommandTextBox.Text.Length == 6 ? "" : CommandTextBox.Text.Substring(6);
+                    var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
+                    wsNames ??= new List<string>();
+                    wsNames = wsNames.Where(ws => ws.ToLower().StartsWith(query.ToLower())).ToList();
+                    AutocompleteCandidates.Clear();
+                    foreach (var wsName in wsNames)
+                    {
+                        AutocompleteCandidates.Enqueue(wsName);
+                    }
+                    TabScroll = true;
+                }
+                CycleToNextAutocompleteCandidate(commandBase);
+            }
+        }
+
+        private void CycleToNextAutocompleteCandidate(string commandBase)
+        {
+            // get next candidate
+            var next = AutocompleteCandidates.Dequeue();
+            CommandTextBox.Text = commandBase + next;  // TODO adapt this to dynamically work with other commands?
+            PreviousTabScrollText = CommandTextBox.Text;
+            AutocompleteCandidates.Enqueue(next);
+            CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
         }
 
         // returns whether successful (i.e. valid) command
