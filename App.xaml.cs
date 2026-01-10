@@ -1,33 +1,69 @@
-﻿using Cloudless;
-using System.Configuration;
-using System.Data;
+﻿using System;
+using System.Linq;
+using System.Threading;
 using System.Windows;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
 
 namespace Cloudless
 {
     public partial class App : Application
     {
+        private const string MutexName = "Cloudless.SingleInstance";
+        private Mutex? _mutex;
+
         protected override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-            string? filePath = null;
+            bool isFirstInstance;
+            _mutex = new Mutex(true, MutexName, out isFirstInstance);
 
-            if (e.Args.Length > 0)
+            string? filePath = e.Args.FirstOrDefault();
+
+            if (!isFirstInstance)
             {
-                filePath = e.Args[0];
+                // Send args to primary instance and exit
+                if (!string.IsNullOrWhiteSpace(filePath))
+                {
+                    SingleInstanceIpc.SendMessageToPrimary(filePath);
+                }
+
+                Shutdown();
+                return;
             }
 
-            // TODO may no longer be needed
-            Timeline.DesiredFrameRateProperty.OverrideMetadata(
-                typeof(Timeline),
-                new FrameworkPropertyMetadata { DefaultValue = 60 });
+            // Primary instance startup
+            SingleInstanceIpc.StartServer();
 
-            // Show the main window or a welcome screen
+            SingleInstanceIpc.MessageReceived += OnIpcMessageReceived;
+
+            base.OnStartup(e);
+
             var mainWindow = new MainWindow(filePath);
+            MainWindow = mainWindow;
             mainWindow.Show();
-            
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            SingleInstanceIpc.StopServer();
+            _mutex?.ReleaseMutex();
+            base.OnExit(e);
+        }
+
+        private void OnIpcMessageReceived(string message)
+        {
+            // Must marshal back to UI thread
+            Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    var win = new MainWindow(message);
+                    win.Show();
+                    win.Activate();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to open file from IPC:\n{ex.Message}");
+                }
+            });
         }
     }
 }
