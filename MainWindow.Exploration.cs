@@ -11,7 +11,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        private void EnterExplorationMode()
+        private void EnterExplorationMode(bool silent = false)
         {
             var wasExplorationMode = isExplorationMode;
 
@@ -34,7 +34,7 @@ namespace Cloudless
             isExplorationMode = true;
             ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
 
-            if (!wasExplorationMode)
+            if (!wasExplorationMode && !silent)
                 Message("Entered Exploration Mode (zoom and pan)");
         }
         private void ApplyDisplayMode(bool simulateZoomlessBestFit = false)
@@ -609,7 +609,7 @@ namespace Cloudless
                 isCropMode = !isCropMode;
 
             // Without this, there's some weirdness: after loading a cropped image from a workstation and then zooming/panning, the zoom/pan resets.
-            if (isCropMode && !isExplorationMode) EnterExplorationMode();
+            if (isCropMode && !isExplorationMode) EnterExplorationMode(silent);
 
             UpdateCropModeInfo();
 
