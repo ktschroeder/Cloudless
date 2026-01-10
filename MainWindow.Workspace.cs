@@ -93,6 +93,33 @@ namespace Cloudless
             }
         }
 
+        private void MinimizeAllOtherInstances()
+        {
+            var windowsToMinimize = Application.Current.Windows
+                .OfType<Window>()
+                .Where(w => w != this)
+                .ToList();
+
+            foreach (var w in windowsToMinimize)
+            {
+                w.WindowState = WindowState.Minimized;
+            }
+        }
+
+        private void UnminimizeAllOtherInstances()
+        {
+            var windowsToUnminimize = Application.Current.Windows
+                .OfType<Window>()
+                .Where(w => w != this)
+                .ToList();
+
+            foreach (var w in windowsToUnminimize)
+            {
+                if (w.WindowState == WindowState.Minimized)
+                    w.WindowState = WindowState.Normal;
+            }
+        }
+
         // returns whether successful
         public bool LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {

@@ -134,9 +134,28 @@ namespace Cloudless
                 return true;  // should be essentially unreachable
             }
 
+            if (command.ToLower().Equals("m all"))
+            {
+                MinimizeAllOtherInstances();
+                MinimizeWindow();
+                return true;  // should be essentially unreachable
+            }
+
+            if (command.ToLower().Equals("um all"))
+            {
+                UnminimizeAllOtherInstances();
+                return true;  // should be essentially unreachable
+            }
+
             if (command.ToLower().Equals("c others"))  // close all other instances
             {
                 CloseAllOtherInstances();
+                return true;  // should be essentially unreachable
+            }
+
+            if (command.ToLower().Equals("m others"))
+            {
+                MinimizeAllOtherInstances();
                 return true;  // should be essentially unreachable
             }
 
