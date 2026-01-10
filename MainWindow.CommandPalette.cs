@@ -138,25 +138,25 @@ namespace Cloudless
             {
                 MinimizeAllOtherInstances();
                 MinimizeWindow();
-                return true;  // should be essentially unreachable
+                return true;
             }
 
             if (command.ToLower().Equals("um all"))
             {
                 UnminimizeAllOtherInstances();
-                return true;  // should be essentially unreachable
+                return true;
             }
 
             if (command.ToLower().Equals("c others"))  // close all other instances
             {
                 CloseAllOtherInstances();
-                return true;  // should be essentially unreachable
+                return true;
             }
 
             if (command.ToLower().Equals("m others"))
             {
                 MinimizeAllOtherInstances();
-                return true;  // should be essentially unreachable
+                return true;
             }
 
             if (command.ToLower().Equals("first"))
@@ -302,7 +302,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().StartsWith("c") && int.TryParse(command.Substring(1,2), out int cIndex))
+            if (command.ToLower().StartsWith("c") && command.Length > 1 && int.TryParse(command.Substring(1,2), out int cIndex))
             {
                 string param = command.ToLower().Substring(3);
                 if (param.StartsWith("set ") && param.Length > 4)
