@@ -131,7 +131,7 @@ namespace Cloudless
             UpdateContextMenuState();  // for zoom amount, which may change when window is resized
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (CommandPalette.IsVisible && CommandTextBox.IsFocused)
             {
@@ -187,7 +187,7 @@ namespace Cloudless
 
             if (e.Key == Key.O)
             {
-                OpenImage();
+                await OpenImage();
                 e.Handled = true;
                 return;
             }
@@ -360,7 +360,7 @@ namespace Cloudless
                 else
                 {
                     // Repeat previous command when CTRL is held
-                    ExecuteCommand(_commandHistory.LastOrDefault() ?? "");
+                    await ExecuteCommand(_commandHistory.LastOrDefault() ?? "");
                 }
 
                 e.Handled = true;
@@ -373,7 +373,7 @@ namespace Cloudless
                 {
                     // Go to the previous image
                     currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
-                    DisplayImage(currentImageIndex, true);
+                    await DisplayImage(currentImageIndex, true);
                     e.Handled = true;
                     return;
                 }
@@ -381,7 +381,7 @@ namespace Cloudless
                 {
                     // Go to the next image
                     currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
-                    DisplayImage(currentImageIndex, true);
+                    await DisplayImage(currentImageIndex, true);
                     e.Handled = true;
                     return;
                 }
@@ -415,14 +415,14 @@ namespace Cloudless
                 {
                     switch (e.Key)
                     {
-                        case Key.D1: RunUserCommand(0); break;
-                        case Key.D2: RunUserCommand(1); break;
-                        case Key.D3: RunUserCommand(2); break;
-                        case Key.D4: RunUserCommand(3); break;
-                        case Key.D5: RunUserCommand(4); break;
-                        case Key.D6: RunUserCommand(5); break;
-                        case Key.D7: RunUserCommand(6); break;
-                        case Key.D8: RunUserCommand(7); break;
+                        case Key.D1: await RunUserCommand(0); break;
+                        case Key.D2: await RunUserCommand(1); break;
+                        case Key.D3: await RunUserCommand(2); break;
+                        case Key.D4: await RunUserCommand(3); break;
+                        case Key.D5: await RunUserCommand(4); break;
+                        case Key.D6: await RunUserCommand(5); break;
+                        case Key.D7: await RunUserCommand(6); break;
+                        case Key.D8: await RunUserCommand(7); break;
                     }
                     e.Handled = true;
                 }
@@ -460,7 +460,7 @@ namespace Cloudless
 
             e.Handled = true;
         }
-        private void Window_Drop(object sender, DragEventArgs e)
+        private async void Window_Drop(object sender, DragEventArgs e)
         {
             try
             {
@@ -470,7 +470,7 @@ namespace Cloudless
                     string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                     if (files.Length > 0 && IsSupportedImageFile(files[0]))
                     {
-                        LoadImage(files[0], true);
+                        await LoadImage(files[0], true);
                     }
                 }
                 else if (e.Data.GetDataPresent(DataFormats.Text))

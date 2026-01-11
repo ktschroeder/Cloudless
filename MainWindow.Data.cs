@@ -16,13 +16,14 @@ using NReco.VideoConverter;
 using Newtonsoft.Json;
 using Path = System.IO.Path;
 using Image = System.Drawing.Image;
+using Microsoft.Web.WebView2;
 
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        private void OpenImage()
+        private async Task OpenImage()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -31,7 +32,7 @@ namespace Cloudless
 
             if (openFileDialog.ShowDialog() == true)
             {
-                LoadImage(openFileDialog.FileName, true);
+                await LoadImage(openFileDialog.FileName, true);
                 Message("File loaded from dialog.");
             }
         }
@@ -117,7 +118,7 @@ namespace Cloudless
                 Message($"An error occurred: {ex.Message}");
             }
         }
-        private void LoadImage(string? imagePath, bool openedThroughApp)
+        private async Task LoadImage(string? imagePath, bool openedThroughApp)
         {
             try
             {
@@ -146,17 +147,19 @@ namespace Cloudless
                     return;
                 }
 
-                DisplayImage(currentImageIndex, openedThroughApp);
+                await DisplayImage(currentImageIndex, openedThroughApp);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load the image at path \"{imagePath}\": {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private void DisplayImage(int index, bool openedThroughApp)
+        private async Task DisplayImage(int index, bool openedThroughApp)
         {
             RemoveZen();
             autoResizingSpaceIsToggled = false;
+            WebmView.Visibility = Visibility.Collapsed;
+            ImageDisplay.Visibility = Visibility.Visible;
 
             try
             {
@@ -183,65 +186,8 @@ namespace Cloudless
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
                 {
-                    var ffmpeg = new FFMpegConverter();
-                    try
-                    {
-                        var path = uri.OriginalString;
-                        if (!File.Exists(path))
-                            return;
-
-                        string convertedGifPath = GetFilePathForWebmGifConversion();
-
-                        if (!File.Exists(convertedGifPath))
-                        {
-                            var settings = new ConvertSettings();
-                            //settings.VideoFrameSize
-                            // via https://superuser.com/questions/1049606/reduce-generated-gif-size-using-ffmpeg
-                            //settings.CustomOutputArgs = "fps=5,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=32[p];[s1][p]paletteuse=dither=bayer";
-
-                            string directory = Path.GetTempPath();
-                            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-                            string tempThumbPath = Path.Combine(cloudlessTempPath, "ThumbTemp.jpg");
-
-                            int height = -1;
-                            int width = -1;
-
-                            using (FileStream stream = new FileStream(tempThumbPath, FileMode.Create))
-                            {
-                                ffmpeg.GetVideoThumbnail(path, stream);
-
-                                using (var image = Image.FromStream(stream, false, false))
-                                {
-                                    height = image.Height;
-                                    width = image.Width;
-                                }
-                            }
-
-                            File.Delete(tempThumbPath);
-
-                            if (height > 500)
-                            {
-                                double shrinkMultiplier = 500d / (double)height;
-                                settings.SetVideoFrameSize((int)(width * shrinkMultiplier), (int)(height * shrinkMultiplier));
-                            }
-
-                            ffmpeg.ConvertMedia(path, null, convertedGifPath, null, settings);
-
-                            // Optional: Customize conversion settings (e.g., lower frame rate for smaller size)
-                            // var settings = new ConvertSettings();
-                            // settings.SetVideoFrameRate(10); // set frame rate to 10 fps
-                            // ffmpeg.ConvertMedia(inputFile, null, "output_low_fps.gif", null, settings);
-                        }
-                        var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
-                        ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);
-
-                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
-                    }
-                    catch (Exception ex)
-                    {
-                        Message($"An error occurred: {ex.Message}");
-                    }
+                    bool success = await ShowWebm(uri.OriginalString);
+                    
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
@@ -637,7 +583,7 @@ namespace Cloudless
                     Tag = file,
                     Icon = GetImageThumbnail(file, 16, 16, true)
                 };
-                fileItem.Click += (s, e) => OpenRecentFile((string)((MenuItem)s).Tag);
+                fileItem.Click += async (s, e) => await OpenRecentFile((string)((MenuItem)s).Tag);
                 RecentFilesMenu.Items.Add(fileItem);
             }
 
@@ -678,7 +624,7 @@ namespace Cloudless
             }
         }
 
-        public void OpenRecentFile(string filePath)
+        public async Task OpenRecentFile(string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -686,7 +632,7 @@ namespace Cloudless
                 return;
             }
 
-            LoadImage(filePath, true);
+            await LoadImage(filePath, true);
         }
         private void SaveRecentFiles()
         {
