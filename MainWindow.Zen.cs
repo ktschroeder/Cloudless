@@ -16,7 +16,7 @@ namespace Cloudless
         
         private Canvas? StarsCanvas;
 
-        private Random? _random = new Random();
+        private Random _random = new Random();
         private bool isZen;
         private int staticStarSession = -1;  // smelly technique for determining in star child generation whether they should proceed (if in old session, then no).
         private bool isWelcome = true;
@@ -209,7 +209,7 @@ namespace Cloudless
             Canvas.SetTop(star, startY);
 
             // Add the star to the canvas
-            StarsCanvas.Children.Add(star);
+            StarsCanvas?.Children.Add(star);
 
             // Create animations for fade-in, movement, and fade-out
             const double AnimationDurationSeconds = 8;
@@ -254,7 +254,7 @@ namespace Cloudless
 
                 if (starSession == staticStarSession && isZen)  // if we got here from the completion of a star that is not part of this zen session then just stop.
                 {
-                    StarsCanvas.Children.Remove(star);
+                    StarsCanvas?.Children.Remove(star);
                     CreateStar(canvasWidth, canvasHeight, repeatCount, starSession);
                 }
             };
@@ -308,7 +308,7 @@ namespace Cloudless
             for (int i = 0; i < CONCURRENT_ZEN_LAYERS; i++)
             {
                 var ml = CreateMagicLayer();
-                ml.rectStoryboard.Begin(this, true);
+                ml.rectStoryboard?.Begin(this, true);
             }
 
             Debug.WriteLine("Started GradientMagic");
@@ -454,7 +454,7 @@ namespace Cloudless
                         throw new Exception("bad");
                     if (expiredLayer.layerIndex != mlLayerIndex - 1)
                         throw new Exception("also bad");
-                    Debug.Print($"Freed layer with opacity {expiredLayer.rect.Opacity} while new ded layer had opacity {mlRect.Opacity}"); 
+                    Debug.Print($"Freed layer with opacity {expiredLayer.rect?.Opacity} while new ded layer had opacity {mlRect.Opacity}"); 
                     expiredLayer.Free(this, MyGrid);
                 }
 
@@ -462,7 +462,7 @@ namespace Cloudless
                     throw new Exception("also also bad");
 
                 var ml = CreateMagicLayer(); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
-                ml.rectStoryboard.Begin(this, true);
+                ml.rectStoryboard?.Begin(this, true);
             };
 
             magicLayers.Enqueue(magicLayer);
@@ -483,11 +483,11 @@ namespace Cloudless
 
         internal class MagicLayer
         {
-            internal Rectangle rect;  // has opacity and fill
+            internal Rectangle? rect;  // has opacity and fill
             internal DateTime birth;
             internal Duration lifespan;
-            internal Storyboard gradientStopStoryboard;
-            internal Storyboard rectStoryboard;
+            internal Storyboard? gradientStopStoryboard;
+            internal Storyboard? rectStoryboard;
             internal int layerIndex;
             internal List<GradientStopContext> gscs = new List<GradientStopContext>();
             internal double gradientAngle;
@@ -502,17 +502,17 @@ namespace Cloudless
                 {
                     mainWindow.UnregisterName(gsc.name);
                     if (gsc.offsetAnimation != null)
-                        gradientStopStoryboard.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
+                        gradientStopStoryboard?.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
                     if (gsc.colorAnimation != null)
-                        gradientStopStoryboard.Children.Remove(gsc.colorAnimation);
-                    gradientStopStoryboard.Stop();
-                    gradientStopStoryboard.Remove();
+                        gradientStopStoryboard?.Children.Remove(gsc.colorAnimation);
+                    gradientStopStoryboard?.Stop();
+                    gradientStopStoryboard?.Remove();
                 }
 
-                rectStoryboard.Children.Clear();
-                rectStoryboard.Stop();
-                rectStoryboard.Remove();
-                rect.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
+                rectStoryboard?.Children.Clear();
+                rectStoryboard?.Stop();
+                rectStoryboard?.Remove();
+                rect?.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
                 mainWindow.UnregisterName("MyRect" + layerIndex);
             }
         }

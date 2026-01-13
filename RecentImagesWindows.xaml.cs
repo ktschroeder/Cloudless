@@ -11,11 +11,11 @@ namespace Cloudless
 {
     public class RecentImageItem : INotifyPropertyChanged
     {
-        public string FilePath { get; init; }
-        public string FileName => Path.GetFileName(FilePath);
+        public string? FilePath { get; init; }
+        public string? FileName => Path.GetFileName(FilePath);
 
-        private ImageSource _thumbnail;
-        public ImageSource Thumbnail
+        private ImageSource? _thumbnail;
+        public ImageSource? Thumbnail
         {
             get => _thumbnail;
             set
@@ -28,7 +28,7 @@ namespace Cloudless
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 
 

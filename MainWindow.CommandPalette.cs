@@ -119,7 +119,7 @@ namespace Cloudless
 
             if (command.ToLower().Equals("p"))  // load most recently opened image
             {
-                string path = recentFiles?.FirstOrDefault();
+                string? path = recentFiles?.FirstOrDefault();
                 if (path != null)
                 {
                     await OpenRecentFile(path);
@@ -385,7 +385,7 @@ namespace Cloudless
 
             if (command.ToLower().Equals("rev"))  // reveal current image in file explorer
             {
-                string path = currentlyDisplayedImagePath;
+                string? path = currentlyDisplayedImagePath;
                 if (path == null)
                 {
                     Message("Cannot reveal image in Explorer because no image is loaded");

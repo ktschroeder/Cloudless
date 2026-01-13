@@ -327,6 +327,8 @@ namespace Cloudless
         }
         private void ClampTransformToIntuitiveBounds(Vector? delta = null)
         {
+            if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
+
             // Get current image dimensions including any scaling (zoom)
             double scaledWidth = ImageDisplay.ActualWidth * imageScaleTransform.ScaleX;
             double scaledHeight = ImageDisplay.ActualHeight * imageScaleTransform.ScaleY;
@@ -398,6 +400,8 @@ namespace Cloudless
 
             if (!isExplorationMode) EnterExplorationMode();
 
+            if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
+
             double derivedDelta = zoomDelta != null ? (double)zoomDelta : ((double)zoomFinal / imageScaleTransform.ScaleX);
 
             // Calculate new scale
@@ -459,6 +463,7 @@ namespace Cloudless
         }
         private void ResetZoom()
         {
+            if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
             imageScaleTransform.ScaleX = 1.0;
             imageScaleTransform.ScaleY = 1.0;
         }
@@ -468,6 +473,7 @@ namespace Cloudless
 
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
+                if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
                 imageScaleTransform.ScaleX = 1.0 / ImageDisplay.ActualWidth * bitmap.PixelWidth;
                 imageScaleTransform.ScaleY = 1.0 / ImageDisplay.ActualHeight * bitmap.PixelHeight;
             }
@@ -477,6 +483,7 @@ namespace Cloudless
         private void ResetPan()
         {
             StopPanning();
+            if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
             imageTranslateTransform.X = 0;
             imageTranslateTransform.Y = 0;
         }

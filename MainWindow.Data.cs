@@ -60,7 +60,7 @@ namespace Cloudless
             {
                 return new NaturalStringComparer();
             }
-            catch (Exception e)
+            catch (Exception)
             {  // TODO handle
                 return null;
             }
@@ -287,7 +287,7 @@ namespace Cloudless
                 return;
             }
 
-            if (currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
+            if (currentlyDisplayedImagePath?.ToLower().EndsWith(".gif") ?? false)
             {
                 Message("This app does not support compressing GIFs.");
                 return;
@@ -373,7 +373,7 @@ namespace Cloudless
             if (!Directory.Exists(cloudlessTempPath))
                 Directory.CreateDirectory(cloudlessTempPath);
 
-            string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath);
+            string? originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath);
             string extension = ".jpg";
             int index = 0;
 
@@ -421,7 +421,7 @@ namespace Cloudless
             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
             string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
 
-            var dict = new Dictionary<string, string>();
+            Dictionary<string, string>? dict = null;
 
             if (File.Exists(mapFile))
             {
@@ -429,7 +429,7 @@ namespace Cloudless
                 dict = JsonSerializer.Deserialize<Dictionary<string, string>>(text);
             }
 
-            return dict;
+            return dict ?? new Dictionary<string, string>();
         }
 
         private void UpdateWebmGifConversionMap(Dictionary<string, string> map)
@@ -793,7 +793,7 @@ namespace Cloudless
                     Message($"A newer version of Cloudless ({Version.Parse(release.tag_name.TrimStart('v', 'V')).ToString()}) is available!");
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //Message(e.ToString());
                 // Fail silently — update checks should NEVER crash the app

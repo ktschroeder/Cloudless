@@ -190,12 +190,12 @@ namespace Cloudless
             double imageHeight = ImageDisplay.ActualHeight;
 
             // Image scale
-            double scaleX = imageScaleTransform.ScaleX;
-            double scaleY = imageScaleTransform.ScaleY;
+            double? scaleX = imageScaleTransform?.ScaleX;
+            double? scaleY = imageScaleTransform?.ScaleY;
 
             // Image translation
-            double translateX = imageTranslateTransform.X;
-            double translateY = imageTranslateTransform.Y;
+            double? translateX = imageTranslateTransform?.X;
+            double? translateY = imageTranslateTransform?.Y;
 
             // Cursor position relative to the window
             Point cursorPosition = Mouse.GetPosition(this);

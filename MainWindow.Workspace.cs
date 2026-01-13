@@ -16,6 +16,8 @@ namespace Cloudless
 
         public CloudlessWindowState GetWindowState(Dictionary<IntPtr, int> zOrderMap)
         {
+            if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
+
             IntPtr hwnd = new WindowInteropHelper(this).Handle;
             int zOrder = zOrderMap.TryGetValue(hwnd, out int z) ? z : int.MaxValue;
 
@@ -152,12 +154,12 @@ namespace Cloudless
                 
                 return true;
             }
-            catch (FileNotFoundException e)
+            catch (FileNotFoundException)
             {
                 Message("Workspace file not found.");
                 return false;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Message("Unexpected error loading workspace.");
                 return false;
@@ -192,6 +194,8 @@ namespace Cloudless
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
             {
+                if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
+
                 // This essentially applies cropping
                 ToggleCropMode(true, true);
                 ImageDisplay.Width = state.RenderWidth;
