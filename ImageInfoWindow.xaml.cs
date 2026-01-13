@@ -36,9 +36,14 @@ namespace Cloudless
             PathText.Text = $"{_imagePath}";
             SizeText.Text = $"{fileInfo.Length / 1024.0:0.##} KB";
 
-            // Set format and dimensions
-            var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
-            DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
+            try  // TODO add thumbnail support for WEBMs; without try/catch, exception when creating bitmap
+            {
+                // Set format and dimensions
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
+                DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
+            }
+            catch { }
+            
             FormatText.Text = $"{fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
 
             var lastModTime = File.GetLastWriteTime(_imagePath);

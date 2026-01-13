@@ -63,8 +63,8 @@ namespace Cloudless
                 if (!File.Exists(item.FilePath))
                     continue;
 
-                var thumb = await RunStaAsync(() =>
-                    MainWindow.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128).Source);
+                ImageSource? thumb = await RunStaAsync(() =>
+                    MainWindow.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128)?.Source);
 
                 if (thumb != null)
                     item.Thumbnail = thumb;

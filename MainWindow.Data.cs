@@ -192,6 +192,8 @@ namespace Cloudless
                     {
                         try
                         {
+                            // TODO here, show "loading WEBM..." persistent message on solid black
+
                             var path = uri.OriginalString;
                             if (!File.Exists(path))
                                 return;
@@ -224,9 +226,10 @@ namespace Cloudless
                                 await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
                             }
 
+                            // TODO it would be nice if we could do this in an async manner, currently it freezes UI
                             var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
                             ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                            ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);
+                            ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
 
                             gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
                         }
@@ -613,10 +616,10 @@ namespace Cloudless
 
                 return new System.Windows.Controls.Image { Source = bitmap, Width = width, Height = height };
             }
-            catch (Exception ex)
+            catch (Exception ex)  // TODO WEBMs will get us here
             {
                 Console.WriteLine($"Failed to load thumbnail: {ex.Message}");
-                return null;  // Return null if there's an issue loading the image
+                return new System.Windows.Controls.Image { Source = null, Width = width, Height = height }; ;  // Return null if there's an issue loading the image
             }
         }
         private void UpdateRecentFilesMenu()  // no side effects beyond instance. Reads from static file at this time, does not write to it.
