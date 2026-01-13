@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 
@@ -154,6 +155,13 @@ namespace Cloudless
         private void SetDefaultButton_Click(object sender, RoutedEventArgs e)
         {
             OpenDefaultAppsSettings();
+        }
+
+        private void ManageGifCache_Click(object sender, RoutedEventArgs e)
+        {
+            string directory = Path.GetTempPath();
+            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+            MainWindow.RevealDirectoryInExplorer(cloudlessTempPath);
         }
 
         private void OpenDefaultAppsSettings()

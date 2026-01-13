@@ -294,7 +294,7 @@ namespace Cloudless
                 }
                 else if (command.ToLower().Equals("ws rev"))
                 {
-                    RevealWorkstationDirectoryInExplorer(workspaceFilesPath);
+                    RevealDirectoryInExplorer(workspaceFilesPath);
                 }
                 else
                 {

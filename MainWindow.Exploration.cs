@@ -656,7 +656,7 @@ namespace Cloudless
             }
         }
 
-        public static void RevealWorkstationDirectoryInExplorer(string path)
+        public static void RevealDirectoryInExplorer(string path)
         {
             try
             {
