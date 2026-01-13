@@ -14,6 +14,7 @@ using System.Collections.Specialized;
 using System.Text.Json;
 using Path = System.IO.Path;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace Cloudless
 {
@@ -21,9 +22,16 @@ namespace Cloudless
     {
         private void OpenImage()
         {
+            string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif";
+            if (Properties.Settings.Default.WebmEnabled)
+            {
+                filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm";
+            }
+            
+
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm"
+                Filter = filter
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -180,47 +188,56 @@ namespace Cloudless
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
                 {
-                    try
+                    if (Properties.Settings.Default.WebmEnabled)
                     {
-                        var path = uri.OriginalString;
-                        if (!File.Exists(path))
-                            return;
-
-                        string convertedGifPath = GetFilePathForWebmGifConversion();
-
-                        if (!File.Exists(convertedGifPath))
+                        try
                         {
-                            string directory = Path.GetTempPath();
-                            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-                            string tempThumbPath = Path.Combine(cloudlessTempPath, "ThumbTemp.jpg");
+                            var path = uri.OriginalString;
+                            if (!File.Exists(path))
+                                return;
 
-                            int height = -1;
-                            int width = -1;
+                            string convertedGifPath = GetFilePathForWebmGifConversion();
+                            Random random = new Random();
 
-                            string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
-                            FFmpegExecutor.ExecuteFFmpegCommand(ffmpegThumbArgs);
-                            using (var thumb = new Bitmap(tempThumbPath))
+                            if (!File.Exists(convertedGifPath))
                             {
-                                height = thumb.Height;
-                                width = thumb.Width;
+                                string directory = Path.GetTempPath();
+                                string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+                                string tempThumbPath = Path.Combine(cloudlessTempPath, $"ThumbTemp{random.Next(int.MaxValue)}.jpg");
+
+                                int height = -1;
+                                int width = -1;
+
+                                string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
+                                var ffmpeg = new FFmpegExecutor();
+                                ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
+                                using (var thumb = new Bitmap(tempThumbPath))
+                                {
+                                    height = thumb.Height;
+                                    width = thumb.Width;
+                                }
+                                File.Delete(tempThumbPath);
+
+                                int convertedWidth = Math.Min(width, 500);
+
+                                string ffmpegArgs = $"-i \"{path}\" -vf \"scale=-1:{convertedWidth}:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" \"{convertedGifPath}\"";
+                                ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
                             }
-                            File.Delete(tempThumbPath);
 
-                            int convertedWidth = Math.Min(width, 500);
+                            var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
+                            ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                            ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);
 
-                            string ffmpegArgs = $"-i \"{path}\" -vf \"scale=-1:{convertedWidth}:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" \"{convertedGifPath}\"";
-                            FFmpegExecutor.ExecuteFFmpegCommand(ffmpegArgs);
+                            gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
                         }
-
-                        var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
-                        ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);
-
-                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
+                        catch (Exception ex)
+                        {
+                            Message($"An error occurred: {ex.Message}");
+                        }
                     }
-                    catch (Exception ex)
+                    else  // WEBMs disabled
                     {
-                        Message($"An error occurred: {ex.Message}");
+                        Message("Tried to load WEBM, but WEBMs are disabled. See preferences.");
                     }
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
@@ -440,12 +457,12 @@ namespace Cloudless
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || (Properties.Settings.Default.WebmEnabled && extension == ".webm");
         }
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || (Properties.Settings.Default.WebmEnabled && extension == ".webm");
         }
         private async void DownloadAndLoadImage(Uri uri)
         {
@@ -793,15 +810,11 @@ namespace Cloudless
         public DateTime published_at { get; set; }
     }
 
-    public static class FFmpegExecutor
+    public class FFmpegExecutor
     {
         // returns whether successful
-        public static bool ExecuteFFmpegCommand(string ffmpegArguments)//(string inputFilePath, string outputFilePath)
+        public bool ExecuteFFmpegCommand(string ffmpegArguments, MainWindow mainWindow)
         {
-            // Define the arguments for the FFmpeg command
-            // This example converts an input file to a webm format
-            //string arguments = "-version";// $"-i \"{inputFilePath}\" -threads 8 -f webm -aspect 16:9 -vcodec libvpx -acodec libvorbis \"{outputFilePath}\"";
-
             var startInfo = new ProcessStartInfo
             {
                 FileName = "ffmpeg", // "ffmpeg.exe" on Windows, "ffmpeg" on Linux/macOS, relies on the system PATH
@@ -818,6 +831,10 @@ namespace Cloudless
             {
                 using (Process process = Process.Start(startInfo))
                 {
+                    // process can be null if ffmpeg is not installed?
+                    if (process == null)
+                        throw new Win32Exception("process was null");
+
                     // Capture output (optional, but useful for debugging and progress monitoring)
                     process.OutputDataReceived += (sender, e) =>
                     {
@@ -849,13 +866,21 @@ namespace Cloudless
                     else
                     {
                         Console.WriteLine($"FFmpeg command failed with exit code: {process.ExitCode}");
+                        mainWindow.Message($"Failed to convert WEBM due to ffmpeg error.");
                         return false;
                     }
                 }
             }
+            catch (Win32Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                mainWindow.Message($"Failed to convert WEBM: FFmpeg is not installed or cannot be found.");
+                return false;
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
+                mainWindow.Message("Failed to convert WEBM due to unexpected error.");
                 return false;
             }
         }

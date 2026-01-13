@@ -188,5 +188,17 @@ namespace Cloudless.Properties {
                 this["UserCommands"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool WebmEnabled {
+            get {
+                return ((bool)(this["WebmEnabled"]));
+            }
+            set {
+                this["WebmEnabled"] = value;
+            }
+        }
     }
 }

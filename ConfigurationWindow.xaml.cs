@@ -18,6 +18,7 @@ namespace Cloudless
         public bool AlwaysOnTopByDefault { get; private set; }
         public double MaxCompressedCopySizeMB { get; private set; }
         public bool DisableSmartZoom { get; private set; }
+        public bool WebmEnabled { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -66,6 +67,10 @@ namespace Cloudless
             var currentDisableSmartZoom = Cloudless.Properties.Settings.Default.DisableSmartZoom;
             DisableSmartZoomCheckbox.IsChecked = currentDisableSmartZoom;
             DisableSmartZoom = currentDisableSmartZoom;
+
+            var currentWebmEnabled = Cloudless.Properties.Settings.Default.WebmEnabled;
+            WebmEnabledCheckbox.IsChecked = currentWebmEnabled;
+            WebmEnabled = currentWebmEnabled;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -137,6 +142,7 @@ namespace Cloudless
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
             DisableSmartZoom = DisableSmartZoomCheckbox.IsChecked ?? false;
+            WebmEnabled = WebmEnabledCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

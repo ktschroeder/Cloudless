@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Preferences"
-        Height="525"
+        Height="545"
         Width="600"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -63,6 +63,9 @@
                 <CheckBox x:Name="DisableSmartZoomCheckbox" 
                           Content="Disable smart zoom/pan corrections (only recommended for specific reasons)" 
                           Margin="0,2"/>
+                <CheckBox x:Name="WebmEnabledCheckbox" 
+                          Content="Enable limited WEBM support (FFmpeg must be installed and added to PATH)" 
+                          Margin="0,2"/>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
                     <TextBlock Text="Max size (MBs) when compressed copying image:" VerticalAlignment="Center" Foreground="#555"/>
@@ -90,7 +93,7 @@
                         Margin="0,6,0,6"
                         Style="{StaticResource CloudlessButton}"/>
 
-                <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .webp, .jfif, and (limited) .webm" 
+                <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .webp, .jfif, and (limited, if enabled) .webm" 
                            Foreground="#666" Margin="0,0,0,10"/>
 
                 <!-- Buttons -->

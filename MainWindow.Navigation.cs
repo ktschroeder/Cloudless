@@ -48,6 +48,7 @@ namespace Cloudless
                 var previousSortOrder = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
                 Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
                 Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
+                Cloudless.Properties.Settings.Default.WebmEnabled = configWindow.WebmEnabled;
 
                 Cloudless.Properties.Settings.Default.Save();
 
