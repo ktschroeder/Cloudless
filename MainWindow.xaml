@@ -27,6 +27,37 @@
             <!-- Image Display -->
             <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
 
+            <!-- Loading Overlay -->
+            <Border x:Name="LoadingOverlay"
+            Background="Black"
+            Opacity="0.85"
+            Visibility="Collapsed"
+            IsHitTestVisible="False">
+                <StackPanel HorizontalAlignment="Center"
+VerticalAlignment="Center">
+                    <!--<Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>-->
+                    <TextBlock x:Name="LoadingText1"
+                        Text="Loading..."
+                       Foreground="White"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                               Margin="10"/>
+                    <TextBlock x:Name="LoadingText2"
+                        Text=""
+                       Foreground="White"
+                       FontSize="14"
+                       FontWeight="Normal"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                               Margin="10"/>
+                </StackPanel>
+            </Border>
+
             <!-- Debug Info Overlay -->
             <Border x:Name="DebugTextBlockBorder" HorizontalAlignment="Left" VerticalAlignment="Bottom" 
                     Margin="10"

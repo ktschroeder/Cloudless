@@ -146,7 +146,7 @@ namespace Cloudless
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (initialImageToLoad != null)
+            if (initialImageToLoad != null && WorkspaceLoadInProgress == false)
             {
                 await LoadImage(initialImageToLoad, false);
             }
@@ -233,6 +233,19 @@ namespace Cloudless
         {
             duration ??= TimeSpan.FromSeconds(1.5);
             overlayManager?.ShowOverlayMessage(message, (TimeSpan)duration);
+        }
+
+        private void ShowLoadingOverlay(string text1 = "Loading...", string text2 = "")
+        {
+            LoadingText1.Text = text1;
+            LoadingText2.Text = text2;
+            LoadingOverlay.Visibility = Visibility.Visible;
+            LoadingOverlay.UpdateLayout();   // force immediate render
+        }
+
+        private void HideLoadingOverlay()
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
         }
     }
 }

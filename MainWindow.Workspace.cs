@@ -123,7 +123,7 @@ namespace Cloudless
         }
 
         // returns whether successful
-        public bool LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
+        public async Task<bool> LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
             try
             {
@@ -144,12 +144,12 @@ namespace Cloudless
                     //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                     this.CloseAllOtherInstances();
                     Thread.Sleep(150); // brief grace period (optional but helps UX)
-                    CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
+                    await CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
                     this.Close();
                 }
                 else
                 {
-                    CreateWindowsForWorkspace(workspace);
+                    await CreateWindowsForWorkspace(workspace);
                 }
                 
                 return true;
@@ -166,12 +166,13 @@ namespace Cloudless
             }
         }
 
-        public static void CreateWindowsForWorkspace(CloudlessWorkspace workspace)
+        public async Task CreateWindowsForWorkspace(CloudlessWorkspace workspace)
         {
             var zOrderedWindows = workspace.CloudlessWindows.OrderByDescending(w => w.ZOrder).ToList();
             foreach (var state in zOrderedWindows)
             {
                 var window = new MainWindow(state.ImagePath, state.Width, state.Height);
+                await window.LoadImage(state.ImagePath, false);
                 window.ApplyWindowState(state);
                 window.Show();
                 window.PostProcessLoadedWindow();

@@ -15,6 +15,9 @@ using System.Text.Json;
 using Path = System.IO.Path;
 using System.Diagnostics;
 using System.ComponentModel;
+using System.Windows.Threading;
+using System.Windows.Shapes;
+using System;
 
 namespace Cloudless
 {
@@ -180,9 +183,16 @@ namespace Cloudless
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
+                    var fileSizeMB = (double)(new FileInfo(uri.AbsolutePath).Length) / 1024 / 1024;
+                    ShowLoadingOverlay($"Loading GIF... ({fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+
                     var bitmap = new BitmapImage(uri);
                     ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                    ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
+
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+                    ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
+                    HideLoadingOverlay();
 
                     gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
                 }
@@ -203,6 +213,9 @@ namespace Cloudless
 
                             if (!File.Exists(convertedGifPath))
                             {
+                                ShowLoadingOverlay($"Creating cached GIF from WEBM...", $"{Path.GetFileName(path)}");
+                                await Dispatcher.Yield(DispatcherPriority.Background);
+
                                 string directory = Path.GetTempPath();
                                 string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
                                 string tempThumbPath = Path.Combine(cloudlessTempPath, $"ThumbTemp{random.Next(int.MaxValue)}.jpg");
@@ -233,14 +246,20 @@ namespace Cloudless
                                         "[s1][p]paletteuse=dither=sierra2_4a\" " +
                                         $"\"{convertedGifPath}\"";
                                 await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
+                                HideLoadingOverlay();
                             }
 
-                            // TODO it would be nice if we could do this in an async manner, currently it freezes UI
+                            var fileSizeMB = (double)(new FileInfo(convertedGifPath).Length) / 1024 / 1024;
+                            ShowLoadingOverlay($"Loading WEBM as GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(path)}");
+                            await Dispatcher.Yield(DispatcherPriority.Background);
+
                             var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
                             ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                            await Dispatcher.Yield(DispatcherPriority.Background);
                             ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
+                            HideLoadingOverlay();
 
-                            gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
+                            gifController = ImageBehavior.GetAnimationController(ImageDisplay);
                         }
                         catch (Exception ex)
                         {
@@ -278,7 +297,7 @@ namespace Cloudless
                 if (NoImageMessage != null)
                     NoImageMessage.Visibility = Visibility.Collapsed;
 
-                if (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                if (WorkspaceLoadInProgress == false && (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp))
                 {
                     ResizeWindowToImage();
                     CenterWindow();

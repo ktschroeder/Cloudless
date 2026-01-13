@@ -92,6 +92,9 @@ namespace Cloudless
 
         private void CycleToNextAutocompleteCandidate(string commandBase)
         {
+            if (AutocompleteCandidates.Count == 0)
+                return;
+
             // get next candidate
             var next = AutocompleteCandidates.Dequeue();
             CommandTextBox.Text = commandBase + next;  // TODO adapt this to dynamically work with other commands?
@@ -264,28 +267,28 @@ namespace Cloudless
                 else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
                 {
                     string name = command.Substring(8);
-                    bool success = LoadWorkspace(name);
+                    bool success = await LoadWorkspace(name);
                     if (success)
                         Message("Loaded workspace: " + name);
                 }
                 else if (command.ToLower().StartsWith("ws l ") && command.Length > 5)
                 {
                     string name = command.Substring(5);
-                    bool success = LoadWorkspace(name);
+                    bool success = await LoadWorkspace(name);
                     if (success)
                         Message("Loaded workspace: " + name);
                 }
                 else if (command.ToLower().StartsWith("ws merge ") && command.Length > 9)
                 {
                     string name = command.Substring(9);
-                    bool success = LoadWorkspace(name, true);
+                    bool success = await LoadWorkspace(name, true);
                     if (success)
                         Message("Merged workspace: " + name);
                 }
                 else if (command.ToLower().StartsWith("ws m ") && command.Length > 5)
                 {
                     string name = command.Substring(5);
-                    bool success = LoadWorkspace(name, true);
+                    bool success = await LoadWorkspace(name, true);
                     if (success)
                         Message("Merged workspace: " + name);
                 }
