@@ -8,7 +8,6 @@ using Point = System.Windows.Point;
 using System.Windows.Media;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
-using System.Diagnostics;
 
 namespace Cloudless
 {
@@ -66,17 +65,19 @@ namespace Cloudless
         private TextBlock? NoImageMessage;
 
         private ImageAnimationController? gifController;
-
-        private string? initialImagePath = null;
         #endregion
 
         #region Setup
         public MainWindow(string filePath, double windowW, double windowH)
         {
-            initialImagePath = filePath;
+            bool willLoadImage = filePath != null && filePath.Length > 0;
             Setup();
 
-            if (initialImagePath == null)
+            if (willLoadImage)
+            {
+                LoadImage(filePath, false);
+            }
+            else
             {
                 Zen(true);
             }
@@ -88,10 +89,14 @@ namespace Cloudless
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
 
-            initialImagePath = filePath;
+            bool willLoadImage = filePath != null;
             Setup();
 
-            if (initialImagePath == null)
+            if (willLoadImage)
+            {
+                LoadImage(filePath, false);
+            }
+            else
             {
                 Zen(true);
             }
@@ -225,98 +230,6 @@ namespace Cloudless
         {
             duration ??= TimeSpan.FromSeconds(1.5);
             overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
-        }
-
-        private string BuildWebmHtml(string filePath)
-        {
-            string fileName = Path.GetFileName(filePath);
-            string uri = $"https://cloudless.local/{Uri.EscapeDataString(fileName)}";
-
-            return $@"
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <meta charset=""utf-8"">
-        <style>
-            html, body {{
-                margin: 0;
-                background: black;
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-            }}
-
-            video {{
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }}
-        </style>
-        </head>
-        <body>
-            <video autoplay loop muted controls>
-                <source src=""{uri}"" type=""video/webm"">
-            </video>
-        </body>
-        </html>";
-        }
-
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                await WebmView.EnsureCoreWebView2Async();
-
-                var settings = WebmView.CoreWebView2.Settings;
-                settings.AreDefaultContextMenusEnabled = false;
-                settings.IsZoomControlEnabled = false;
-
-                if (initialImagePath != null)
-                {
-                    await LoadImage(initialImagePath, false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("WebView2 init failed: " + ex);
-            }
-        }
-
-        private string? _mappedWebmFolder;
-
-        private async Task EnsureWebViewForWebmAsync(string filePath)
-        {
-            await WebmView.EnsureCoreWebView2Async();
-
-            string folder = Path.GetDirectoryName(filePath)!;
-
-            if (!string.Equals(folder, _mappedWebmFolder, StringComparison.OrdinalIgnoreCase))
-            {
-                // Remove old mapping if any
-                if (_mappedWebmFolder != null)
-                {
-                    WebmView.CoreWebView2.ClearVirtualHostNameToFolderMapping("cloudless.local");
-                }
-
-                WebmView.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                    "cloudless.local",
-                    folder,
-                    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow
-                );
-
-                _mappedWebmFolder = folder;
-            }
-        }
-
-        private async Task<bool> ShowWebm(string filePath)
-        {
-            await EnsureWebViewForWebmAsync(filePath);
-
-            WebmView.NavigateToString(BuildWebmHtml(filePath));
-
-            WebmView.Visibility = Visibility.Visible;
-            ImageDisplay.Visibility = Visibility.Collapsed;
-            return true;
         }
     }
 }

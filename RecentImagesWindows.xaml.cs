@@ -93,13 +93,13 @@ namespace Cloudless
             return tcs.Task;
         }
 
-        private async void Thumbnail_Click(object sender, MouseButtonEventArgs e)
+        private void Thumbnail_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement fe &&
                 fe.DataContext is RecentImageItem item)
             {
                 if (Owner is MainWindow mw)
-                    await mw.OpenRecentFile(item.FilePath);
+                    mw.OpenRecentFile(item.FilePath);
 
                 Close();
             }

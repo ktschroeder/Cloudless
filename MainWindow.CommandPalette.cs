@@ -26,7 +26,7 @@ namespace Cloudless
             Keyboard.Focus(this);
         }
 
-        private async void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
+        private void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Tab)
             {
@@ -47,16 +47,16 @@ namespace Cloudless
 
             if (e.Key == Key.Enter)
             {
-                await ExecuteCommand(CommandTextBox.Text.Trim());
+                ExecuteCommand(CommandTextBox.Text.Trim());
                 CloseCommandPalette();
                 e.Handled = true;
                 return;
             }
         }
 
-        private async Task ExecuteCommand(string command)
+        private void ExecuteCommand(string command)
         {
-            bool validCommand = await ExecuteCommandInner(command);
+            bool validCommand = ExecuteCommandInner(command);
             // Originally it seemed better to oonly commit valid commands, but I find it more convenient to commit all commands, at least for now.
             // ...especially when the user makes a sllight typo and would rather not fully re-type a longer command.
             CommitCommand(command);
@@ -101,7 +101,7 @@ namespace Cloudless
         }
 
         // returns whether successful (i.e. valid) command
-        private async Task<bool> ExecuteCommandInner(string command)
+        private bool ExecuteCommandInner(string command)
         {
             command = command.Trim();
 
@@ -113,7 +113,7 @@ namespace Cloudless
 
             if (command.StartsWith("/"))
             {
-                await ExecuteFilenameSearch(command.Substring(1));
+                ExecuteFilenameSearch(command.Substring(1));
                 return true;
             }
 
@@ -122,7 +122,7 @@ namespace Cloudless
                 string path = recentFiles?.FirstOrDefault();
                 if (path != null)
                 {
-                    await OpenRecentFile(path);
+                    OpenRecentFile(path);
                 }
                 return true;
             }
@@ -164,7 +164,7 @@ namespace Cloudless
                 if (imageFiles == null)
                     return true;
 
-                await JumpToIndex(0);
+                JumpToIndex(0);
                 return true;
             }
 
@@ -173,7 +173,7 @@ namespace Cloudless
                 if (imageFiles == null)
                     return true;
 
-                await JumpToIndex(imageFiles.Length - 1);
+                JumpToIndex(imageFiles.Length - 1);
                 return true;
             }
 
@@ -317,7 +317,7 @@ namespace Cloudless
                 }
                 else if (param.Equals("run"))
                 {
-                    await RunUserCommand(cIndex-1);
+                    RunUserCommand(cIndex-1);
                     return true;
                 }
             }
@@ -336,7 +336,7 @@ namespace Cloudless
                 }
                 else if (File.Exists(resolvedPath)) 
                 {
-                    await LoadImage(resolvedPath, true);
+                    LoadImage(resolvedPath, true);
                 }
                 return true;
             }
@@ -354,7 +354,7 @@ namespace Cloudless
                 }
                 else if (File.Exists(resolvedPath))
                 {
-                    await LoadImage(resolvedPath, true);
+                    LoadImage(resolvedPath, true);
                 }
                 return true;
             }
@@ -424,7 +424,7 @@ namespace Cloudless
                         Message("Relative jump was clamped to final image in directory");
                 }
 
-                await JumpToIndex(clampedIndex);
+                JumpToIndex(clampedIndex);
                 return true;
             }
             else if (int.TryParse(command, out targetIndex))  // Absolute jump
@@ -442,7 +442,7 @@ namespace Cloudless
 
                 // Clamp to valid range
                 targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
-                await JumpToIndex(targetIndex);
+                JumpToIndex(targetIndex);
                 return true;
             }
 
@@ -496,16 +496,16 @@ namespace Cloudless
             }
         }
 
-        private async Task JumpToIndex(int index)
+        private void JumpToIndex(int index)
         {
             if (index < 0 || imageFiles == null || index >= imageFiles.Count())
                 return;
 
             currentImageIndex = index;
-            await DisplayImage(index, true);
+            DisplayImage(index, true);
         }
 
-        private async Task ExecuteFilenameSearch(string query)
+        private void ExecuteFilenameSearch(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -529,7 +529,7 @@ namespace Cloudless
 
                 if (fileName.Contains(lowerQuery))
                 {
-                    await JumpToIndex(index);
+                    JumpToIndex(index);
                     return;
                 }
             }
@@ -541,7 +541,7 @@ namespace Cloudless
 
                 if (fileName.Contains(lowerQuery))
                 {
-                    await JumpToIndex(index);
+                    JumpToIndex(index);
                     Message("Continuing search from start of directory");
                     return;
                 }
@@ -571,7 +571,7 @@ namespace Cloudless
             }
         }
 
-        private async Task RunUserCommand(int cIndex)
+        private void RunUserCommand(int cIndex)
         {
             LoadUserCommands();
             string command = UserCommands[cIndex];
@@ -581,7 +581,7 @@ namespace Cloudless
             }
             else
             {
-                await ExecuteCommand(command);
+                ExecuteCommand(command);
             }
         }
 
