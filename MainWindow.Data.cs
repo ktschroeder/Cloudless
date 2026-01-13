@@ -222,7 +222,16 @@ namespace Cloudless
 
                                 int convertedWidth = Math.Min(width, 500);
 
-                                string ffmpegArgs = $"-i \"{path}\" -vf \"scale=-1:{convertedWidth}:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" \"{convertedGifPath}\"";
+                                //string ffmpegArgs = $"-i \"{path}\" \"{convertedGifPath}\"";
+                                string ffmpegArgs = 
+                                        $"-i \"{path}\" " +
+                                        $"-vf \"scale=-2:{convertedWidth}:flags=lanczos," +
+                                        "setsar=1," +
+                                        "format=rgba," +
+                                        "split[s0][s1];" +
+                                        "[s0]palettegen=stats_mode=diff[p];" +
+                                        "[s1][p]paletteuse=dither=sierra2_4a\" " +
+                                        $"\"{convertedGifPath}\"";
                                 await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
                             }
 
