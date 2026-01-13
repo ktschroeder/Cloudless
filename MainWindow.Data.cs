@@ -395,10 +395,10 @@ namespace Cloudless
                 Directory.CreateDirectory(cloudlessTempPath);
 
             var webmGifDict = GetWebmGifConversionMap();
-            if (webmGifDict.TryGetValue(currentlyDisplayedImagePath, out string gifName))
+            if (webmGifDict.TryGetValue(currentlyDisplayedImagePath ?? "", out string? gifName))
                 return Path.Combine(cloudlessTempPath, gifName);
 
-            string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath);
+            string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath ?? "");
             string extension = ".gif";
             int index = 0;
 
@@ -409,7 +409,7 @@ namespace Cloudless
                 index++;
             } while (File.Exists(filePath));
 
-            webmGifDict.Add(currentlyDisplayedImagePath, Path.GetFileNameWithoutExtension(filePath) + ".gif");
+            webmGifDict.Add(currentlyDisplayedImagePath ?? "", Path.GetFileNameWithoutExtension(filePath) + ".gif");
             UpdateWebmGifConversionMap(webmGifDict);
 
             return filePath;
@@ -578,7 +578,7 @@ namespace Cloudless
             }
         }
 
-        public static System.Windows.Controls.Image GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false)
+        public static System.Windows.Controls.Image? GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false)
         {
             try  // called 10+ times every time context menu is used/updated. Could be more efficient.
             {

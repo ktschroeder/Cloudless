@@ -33,9 +33,15 @@ namespace Cloudless
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
-        private string? currentlyDisplayedImagePath;
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
+        private string? currentlyDisplayedImagePath { get 
+            {
+                if (currentlyDisplayedImagePath == null)
+                    throw new InvalidOperationException("currentlyDisplayedImagePath is null");
+                return currentlyDisplayedImagePath; 
+            } set { }
+        }
 
         private bool isCropMode;
         private double cropModeStartingImagePosX = 0;
@@ -63,7 +69,7 @@ namespace Cloudless
         public ScaleTransform? imageScaleTransform = new ScaleTransform();
         public TranslateTransform? imageTranslateTransform = new TranslateTransform();
 
-        private TextBlock? NoImageMessage;
+        private TextBlock? NoImageMessage = null;
 
         private ImageAnimationController? gifController;
 
@@ -232,7 +238,7 @@ namespace Cloudless
         public void Message(string message, TimeSpan? duration = null)
         {
             duration ??= TimeSpan.FromSeconds(1.5);
-            overlayManager.ShowOverlayMessage(message, (TimeSpan)duration);
+            overlayManager?.ShowOverlayMessage(message, (TimeSpan)duration);
         }
     }
 }

@@ -21,8 +21,8 @@ namespace Cloudless
         private int staticStarSession = -1;  // smelly technique for determining in star child generation whether they should proceed (if in old session, then no).
         private bool isWelcome = true;
         private DispatcherTimer? _resizeStarTimer;
-        private int brushKey = 0;
-        private Storyboard? orchStoryboard;
+        //private int brushKey = 0;
+        //private Storyboard? orchStoryboard;
 
         private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
         private int magicLayersCreated = 0;
@@ -473,7 +473,7 @@ namespace Cloudless
 
         internal class GradientStopContext
         {
-            internal GradientStop stop;
+            internal GradientStop? stop;
             internal string? name;
             internal AnimationTimeline? offsetAnimation;
             internal AnimationTimeline? colorAnimation;

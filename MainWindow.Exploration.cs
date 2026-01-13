@@ -402,7 +402,7 @@ namespace Cloudless
 
             if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
 
-            double derivedDelta = zoomDelta != null ? (double)zoomDelta : ((double)zoomFinal / imageScaleTransform.ScaleX);
+            double derivedDelta = zoomDelta != null ? (double)zoomDelta : ((double)(zoomFinal ?? 1) / imageScaleTransform.ScaleX);
 
             // Calculate new scale
             double newScaleX = imageScaleTransform.ScaleX * derivedDelta;
@@ -495,7 +495,7 @@ namespace Cloudless
                 return;
             }
 
-            if (currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
+            if (currentlyDisplayedImagePath?.ToLower().EndsWith(".gif") ?? false)
             {
                 Message("This app does not support rotating GIFs.");
                 return;

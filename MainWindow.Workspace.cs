@@ -26,7 +26,7 @@ namespace Cloudless
 
             var state = new CloudlessWindowState()
             {
-                ImagePath = currentlyDisplayedImagePath,
+                ImagePath = currentlyDisplayedImagePath ?? "",
                 Left = Left,
                 Top = Top,
                 Width = Width,
@@ -259,7 +259,7 @@ namespace Cloudless
         public double Height { get; set; }
 
         // Image view state
-        public string DisplayMode { get; set; }  // TODO convert this to an enum, here and elsewhere.
+        public string DisplayMode { get; set; } = "";  // TODO convert this to an enum, here and elsewhere.
         public double Zoom { get; set; }
         public double PanX { get; set; }
         public double PanY { get; set; }
@@ -270,7 +270,7 @@ namespace Cloudless
         public bool IsMaximized { get; set; }
         public int ZOrder { get; set; }  // relative order among Cloudless windows
 
-        public string CloudlessAppVersion { get; set; }
+        public string CloudlessAppVersion { get; set; } = "";
     }
 
     internal static class NativeMethods

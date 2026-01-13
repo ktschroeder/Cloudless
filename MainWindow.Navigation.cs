@@ -111,7 +111,7 @@ namespace Cloudless
         private void DuplicateWindow()
         {
             //debugger shows binding errors but may not be real issue, see perhaps https://stackoverflow.com/questions/14526371/menuitem-added-programmatically-causes-binding-error
-            var duplicateWindow = new MainWindow(currentlyDisplayedImagePath, this.Width, this.Height);
+            var duplicateWindow = new MainWindow(currentlyDisplayedImagePath ?? "", this.Width, this.Height);
             // could also include viewing mode, possibly panning/zooming etc. But this can get messy and imperfect unless total state is matched properly (preferences may not be aligned)
 
             //setDimensionsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
