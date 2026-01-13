@@ -183,7 +183,7 @@ namespace Cloudless
 
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
-                    var fileSizeMB = (double)(new FileInfo(uri.AbsolutePath).Length) / 1024 / 1024;
+                    var fileSizeMB = (double)(new FileInfo(uri.OriginalString).Length) / 1024 / 1024;
                     ShowLoadingOverlay($"Loading GIF... ({fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
                     await Dispatcher.Yield(DispatcherPriority.Background);
 
