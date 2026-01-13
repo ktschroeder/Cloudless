@@ -13,8 +13,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
+        public const string CURRENT_VERION = "0.5.1.1";
+
         #region Fields
-        public const string CURRENT_VERION = "0.5.1";
 
         private static readonly Mutex recentFilesMutex = new(false, "CloudlessRecentFilesMutex");
         private static readonly string recentFilesPath = Path.Combine(
@@ -65,19 +66,17 @@ namespace Cloudless
         private TextBlock? NoImageMessage;
 
         private ImageAnimationController? gifController;
+
+        private string? initialImageToLoad;
         #endregion
 
         #region Setup
         public MainWindow(string filePath, double windowW, double windowH)
         {
-            bool willLoadImage = filePath != null && filePath.Length > 0;
+            initialImageToLoad = filePath;
             Setup();
 
-            if (willLoadImage)
-            {
-                LoadImage(filePath, false);
-            }
-            else
+            if (initialImageToLoad == null)
             {
                 Zen(true);
             }
@@ -92,11 +91,7 @@ namespace Cloudless
             bool willLoadImage = filePath != null;
             Setup();
 
-            if (willLoadImage)
-            {
-                LoadImage(filePath, false);
-            }
-            else
+            if (initialImageToLoad == null)
             {
                 Zen(true);
             }
@@ -147,6 +142,14 @@ namespace Cloudless
             InitializeZenMode();
 
             _ = CheckForUpdatesAsync();  // fire and forget check for newer app version
+        }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (initialImageToLoad != null)
+            {
+                await LoadImage(initialImageToLoad, false);
+            }
         }
 
         private void Window_SourceInitialized(object sender, EventArgs e)

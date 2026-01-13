@@ -19,7 +19,8 @@
         SizeChanged="Window_SizeChanged"
         AllowDrop="True"
         DragOver="Window_DragOver"
-        Drop="Window_Drop">
+        Drop="Window_Drop"
+        Loaded="Window_Loaded">
 
     <Border x:Name="MainBorder" BorderBrush="Black" BorderThickness="2">
         <Grid Name="MyGrid">

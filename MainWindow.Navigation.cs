@@ -8,9 +8,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        private void OpenImage_Click(object sender, RoutedEventArgs e)
+        private async void OpenImage_Click(object sender, RoutedEventArgs e)
         {
-            OpenImage();
+            await OpenImage();
         }
         private void MinimizeWindow()
         {

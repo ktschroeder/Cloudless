@@ -20,7 +20,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        private void OpenImage()
+        private async Task OpenImage()
         {
             string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif";
             if (Properties.Settings.Default.WebmEnabled)
@@ -36,7 +36,7 @@ namespace Cloudless
 
             if (openFileDialog.ShowDialog() == true)
             {
-                LoadImage(openFileDialog.FileName, true);
+                await LoadImage(openFileDialog.FileName, true);
                 Message("File loaded from dialog.");
             }
         }
@@ -122,7 +122,7 @@ namespace Cloudless
                 Message($"An error occurred: {ex.Message}");
             }
         }
-        private void LoadImage(string? imagePath, bool openedThroughApp)
+        private async Task LoadImage(string? imagePath, bool openedThroughApp)
         {
             try
             {
@@ -151,14 +151,14 @@ namespace Cloudless
                     return;
                 }
 
-                DisplayImage(currentImageIndex, openedThroughApp);
+                await DisplayImage(currentImageIndex, openedThroughApp);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load the image at path \"{imagePath}\": {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private void DisplayImage(int index, bool openedThroughApp)
+        private async Task DisplayImage(int index, bool openedThroughApp)
         {
             RemoveZen();
             autoResizingSpaceIsToggled = false;
@@ -210,7 +210,7 @@ namespace Cloudless
 
                                 string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
                                 var ffmpeg = new FFmpegExecutor();
-                                ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
+                                await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
                                 using (var thumb = new Bitmap(tempThumbPath))
                                 {
                                     height = thumb.Height;
@@ -221,7 +221,7 @@ namespace Cloudless
                                 int convertedWidth = Math.Min(width, 500);
 
                                 string ffmpegArgs = $"-i \"{path}\" -vf \"scale=-1:{convertedWidth}:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" \"{convertedGifPath}\"";
-                                ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
+                                await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
                             }
 
                             var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
@@ -634,7 +634,7 @@ namespace Cloudless
                     Tag = file,
                     Icon = GetImageThumbnail(file, 16, 16, true)
                 };
-                fileItem.Click += (s, e) => OpenRecentFile((string)((MenuItem)s).Tag);
+                fileItem.Click += async (s, e) => await OpenRecentFile((string)((MenuItem)s).Tag);
                 RecentFilesMenu.Items.Add(fileItem);
             }
 
@@ -675,7 +675,7 @@ namespace Cloudless
             }
         }
 
-        public void OpenRecentFile(string filePath)
+        public async Task OpenRecentFile(string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -683,7 +683,7 @@ namespace Cloudless
                 return;
             }
 
-            LoadImage(filePath, true);
+            await LoadImage(filePath, true);
         }
         private void SaveRecentFiles()
         {
@@ -813,7 +813,7 @@ namespace Cloudless
     public class FFmpegExecutor
     {
         // returns whether successful
-        public bool ExecuteFFmpegCommand(string ffmpegArguments, MainWindow mainWindow)
+        public async Task<bool> ExecuteFFmpegCommand(string ffmpegArguments, MainWindow mainWindow)
         {
             var startInfo = new ProcessStartInfo
             {
@@ -856,7 +856,7 @@ namespace Cloudless
                     process.BeginErrorReadLine();
 
                     // Wait for the process to exit
-                    process.WaitForExit(); // Use WaitForExitAsync() for async
+                    await process.WaitForExitAsync(); // Use WaitForExitAsync() for async
 
                     if (process.ExitCode == 0)
                     {

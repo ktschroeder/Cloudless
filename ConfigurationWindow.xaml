@@ -64,7 +64,7 @@
                           Content="Disable smart zoom/pan corrections (only recommended for specific reasons)" 
                           Margin="0,2"/>
                 <CheckBox x:Name="WebmEnabledCheckbox" 
-                          Content="Enable limited WEBM support (FFmpeg must be installed and added to PATH)" 
+                          Content="Enable limited WEBM support (FFmpeg must be installed and added to PATH. Only suited to small files)" 
                           Margin="0,2"/>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
