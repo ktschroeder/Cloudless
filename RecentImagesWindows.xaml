@@ -10,7 +10,8 @@
         Background="Transparent"
         AllowsTransparency="True"
         MouseDown="Window_MouseDown"
-        KeyDown="Window_KeyDown">
+        KeyDown="Window_KeyDown"
+        Loaded="Window_Loaded">
 
     <Border Background="#FAFAFA"
             CornerRadius="6">

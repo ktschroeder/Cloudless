@@ -49,11 +49,14 @@ namespace Cloudless
                     Thumbnail = null  // placeholder, pending loading image. Could add an actual placeholder graphic if desired.
                 });
             }
-
-            LoadThumbnailsAsync();
         }
 
-        private async void LoadThumbnailsAsync()
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            await LoadThumbnailsAsync();
+        }
+
+        private async Task LoadThumbnailsAsync()
         {
             foreach (var item in RecentImages)
             {
@@ -61,7 +64,7 @@ namespace Cloudless
                     continue;
 
                 var thumb = await RunStaAsync(() =>
-                    MainWindow.GetImageThumbnail(item.FilePath, 128, 128).Source);
+                    MainWindow.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128).Source);
 
                 if (thumb != null)
                     item.Thumbnail = thumb;
@@ -99,7 +102,7 @@ namespace Cloudless
                 fe.DataContext is RecentImageItem item)
             {
                 if (Owner is MainWindow mw)
-                    await mw.OpenRecentFile(item.FilePath);
+                    await mw.OpenRecentFile(item.FilePath ?? "");
 
                 Close();
             }

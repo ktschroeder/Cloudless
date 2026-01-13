@@ -35,13 +35,7 @@ namespace Cloudless
         private int currentImageIndex;
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
-        private string? currentlyDisplayedImagePath { get 
-            {
-                if (currentlyDisplayedImagePath == null)
-                    throw new InvalidOperationException("currentlyDisplayedImagePath is null");
-                return currentlyDisplayedImagePath; 
-            } set { }
-        }
+        private string? currentlyDisplayedImagePath;
 
         private bool isCropMode;
         private double cropModeStartingImagePosX = 0;

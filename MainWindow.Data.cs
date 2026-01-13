@@ -263,7 +263,8 @@ namespace Cloudless
 
                 // hide the no-image message if an image is loaded
                 ImageDisplay.Visibility = Visibility.Visible;
-                NoImageMessage.Visibility = Visibility.Collapsed;
+                if (NoImageMessage != null)
+                    NoImageMessage.Visibility = Visibility.Collapsed;
 
                 if (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
                 {
@@ -483,7 +484,8 @@ namespace Cloudless
 
                 // Show the image and hide the no-image message
                 ImageDisplay.Visibility = Visibility.Visible;
-                NoImageMessage.Visibility = Visibility.Collapsed;
+                if (NoImageMessage != null) 
+                    NoImageMessage.Visibility = Visibility.Collapsed;
 
                 ApplyDisplayMode();
             }
@@ -692,7 +694,7 @@ namespace Cloudless
                 try
                 {
                     // Ensure the directory exists
-                    Directory.CreateDirectory(Path.GetDirectoryName(recentFilesPath));
+                    Directory.CreateDirectory(Path.GetDirectoryName(recentFilesPath) ?? "");
 
                     File.WriteAllText(recentFilesPath, System.Text.Json.JsonSerializer.Serialize(recentFiles));
                 }
@@ -815,7 +817,7 @@ namespace Cloudless
         // returns whether successful
         public async Task<bool> ExecuteFFmpegCommand(string ffmpegArguments, MainWindow mainWindow)
         {
-            var startInfo = new ProcessStartInfo
+            ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "ffmpeg", // "ffmpeg.exe" on Windows, "ffmpeg" on Linux/macOS, relies on the system PATH
                 Arguments = ffmpegArguments,
