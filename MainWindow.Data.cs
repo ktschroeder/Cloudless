@@ -13,7 +13,6 @@ using WebP.Net;
 using System.Collections.Specialized;
 using System.Text.Json;
 using NReco.VideoConverter;
-using Newtonsoft.Json;
 using Path = System.IO.Path;
 using Image = System.Drawing.Image;
 
@@ -429,7 +428,7 @@ namespace Cloudless
             if (File.Exists(mapFile))
             {
                 string text = File.ReadAllText(mapFile);
-                dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
+                dict = JsonSerializer.Deserialize<Dictionary<string, string>>(text);
             }
 
             return dict;
@@ -441,7 +440,7 @@ namespace Cloudless
             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
             string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
 
-            var str = JsonConvert.SerializeObject(map);
+            var str = JsonSerializer.Serialize(map);
             File.WriteAllText(mapFile, str);
         }
 
