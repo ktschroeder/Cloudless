@@ -12,10 +12,8 @@ using System.Windows.Media.Imaging;
 using WebP.Net;
 using System.Collections.Specialized;
 using System.Text.Json;
-using NReco.VideoConverter;
 using Path = System.IO.Path;
-using Image = System.Drawing.Image;
-
+using System.Diagnostics;
 
 namespace Cloudless
 {
@@ -182,7 +180,6 @@ namespace Cloudless
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
                 {
-                    var ffmpeg = new FFMpegConverter();
                     try
                     {
                         var path = uri.OriginalString;
@@ -193,11 +190,6 @@ namespace Cloudless
 
                         if (!File.Exists(convertedGifPath))
                         {
-                            var settings = new ConvertSettings();
-                            //settings.VideoFrameSize
-                            // via https://superuser.com/questions/1049606/reduce-generated-gif-size-using-ffmpeg
-                            //settings.CustomOutputArgs = "fps=5,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=32[p];[s1][p]paletteuse=dither=bayer";
-
                             string directory = Path.GetTempPath();
                             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
                             string tempThumbPath = Path.Combine(cloudlessTempPath, "ThumbTemp.jpg");
@@ -205,32 +197,21 @@ namespace Cloudless
                             int height = -1;
                             int width = -1;
 
-                            using (FileStream stream = new FileStream(tempThumbPath, FileMode.Create))
+                            string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
+                            FFmpegExecutor.ExecuteFFmpegCommand(ffmpegThumbArgs);
+                            using (var thumb = new Bitmap(tempThumbPath))
                             {
-                                ffmpeg.GetVideoThumbnail(path, stream);
-
-                                using (var image = Image.FromStream(stream, false, false))
-                                {
-                                    height = image.Height;
-                                    width = image.Width;
-                                }
+                                height = thumb.Height;
+                                width = thumb.Width;
                             }
-
                             File.Delete(tempThumbPath);
 
-                            if (height > 500)
-                            {
-                                double shrinkMultiplier = 500d / (double)height;
-                                settings.SetVideoFrameSize((int)(width * shrinkMultiplier), (int)(height * shrinkMultiplier));
-                            }
+                            int convertedWidth = Math.Min(width, 500);
 
-                            ffmpeg.ConvertMedia(path, null, convertedGifPath, null, settings);
-
-                            // Optional: Customize conversion settings (e.g., lower frame rate for smaller size)
-                            // var settings = new ConvertSettings();
-                            // settings.SetVideoFrameRate(10); // set frame rate to 10 fps
-                            // ffmpeg.ConvertMedia(inputFile, null, "output_low_fps.gif", null, settings);
+                            string ffmpegArgs = $"-i \"{path}\" -vf \"scale=-1:{convertedWidth}:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse\" \"{convertedGifPath}\"";
+                            FFmpegExecutor.ExecuteFFmpegCommand(ffmpegArgs);
                         }
+
                         var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
                         ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
                         ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);
@@ -810,5 +791,73 @@ namespace Cloudless
         public bool prerelease { get; set; }
         public bool draft { get; set; }
         public DateTime published_at { get; set; }
+    }
+
+    public static class FFmpegExecutor
+    {
+        // returns whether successful
+        public static bool ExecuteFFmpegCommand(string ffmpegArguments)//(string inputFilePath, string outputFilePath)
+        {
+            // Define the arguments for the FFmpeg command
+            // This example converts an input file to a webm format
+            //string arguments = "-version";// $"-i \"{inputFilePath}\" -threads 8 -f webm -aspect 16:9 -vcodec libvpx -acodec libvorbis \"{outputFilePath}\"";
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg", // "ffmpeg.exe" on Windows, "ffmpeg" on Linux/macOS, relies on the system PATH
+                Arguments = ffmpegArguments,
+                UseShellExecute = false, // Must be false to redirect I/O streams
+                RedirectStandardOutput = true,
+                RedirectStandardError = true, // Often FFmpeg output is on StandardError
+                CreateNoWindow = true
+            };
+
+            Console.WriteLine($"Executing: {startInfo.FileName} {startInfo.Arguments}");
+
+            try
+            {
+                using (Process process = Process.Start(startInfo))
+                {
+                    // Capture output (optional, but useful for debugging and progress monitoring)
+                    process.OutputDataReceived += (sender, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            Console.WriteLine($"[FFmpeg OUT] {e.Data}");
+                        }
+                    };
+                    process.ErrorDataReceived += (sender, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            // FFmpeg progress usually comes through the error stream
+                            Console.WriteLine($"[FFmpeg ERR] {e.Data}");
+                        }
+                    };
+
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    // Wait for the process to exit
+                    process.WaitForExit(); // Use WaitForExitAsync() for async
+
+                    if (process.ExitCode == 0)
+                    {
+                        Console.WriteLine("FFmpeg command executed successfully.");
+                        return true;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"FFmpeg command failed with exit code: {process.ExitCode}");
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return false;
+            }
+        }
     }
 }
