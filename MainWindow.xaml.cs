@@ -88,7 +88,7 @@ namespace Cloudless
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
 
-            bool willLoadImage = filePath != null;
+            initialImageToLoad = filePath;
             Setup();
 
             if (initialImageToLoad == null)
