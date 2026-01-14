@@ -117,8 +117,7 @@ namespace Cloudless
             LoadRecentFiles();
             UpdateContextMenuState();
             PrepareZoomMenu();
-            UpdateRecentFilesMenu();
-
+            
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
             InitializeZooming();
@@ -146,6 +145,8 @@ namespace Cloudless
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            await UpdateRecentFilesMenu();
+
             if (initialImageToLoad != null && WorkspaceLoadInProgress == false)
             {
                 await LoadImage(initialImageToLoad, false);

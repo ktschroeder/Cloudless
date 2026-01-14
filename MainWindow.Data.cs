@@ -184,7 +184,7 @@ namespace Cloudless
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
                 {
                     var fileSizeMB = (double)(new FileInfo(uri.OriginalString).Length) / 1024 / 1024;
-                    ShowLoadingOverlay($"Loading GIF... ({fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
+                    ShowLoadingOverlay($"Loading GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
                     await Dispatcher.Yield(DispatcherPriority.Background);
 
                     var bitmap = new BitmapImage(uri);
@@ -426,45 +426,67 @@ namespace Cloudless
             if (!Directory.Exists(cloudlessTempPath))
                 Directory.CreateDirectory(cloudlessTempPath);
 
-            var webmGifDict = GetWebmGifConversionMap();
-            if (webmGifDict.TryGetValue(currentlyDisplayedImagePath ?? "", out string? gifName))
-                return Path.Combine(cloudlessTempPath, gifName);
+            string gifDestination = Path.Combine(cloudlessTempPath, "GifsFromWebms");
+            if (!Directory.Exists(gifDestination))
+                Directory.CreateDirectory(gifDestination);
+
+            string thumbDestination = Path.Combine(cloudlessTempPath, "ThumbnailsFromWebms");
+            if (!Directory.Exists(thumbDestination))
+                Directory.CreateDirectory(thumbDestination);
+
+            var webmXrefDict = GetWebmGifConversionMap();
+            if (webmXrefDict.TryGetValue(currentlyDisplayedImagePath ?? "", out WebmXref? webmXref))
+                return Path.Combine(gifDestination, webmXref.GifPath);
 
             string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath ?? "");
-            string extension = ".gif";
             int index = 0;
 
-            string filePath;
+            string gifPath;
             do
             {
-                filePath = Path.Combine(cloudlessTempPath, $"{originalFileName}_{index}{extension}");
+                gifPath = Path.Combine(gifDestination, $"{originalFileName}_{index}.gif");
                 index++;
-            } while (File.Exists(filePath));
+            } while (File.Exists(gifPath));
 
-            webmGifDict.Add(currentlyDisplayedImagePath ?? "", Path.GetFileNameWithoutExtension(filePath) + ".gif");
-            UpdateWebmGifConversionMap(webmGifDict);
+            string thumbPath;
+            index = 0;
+            do
+            {
+                thumbPath = Path.Combine(thumbDestination, $"{originalFileName}_{index}.jpg");
+                index++;
+            } while (File.Exists(thumbPath));
 
-            return filePath;
+            var xref = new WebmXref { GifPath = gifPath, ThumbnailPath = thumbPath };
+            webmXrefDict.Add(currentlyDisplayedImagePath ?? "", xref);
+            UpdateWebmGifConversionMap(webmXrefDict);
+
+            return gifPath;
         }
 
-        private Dictionary<string, string> GetWebmGifConversionMap()  // (WEBM full path, GIF filename)
+        class WebmXref
+        {
+            public string GifPath { get; set; } = "";
+            public string ThumbnailPath { get; set; } = "";
+        }
+
+        private static Dictionary<string, WebmXref> GetWebmGifConversionMap()  // (WEBM full path, GIF filename)
         {
             string directory = Path.GetTempPath();
             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
             string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
 
-            Dictionary<string, string>? dict = null;
+            Dictionary<string, WebmXref>? dict = null;
 
             if (File.Exists(mapFile))
             {
                 string text = File.ReadAllText(mapFile);
-                dict = JsonSerializer.Deserialize<Dictionary<string, string>>(text);
+                dict = JsonSerializer.Deserialize<Dictionary<string, WebmXref>>(text);
             }
 
-            return dict ?? new Dictionary<string, string>();
+            return dict ?? new Dictionary<string, WebmXref>();
         }
 
-        private void UpdateWebmGifConversionMap(Dictionary<string, string> map)
+        private void UpdateWebmGifConversionMap(Dictionary<string, WebmXref> map)
         {
             string directory = Path.GetTempPath();
             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
@@ -611,10 +633,30 @@ namespace Cloudless
             }
         }
 
-        public static System.Windows.Controls.Image? GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false)
+        public async Task<System.Windows.Controls.Image?> GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false)
         {
             try  // called 10+ times every time context menu is used/updated. Could be more efficient.
             {
+                // if WEBM then use the pre-created thumbnail if it exists
+                if (filePath.ToLower().EndsWith(".webm"))
+                {
+                    var xrefDict = GetWebmGifConversionMap();
+                    var xref = xrefDict.GetValueOrDefault(filePath);
+                    if (xref == null)
+                        return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };
+
+                    var thumbPath = xref.ThumbnailPath;
+                    if (!File.Exists(thumbPath))
+                    {
+                        // must create the thumbnail
+                        string ffmpegThumbArgs = $"-i \"{filePath}\" -frames:v 1 \"{thumbPath}\"";
+                        var ffmpeg = new FFmpegExecutor();
+                        await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
+                    }
+
+                    filePath = thumbPath;
+                }
+
                 using var stream = File.OpenRead(filePath);
 
                 var bitmap = new BitmapImage();
@@ -650,7 +692,7 @@ namespace Cloudless
                 return new System.Windows.Controls.Image { Source = null, Width = width, Height = height }; ;  // Return null if there's an issue loading the image
             }
         }
-        private void UpdateRecentFilesMenu()  // no side effects beyond instance. Reads from static file at this time, does not write to it.
+        private async Task UpdateRecentFilesMenu()  // no side effects beyond instance. Reads from static file at this time, does not write to it.
         {
             LoadRecentFiles(); // Always fetch the latest list
 
@@ -665,7 +707,7 @@ namespace Cloudless
                     Header = System.IO.Path.GetFileName(file),
                     ToolTip = file,
                     Tag = file,
-                    Icon = GetImageThumbnail(file, 16, 16, true)
+                    Icon = await GetImageThumbnail(file, 16, 16, true)
                 };
                 fileItem.Click += async (s, e) => await OpenRecentFile((string)((MenuItem)s).Tag);
                 RecentFilesMenu.Items.Add(fileItem);
@@ -694,7 +736,7 @@ namespace Cloudless
                     Header = "Clear History",
                     ToolTip = "Clear the list of recent files."
                 };
-                clearHistoryItem.Click += (s, e) => ClearRecentFiles();
+                clearHistoryItem.Click += async (s, e) => await ClearRecentFiles();
                 RecentFilesMenu.Items.Add(clearHistoryItem);
             }
             else
@@ -739,10 +781,10 @@ namespace Cloudless
                 MessageBox.Show("Unable to write to recent files. Another instance may be busy.");  // TODO should this and other similar lines be replaced with Message()? These might be outdated.
             }
         }
-        private void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
+        private async void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
         {
             LoadRecentFiles();
-            UpdateRecentFilesMenu();
+            await UpdateRecentFilesMenu();
         }
 
         private void LoadRecentFiles() // TODO handle exceptions: file corruption, access issues, launching with empty or missing list, manually deleting file outside of or inside of session(s).
@@ -772,11 +814,11 @@ namespace Cloudless
             }
         }
 
-        private void ClearRecentFiles()
+        private async Task ClearRecentFiles()
         {
             recentFiles.Clear();
             SaveRecentFiles();
-            UpdateRecentFilesMenu();
+            await UpdateRecentFilesMenu();
         }
 
         async Task<GitHubRelease?> GetLatestReleaseAsync(bool allowPrerelease)

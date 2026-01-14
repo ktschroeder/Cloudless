@@ -67,7 +67,7 @@
                           Content="Enable limited WEBM support (FFmpeg must be installed and added to PATH. Only suited to small files)" 
                           Margin="0,2"/>
 
-                <Button Content="Manage WEBM-GIF conversion cache"
+                <Button Content="Manage cache (GIFs from converted WEBMs, thumbnails, etc.)"
                         Click="ManageGifCache_Click" 
                         Margin="0,6,0,6"
                         Style="{StaticResource CloudlessButton}"/>
