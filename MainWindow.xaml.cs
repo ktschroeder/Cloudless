@@ -13,7 +13,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.5.1";
+        public const string CURRENT_VERION = "0.5.1.11";
 
         #region Fields
 
@@ -208,10 +208,29 @@ namespace Cloudless
 
             double? imageTrueWidth = null;
             double? imageTrueHeight = null;
+            double? realScale = null;
+            double? tloX = null;  // Top Left Origin, as opposed to central origin. These values are with respect to coordinates on the original image in original dimensions.
+            double? tloY = null;  // This TLO debug info is to help sort out the advanced wallpaper feature
+            double? tloWidth = null;
+            double? tloHeight = null;
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 imageTrueWidth = bitmap.PixelWidth;
                 imageTrueHeight = bitmap.PixelHeight;
+                realScale = imageWidth / (double)imageTrueWidth * (double)scaleX;  // ignores nuance if x and y scales don't match, i.e. stretching
+
+                if (WindowState == WindowState.Maximized)
+                {
+                    var diff = GetHackBorderSizeWhenFullscreen().Left * 2;
+                    windowHeight -= diff;
+                    windowWidth -= diff;
+                }
+
+                // evil graphics math
+                tloX = imageTrueWidth / 2 - (translateX + windowWidth / 2) / realScale;
+                tloY = imageTrueHeight / 2 - (translateY + windowHeight / 2) / realScale;
+                tloWidth = windowWidth / realScale;
+                tloHeight = windowHeight / realScale;
             }
 
             // Debug text
@@ -225,7 +244,10 @@ namespace Cloudless
             $"Left Margin: {ImageDisplay.Margin.Left:F2}\n" +
             $"Top Margin: {ImageDisplay.Margin.Top:F2}\n" +
             $"Scale: X={scaleX:F2}, Y={scaleY:F2}\n" +
+            $"Real Zoom: {realScale ?? 0:F2}\n" +
             $"Translation: X={translateX:F2}, Y={translateY:F2}\n" +
+            $"Effective crop rect with TLO: X={tloX ?? 0:F2}, Y={tloY ?? 0:F2}\n" +
+            $"Effective crop rect with TLO: Width={tloWidth ?? 0:F2}, Height={tloHeight ?? 0:F2}\n" +
             $"Cursor (Window): X={cursorPosition.X:F2}, Y={cursorPosition.Y:F2}\n" +
             $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
             $"Display mode: {displayMode:F2}";

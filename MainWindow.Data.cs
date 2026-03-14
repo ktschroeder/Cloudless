@@ -18,6 +18,9 @@ using System.ComponentModel;
 using System.Windows.Threading;
 using System.Windows.Shapes;
 using System;
+using System.Windows.Media;
+using Point = System.Windows.Point;
+using Size = System.Windows.Size;
 
 namespace Cloudless
 {
@@ -873,6 +876,76 @@ namespace Cloudless
                 //Message(e.ToString());
                 // Fail silently — update checks should NEVER crash the app
             }
+        }
+
+        public Bitmap CreateImageForWallpaper()
+        {
+            var img = ImageDisplay.Source as BitmapSource;
+
+            // Window dimensions
+            double windowWidth = this.ActualWidth;
+            double windowHeight = this.ActualHeight;
+
+            // Image dimensions
+            double imageWidth = ImageDisplay.ActualWidth;
+            double imageHeight = ImageDisplay.ActualHeight;
+
+            // Image scale
+            double? scaleX = imageScaleTransform?.ScaleX;
+            double? scaleY = imageScaleTransform?.ScaleY;
+
+            // Image translation
+            double? translateX = imageTranslateTransform?.X;
+            double? translateY = imageTranslateTransform?.Y;
+            double? imageTrueWidth = null;
+            double? imageTrueHeight = null;
+            double? realScale = null;
+            double? tloX = null;  // Top Left Origin, as opposed to central origin. These values are with respect to coordinates on the original image in original dimensions.
+            double? tloY = null;
+            double? tloWidth = null;
+            double? tloHeight = null;
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
+                imageTrueWidth = bitmap.PixelWidth;
+                imageTrueHeight = bitmap.PixelHeight;
+                realScale = imageWidth / (double)imageTrueWidth * (double)scaleX;  // ignores nuance if x and y scales don't match, i.e. stretching
+
+                if (WindowState == WindowState.Maximized)
+                {
+                    var diff = GetHackBorderSizeWhenFullscreen().Left * 2;
+                    windowHeight -= diff;
+                    windowWidth -= diff;
+                }
+
+                // evil graphics math
+                tloX = imageTrueWidth / 2 - (translateX + windowWidth / 2) / realScale;   // TODO enforce: must not be stretched (for now?) and must not have any visible margins
+                tloY = imageTrueHeight / 2 - (translateY + windowHeight / 2) / realScale;
+                tloWidth = windowWidth / realScale;
+                tloHeight = windowHeight / realScale;
+            }
+
+            // define the crop area (X, Y, Width, Height in pixels)
+            Int32Rect cropRect = new Int32Rect((int)tloX, (int)tloY, (int)tloWidth, (int)tloHeight);
+
+            var croppedBitmap = new CroppedBitmap(img, cropRect);
+
+            MemoryStream ms = new MemoryStream();
+            var encoder = new PngBitmapEncoder();  // supports images with alpha channels (transparency)
+            encoder.Frames.Add(BitmapFrame.Create(croppedBitmap));
+            encoder.Save(ms);
+            ms.Flush();
+            return new Bitmap(ms);
+        }
+
+        private static Bitmap ConvertBitmapSourceToBitmap(BitmapSource source)
+        {
+            using var stream = new MemoryStream();
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(source));
+            encoder.Save(stream);
+
+            return new Bitmap(stream);
         }
     }
 

@@ -1,6 +1,8 @@
-﻿using System.Windows;
+﻿using System.Drawing;
+using System.Windows;
 using System.Windows.Input;
 using WpfAnimatedGif;
+using Point = System.Windows.Point;
 
 namespace Cloudless
 {
@@ -310,6 +312,24 @@ namespace Cloudless
             if (e.Key == Key.B)
             {
                 ResizeWindowToRemoveBestFitBars();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.L)
+            {
+                if (Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    try {
+                        Bitmap wallpaperBitmap = CreateImageForWallpaper();
+                        WallpaperHelper.SetWallpaper(wallpaperBitmap);
+                    } catch { }  // TODO cleanup
+                }
+                else
+                {
+                    WallpaperHelper.SetWallpaper(currentlyDisplayedImagePath);
+                }
+
                 e.Handled = true;
                 return;
             }
