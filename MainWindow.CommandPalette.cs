@@ -70,7 +70,7 @@ namespace Cloudless
             if (PreviousTabScrollText != CommandTextBox.Text)
                 TabScroll = false;
 
-            if (CommandTextBox.Text.ToLower().StartsWith(":ws l ") || CommandTextBox.Text.ToLower().StartsWith(":ws s "))
+            if (CommandTextBox.Text.ToLower().StartsWith(":ws l ") || CommandTextBox.Text.ToLower().StartsWith(":ws s ") || CommandTextBox.Text.ToLower().StartsWith(":ws m "))
             {
                 string commandBase = CommandTextBox.Text.Substring(0,6);
                 if (!TabScroll)

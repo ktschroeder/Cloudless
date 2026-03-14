@@ -54,7 +54,7 @@ namespace Cloudless
                 $"wallpaper_{Guid.NewGuid()}.png");
 
             bitmap.Save(filePath, ImageFormat.Png);
-
+            // TODO delete this temp file once finished
             return filePath;
         }
 
