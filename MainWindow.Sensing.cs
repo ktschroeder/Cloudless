@@ -316,14 +316,16 @@ namespace Cloudless
                 return;
             }
 
-            if (e.Key == Key.L)
+            if (e.Key == Key.W)
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
                     try {
                         Bitmap wallpaperBitmap = CreateImageForWallpaper();
                         WallpaperHelper.SetWallpaper(wallpaperBitmap);
-                    } catch { }  // TODO cleanup
+                    } catch {
+                        Message("Failed to set wallpaper from view. Make sure there are no visible margins.");
+                    } 
                 }
                 else
                 {

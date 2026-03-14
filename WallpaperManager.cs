@@ -34,6 +34,8 @@ namespace Cloudless
 
             if (!result)
                 throw new Exception("Failed to set wallpaper.");
+
+            File.Delete(path);
         }
 
         public static void SetWallpaper(string path)
@@ -54,7 +56,7 @@ namespace Cloudless
                 $"wallpaper_{Guid.NewGuid()}.png");
 
             bitmap.Save(filePath, ImageFormat.Png);
-            // TODO delete this temp file once finished
+            
             return filePath;
         }
 
