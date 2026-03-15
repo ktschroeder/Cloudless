@@ -379,6 +379,25 @@ namespace Cloudless
                 return false;
             }
 
+            if (command.ToLower().StartsWith("dim "))
+            {
+                if (command.Length < 5)
+                    return false;
+
+                string dim = command.Substring(4);
+                var dims = dim.Split(' ');
+                if (dims.Length != 2)
+                    return false;
+
+                if (!int.TryParse(dims[0], out int width) || !int.TryParse(dims[1], out int height))
+                    return false;
+
+                ResizeWindow(width, height);
+                CenterWindow();
+
+                return true;
+            }
+
             if (command.ToLower().Equals("cip"))  // copy image path
             {
                 Clipboard.SetText(currentlyDisplayedImagePath);
