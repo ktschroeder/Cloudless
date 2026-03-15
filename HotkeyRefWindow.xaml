@@ -44,7 +44,7 @@
                             <Run Text="Esc:" FontWeight="Bold"/> Exit fullscreen or close a secondary window
                         </TextBlock>
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="F:" FontWeight="Bold"/> Set window size to image's true dimensions
+                            <Run Text="F:" FontWeight="Bold"/> Set window size to image's true dimensions, or as big as possible without going off-screen
                         </TextBlock>
                         <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
                             <Run Text="O:" FontWeight="Bold"/> Open an image

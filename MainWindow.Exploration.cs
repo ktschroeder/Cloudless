@@ -318,6 +318,40 @@ namespace Cloudless
                 this.Height = newHeight;
             }
         }
+
+        public void ResizeImageToFillWindow() 
+        {
+            if (!isExplorationMode)
+                EnterExplorationMode();
+
+            // TODO maybe require best fit mode?
+            // TODO behavior with advanced wallpaper feature? Be wary of tiny margins causing issues. maybe add a small pixel buffer or something. Test this with various images etc.
+            if (ImageDisplay.Source is BitmapSource bitmap)
+            {
+                double imageWidth = bitmap.PixelWidth;
+                double imageHeight = bitmap.PixelHeight;
+
+                double windowWidth = this.ActualWidth;  // TODO include fullscreen hack probably? Test both ways
+                double windowHeight = this.ActualHeight;
+
+                var imageLandscapeness = imageWidth / imageHeight;
+                var windowLandscapeness = windowWidth / windowHeight;
+                bool imageIsLandscaperThanWindow = imageLandscapeness > windowLandscapeness;
+                if (imageIsLandscaperThanWindow)
+                {
+                    // zoom so that height matches wiwndow. width will be cut-off.
+                    var targetRealScale = windowHeight / imageHeight;
+                    ZoomFromCenterToGivenScale(targetRealScale);
+                }
+                else
+                {
+                    // zoom so that width matches wiwndow. height will be cut-off.
+                    var targetRealScale = windowWidth / imageWidth;
+                    ZoomFromCenterToGivenScale(targetRealScale);
+                }
+            }
+        }
+
         private void CenterWindow()
         {
             var workingArea = SystemParameters.WorkArea;

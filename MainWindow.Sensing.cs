@@ -316,6 +316,13 @@ namespace Cloudless
                 return;
             }
 
+            if (e.Key == Key.L)
+            {
+                ResizeImageToFillWindow();
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.W)
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control)
