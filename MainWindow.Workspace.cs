@@ -33,6 +33,7 @@ namespace Cloudless
                 Height = Height,
                 CloudlessAppVersion = GetVersion(),
                 IsMaximized = this.WindowState == WindowState.Maximized,
+                IsMinimized = this.WindowState == WindowState.Minimized,
                 DisplayMode = Cloudless.Properties.Settings.Default.DisplayMode,
                 Zoom = imageScaleTransform.ScaleX,  // Y would be the same as X regardless
                 PanX = imageTranslateTransform.X,
@@ -57,11 +58,20 @@ namespace Cloudless
                     return (-2, null);
                 }
 
-                var zOrderMap = GetZOrderForCurrentProcessWindows();
+                var zOrderMap = GetZOrderForCurrentProcessWindows();  // TODO unused? probably replace a few lines below.
 
                 foreach (var window in Application.Current.Windows.OfType<MainWindow>())
                 {
-                    workspace.CloudlessWindows.Add(window.GetWindowState(GetZOrderForCurrentProcessWindows()));
+                    CloudlessWindowState cws;
+                    if (window.WindowState == WindowState.Minimized)
+                    {  // "WindowState" on this line refers to Windows's window state (maximied, e.g.), not CloudlessWindowState
+                        cws = window.stateUponMinimizing;
+                        cws.IsMinimized = true;
+                    }
+                    else
+                        cws = window.GetWindowState(GetZOrderForCurrentProcessWindows());
+
+                    workspace.CloudlessWindows.Add(cws);
                 }
 
                 var options = new JsonSerializerOptions
@@ -175,7 +185,7 @@ namespace Cloudless
                 await window.LoadImage(state.ImagePath, false);
                 window.ApplyWindowState(state);
                 window.Show();
-                window.PostProcessLoadedWindow();
+                window.PostProcessLoadedWindow(state);
             }
         }
 
@@ -213,9 +223,13 @@ namespace Cloudless
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
 
-        public void PostProcessLoadedWindow()
+        public void PostProcessLoadedWindow(CloudlessWindowState state)
         {
-            ToggleCropMode(false, true);
+            if (state.IsMinimized)
+                MinimizeWindow(state);  // this must be done after calling Show() on window, or else image is re-rendered improperly later
+
+            ToggleCropMode(setTo: false, silent: true);
+            
             WorkspaceLoadInProgress = false;
         }
 
@@ -245,7 +259,7 @@ namespace Cloudless
 
     public class CloudlessWorkspace
     {
-        public int SchemaVersion { get; set; } = 1;
+        public int SchemaVersion { get; set; } = 2;
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
     }
 
@@ -269,6 +283,7 @@ namespace Cloudless
 
         // Optional but useful
         public bool IsMaximized { get; set; }
+        public bool IsMinimized { get; set; }
         public int ZOrder { get; set; }  // relative order among Cloudless windows
 
         public string CloudlessAppVersion { get; set; } = "";

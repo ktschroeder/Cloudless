@@ -13,7 +13,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.5.1.13";
+        public const string CURRENT_VERION = "0.5.1.14";
 
         #region Fields
 
@@ -68,6 +68,8 @@ namespace Cloudless
         private ImageAnimationController? gifController;
 
         private string? initialImageToLoad;
+
+        private CloudlessWindowState? stateUponMinimizing = null;
         #endregion
 
         #region Setup

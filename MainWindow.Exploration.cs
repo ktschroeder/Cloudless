@@ -324,14 +324,13 @@ namespace Cloudless
             if (!isExplorationMode)
                 EnterExplorationMode();
 
-            // TODO maybe require best fit mode?
-            // TODO behavior with advanced wallpaper feature? Be wary of tiny margins causing issues. maybe add a small pixel buffer or something. Test this with various images etc.
+            
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 double imageWidth = bitmap.PixelWidth;
                 double imageHeight = bitmap.PixelHeight;
 
-                double windowWidth = this.ActualWidth;  // TODO include fullscreen hack probably? Test both ways
+                double windowWidth = this.ActualWidth;  // can include fullscreen margin hack if needed
                 double windowHeight = this.ActualHeight;
 
                 var imageLandscapeness = imageWidth / imageHeight;

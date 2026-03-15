@@ -325,18 +325,23 @@ namespace Cloudless
 
             if (e.Key == Key.W)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control)
-                {
-                    try {
-                        Bitmap wallpaperBitmap = CreateImageForWallpaper();
-                        WallpaperHelper.SetWallpaper(wallpaperBitmap);
-                    } catch {
-                        Message("Failed to set wallpaper from view. Make sure there are no visible margins.");
-                    } 
-                }
-                else
-                {
-                    WallpaperHelper.SetWallpaper(currentlyDisplayedImagePath);
+                if (!string.IsNullOrEmpty(currentlyDisplayedImagePath)){
+                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    {
+                        try
+                        {
+                            Bitmap wallpaperBitmap = CreateImageForWallpaper();
+                            WallpaperHelper.SetWallpaper(wallpaperBitmap);
+                        }
+                        catch
+                        {
+                            Message("Failed to set wallpaper from view. Make sure there are no visible margins.");
+                        }
+                    }
+                    else
+                    {
+                        WallpaperHelper.SetWallpaper(currentlyDisplayedImagePath);
+                    }
                 }
 
                 e.Handled = true;

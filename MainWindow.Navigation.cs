@@ -12,8 +12,15 @@ namespace Cloudless
         {
             await OpenImage();
         }
-        private void MinimizeWindow()
+        private void MinimizeWindow(CloudlessWindowState stateFromWorkspaceLoad = null)
         {
+            if (stateFromWorkspaceLoad != null)
+            {
+                stateUponMinimizing = stateFromWorkspaceLoad;
+                stateUponMinimizing.IsMinimized = false;
+            }
+            else
+                stateUponMinimizing = GetWindowState(GetZOrderForCurrentProcessWindows());
             this.WindowState = WindowState.Minimized;
         }
         private void Minimize_Click(object sender, RoutedEventArgs e)
