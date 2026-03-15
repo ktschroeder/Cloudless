@@ -76,7 +76,7 @@ namespace Cloudless
             initialImageToLoad = filePath;
             Setup();
 
-            if (initialImageToLoad == null)
+            if (string.IsNullOrEmpty(initialImageToLoad))
             {
                 Zen(true);
             }
@@ -91,7 +91,7 @@ namespace Cloudless
             initialImageToLoad = filePath;
             Setup();
 
-            if (initialImageToLoad == null)
+            if (string.IsNullOrEmpty(initialImageToLoad))
             {
                 Zen(true);
             }
@@ -147,7 +147,7 @@ namespace Cloudless
         {
             await UpdateRecentFilesMenu();
 
-            if (initialImageToLoad != null && WorkspaceLoadInProgress == false)
+            if (!string.IsNullOrEmpty(initialImageToLoad) && WorkspaceLoadInProgress == false)
             {
                 await LoadImage(initialImageToLoad, false);
             }
