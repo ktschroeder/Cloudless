@@ -15,6 +15,7 @@ namespace Cloudless
         public SetDimensionsWindow(double w, double h)
         {
             InitializeComponent();
+            EventManager.RegisterClassHandler(typeof(System.Windows.Controls.TextBox), System.Windows.Controls.TextBox.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(OnGotKeyboardFocus));
             FillDimensionInfo(w, h);
         }
         public void FillDimensionInfo(double w, double h)  // could also just send in dimensions as parameters here
@@ -52,6 +53,14 @@ namespace Cloudless
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        void OnGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            var textBox = sender as System.Windows.Controls.TextBox;
+
+            if (textBox != null && !textBox.IsReadOnly && e.KeyboardDevice.IsKeyDown(Key.Tab))
+                textBox.SelectAll();
         }
     }
 }
