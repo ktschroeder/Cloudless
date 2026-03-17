@@ -28,28 +28,52 @@ namespace Cloudless
         private int magicLayersCreated = 0;
         private const int CONCURRENT_ZEN_LAYERS = 4;
 
+        private Queue<MagicLayer> magicLayers = new Queue<MagicLayer>();
+
+        // Track stars so we can properly detach handlers and animations
+        private List<StarEntry> _activeStars = new List<StarEntry>();
+        private class StarEntry
+        {
+            public Ellipse Star { get; set; } = null!;
+            public Storyboard Storyboard { get; set; } = null!;
+            public EventHandler? CompletedHandler { get; set; }
+        }
+
         private void InitializeZenMode()
         {
             _resizeStarTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(400)
             };
-            _resizeStarTimer.Tick += (s, e) =>
-            {
-                _resizeStarTimer.Stop();
-                if (isZen) {
-                    GenerateStars();
-                }; // Only regenerate stars once resizing stops
-            };
+            _resizeStarTimer.Tick += ResizeStarTimer_Tick;
 
-            MyGrid.SizeChanged += (s, e) =>
+            MyGrid.SizeChanged += MyGrid_SizeChanged;
+
+            this.Closing += (s, e) =>
             {
-                ClearStars();
-                _resizeStarTimer.Stop(); // Restart the timer on each size change
-                _resizeStarTimer.Start();
+                try
+                {
+                    _resizeStarTimer?.Stop();
+                    RemoveZen(true);
+                }
+                catch { }
             };
-            _resizeStarTimer.Start();
         }
+
+        private void ResizeStarTimer_Tick(object? sender, EventArgs e)
+        {
+            _resizeStarTimer?.Stop();
+            if (isZen)
+                GenerateStars();  // Only regenerate stars once resizing stops
+        }
+
+        private void MyGrid_SizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            ClearStars();
+            _resizeStarTimer?.Stop(); // Restart the timer on each size change
+            _resizeStarTimer?.Start();
+        }
+
 
         private void Zen(bool includeInfoText)
         {
@@ -86,49 +110,39 @@ namespace Cloudless
             if (!leaveInfo)
                 MyGrid.Children.Remove(NoImageMessage);
 
-            foreach (var ml in magicLayers)
+            while (magicLayers.Count > 0)
             {
-                ml.Free(this, MyGrid);
+                var layer = magicLayers.Dequeue();
+                try { layer.Free(this, MyGrid); }
+                catch { }
             }
 
-            SetBackground();
-
-            // Remove all rectangles added to the Grid
-            for (int i = MyGrid.Children.Count - 1; i >= 0; i--)
-            {
-                if (MyGrid.Children[i] is Rectangle)
-                {
-                    MyGrid.Children.RemoveAt(i);
-                }
-            }
-
-            // Clear the storyboard children to release animations
-            foreach (var resourceKey in Resources.Keys)
-            {
-                if (Resources[resourceKey] is Storyboard storyboard)
-                {
-                    storyboard.Stop(this);//
-                    storyboard.Children.Clear();
-                }
-            }
-
-            magicLayers.Clear();
+            gradientStopContexts.Clear();
 
             ClearStars();
 
-            // Remove the canvas from the parent container
-            if (MyGrid.Children.Contains(StarsCanvas))
-            {
+            if (StarsCanvas != null && MyGrid.Children.Contains(StarsCanvas))
                 MyGrid.Children.Remove(StarsCanvas);
+
+            StarsCanvas = null;
+
+            for (int i = MyGrid.Children.Count - 1; i >= 0; i--)
+            {
+                if (MyGrid.Children[i] is Rectangle)  // TODO iterating on modifying list? Leakage potential here?
+                    MyGrid.Children.RemoveAt(i);
             }
 
-            // Set StarsCanvas to null to allow garbage collection
-            StarsCanvas = null;
+            if (_resizeStarTimer != null)
+            {
+                _resizeStarTimer.Stop();
+                _resizeStarTimer.Tick -= ResizeStarTimer_Tick;
+                _resizeStarTimer = null;
+            }
 
             if (currentlyDisplayedImagePath != null)
                 ImageDisplay.Visibility = Visibility.Visible;
 
-            isZen = false; // TODO check performance and that nothing is missed
+            isZen = false;
         }
 
         private void Zen_Click(object sender, RoutedEventArgs e)
@@ -141,18 +155,25 @@ namespace Cloudless
         private void ClearStars()
         {
             if (StarsCanvas == null) return;
-            // clear animations to avoid memory leak
-            foreach (UIElement child in StarsCanvas.Children)
+
+            foreach (var entry in _activeStars)
             {
-                if (child is FrameworkElement fe && fe.Tag is Storyboard storyboard)
+                try
                 {
-                    storyboard.Stop();
-                    storyboard.Remove(); // Remove storyboard from the clock system
-                    fe.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
+                    if (entry.CompletedHandler != null)
+                        entry.Storyboard.Completed -= entry.CompletedHandler;
+
+                    entry.Storyboard.Stop(this);
+                    entry.Storyboard.Remove();
+                    entry.Storyboard.Children.Clear();
+
+                    entry.Star.BeginAnimation(UIElement.OpacityProperty, null);
                 }
+                catch { }
             }
 
-            StarsCanvas.Children.Clear(); // Clear existing stars
+            _activeStars.Clear();
+            StarsCanvas.Children.Clear();
         }
 
         private void GenerateStars()
@@ -164,7 +185,7 @@ namespace Cloudless
             {
                 StarsCanvas = new Canvas
                 {
-                    Name = "StarsCanvas"
+                    //Name = "StarsCanvas"
                 };
 
             }
@@ -192,6 +213,8 @@ namespace Cloudless
         // repeatCount is a parameter because if we generate it within and don't reuse it, we will gradually skew toward stars with many more repeats on-screen
         private void CreateStar(double canvasWidth, double canvasHeight, int repeatCount, int starSession)
         {
+            if (StarsCanvas == null) return;
+
             // Create a star (small circle)
             Ellipse star = new Ellipse
             {
@@ -209,7 +232,7 @@ namespace Cloudless
             Canvas.SetTop(star, startY);
 
             // Add the star to the canvas
-            StarsCanvas?.Children.Add(star);
+            StarsCanvas.Children.Add(star);
 
             // Create animations for fade-in, movement, and fade-out
             const double AnimationDurationSeconds = 8;
@@ -240,26 +263,37 @@ namespace Cloudless
             storyboard.Children.Add(fadeIn);
             storyboard.Children.Add(fadeOut);
 
-            star.Tag = storyboard;
-
-            storyboard.Completed += (s, e) =>
+            EventHandler completedHandler = null!;
+            completedHandler = (s, e) =>
             {
-                // looks like we get here after clearing/freeing star still, similar to rect issue.
-                // temporary band-aid to avoid exceptions
-
-                // must clean/free this one
-                storyboard.Stop();
-                storyboard.Remove(); // Remove storyboard from the clock system
-                star.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
-
-                if (starSession == staticStarSession && isZen)  // if we got here from the completion of a star that is not part of this zen session then just stop.
+                try
                 {
-                    StarsCanvas?.Children.Remove(star);
-                    CreateStar(canvasWidth, canvasHeight, repeatCount, starSession);
+                    storyboard.Completed -= completedHandler;
+
+                    storyboard.Stop(this);
+                    storyboard.Remove();
+                    storyboard.Children.Clear();
+
+                    star.BeginAnimation(UIElement.OpacityProperty, null);
+
+                    if (starSession == staticStarSession && isZen)
+                    {
+                        StarsCanvas.Children.Remove(star);
+                        CreateStar(canvasWidth, canvasHeight, repeatCount, starSession);
+                    }
                 }
+                catch { }
             };
 
-            // Start the animation
+            storyboard.Completed += completedHandler;
+
+            _activeStars.Add(new StarEntry
+            {
+                Star = star,
+                Storyboard = storyboard,
+                CompletedHandler = completedHandler
+            });
+
             storyboard.Begin(this, true);
         }
 
@@ -479,7 +513,7 @@ namespace Cloudless
             internal AnimationTimeline? colorAnimation;
         }
 
-        private Queue<MagicLayer> magicLayers = new Queue<MagicLayer>();
+        //private Queue<MagicLayer> magicLayers = new Queue<MagicLayer>();
 
         internal class MagicLayer
         {
@@ -496,24 +530,34 @@ namespace Cloudless
             internal void Free(MainWindow mainWindow, Grid parentOfRect) // pass in MainWindow ("this") and MyGrid
             { // TODO should consider both types of storyboard and other recent changes. maybe we can set alerts for memory leaks too.
                 endOfLine = true;
-                parentOfRect.Children.Remove(rect);
 
-                foreach (var gsc in gscs)
+                try
                 {
-                    mainWindow.UnregisterName(gsc.name);
-                    if (gsc.offsetAnimation != null)
-                        gradientStopStoryboard?.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
-                    if (gsc.colorAnimation != null)
-                        gradientStopStoryboard?.Children.Remove(gsc.colorAnimation);
+                    if (rect != null && parentOfRect.Children.Contains(rect))
+                        parentOfRect.Children.Remove(rect);
+
                     gradientStopStoryboard?.Stop();
                     gradientStopStoryboard?.Remove();
-                }
+                    gradientStopStoryboard?.Children.Clear();
 
-                rectStoryboard?.Children.Clear();
-                rectStoryboard?.Stop();
-                rectStoryboard?.Remove();
-                rect?.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
-                mainWindow.UnregisterName("MyRect" + layerIndex);
+                    rectStoryboard?.Stop();
+                    rectStoryboard?.Remove();
+                    rectStoryboard?.Children.Clear();
+
+                    rect?.BeginAnimation(UIElement.OpacityProperty, null);
+
+                    foreach (var gsc in gscs)
+                    {
+                        if (gsc.name != null)
+                        {
+                            try { mainWindow.UnregisterName(gsc.name); }
+                            catch { }
+                        }
+                    }
+
+                    mainWindow.UnregisterName("MyRect" + layerIndex);
+                }
+                catch { }
             }
         }
 
