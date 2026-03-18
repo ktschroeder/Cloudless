@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
-        Height="850"
+        Height="350"
         Width="700"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -34,122 +34,286 @@
 
                     <!-- Hotkey List -->
                     <StackPanel Margin="0,0,0,10">
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="X:" FontWeight="Bold"/> Show the context menu (as if you've right-clicked)
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="F11:" FontWeight="Bold"/> Toggle fullscreen
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="Esc:" FontWeight="Bold"/> Exit fullscreen or close a secondary window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="F:" FontWeight="Bold"/> Set window size to image's true dimensions, or as big as possible without going off-screen
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="O:" FontWeight="Bold"/> Open an image
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="V:" FontWeight="Bold"/> Maximize vertical dimension
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="Q:" FontWeight="Bold"/> Toggle crop mode
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="CTRL C:" FontWeight="Bold"/> Copy displayed image file to clipboard
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="CTRL ALT C:" FontWeight="Bold"/> Convert displayed image to JPG, and compress iteratively until it is below a configured max file size, then copy the resulting image file to clipboard
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="C:" FontWeight="Bold"/> Close window or secondary window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="P:" FontWeight="Bold"/> Open Preferences window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="A:" FontWeight="Bold"/> Open About window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="H:" FontWeight="Bold"/> Open Hotkey Reference window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="CTRL H:" FontWeight="Bold"/> Open Command Palette Reference window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="G:" FontWeight="Bold"/> Switch background (black, white, transparent)
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="I:" FontWeight="Bold"/> Open Image Info window (if one is loaded)
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="M:" FontWeight="Bold"/> Minimize window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="R:" FontWeight="Bold"/> Rotate image 90° clockwise
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="Left and Right:" FontWeight="Bold"/> Load adjacent images in directory of current image
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="B:" FontWeight="Bold"/> Resize window to remove best-fit bars
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="T:" FontWeight="Bold"/> Toggle always-on-top
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="D:" FontWeight="Bold"/> Duplicate window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="CTRL D:" FontWeight="Bold"/> Toggle debug info window
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="Space:" FontWeight="Bold"/> Pause/resume GIF
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="CTRL Space:" FontWeight="Bold"/> Restart GIF
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="[Zoom controls]" FontWeight="Bold"/>
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-                            <Run Text="CTRL +:" FontWeight="Bold"/> Zoom in
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-                            <Run Text="CTRL -:" FontWeight="Bold"/> Zoom out
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-                            <Run Text="CTRL 0:" FontWeight="Bold"/> Reset zoom/pan
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-                            <Run Text="CTRL 9:" FontWeight="Bold"/> Set zoom to true resolution
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="20,0,0,5">
-                            <Run Text="Holding CTRL:" FontWeight="Bold"/> Enables panning (click and drag) and zooming (scroll). For fine zooming, hold ALT as well.
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="Shift:" FontWeight="Bold"/> Hold Shift when moving window to constrain movement to vertical/horizontal lines (must hold at start)
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="CTRL R:" FontWeight="Bold"/> Open recent images gallery
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text="Z:" FontWeight="Bold"/> Toggle between Zen and the open image
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
-                            <Run Text=": (colon):" FontWeight="Bold"/> Open Command Palette (for more info, see Command Palette Reference)
-                        </TextBlock>
-                    </StackPanel>
+                        <TabControl Background="Transparent" BorderThickness="0">
 
-                    <!-- Close Button -->
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                Margin="0,10,0,0">
-                        <Button Content="Close"
-                                Style="{StaticResource CloudlessPrimaryButton}"
-                                Click="Close_Click"
-                                FontWeight="SemiBold"
-                                Width="60"/>
+                            <!-- GENERAL -->
+                            <TabItem Header="General">
+                                <ScrollViewer Margin="12">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="X" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Show the context menu (as if you've right-clicked)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="C" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Close window or secondary window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="M" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Minimize window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="Esc" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Exit fullscreen or close a secondary window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="F11 or double-click" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Toggle fullscreen"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="D" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Duplicate window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="Z" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Toggle Zen"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Space" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Pause/resume GIF"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Ctrl Space" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Restart GIF"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl C" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Copy image file to clipboard"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="Ctrl Alt C" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Copy compressed image file to clipboard (configure size max in preferences)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="11" Text="W" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="11" Text="Set current image as desktop wallpaper"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="Ctrl W" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="12" Text="Apply the window's view to desktop wallpaper (includes pan/zoom/crop)"/>
+
+                                        </Grid>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- VIEW -->
+                            <TabItem Header="View">
+                                <ScrollViewer Margin="12">
+                                    <StackPanel>
+
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="F" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Set window size to image's true dimensions, or as big as possible without going off-screen"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="V" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Maximize vertical dimension"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="Q" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Toggle crop mode"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="G" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Switch background (black, white, transparent)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="R" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Rotate image 90° clockwise"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="B" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Resize window to remove best-fit bars"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="G" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Switch background (black, white, transparent)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl + / -" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Zoom in / out"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Ctrl 0" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Reset zoom/pan"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl 9" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Set zoom to image's true resolution"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="G" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Switch background (black, white, transparent)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="11" Text="Ctrl, scroll mouse" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="11" Text="Zoom in or out. Additionally, hold ALT for fine zooming"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="Ctrl, click and drag" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="12" Text="Pan image"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="L" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="13" Text="Zoom image to fill view"/>
+
+                                        </Grid>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- Image -->
+                            <TabItem Header="Image">
+                                <ScrollViewer Margin="12">
+                                    <StackPanel>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="O" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Open an image"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Left and Right" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Load adjacent images in directory of current image"/>
+
+                                        </Grid>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- WINDOWS -->
+                            <TabItem Header="Windows">
+                                <ScrollViewer Margin="12">
+                                    <StackPanel>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="P" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Open Preferences window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="A" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Open About window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="H" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Open Hotkey Reference window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="Ctrl H" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Open Command Palette Reference window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="I" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Open Image Info window (if one is loaded)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="Ctrl R" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Open recent images gallery"/>
+
+                                        </Grid>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- ADVANCED -->
+                            <TabItem Header="Advanced">
+                                <ScrollViewer Margin="12">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="T" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Toggle always-on-top"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Ctrl D" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Toggle debug info panel"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="Shift (see note)" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Hold when moving window to constrain movement to straight lines (must hold at start)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="; or :" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Open Command Palette (for more info, see Command Palette Reference)"/>
+
+                                        </Grid>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                        </TabControl>
                     </StackPanel>
 
                 </StackPanel>
