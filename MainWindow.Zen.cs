@@ -192,6 +192,9 @@ namespace Cloudless
         // repeatCount is a parameter because if we generate it within and don't reuse it, we will gradually skew toward stars with many more repeats on-screen
         private void CreateStar(double canvasWidth, double canvasHeight, int repeatCount, int starSession)
         {
+            if (!isZen)
+                return;
+
             // Create a star (small circle)
             Ellipse star = new Ellipse
             {
@@ -260,7 +263,7 @@ namespace Cloudless
             };
 
             // Start the animation
-            storyboard.Begin(this, true);
+            storyboard.Begin(this);
         }
 
         
@@ -308,10 +311,8 @@ namespace Cloudless
             for (int i = 0; i < CONCURRENT_ZEN_LAYERS; i++)
             {
                 var ml = CreateMagicLayer();
-                ml.rectStoryboard?.Begin(this, true);
+                ml.rectStoryboard?.Begin(this);
             }
-
-            Debug.WriteLine("Started GradientMagic");
         }
 
 
@@ -419,7 +420,7 @@ namespace Cloudless
                     fluxCount++;
                 }
 
-                Debug.Print($"Made a batch of {fluxCount} fluctuations totaling {magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds} seconds");
+                //Debug.Print($"Made a batch of {fluxCount} fluctuations totaling {magicLayer.lifespan.TimeSpan.TotalSeconds - fadeInDurationSeconds} seconds");
                 Storyboard.SetTarget(fluctuationAnimation, magicLayer.rect);
                 Storyboard.SetTargetProperty(fluctuationAnimation, new PropertyPath(Rectangle.OpacityProperty));
                 rectStoryboard.Children.Add(fluctuationAnimation);
@@ -439,7 +440,7 @@ namespace Cloudless
             rectStoryboard.Children.Add(fadeToFull);
 
             //5.Once at 1.0, delete and free the layer that was previously at 1.0 (it's the layer with one-lower index). Remain at 1.0 until another layer does the same.
-            rectStoryboard.Completed += (s, e) =>
+            magicLayer.completedHandler = (s, e) =>
             {
                 if (magicLayer.endOfLine)
                 {
@@ -454,20 +455,24 @@ namespace Cloudless
                         throw new Exception("bad");
                     if (expiredLayer.layerIndex != mlLayerIndex - 1)
                         throw new Exception("also bad");
-                    Debug.Print($"Freed layer with opacity {expiredLayer.rect?.Opacity} while new ded layer had opacity {mlRect.Opacity}"); 
+                    //Debug.Print($"Freed layer with opacity {expiredLayer.rect?.Opacity} while new ded layer had opacity {mlRect.Opacity}");
                     expiredLayer.Free(this, MyGrid);
                 }
 
                 if (magicLayers.Any(ml => ml.layerIndex < mlLayerIndex))
                     throw new Exception("also also bad");
 
-                var ml = CreateMagicLayer(); // This is infinite recursion (though limited in contant space); may want to check that this is cleared as expected when exiting/resetting zen.
-                ml.rectStoryboard?.Begin(this, true);
+                if (isZen)
+                {
+                    var ml = CreateMagicLayer(); // This is infinite recursion (though limited in constant space); may want to check that this is cleared as expected when exiting/resetting zen.
+                    ml.rectStoryboard?.Begin(this);
+                }
             };
+            rectStoryboard.Completed += magicLayer.completedHandler;
 
             magicLayers.Enqueue(magicLayer);
-            gradientStopStoryboard.Begin(this, true);
-            Debug.WriteLine("created magic layer with index " + magicLayer.layerIndex + " lifespan " + magicLayer.lifespan);
+            gradientStopStoryboard.Begin(this);
+            //Debug.WriteLine("created magic layer with index " + magicLayer.layerIndex + " lifespan " + magicLayer.lifespan);
             return magicLayer;
         }
 
@@ -492,28 +497,63 @@ namespace Cloudless
             internal List<GradientStopContext> gscs = new List<GradientStopContext>();
             internal double gradientAngle;
             internal bool endOfLine = false;
+            internal EventHandler? completedHandler;
 
             internal void Free(MainWindow mainWindow, Grid parentOfRect) // pass in MainWindow ("this") and MyGrid
-            { // TODO should consider both types of storyboard and other recent changes. maybe we can set alerts for memory leaks too.
+            {
                 endOfLine = true;
-                parentOfRect.Children.Remove(rect);
+
+                if (rect != null)
+                {
+                    rect.BeginAnimation(UIElement.OpacityProperty, null);
+                    rect.Fill = null;
+                    parentOfRect.Children.Remove(rect);
+                }
 
                 foreach (var gsc in gscs)
                 {
                     mainWindow.UnregisterName(gsc.name);
-                    if (gsc.offsetAnimation != null)
-                        gradientStopStoryboard?.Children.Remove(gsc.offsetAnimation); // TODO anything more needed to release this resource?
-                    if (gsc.colorAnimation != null)
-                        gradientStopStoryboard?.Children.Remove(gsc.colorAnimation);
-                    gradientStopStoryboard?.Stop();
-                    gradientStopStoryboard?.Remove();
+
+                    if (gsc.stop != null)
+                    {
+                        gsc.stop.BeginAnimation(GradientStop.OffsetProperty, null);
+                        gsc.stop.BeginAnimation(GradientStop.ColorProperty, null);
+                    }
                 }
 
-                rectStoryboard?.Children.Clear();
-                rectStoryboard?.Stop();
-                rectStoryboard?.Remove();
-                rect?.BeginAnimation(UIElement.OpacityProperty, null); // Detach animations
+                if (gradientStopStoryboard != null)
+                {
+                    foreach (var anim in gradientStopStoryboard.Children)
+                        Storyboard.SetTarget(anim, null);
+
+                    gradientStopStoryboard.Children.Clear();
+                    gradientStopStoryboard.Stop();
+                    gradientStopStoryboard.Remove();
+                    gradientStopStoryboard = null;
+                }
+
+                if (rectStoryboard != null && completedHandler != null)
+                {
+                    rectStoryboard.Completed -= completedHandler;
+                    completedHandler = null;
+                }
+
+                if (rectStoryboard != null)
+                {
+                    foreach (var anim in rectStoryboard.Children)
+                        Storyboard.SetTarget(anim, null);
+
+                    rectStoryboard.Children.Clear();
+                    rectStoryboard.Stop();
+                    rectStoryboard.Remove();
+                    rectStoryboard = null;
+                }
+
+                gscs.Clear();
+
                 mainWindow.UnregisterName("MyRect" + layerIndex);
+
+                rect = null;
             }
         }
 
