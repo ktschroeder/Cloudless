@@ -162,6 +162,12 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().Equals("help"))
+            {
+                CommandPaletteRef();
+                return true;
+            }
+
             if (command.ToLower().Equals("first"))
             {
                 if (imageFiles == null)
