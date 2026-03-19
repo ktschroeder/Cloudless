@@ -272,5 +272,31 @@ namespace Cloudless
         {
             LoadingOverlay.Visibility = Visibility.Collapsed;
         }
+
+        private static void ZenOrUnzenAllWindows()  // a bit slow for larger workspaces. make concurrent probs.
+        {
+            int zenCount = 0;
+            var windows = Application.Current.Windows.OfType<MainWindow>();
+            foreach (var window in windows)
+            {
+                if (window.isZen)
+                    zenCount++;
+            }
+
+            if (zenCount == windows.Count())  // then all windows are currently zen. So un-zen them all.
+            {
+                foreach (var window in windows)
+                {
+                    window.RemoveZen();
+                }
+            }
+            else
+            {
+                foreach (var window in windows)
+                {
+                    window.Zen(false);
+                }
+            }
+        }
     }
 }

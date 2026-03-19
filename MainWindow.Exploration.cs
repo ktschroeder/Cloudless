@@ -648,7 +648,7 @@ namespace Cloudless
             else
                 isCropMode = !isCropMode;
 
-            // Without this, there's some weirdness: after loading a cropped image from a workstation and then zooming/panning, the zoom/pan resets.
+            // Without this, there's some weirdness: after loading a cropped image from a workspace and then zooming/panning, the zoom/pan resets.
             if (isCropMode && !isExplorationMode) EnterExplorationMode(silent);
 
             UpdateCropModeInfo();

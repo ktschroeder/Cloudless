@@ -196,7 +196,7 @@ namespace Cloudless
             //Cloudless.Properties.Settings.Default.DisplayMode = state.DisplayMode;
             //ApplyDisplayMode();
             // This gets weird and complicated since all instances share the same config file. It might make sense to just default all windows to a best fit mode.
-            // Anyway, it's hard to imagine a use case where someone would really want a workstation with mixed modes.
+            // Anyway, it's hard to imagine a use case where someone would really want a workspace with mixed modes.
 
             ResizeWindow(state.Width, state.Height);
             RepositionWindow(state.Left, state.Top);

@@ -141,6 +141,11 @@ namespace Cloudless
                 return;
             }
 
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            bool control = (modifiers & ModifierKeys.Control) != 0;
+            bool alt = (modifiers & ModifierKeys.Alt) != 0;
+            bool shift = (modifiers & ModifierKeys.Shift) != 0;
+
             if (e.Key == Key.F11)
             {
                 ToggleFullscreen();
@@ -159,10 +164,9 @@ namespace Cloudless
                 return;
             }
 
-
             if (e.Key == Key.D)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control)
+                if (control)
                 {
                     DebugTextBlockBorder.Visibility = DebugTextBlockBorder.Visibility == Visibility.Visible
                     ? Visibility.Collapsed
@@ -196,17 +200,23 @@ namespace Cloudless
 
             if (e.Key == Key.Z)
             {
-                if (isZen)
-                    RemoveZen(true);
+                if (control)
+                    ZenOrUnzenAllWindows();
                 else
-                    Zen(isWelcome);
+                {
+                    if (isZen)
+                        RemoveZen(true);
+                    else
+                        Zen(isWelcome);
+                }
+                
                 e.Handled = true;
                 return;
             }
 
             if (e.Key == Key.H)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control)
+                if (control)
                     CommandPaletteRef();
                 else
                     HotkeyRef();
@@ -214,23 +224,20 @@ namespace Cloudless
                 return;
             }
 
-            if (e.Key == Key.V && !(Keyboard.Modifiers == ModifierKeys.Control))
+            if (e.Key == Key.V && !(control))
             {
                 MaximizeVerticalDimension();
                 e.Handled = true;
                 return;
             }
 
-
             if (e.Key == Key.C)
             {
-                ModifierKeys modifiers = Keyboard.Modifiers;
-
-                if ((modifiers & ModifierKeys.Control) != 0 && (modifiers & ModifierKeys.Alt) != 0)
+                if (control && alt)
                 {
                     CopyCompressedImageToClipboardAsJpgFile();
                 }
-                else if ((modifiers & ModifierKeys.Control) != 0)
+                else if (control)
                 {
                     CopyImageToClipboard();
                 }
@@ -296,7 +303,7 @@ namespace Cloudless
 
             if (e.Key == Key.R)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control)
+                if (control)
                 {
                     OpenRecentImagesWindow();
                 }
@@ -326,7 +333,7 @@ namespace Cloudless
             if (e.Key == Key.W)
             {
                 if (!string.IsNullOrEmpty(currentlyDisplayedImagePath)){
-                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    if (control)
                     {
                         try
                         {
@@ -364,8 +371,7 @@ namespace Cloudless
                 // TODO changing loop preference while a gif is playing causes these controls to stop working until loading another GIF.
                 if (gifController != null)
                 {
-                    ModifierKeys modifiers = Keyboard.Modifiers;
-                    if ((modifiers & ModifierKeys.Control) != 0)
+                    if (control)
                     {
                         gifController.GotoFrame(0);
                     }
@@ -387,7 +393,7 @@ namespace Cloudless
 
             if (e.Key == Key.OemSemicolon) // && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':' but allow semicolon for convenience
             {
-                if (Keyboard.Modifiers != ModifierKeys.Control)
+                if (!control)
                 {
                     OpenCommandPalette();
                 }
@@ -421,7 +427,7 @@ namespace Cloudless
                 }
             }
 
-            if (Keyboard.Modifiers == ModifierKeys.Control)
+            if (control)
             {
                 if (e.Key == Key.OemPlus || e.Key == Key.Add) // Zoom In
                 {

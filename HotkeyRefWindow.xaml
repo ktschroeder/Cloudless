@@ -81,23 +81,26 @@
                                             <TextBlock Grid.Column="0" Grid.Row="6" Text="Z" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="6" Text="Toggle Zen"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Space" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Pause/resume GIF"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl Z" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Start Zen on all open windows, or stop Zen on all open windows if already on everywhere"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Ctrl Space" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Restart GIF"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Space" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Pause/resume GIF"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl C" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Copy image file to clipboard"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl Space" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Restart GIF"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="Ctrl Alt C" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Copy compressed image file to clipboard (configure size max in preferences)"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="Ctrl C" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Copy image file to clipboard"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="11" Text="W" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="11" Text="Set current image as desktop wallpaper"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="11" Text="Ctrl Alt C" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="11" Text="Copy compressed image file to clipboard (configure size max in preferences)"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="Ctrl W" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="12" Text="Apply the window's view to desktop wallpaper (includes pan/zoom/crop)"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="W" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="12" Text="Set current image as desktop wallpaper"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="Ctrl W" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="13" Text="Apply the window's view to desktop wallpaper (includes pan/zoom/crop)"/>
 
                                         </Grid>
                                     </StackPanel>

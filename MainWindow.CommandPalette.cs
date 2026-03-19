@@ -264,7 +264,7 @@ namespace Cloudless
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -2)
-                        Message("A workstation by that name already exists. To overwrite it, use command 'ws save! [name]'");
+                        Message("A workspace by that name already exists. To overwrite it, use command 'ws save! [name]'");
                     else
                         Message($"Saved workspace {name} with {windowCount} windows");
                 }
@@ -275,7 +275,7 @@ namespace Cloudless
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -2)
-                        Message("A workstation by that name already exists. To overwrite it, use command 'ws s! [name]'");
+                        Message("A workspace by that name already exists. To overwrite it, use command 'ws s! [name]'");
                     else
                         Message($"Saved workspace {name} with {windowCount} windows");
                 }
