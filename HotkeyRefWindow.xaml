@@ -15,9 +15,7 @@
             CornerRadius="6"
             Padding="0">
 
-
         <DockPanel>
-
             <!-- Header -->
             <Border Background="#F0F0F0"
                     Padding="8"
@@ -31,8 +29,6 @@
             <!-- Content with ScrollViewer -->
             <StackPanel Margin="12">
                 <StackPanel>
-
-                    <!-- Hotkey List -->
                     <StackPanel Margin="0,0,0,0" Height="260">
                         <TabControl Background="Transparent" BorderThickness="0">
 
@@ -308,13 +304,10 @@
                                             <TextBlock Grid.Column="1" Grid.Row="3" Text="Open Command Palette (for more info, see Command Palette Reference)"/>
 
                                         </Grid>
-
                                     </StackPanel>
                                 </ScrollViewer>
                             </TabItem>
-
                         </TabControl>
-                        
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal"
@@ -326,16 +319,8 @@
                                 FontWeight="SemiBold"
                                 Width="60"/>
                     </StackPanel>
-
                 </StackPanel>
-                
             </StackPanel>
-            
-            
-
         </DockPanel>
-        
-        
     </Border>
-    
 </Window>

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
-        Height="285"
+        Height="325"
         Width="830"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -33,7 +33,7 @@
                 <StackPanel>
 
                     <!-- Hotkey List -->
-                    <StackPanel Margin="0,0,0,0" Height="200">
+                    <StackPanel Margin="0,0,0,0" Height="240">
                         <TabControl Background="Transparent" BorderThickness="0">
 
                             <!-- Non-Command -->
@@ -289,6 +289,18 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="ws rev" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="4" Text="In File Explorer, reveal directory of workspace (.cloudless) files"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="qs" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Quicksave: Save current workspace to an unnamed workspace, which can be quickloaded. This always overwrites."/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="qs c" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Quicksave (see above), and then close all windows if successful"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="ql" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Quickload: load the quicksave workspace"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="qm" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Quickmerge: merge the quicksave workspace (load it without closing any windows)"/>
 
                                         </Grid>
                                         <TextBlock Margin="0,10,0,1">With "ws l" or "ws s" or "ws m", press tab to autocomplete name (press repeatedly to traverse matches)</TextBlock>

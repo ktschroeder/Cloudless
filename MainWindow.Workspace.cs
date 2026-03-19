@@ -255,6 +255,30 @@ namespace Cloudless
 
             return result;
         }
+
+        const string QUICKSAVE_NAME = "_system_quicksave";
+        private bool Quicksave()  // returns whether successful
+        {
+            (int windowCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, true);
+            if (windowCount == -1)
+            {
+                Message("Failed to quicksave due to unexpected error: " + error);
+                return false;
+            }
+            else
+            {
+                Message($"Quicksave done with {windowCount} windows");
+                return true;
+            }
+        }
+        private async Task Quickload()
+        {
+            await LoadWorkspace(QUICKSAVE_NAME);
+        }
+        private async Task Quickmerge()
+        {
+            await LoadWorkspace(QUICKSAVE_NAME, true);
+        }
     }
 
     public class CloudlessWorkspace

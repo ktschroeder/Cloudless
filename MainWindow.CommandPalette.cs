@@ -2,6 +2,7 @@
 using System.Windows.Input;
 using System.IO;
 using System.Collections.Specialized;
+using System.Xml.Linq;
 
 namespace Cloudless
 {
@@ -225,6 +226,32 @@ namespace Cloudless
 
                 Cloudless.Properties.Settings.Default.Save();
                 ApplyDisplayMode();
+                return true;
+            }
+
+            if (command.ToLower().Equals("qs"))
+            {
+                Quicksave();
+                return true;
+            }
+            if (command.ToLower().Equals("qs c"))
+            {
+                bool success = Quicksave();
+                if (success)
+                {
+                    CloseAllOtherInstances();
+                    this.Close();
+                }
+                return true;
+            }
+            if (command.ToLower().Equals("ql"))
+            {
+                await Quickload();
+                return true;
+            }
+            if (command.ToLower().Equals("qm"))
+            {
+                await Quickmerge();
                 return true;
             }
 
