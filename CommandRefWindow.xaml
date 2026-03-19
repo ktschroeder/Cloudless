@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
-        Height="350"
-        Width="900"
+        Height="285"
+        Width="830"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -29,16 +29,16 @@
             </Border>
 
             <!-- Content with ScrollViewer -->
-            <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
                 <StackPanel>
 
                     <!-- Hotkey List -->
-                    <StackPanel Margin="0,0,0,10">
+                    <StackPanel Margin="0,0,0,0" Height="200">
                         <TabControl Background="Transparent" BorderThickness="0">
 
                             <!-- Non-Command -->
                             <TabItem Header="Non-Command">
-                                <ScrollViewer Margin="12">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <TextBlock Margin="0,0,0,10">The command palette provides advanced features using a text-based interface.</TextBlock>
                                         <Grid>
@@ -90,7 +90,7 @@
 
                             <!-- General -->
                             <TabItem Header="General">
-                                <ScrollViewer Margin="12">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -149,7 +149,7 @@
 
                             <!-- VIEW -->
                             <TabItem Header="View">
-                                <ScrollViewer Margin="12">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
 
 
@@ -189,7 +189,7 @@
 
                             <!-- Image -->
                             <TabItem Header="Image">
-                                <ScrollViewer Margin="12">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
 
                                         <Grid>
@@ -253,7 +253,7 @@
 
                             <!-- WINDOWS -->
                             <TabItem Header="Workspace">
-                                <ScrollViewer Margin="12">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <TextBlock Margin="0,0,0,10">A "workspace" is the collective arrangement of all open Cloudless windows. When you save a workspace, you can later<LineBreak /> load it to quickly open all its images, with their identical position, zoom, pan, crop, and Z-order. (Tip: combine this with<LineBreak />custom commands to rapidly page through your custom image arrangements.)</TextBlock>
                                         <Grid>
@@ -302,8 +302,18 @@
                         </TabControl>
                     </StackPanel>
 
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,10,0,0">
+                        <Button Content="Close"
+                                Style="{StaticResource CloudlessPrimaryButton}"
+                                Click="Close_Click"
+                                FontWeight="SemiBold"
+                                Width="60"/>
+                    </StackPanel>
+
                 </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
 
         </DockPanel>
     </Border>
