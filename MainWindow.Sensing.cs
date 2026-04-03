@@ -166,20 +166,23 @@ namespace Cloudless
 
             if (e.Key == Key.D)
             {
-                if (control)
+                if (control && !alt)
+                {
+                    DuplicateWindow();
+                    e.Handled = true;
+                    return;
+                }
+                else if (control && alt)
                 {
                     DebugTextBlockBorder.Visibility = DebugTextBlockBorder.Visibility == Visibility.Visible
                     ? Visibility.Collapsed
                     : Visibility.Visible;
+                    e.Handled = true;
+                    return;
                 }
-                else
-                {
-                    DuplicateWindow();
-                }
-                e.Handled = true;
-                return;
-            }
 
+                // do nothing for unmodified Key.D. We handle that near Key.Right later in this method.
+            }
 
             // set window dimensions to image if possible
             if (e.Key == Key.F)
@@ -264,7 +267,7 @@ namespace Cloudless
                 return;
             }
 
-            if (e.Key == Key.A)
+            if (e.Key == Key.A && control)
             {
                 About();
                 e.Handled = true;
@@ -407,9 +410,9 @@ namespace Cloudless
             }
 
             // navigating in directory
-            if (imageFiles != null && imageFiles.Length != 0)
+            if (imageFiles != null && imageFiles.Length != 0 && !control && !alt)
             {
-                if (e.Key == Key.Left)
+                if (e.Key == Key.Left || e.Key == Key.A)
                 {
                     // Go to the previous image
                     currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
@@ -417,7 +420,7 @@ namespace Cloudless
                     e.Handled = true;
                     return;
                 }
-                else if (e.Key == Key.Right)
+                else if (e.Key == Key.Right || e.Key == Key.D)
                 {
                     // Go to the next image
                     currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;

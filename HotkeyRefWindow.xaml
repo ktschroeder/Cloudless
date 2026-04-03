@@ -75,7 +75,7 @@
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="F11 or double-click" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="4" Text="Toggle fullscreen"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="D" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="Ctrl D" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="5" Text="Duplicate window"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="6" Text="Z" FontWeight="Bold"/>
@@ -214,8 +214,8 @@
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="O" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="0" Text="Open an image"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Left and Right" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Load adjacent images in directory of current image"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Left/Right or A/D" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Load adjacent images in directory of current image, based on current sort order"/>
 
                                         </Grid>
 
@@ -250,7 +250,7 @@
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="P" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="0" Text="Open Preferences window"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="A" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Ctrl A" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Open About window"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="2" Text="H" FontWeight="Bold"/>
@@ -297,7 +297,7 @@
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="T" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="0" Text="Toggle always-on-top"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Ctrl D" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Ctrl Alt D" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Toggle debug info panel"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="2" Text="Shift (see note)" FontWeight="Bold"/>
