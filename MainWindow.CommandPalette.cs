@@ -29,14 +29,19 @@ namespace Cloudless
 
         private async void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
         {
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            bool control = (modifiers & ModifierKeys.Control) != 0;
+            bool alt = (modifiers & ModifierKeys.Alt) != 0;
+            bool shift = (modifiers & ModifierKeys.Shift) != 0;
+
             if (e.Key == Key.Tab)
             {
-                TabPressed();
+                TabPressed(shift);
                 e.Handled = true;
                 return;
             }
             
-            if (e.Key != Key.Left && e.Key != Key.Right)
+            if (e.Key != Key.Left && e.Key != Key.Right && !shift)
                 TabScroll = false;
 
             if (e.Key == Key.Escape)
@@ -64,9 +69,9 @@ namespace Cloudless
         }
 
         private bool TabScroll;  // whether next tab should try to find another autocomplete candidate
-        private Queue<string> AutocompleteCandidates = new Queue<string>();
+        private LinkedList<string> AutocompleteCandidates = new LinkedList<string>();
         private string PreviousTabScrollText = null;
-        private void TabPressed()
+        private void TabPressed(bool shiftPressed = false)
         {
             if (PreviousTabScrollText != CommandTextBox.Text)
                 TabScroll = false;
@@ -83,25 +88,52 @@ namespace Cloudless
                     AutocompleteCandidates.Clear();
                     foreach (var wsName in wsNames)
                     {
-                        AutocompleteCandidates.Enqueue(wsName);
+                        AutocompleteCandidates.AddLast(wsName);
                     }
                     TabScroll = true;
                 }
-                CycleToNextAutocompleteCandidate(commandBase);
+                CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed);
             }
         }
 
-        private void CycleToNextAutocompleteCandidate(string commandBase)
+        private void CycleToNextAutocompleteCandidate(string commandBase, bool reverse = false)
         {
             if (AutocompleteCandidates.Count == 0)
                 return;
 
             // get next candidate
-            var next = AutocompleteCandidates.Dequeue();
-            CommandTextBox.Text = commandBase + next;  // TODO adapt this to dynamically work with other commands?
-            PreviousTabScrollText = CommandTextBox.Text;
-            AutocompleteCandidates.Enqueue(next);
-            CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            if (!reverse)
+            {
+                var next = AutocompleteCandidates.First();
+                AutocompleteCandidates.RemoveFirst();
+                CommandTextBox.Text = commandBase + next;  // TODO adapt this to dynamically work with other commands?
+                if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction" so repeat the movement
+                {
+                    AutocompleteCandidates.AddLast(next);
+                    next = AutocompleteCandidates.First();
+                    AutocompleteCandidates.RemoveFirst();
+                    CommandTextBox.Text = commandBase + next;
+                }
+                PreviousTabScrollText = CommandTextBox.Text;
+                AutocompleteCandidates.AddLast(next);
+                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            }
+            else
+            {
+                var next = AutocompleteCandidates.Last();
+                AutocompleteCandidates.RemoveLast();
+                CommandTextBox.Text = commandBase + next;
+                if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction" so repeat the movement
+                {
+                    AutocompleteCandidates.AddFirst(next);
+                    next = AutocompleteCandidates.Last();
+                    AutocompleteCandidates.RemoveLast();
+                    CommandTextBox.Text = commandBase + next;
+                }
+                PreviousTabScrollText = CommandTextBox.Text;
+                AutocompleteCandidates.AddFirst(next);
+                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            }
         }
 
         // returns whether successful (i.e. valid) command
