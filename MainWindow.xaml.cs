@@ -23,7 +23,7 @@ namespace Cloudless
             "Cloudless",
             "recent_files.json");
 
-        private static readonly string workspaceFilesPath = Path.Combine(
+        public static readonly string workspaceFilesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Cloudless");
 

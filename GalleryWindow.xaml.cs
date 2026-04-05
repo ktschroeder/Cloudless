@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -65,6 +66,7 @@ namespace Cloudless
         {
             WorkstationLoadButton.Visibility = Visibility.Visible;
             WorkstationMergeButton.Visibility = Visibility.Visible;
+            WorkstationPreviewButton.Visibility = Visibility.Visible;
         }
 
         private async void Workstation_Load_Click(object sender, RoutedEventArgs e)
@@ -81,6 +83,48 @@ namespace Cloudless
             if (Owner is MainWindow mw)
             {
                 await mw.LoadWorkspace(PreviewWorkspace, merge: true);
+            }
+        }
+
+        private async void Workstation_Preview_Click(object sender, RoutedEventArgs e)
+        {
+            if (Owner is MainWindow mw)
+            {
+                string? workspaceName = await mw.SelectWorkspaceFileToPreview();
+                if (string.IsNullOrEmpty(workspaceName))
+                    return;
+
+
+                // We could simply create a new gallery and close this one, but it's cleaner, to repopulate images.
+                string workspaceFilePath = Path.Combine(MainWindow.workspaceFilesPath, workspaceName + ".cloudless");
+                string json = File.ReadAllText(workspaceFilePath);
+                var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+
+                if (workspace == null)
+                {
+                    mw.Message("Invalid workspace file.");
+                    return;
+                }
+
+                var wsFiles = workspace.CloudlessWindows.Select(cw => cw.ImagePath);
+
+                string title = "Workspace Preview: " + workspaceName;
+                Title = title;
+                TitleText.Text = title;
+
+                GalleryImages.Clear();
+
+                foreach (var file in wsFiles)
+                {
+                    GalleryImages.Add(new GalleryItem
+                    {
+                        FilePath = file,
+                        Thumbnail = null  // placeholder, pending loading image. Could add an actual placeholder graphic if desired.
+                    });
+                }
+
+                PreviewWorkspace = workspaceName;
+                //await LoadThumbnailsAsync();  // TODO revisit. currently this causes a single image load weirdly
             }
         }
 

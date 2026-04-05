@@ -46,6 +46,22 @@ namespace Cloudless
                 Message("File loaded from dialog.");
             }
         }
+        public async Task<string?> SelectWorkspaceFileToPreview()
+        {
+            string filter = "Image files (*.cloudless)|*.cloudless";
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = filter,
+                InitialDirectory = workspaceFilesPath
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string workspaceName = Path.GetFileNameWithoutExtension(openFileDialog.FileName);
+                return workspaceName;
+            }
+            return null;
+        }
         private class NaturalStringComparer : IComparer<string>
         {
             // incorporate the "numerical sorting" used by Windows file explorer, to match the order shown there
