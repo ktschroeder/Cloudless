@@ -350,6 +350,10 @@ namespace Cloudless
                     if (success)
                         Message("Deleted workspace: " + name);
                 }
+                else if (command.ToLower().StartsWith("ws origin"))
+                {
+                    RevealWorkspaceName();
+                }
                 else if (command.ToLower().StartsWith("ws rename ") && command.Length > 10)
                 {
                     string renameParams = command.Substring(10);

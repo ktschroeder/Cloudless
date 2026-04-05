@@ -168,6 +168,7 @@ namespace Cloudless
         {
             RemoveZen();
             autoResizingSpaceIsToggled = false;
+            imageOriginalWorkspaceName = null;  // reset this whenever an image is loaded, e.g. left/right iteration. When loading workspaces, we define this in post-process.
 
             try
             {

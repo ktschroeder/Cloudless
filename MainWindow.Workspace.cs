@@ -172,6 +172,18 @@ namespace Cloudless
             }
         }
 
+        public void RevealWorkspaceName()
+        {
+            if (imageOriginalWorkspaceName == null)
+            {
+                Message("This image did not come directly from loading a workspace.");
+            }
+            else
+            {
+                Message("Workspace: " + imageOriginalWorkspaceName);
+            }
+        }
+
         public bool RenameWorkspace(string[] workspaceNames)
         {
             try
@@ -249,6 +261,7 @@ namespace Cloudless
                 string json = File.ReadAllText(workspaceFilePath);
 
                 var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+                workspace.WorkspaceName = workspaceName;
 
                 if (workspace == null)
                 {
@@ -292,7 +305,7 @@ namespace Cloudless
                 await window.LoadImage(state.ImagePath, false);
                 window.ApplyWindowState(state);
                 window.Show();
-                window.PostProcessLoadedWindow(state);
+                window.PostProcessLoadedWindow(state, workspace.WorkspaceName);
             }
         }
 
@@ -330,13 +343,15 @@ namespace Cloudless
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
 
-        public void PostProcessLoadedWindow(CloudlessWindowState state)
+        public void PostProcessLoadedWindow(CloudlessWindowState state, string workspaceName)
         {
             if (state.IsMinimized)
                 MinimizeWindow(state);  // this must be done after calling Show() on window, or else image is re-rendered improperly later
 
             ToggleCropMode(setTo: false, silent: true);
-            
+
+            imageOriginalWorkspaceName = workspaceName;
+
             WorkspaceLoadInProgress = false;
         }
 
@@ -392,6 +407,7 @@ namespace Cloudless
     {
         public int SchemaVersion { get; set; } = 2;
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
+        public string? WorkspaceName { get; set; }
     }
 
     public class CloudlessWindowState

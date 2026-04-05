@@ -45,6 +45,7 @@ namespace Cloudless
         private double cropModeStartingWindowTop = 0;
         private double cropModeStartingWindowLeft = 0;
         public bool WorkspaceLoadInProgress = false;
+        public string? imageOriginalWorkspaceName;
 
         private OverlayMessageManager? overlayManager;
 
