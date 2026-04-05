@@ -9,7 +9,7 @@ using Path = System.IO.Path;
 
 namespace Cloudless
 {
-    public class RecentImageItem : INotifyPropertyChanged
+    public class GalleryItem : INotifyPropertyChanged
     {
         public string? FilePath { get; init; }
         public string? FileName => Path.GetFileName(FilePath);
@@ -32,18 +32,21 @@ namespace Cloudless
     }
 
 
-    public partial class RecentImagesWindow : Window
+    public partial class GalleryWindow : Window
     {
-        public ObservableCollection<RecentImageItem> RecentImages { get; } = new();
+        public ObservableCollection<GalleryItem> GalleryImages { get; } = new();
 
-        public RecentImagesWindow(IEnumerable<string> recentFiles)
+        public GalleryWindow(IEnumerable<string> galleryFiles, string title = "Image Gallery")
         {
             InitializeComponent();
             DataContext = this;
 
-            foreach (var file in recentFiles)
+            Title = title;
+            TitleText.Text = title;
+
+            foreach (var file in galleryFiles)
             {
-                RecentImages.Add(new RecentImageItem
+                GalleryImages.Add(new GalleryItem
                 {
                     FilePath = file,
                     Thumbnail = null  // placeholder, pending loading image. Could add an actual placeholder graphic if desired.
@@ -58,7 +61,7 @@ namespace Cloudless
 
         private async Task LoadThumbnailsAsync()
         {
-            foreach (var item in RecentImages)
+            foreach (var item in GalleryImages)
             {
                 if (!File.Exists(item.FilePath))
                     continue;
@@ -106,7 +109,7 @@ namespace Cloudless
         private async void Thumbnail_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement fe &&
-                fe.DataContext is RecentImageItem item)
+                fe.DataContext is GalleryItem item)
             {
                 if (Owner is MainWindow mw)
                     await mw.OpenRecentFile(item.FilePath ?? "");

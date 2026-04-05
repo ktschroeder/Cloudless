@@ -357,6 +357,16 @@ namespace Cloudless
                     if (success)
                         Message("Merged workspace: " + name);
                 }
+                else if (command.ToLower().StartsWith("ws preview ") && command.Length > 9)
+                {
+                    string name = command.Substring(11);
+                    bool success = await PreviewWorkspace(name);
+                }
+                else if (command.ToLower().StartsWith("ws p ") && command.Length > 5)
+                {
+                    string name = command.Substring(5);
+                    bool success = await PreviewWorkspace(name);
+                }
                 else if (command.ToLower().Equals("ws rev"))
                 {
                     RevealDirectoryInExplorer(workspaceFilesPath);

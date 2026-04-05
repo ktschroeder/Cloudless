@@ -132,6 +132,45 @@ namespace Cloudless
             }
         }
 
+        public async Task<bool> PreviewWorkspace(string workspaceName)
+        {
+            // TODO adjust gallery window to account for isMinimized, add a graphic or something.
+
+            try
+            {
+                string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
+                // TODO I think this fails if user has the file open for reading in a text editor?
+                string json = File.ReadAllText(workspaceFilePath);
+
+                var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+
+                if (workspace == null)
+                {
+                    Message("Invalid workspace file.");
+                    return false;
+                }
+
+                var wsFiles = workspace.CloudlessWindows.Select(cw => cw.ImagePath);
+
+                var win = new GalleryWindow(wsFiles, "Workspace Preview: " + workspaceName);
+                win.Owner = this;
+                win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                win.Show();
+
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                Message("Workspace file not found.");
+                return false;
+            }
+            catch (Exception)
+            {
+                Message("Unexpected error previewing workspace.");
+                return false;
+            }
+        }
+
         // returns whether successful
         public async Task<bool> LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
