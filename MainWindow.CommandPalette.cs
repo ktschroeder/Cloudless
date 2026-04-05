@@ -343,6 +343,23 @@ namespace Cloudless
                     if (success)
                         Message("Loaded workspace: " + name);
                 }
+                else if (command.ToLower().StartsWith("ws delete ") && command.Length > 10)
+                {
+                    string name = command.Substring(10);
+                    bool success = DeleteWorkspace(name);
+                    if (success)
+                        Message("Deleted workspace: " + name);
+                }
+                else if (command.ToLower().StartsWith("ws rename ") && command.Length > 10)
+                {
+                    string renameParams = command.Substring(10);
+                    bool success = RenameWorkspace(renameParams.Split(' '));
+                }
+                else if (command.ToLower().StartsWith("ws r ") && command.Length > 5)
+                {
+                    string renameParams = command.Substring(5);
+                    bool success = RenameWorkspace(renameParams.Split(' '));
+                }
                 else if (command.ToLower().StartsWith("ws merge ") && command.Length > 9)
                 {
                     string name = command.Substring(9);

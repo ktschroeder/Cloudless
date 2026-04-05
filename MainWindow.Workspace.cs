@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
+using System.Security.Policy;
 
 namespace Cloudless
 {
@@ -167,6 +168,73 @@ namespace Cloudless
             catch (Exception)
             {
                 Message("Unexpected error previewing workspace.");
+                return false;
+            }
+        }
+
+        public bool RenameWorkspace(string[] workspaceNames)
+        {
+            try
+            {
+                if (workspaceNames.Length != 2)
+                {
+                    Message("Unexpected parameters. Use: ws rename [workspace name to replace] [new workspace name]");
+                    return false;
+                }
+
+                string from = workspaceNames[0].Trim();
+                string to = workspaceNames[1].Trim();
+
+                string oldWorkspaceFilePath = Path.Combine(workspaceFilesPath, from + ".cloudless");
+                string newWorkspaceFilePath = Path.Combine(workspaceFilesPath, to + ".cloudless");
+
+                if (!File.Exists(oldWorkspaceFilePath))
+                {
+                    throw new FileNotFoundException();
+                }
+                if (File.Exists(newWorkspaceFilePath))
+                {
+                    Message("Failed to rename: there is already a workstation named " + to);
+                    return false;
+                }
+
+                File.Move(oldWorkspaceFilePath, newWorkspaceFilePath);
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                Message("Workspace file not found.");
+                return false;
+            }
+            catch (Exception)
+            {
+                Message("Unexpected error renaming workspace.");
+                return false;
+            }
+        }
+
+        public bool DeleteWorkspace(string workspaceName)
+        {
+            try
+            {
+                string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
+
+                if (!File.Exists(workspaceFilePath))
+                {
+                    throw new FileNotFoundException();
+                }
+
+                File.Delete(workspaceFilePath);
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                Message("Workspace file not found.");
+                return false;
+            }
+            catch (Exception)
+            {
+                Message("Unexpected error deleting workspace.");
                 return false;
             }
         }
