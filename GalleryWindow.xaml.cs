@@ -35,8 +35,9 @@ namespace Cloudless
     public partial class GalleryWindow : Window
     {
         public ObservableCollection<GalleryItem> GalleryImages { get; } = new();
+        public string? PreviewWorkspace;
 
-        public GalleryWindow(IEnumerable<string> galleryFiles, string title = "Image Gallery")
+        public GalleryWindow(IEnumerable<string> galleryFiles, string title = "Image Gallery", string? workspaceName = null)
         {
             InitializeComponent();
             DataContext = this;
@@ -51,6 +52,35 @@ namespace Cloudless
                     FilePath = file,
                     Thumbnail = null  // placeholder, pending loading image. Could add an actual placeholder graphic if desired.
                 });
+            }
+
+            if (workspaceName != null)
+            {
+                AddWorkspaceButtons();
+                PreviewWorkspace = workspaceName;
+            } 
+        }
+
+        private void AddWorkspaceButtons()
+        {
+            WorkstationLoadButton.Visibility = Visibility.Visible;
+            WorkstationMergeButton.Visibility = Visibility.Visible;
+        }
+
+        private async void Workstation_Load_Click(object sender, RoutedEventArgs e)
+        {
+            if (Owner is MainWindow mw)
+            {
+                await mw.LoadWorkspace(PreviewWorkspace);
+            }
+            Close();
+        }
+
+        private async void Workstation_Merge_Click(object sender, RoutedEventArgs e)
+        {
+            if (Owner is MainWindow mw)
+            {
+                await mw.LoadWorkspace(PreviewWorkspace, merge: true);
             }
         }
 

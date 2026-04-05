@@ -153,7 +153,7 @@ namespace Cloudless
 
                 var wsFiles = workspace.CloudlessWindows.Select(cw => cw.ImagePath);
 
-                var win = new GalleryWindow(wsFiles, "Workspace Preview: " + workspaceName);
+                var win = new GalleryWindow(wsFiles, title: "Workspace Preview: " + workspaceName, workspaceName: workspaceName);
                 win.Owner = this;
                 win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 win.Show();

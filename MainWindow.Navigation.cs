@@ -71,7 +71,7 @@ namespace Cloudless
         }
         private void OpenRecentImagesWindow()
         {
-            var win = new GalleryWindow(recentFiles, "Recent Images Gallery");
+            var win = new GalleryWindow(recentFiles, title: "Recent Images Gallery");
             win.Owner = this;
             win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             win.Show();
