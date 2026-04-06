@@ -13,7 +13,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.5.3.3";
+        public const string CURRENT_VERION = "0.5.3.5";
 
         #region Fields
 
@@ -154,6 +154,12 @@ namespace Cloudless
             {
                 await LoadImage(initialImageToLoad, false);
             }
+
+            Activate();
+
+            //Topmost = true;
+            //Topmost = false;
+            //Focus();
         }
 
         private void Window_SourceInitialized(object sender, EventArgs e)
