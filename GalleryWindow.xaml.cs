@@ -86,11 +86,14 @@ namespace Cloudless
             }
         }
 
+        private bool OpenFileDialogIsOpen = false;  // Without managing anything, WPF weirdly receives a click event on an image thumb when double clicking a file in the OpenFileDialog. This guards against that.
         private async void Workstation_Preview_Click(object sender, RoutedEventArgs e)
         {
             if (Owner is MainWindow mw)
             {
+                OpenFileDialogIsOpen = true;
                 string? workspaceName = await mw.SelectWorkspaceFileToPreview();
+                OpenFileDialogIsOpen = false;
                 if (string.IsNullOrEmpty(workspaceName))
                     return;
 
@@ -124,7 +127,7 @@ namespace Cloudless
                 }
 
                 PreviewWorkspace = workspaceName;
-                //await LoadThumbnailsAsync();  // TODO revisit. currently this causes a single image load weirdly
+                await LoadThumbnailsAsync();  // See OpenFileDialogIsOpen definition comment.
             }
         }
 
@@ -182,6 +185,9 @@ namespace Cloudless
 
         private async void Thumbnail_Click(object sender, MouseButtonEventArgs e)
         {
+            if (OpenFileDialogIsOpen)
+                return;
+
             if (sender is FrameworkElement fe &&
                 fe.DataContext is GalleryItem item)
             {
