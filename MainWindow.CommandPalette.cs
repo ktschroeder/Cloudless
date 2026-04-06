@@ -76,12 +76,23 @@ namespace Cloudless
             if (PreviousTabScrollText != CommandTextBox.Text)
                 TabScroll = false;
 
-            if (CommandTextBox.Text.ToLower().StartsWith(":ws l ") || CommandTextBox.Text.ToLower().StartsWith(":ws s ") || CommandTextBox.Text.ToLower().StartsWith(":ws m "))
+            string foundCommandBase = null;
+            string[] tabbableCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p" };
+            foreach (string tcb in tabbableCommandBases) 
+            { 
+                if (CommandTextBox.Text.ToLower().StartsWith($":{tcb} "))
+                {
+                    foundCommandBase = tcb;
+                    break;
+                }
+            }
+
+            if (foundCommandBase != null)
             {
-                string commandBase = CommandTextBox.Text.Substring(0,6);
+                string commandBase = $":{foundCommandBase} ";
                 if (!TabScroll)
                 {
-                    string query = CommandTextBox.Text.Length == 6 ? "" : CommandTextBox.Text.Substring(6);
+                    string query = CommandTextBox.Text.Length == commandBase.Length ? "" : CommandTextBox.Text.Substring(commandBase.Length);
                     var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
                     wsNames ??= new List<string>();
                     wsNames = wsNames.Where(ws => ws.ToLower().StartsWith(query.ToLower())).ToList();
