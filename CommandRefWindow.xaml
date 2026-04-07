@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
-        Height="325"
+        Height="425"
         Width="830"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -33,7 +33,7 @@
                 <StackPanel>
 
                     <!-- Hotkey List -->
-                    <StackPanel Margin="0,0,0,0" Height="240">
+                    <StackPanel Margin="0,0,0,0" Height="340">
                         <TabControl Background="Transparent" BorderThickness="0">
 
                             <!-- Non-Command -->
@@ -82,6 +82,12 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="5" Text="Ctrl [1 through 8]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="5" Text="Run custom commands stored at the respective index"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="(palette) Tab" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="For workspace commands (e.g. 'ws l [name]'), autocomplete workstation name, or cycle through matches."/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="(palette) Shift Tab" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Similar to above, but cycle in the reverse direction."/>
 
                                         </Grid>
                                     </StackPanel>
@@ -273,18 +279,22 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="ws save [name] | ws s [name]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="ws save | s [name]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="0" Text="Save current workspace to storage as [name]"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="ws s! [name]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="ws save! | s! [name]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Save/overwrite current workspace to storage as [name]"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="ws load [name] | ws l [name]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="ws load | l [name]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="2" Text="Load workspace [name] and close all currently open Cloudless windows"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="ws m [name]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="ws merge | m [name]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="3" Text="Merge workspace [name] (load it without closing any windows)"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="ws rev" FontWeight="Bold"/>
@@ -302,8 +312,20 @@
                                             <TextBlock Grid.Column="0" Grid.Row="8" Text="qm" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="8" Text="Quickmerge: merge the quicksave workspace (load it without closing any windows)"/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="ws preview | p [name]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Open gallery view of workspace preview"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="ws rename | r [old] [new]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Rename workspace [old] to [new]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="11" Text="ws delete [name]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="11" Text="Delete workspace [name]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="ws origin" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="12" Text="Reveal the workspace's name from which this window's current image originated, if any"/>
+
                                         </Grid>
-                                        <TextBlock Margin="0,10,0,1">With "ws l" or "ws s" or "ws m", press tab to autocomplete name (press repeatedly to traverse matches)</TextBlock>
+                                        <TextBlock Margin="0,10,0,1">With "ws l", "ws s", etc., press tab to autocomplete name (press repeatedly to traverse matches. Hold Shift to reverse direction)</TextBlock>
 
                                     </StackPanel>
                                 </ScrollViewer>
