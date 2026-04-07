@@ -94,6 +94,8 @@ VerticalAlignment="Center">
                 Panel.ZIndex="99999999">
 
                 <TextBox x:Name="CommandTextBox"
+                     TextChanged="CommandPalette_TextChanged"
+                     SelectionChanged="CommandPalette_SelectionChanged"
                      Background="Transparent"
                      BorderThickness="0"
                      Foreground="#EAEAEA"
@@ -102,7 +104,7 @@ VerticalAlignment="Center">
                      CaretBrush="White"
                      MinWidth="160"
                      KeyDown="CommandTextBox_KeyDown"
-                         PreviewKeyDown="CommandPaletteTextBox_PreviewKeyDown"/>
+                     PreviewKeyDown="CommandPaletteTextBox_PreviewKeyDown"/>
                     </Border>
 
 

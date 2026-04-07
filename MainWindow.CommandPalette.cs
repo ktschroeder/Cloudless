@@ -3,6 +3,7 @@ using System.Windows.Input;
 using System.IO;
 using System.Collections.Specialized;
 using System.Xml.Linq;
+using System.Windows.Controls;
 
 namespace Cloudless
 {
@@ -16,6 +17,27 @@ namespace Cloudless
             _historyIndex = _commandHistory.Count;
             TabScroll = false;
             CommandTextBox.Focus();
+        }
+
+        private void CommandPalette_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Executes every time a character is added or removed.
+            // Ensure there is a colon at the start.
+            string currentText = CommandTextBox.Text;
+            if (string.IsNullOrEmpty(currentText))
+                CommandTextBox.Text = ":";
+            else if (currentText[0] != ':')
+                CommandTextBox.Text = $":{currentText}";
+        }
+
+        private void CommandPalette_SelectionChanged(object sender, RoutedEventArgs e)
+        {
+            if (CommandTextBox.SelectionLength == 0 && CommandTextBox.CaretIndex == 0 && CommandTextBox.Text.Length > 0)
+            {
+                CommandTextBox.CaretIndex = 1;
+            }
+
+            // TODO: make Ctrl A select all but first char. make Shift Left do nothing when at index 1.
         }
 
         private void CloseCommandPalette()
@@ -623,6 +645,29 @@ namespace Cloudless
 
                 CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
             }
+
+            //// TODO revisit
+            //var textBox = sender as TextBox;
+            //if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            //{
+            //    if (textBox != null && textBox.Text.Length > 1)
+            //    {
+            //        textBox.Select(1, textBox.Text.Length - 1);
+
+            //        // mark event handled to prevent default Ctrl+A
+            //        e.Handled = true;
+            //    }
+            //}
+            //if (textBox != null && e.Key == Key.Left &&
+            //    (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            //{
+            //    // If cursor is at index 1 (between 1st and 2nd char)
+            //    if (textBox.CaretIndex == 1)
+            //    {
+            //        // Stop the default Shift+Left selection behavior
+            //        e.Handled = true;
+            //    }
+            //}
         }
 
         private async Task JumpToIndex(int index)
