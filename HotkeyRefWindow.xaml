@@ -190,7 +190,7 @@
 
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="140"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
@@ -216,6 +216,9 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="1" Text="Left/Right or A/D" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Load adjacent images in directory of current image, based on current sort order"/>
+                                            
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="Mousewheel up/down" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Similar to above"/>
 
                                         </Grid>
 

@@ -414,17 +414,13 @@ namespace Cloudless
             {
                 if (e.Key == Key.Left || e.Key == Key.A)
                 {
-                    // Go to the previous image
-                    currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
-                    await DisplayImage(currentImageIndex, true);
+                    await GoToPreviousImage();
                     e.Handled = true;
                     return;
                 }
                 else if (e.Key == Key.Right || e.Key == Key.D)
                 {
-                    // Go to the next image
-                    currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
-                    await DisplayImage(currentImageIndex, true);
+                    await GoToNextImage();
                     e.Handled = true;
                     return;
                 }
@@ -531,7 +527,7 @@ namespace Cloudless
                 MessageBox.Show($"Failed to load the dragged content: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
+        private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
             {
@@ -551,6 +547,17 @@ namespace Cloudless
                 Zoom(cursorPosition, zoomDelta: zoomDelta);
 
                 e.Handled = true;
+            }
+            else
+            {
+                if (e.Delta > 0)
+                {
+                    await GoToPreviousImage();
+                }
+                else
+                {
+                    await GoToNextImage();
+                }
             }
         }
         private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)

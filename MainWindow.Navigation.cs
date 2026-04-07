@@ -243,5 +243,21 @@ namespace Cloudless
             menu.Placement = PlacementMode.MousePoint;
             menu.IsOpen = true;
         }
+
+        private async Task GoToPreviousImage()
+        {
+            if (imageFiles == null) return;
+            // Go to the previous image
+            currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
+            await DisplayImage(currentImageIndex, true);
+        }
+
+        private async Task GoToNextImage()
+        {
+            if (imageFiles == null) return;
+            // Go to the next image
+            currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
+            await DisplayImage(currentImageIndex, true);
+        }
     }
 }
