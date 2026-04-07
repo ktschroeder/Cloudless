@@ -200,5 +200,17 @@ namespace Cloudless.Properties {
                 this["WebmEnabled"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ImgBBKey {
+            get {
+                return ((string)(this["ImgBBKey"]));
+            }
+            set {
+                this["ImgBBKey"] = value;
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.0";
+        public const string CURRENT_VERION = "0.6.0.1";
 
         #region Fields
 

@@ -21,6 +21,13 @@ using System;
 using System.Windows.Media;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
+using static System.Net.WebRequestMethods;
+using System.Net.Http.Headers;
+using File = System.IO.File;
+using System.Text.RegularExpressions;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 namespace Cloudless
 {
@@ -964,6 +971,72 @@ namespace Cloudless
 
             return new Bitmap(stream);
         }
+
+        private void OpenUrl(string url)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+
+        private async Task<string> ImgBB(string path)  // docs https://api.imgbb.com/
+        {
+            try
+            {
+                using var client = new HttpClient();
+                string apiKey = Cloudless.Properties.Settings.Default.ImgBBKey;
+
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    Message("Add an ImgBB key in preferences to use the RIS feature.");
+                    return null;
+                }
+
+                var url = $"https://api.imgbb.com/1/upload?key={apiKey}&expiration=600";  // expiration is in seconds
+                var content = new MultipartFormDataContent();
+                var b64 = Convert.ToBase64String(File.ReadAllBytes(path));
+                content.Add(new StringContent(b64), "image");
+                var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+                var response = await client.SendAsync(request);
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ImgBBResponse>(jsonString);
+
+                string finalUrl = result.data.url;
+
+                return finalUrl;
+            }
+            catch (Exception ex)
+            {
+                Message($"Error in RIS: Ensure your ImgBB key is valid");
+                return null;
+            }
+            return null;
+        }
+    }
+
+    public class ImgBBResponse
+    {
+        public Data? data { get; set; }
+        public bool success { get; set; }
+        public int status { get; set; }
+    }
+
+    public class Data
+    {
+        public string id { get; set; }
+        public string title { get; set; }
+        public string url_viewer { get; set; }
+        public string url { get; set; }
+        public string display_url { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
+        public int size { get; set; }
+        public int time { get; set; }
+        public int expiration { get; set; }
+        public string delete_url { get; set; }
     }
 
     public class GitHubRelease

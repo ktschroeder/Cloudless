@@ -115,6 +115,8 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="cip" FontWeight="Bold"/>
@@ -146,6 +148,12 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="c[Int 1-8] run" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="9" Text="Run command stored at index [Int]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="ris" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Perform an online reverse-image-search for the current image, including uploading it to a temporary host."/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="11" Text="ris [service]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="11" Text="See above. [service] can be google, bing, yandex, tineye, or saucenao. Their first letters can also be used."/>
 
                                         </Grid>
 

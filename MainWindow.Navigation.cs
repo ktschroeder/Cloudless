@@ -56,6 +56,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
                 Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
                 Cloudless.Properties.Settings.Default.WebmEnabled = configWindow.WebmEnabled;
+                Cloudless.Properties.Settings.Default.ImgBBKey = configWindow.ImgBBKey;
 
                 Cloudless.Properties.Settings.Default.Save();
 

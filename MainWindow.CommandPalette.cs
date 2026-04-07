@@ -2,8 +2,8 @@
 using System.Windows.Input;
 using System.IO;
 using System.Collections.Specialized;
-using System.Xml.Linq;
 using System.Windows.Controls;
+using System.Web;
 
 namespace Cloudless
 {
@@ -534,6 +534,18 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().Trim().Equals("ris"))  // reverse image search
+            {
+                await ReverseImageSearch(currentlyDisplayedImagePath, "g");
+                return true;
+            }
+
+            if (command.ToLower().StartsWith("ris ") && command.Length > 4)  // reverse image search
+            {
+                await ReverseImageSearch(currentlyDisplayedImagePath, command.Split(' ')[1].Trim().ToLower());
+                return true;
+            }
+
             if (command.ToLower().Equals("rev"))  // reveal current image in file explorer
             {
                 string? path = currentlyDisplayedImagePath;
@@ -599,6 +611,45 @@ namespace Cloudless
 
             Message("Command not recognized");
             return false;
+        }
+
+        private async Task ReverseImageSearch(string filePath, string serviceArg) {
+            var validServiceArgs = new List<string>() { "google", "g", "bing", "b", "yandex", "y", "tineye", "t", "saucenao", "s" };
+            if (!validServiceArgs.Contains(serviceArg))
+            {
+                Message("Invalid argument specifying reverse image search service.");
+                return;
+            }
+
+            ShowLoadingOverlay($"Uploading file for reverse image search...");  // takes a couple seconds or so
+            var hostedImageUrl = await ImgBB(filePath);
+            HideLoadingOverlay();
+            if (hostedImageUrl == null)
+                return;
+
+            string Encode(string url) => HttpUtility.UrlEncode(url);
+            string finalUrl = null;
+
+            switch (serviceArg)
+            {
+                case "google" or "g":
+                    finalUrl = $"https://www.google.com/searchbyimage?image_url={Encode(hostedImageUrl)}";
+                    break;
+                case "bing" or "b":
+                    finalUrl = $"https://www.bing.com/images/search?view=detailv2&iss=sbi&imgurl={Encode(hostedImageUrl)}";
+                    break;
+                case "yandex" or "y":
+                    finalUrl = $"https://yandex.com/images/search?rpt=imageview&url={Encode(hostedImageUrl)}";
+                    break;
+                case "tineye" or "t":
+                    finalUrl = $"https://tineye.com/search?url={Encode(hostedImageUrl)}";
+                    break;
+                case "saucenao" or "s":
+                    finalUrl = $"https://saucenao.com/search.php?url={Encode(hostedImageUrl)}";
+                    break;
+            }
+
+            OpenUrl(finalUrl ?? $"https://www.google.com/searchbyimage?image_url={Encode(hostedImageUrl)}");
         }
 
         private void CommitCommand(string command)

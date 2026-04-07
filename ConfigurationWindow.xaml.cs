@@ -20,6 +20,7 @@ namespace Cloudless
         public double MaxCompressedCopySizeMB { get; private set; }
         public bool DisableSmartZoom { get; private set; }
         public bool WebmEnabled { get; private set; }
+        public string ImgBBKey { get; private set; }
 
         public ConfigurationWindow()
         {
@@ -98,6 +99,10 @@ namespace Cloudless
             var currentMaxCompressedCopySizeMB = Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB;
             MaxCompressedCopySizeMBTextBox.Text = currentMaxCompressedCopySizeMB.ToString();
             MaxCompressedCopySizeMB = currentMaxCompressedCopySizeMB;
+
+            var currentImgBBKey = Cloudless.Properties.Settings.Default.ImgBBKey;
+            ImgBBKeyTextBox.Text = currentImgBBKey;
+            ImgBBKey = currentImgBBKey;
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
@@ -147,6 +152,7 @@ namespace Cloudless
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;
+            ImgBBKey = ImgBBKeyTextBox.Text.Trim();
 
             DialogResult = true;
             Close();
