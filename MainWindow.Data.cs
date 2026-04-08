@@ -208,21 +208,42 @@ namespace Cloudless
                     gifController = null;  // can probably more efficiently reuse this. see https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/WpfAnimatedGif.Demo/MainWindow.xaml.cs
                 }
 
-                if (uri.AbsolutePath.ToLower().EndsWith(".gif"))
+                if (uri.AbsolutePath.ToLower().EndsWith(".gif"))  // TODO fair bit of duplicate code shared with WEBM section of this method
                 {
                     var fileSizeMB = (double)(new FileInfo(uri.OriginalString).Length) / 1024 / 1024;
-                    ShowLoadingOverlay($"Loading GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
-                    await Dispatcher.Yield(DispatcherPriority.Background);
+                    bool loadGif = true;
 
-                    var bitmap = new BitmapImage(uri);
-                    ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                    if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
+                    {
+                        var gifWarningWindow = new GifWarningWindow(currentlyDisplayedImagePath, fileSizeMB)
+                        {
+                            Owner = this,
+                            WindowStartupLocation = WindowStartupLocation.CenterOwner
+                        };
+                        gifWarningWindow.ShowDialog();
+                        loadGif = gifWarningWindow.Proceed;
+                    }
+                    
+                    if (loadGif)
+                    {
+                        ShowLoadingOverlay($"Loading GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
+                        await Dispatcher.Yield(DispatcherPriority.Background);
 
-                    await Dispatcher.Yield(DispatcherPriority.Background);
-                    ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
-                    HideLoadingOverlay();
+                        var bitmap = new BitmapImage(uri);
+                        ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
 
-                    gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
-                }
+                        await Dispatcher.Yield(DispatcherPriority.Background);
+                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
+                        HideLoadingOverlay();
+
+
+                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
+                    }
+                    else
+                    {
+                        ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
+                    }
+                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
                 {
                     if (Properties.Settings.Default.WebmEnabled)
@@ -276,17 +297,36 @@ namespace Cloudless
                                 HideLoadingOverlay();
                             }
 
+                            bool loadGif = true;
                             var fileSizeMB = (double)(new FileInfo(convertedGifPath).Length) / 1024 / 1024;
-                            ShowLoadingOverlay($"Loading WEBM as GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(path)}");
-                            await Dispatcher.Yield(DispatcherPriority.Background);
+                            if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
+                            {
+                                var gifWarningWindow = new GifWarningWindow(convertedGifPath, fileSizeMB)
+                                {
+                                    Owner = this,
+                                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                                };
+                                gifWarningWindow.ShowDialog();
+                                loadGif = gifWarningWindow.Proceed;
+                            }
 
-                            var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
-                            ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                            await Dispatcher.Yield(DispatcherPriority.Background);
-                            ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
-                            HideLoadingOverlay();
+                            if (loadGif)
+                            {
+                                ShowLoadingOverlay($"Loading WEBM as GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(path)}");
+                                await Dispatcher.Yield(DispatcherPriority.Background);
 
-                            gifController = ImageBehavior.GetAnimationController(ImageDisplay);
+                                var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
+                                ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                                await Dispatcher.Yield(DispatcherPriority.Background);
+                                ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
+                                HideLoadingOverlay();
+
+                                gifController = ImageBehavior.GetAnimationController(ImageDisplay);
+                            }
+                            else
+                            {
+                                ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
+                            }
                         }
                         catch (Exception ex)
                         {

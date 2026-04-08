@@ -19,6 +19,9 @@
     <Compile Update="CommandRefWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="GifWarningWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="SetDimensionsWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
