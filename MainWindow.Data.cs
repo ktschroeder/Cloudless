@@ -367,7 +367,7 @@ namespace Cloudless
                 if (WorkspaceLoadInProgress == false && (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp))
                 {
                     ResizeWindowToImage();
-                    CenterWindow();
+                    CenterWindowOnCurrentScreen();
                 }
 
                 ApplyDisplayMode();

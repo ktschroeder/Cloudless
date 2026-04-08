@@ -189,7 +189,7 @@ namespace Cloudless
             {
                 autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
                 ResizeWindowToImage();
-                CenterWindow();
+                CenterWindowOnCurrentScreen();
                 e.Handled = true;
                 return;
             }

@@ -6,6 +6,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
 
 namespace Cloudless
 {
@@ -351,13 +353,41 @@ namespace Cloudless
             }
         }
 
-        private void CenterWindow()
+        private void CenterWindowForStartup()
         {
             var workingArea = SystemParameters.WorkArea;
             var left = (workingArea.Width - this.Width) / 2 + workingArea.Left;
             var top = (workingArea.Height - this.Height) / 2 + workingArea.Top;
             RepositionWindow(left, top);
         }
+
+        private void CenterWindowOnCurrentScreen()
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            IntPtr hMonitor = MonitorFromWindow(hwnd, 2); // 2 = MONITOR_DEFAULTTONEAREST
+
+            MONITORINFO mi = new MONITORINFO();
+            mi.cbSize = Marshal.SizeOf(mi);
+
+            if (GetMonitorInfo(hMonitor, ref mi))
+            {
+                // Work area coordinates are in physical pixels
+                var workArea = mi.rcWork;
+
+                // Convert physical pixels to WPF's Device Independent Pixels (DIPs)
+                var source = PresentationSource.FromVisual(this);
+                double dpiScaling = source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+
+                double screenWidth = (workArea.Right - workArea.Left) / dpiScaling;
+                double screenHeight = (workArea.Bottom - workArea.Top) / dpiScaling;
+                double screenLeft = workArea.Left / dpiScaling;
+                double screenTop = workArea.Top / dpiScaling;
+
+                this.Left = screenLeft + (screenWidth - this.ActualWidth) / 2;
+                this.Top = screenTop + (screenHeight - this.ActualHeight) / 2;
+            }
+        }
+
         private void ClampTransformToIntuitiveBounds(Vector? delta = null)
         {
             if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
@@ -738,5 +768,25 @@ namespace Cloudless
                 MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
+        // Native structures for Monitor info
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT { public int Left, Top, Right, Bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork; // This is the "Working Area" (no taskbar)
+            public uint dwFlags;
+        }
+
+        [DllImport("user32.dll")]
+        static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
     }
 }

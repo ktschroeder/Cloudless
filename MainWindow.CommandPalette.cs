@@ -522,7 +522,7 @@ namespace Cloudless
                     return false;
 
                 ResizeWindow(width, height);
-                CenterWindow();
+                CenterWindowOnCurrentScreen();
 
                 return true;
             }

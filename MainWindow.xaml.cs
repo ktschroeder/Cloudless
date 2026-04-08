@@ -8,12 +8,13 @@ using Point = System.Windows.Point;
 using System.Windows.Media;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
+using System.Runtime.InteropServices;
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.0.2";
+        public const string CURRENT_VERION = "0.6.0.3";
 
         #region Fields
 
@@ -85,7 +86,7 @@ namespace Cloudless
             }
 
             ResizeWindow(windowW, windowH);
-            CenterWindow();  // maybe redundant call. at some point look for other redundant calls to improve cleanliness/performance
+            CenterWindowForStartup();  // maybe redundant call. at some point look for other redundant calls to improve cleanliness/performance
         }
         public MainWindow(string? filePath)
         {
@@ -99,7 +100,7 @@ namespace Cloudless
                 Zen(true);
             }
 
-            CenterWindow();
+            CenterWindowForStartup();
         }
         private void Setup()
         {

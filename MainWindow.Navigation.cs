@@ -109,7 +109,7 @@ namespace Cloudless
             if (setDimensionsWindow.ShowDialog() == true)
             {
                 ResizeWindow(setDimensionsWindow.NewWidth, setDimensionsWindow.NewHeight);
-                CenterWindow();
+                CenterWindowOnCurrentScreen();
             }
         }
         private void DuplicateWindow_Click(object sender, RoutedEventArgs e)
