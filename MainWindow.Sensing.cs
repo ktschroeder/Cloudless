@@ -403,6 +403,7 @@ namespace Cloudless
                 else
                 {
                     // Repeat previous command when CTRL is held
+                    LoadCommandHistory();
                     await ExecuteCommand(_commandHistory.LastOrDefault() ?? "");
                 }
 

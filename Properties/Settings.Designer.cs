@@ -212,5 +212,16 @@ namespace Cloudless.Properties {
                 this["ImgBBKey"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection CommandHistory {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["CommandHistory"]));
+            }
+            set {
+                this["CommandHistory"] = value;
+            }
+        }
     }
 }

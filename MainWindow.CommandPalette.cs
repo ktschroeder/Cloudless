@@ -14,6 +14,7 @@ namespace Cloudless
             CommandPalette.Visibility = Visibility.Visible;
             CommandTextBox.Text = ":";
             CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            LoadCommandHistory();
             _historyIndex = _commandHistory.Count;
             TabScroll = false;
             CommandTextBox.Focus();
@@ -652,14 +653,35 @@ namespace Cloudless
             OpenUrl(finalUrl ?? $"https://www.google.com/searchbyimage?image_url={Encode(hostedImageUrl)}");
         }
 
+        private void LoadCommandHistory()
+        {
+            var stringCollection = Cloudless.Properties.Settings.Default.CommandHistory;
+            if (stringCollection == null)
+            {
+                _commandHistory = new List<string>();
+            }
+            else
+            {
+                var list = stringCollection.Cast<string>().ToList();
+                _commandHistory = list;
+            }
+        }
+
         private void CommitCommand(string command)
         {
             if (string.IsNullOrWhiteSpace(command))
                 return;
 
+            LoadCommandHistory();
+
             // Avoid duplicate consecutive entries
             if (_commandHistory.Count == 0 || _commandHistory[^1] != command)
                 _commandHistory.Add(command);
+
+            const int HISTORY_MAX_SIZE = 100;
+            StringCollection sc = new StringCollection();
+            sc.AddRange(_commandHistory.TakeLast(HISTORY_MAX_SIZE).ToArray());
+            Cloudless.Properties.Settings.Default.CommandHistory = sc;
 
             _historyIndex = _commandHistory.Count; // reset position
         }

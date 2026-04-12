@@ -14,7 +14,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.1";
+        public const string CURRENT_VERION = "0.6.1.1";
 
         #region Fields
 
@@ -53,7 +53,7 @@ namespace Cloudless
         private const int MaxRecentFiles = 15;
         private List<string> recentFiles = new();
 
-        private readonly List<string> _commandHistory = new();
+        private List<string> _commandHistory = new();
         private int _historyIndex = -1;
         public List<string> UserCommands = new List<string>(8);
 
