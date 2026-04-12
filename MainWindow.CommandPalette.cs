@@ -682,6 +682,7 @@ namespace Cloudless
             StringCollection sc = new StringCollection();
             sc.AddRange(_commandHistory.TakeLast(HISTORY_MAX_SIZE).ToArray());
             Cloudless.Properties.Settings.Default.CommandHistory = sc;
+            Cloudless.Properties.Settings.Default.Save();
 
             _historyIndex = _commandHistory.Count; // reset position
         }
