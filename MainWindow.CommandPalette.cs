@@ -217,15 +217,33 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().Equals("um origin"))
+            {
+                UnminimizeWorkspaceOriginInstances();
+                return true;
+            }
+
             if (command.ToLower().Equals("c others"))  // close all other instances
             {
                 CloseAllOtherInstances();
                 return true;
             }
 
+            if (command.ToLower().Equals("c origin"))  // close all other instances
+            {
+                CloseWorkspaceOriginInstances();
+                return true;
+            }
+
             if (command.ToLower().Equals("m others"))
             {
                 MinimizeAllOtherInstances();
+                return true;
+            }
+
+            if (command.ToLower().Equals("m origin"))
+            {
+                MinimizeWorkspaceOriginInstances();
                 return true;
             }
 

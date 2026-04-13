@@ -106,6 +106,18 @@ namespace Cloudless
             }
         }
 
+        private void CloseWorkspaceOriginInstances()
+        {
+            foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (window.imageOriginalWorkspaceName != null && window.imageOriginalWorkspaceName.Equals(this.imageOriginalWorkspaceName) && window != this)
+                    window.Close();
+                
+            }
+            Close();
+        }
+
+
         private void MinimizeAllOtherInstances()
         {
             var windowsToMinimize = Application.Current.Windows
@@ -116,6 +128,15 @@ namespace Cloudless
             foreach (var w in windowsToMinimize)
             {
                 w.WindowState = WindowState.Minimized;
+            }
+        }
+
+        private void MinimizeWorkspaceOriginInstances()
+        {
+            foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (window.imageOriginalWorkspaceName != null && window.imageOriginalWorkspaceName.Equals(this.imageOriginalWorkspaceName))
+                    window.WindowState = WindowState.Minimized;
             }
         }
 
@@ -130,6 +151,15 @@ namespace Cloudless
             {
                 if (w.WindowState == WindowState.Minimized)
                     w.WindowState = WindowState.Normal;
+            }
+        }
+
+        private void UnminimizeWorkspaceOriginInstances()
+        {
+            foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (window.imageOriginalWorkspaceName != null && window.imageOriginalWorkspaceName.Equals(this.imageOriginalWorkspaceName) && window.WindowState == WindowState.Minimized)
+                    window.WindowState = WindowState.Normal;
             }
         }
 
