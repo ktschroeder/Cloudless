@@ -133,9 +133,19 @@ namespace Cloudless
             }
         }
 
-        public async Task<bool> PreviewWorkspace(string workspaceName)
+        public async Task<bool> PreviewWorkspace(string workspaceName = "")
         {
             // TODO adjust gallery window to account for isMinimized, add a graphic or something.
+
+            if (string.IsNullOrEmpty(workspaceName))
+            {
+                var win = new GalleryWindow(new List<string>(), title: "Workspace Preview: (none selected)", workspaceName: workspaceName);
+                win.Owner = this;
+                win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                win.Show();
+
+                return true;
+            }
 
             try
             {

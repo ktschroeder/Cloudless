@@ -159,7 +159,7 @@ namespace Cloudless
         {
             CommandPaletteRef();
         }
-        private void CommandPaletteRef()
+        private CommandRefWindow CommandPaletteRef()
         {
             var cprWindow = new CommandRefWindow();
 
@@ -169,6 +169,7 @@ namespace Cloudless
             cprWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             cprWindow.Show();
+            return cprWindow;
         }
         private void ToggleFullscreen()
         {

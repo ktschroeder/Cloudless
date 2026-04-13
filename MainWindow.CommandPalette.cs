@@ -231,7 +231,14 @@ namespace Cloudless
 
             if (command.ToLower().Equals("help"))
             {
-                CommandPaletteRef();
+                var window = CommandPaletteRef();
+                window.Activate(); // TODO bug
+                window.Focus();  // without this, focus stays on main window. If user uses 'c' hotkey, main window closes.
+                                // also, this makes the window properly tabbable.
+
+                // focus still gets taken by main window. maybe happens after here in flow? but weirdly, main window stays behind.
+                // other way to see this idea: "help" and then immediately hotkey Ctrl A, vs being in main screen and doing Ctrl H then Ctrl A.
+
                 return true;
             }
 
@@ -415,12 +422,16 @@ namespace Cloudless
                 else if (command.ToLower().StartsWith("ws preview ") && command.Length > 9)
                 {
                     string name = command.Substring(11);
-                    bool success = await PreviewWorkspace(name);
+                    bool success = await PreviewWorkspace(name.Trim());
                 }
                 else if (command.ToLower().StartsWith("ws p ") && command.Length > 5)
                 {
                     string name = command.Substring(5);
-                    bool success = await PreviewWorkspace(name);
+                    bool success = await PreviewWorkspace(name.Trim());
+                }
+                else if (command.ToLower().Equals("ws p"))
+                {
+                    bool success = await PreviewWorkspace();
                 }
                 else if (command.ToLower().Equals("ws rev"))
                 {

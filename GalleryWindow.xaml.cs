@@ -55,18 +55,25 @@ namespace Cloudless
                 });
             }
 
-            if (workspaceName != null)
-            {
-                AddWorkspaceButtons();
-                PreviewWorkspace = workspaceName;
-            } 
+            AddWorkspaceButtons(!string.IsNullOrEmpty(workspaceName));
+            PreviewWorkspace = workspaceName;
         }
 
-        private void AddWorkspaceButtons()
+        private void AddWorkspaceButtons(bool wsSelected)
         {
-            WorkstationLoadButton.Visibility = Visibility.Visible;
-            WorkstationMergeButton.Visibility = Visibility.Visible;
-            WorkstationPreviewButton.Visibility = Visibility.Visible;
+            if (wsSelected) 
+            {
+                WorkstationLoadButton.Visibility = Visibility.Visible;
+                WorkstationMergeButton.Visibility = Visibility.Visible;
+                WorkstationPreviewButton.Content = "Preview Another WS";
+                WorkstationPreviewButton.Visibility = Visibility.Visible;
+            }
+            
+            if (!wsSelected)
+            {
+                WorkstationPreviewButton.Content = "Preview a WS";
+                WorkstationPreviewButton.Visibility = Visibility.Visible;
+            }
         }
 
         private async void Workstation_Load_Click(object sender, RoutedEventArgs e)
@@ -127,7 +134,9 @@ namespace Cloudless
                 }
 
                 PreviewWorkspace = workspaceName;
+                AddWorkspaceButtons(!string.IsNullOrEmpty(workspaceName));
                 await LoadThumbnailsAsync();  // See OpenFileDialogIsOpen definition comment.
+
             }
         }
 
