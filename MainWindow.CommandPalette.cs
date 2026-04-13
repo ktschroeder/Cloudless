@@ -229,7 +229,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("c origin"))  // close all other instances
+            if (command.ToLower().Equals("c origin"))  // close all instances showing an image from this window's workspace
             {
                 CloseWorkspaceOriginInstances();
                 return true;
