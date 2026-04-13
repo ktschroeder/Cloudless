@@ -264,6 +264,16 @@ namespace Cloudless
         // returns whether successful
         public async Task<bool> LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
+            // if loading undoload, we want to save to undoload_slot, load undoload, then delete undoload and replace it with renamed undoload_slot.
+            try
+            {
+                SaveWorkspace(workspaceName.Equals(UNDOLOAD_NAME) ? UNDOLOAD_SLOT_NAME : UNDOLOAD_NAME, true);
+            }
+            catch (Exception e)
+            {
+                Message("Failed to save system undo file during loading");
+            }
+            
             try
             {
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
@@ -389,6 +399,8 @@ namespace Cloudless
         }
 
         const string QUICKSAVE_NAME = "_system_quicksave";
+        const string UNDOLOAD_NAME = "_system_undoload";
+        const string UNDOLOAD_SLOT_NAME = "_system_undoload_slot";
         private bool Quicksave()  // returns whether successful
         {
             (int windowCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, true);
@@ -410,6 +422,21 @@ namespace Cloudless
         private async Task Quickmerge()
         {
             await LoadWorkspace(QUICKSAVE_NAME, true);
+        }
+        private async Task UndoLoad()
+        {
+            await LoadWorkspace(UNDOLOAD_NAME);
+            try
+            {
+                string path = Path.Combine(workspaceFilesPath, UNDOLOAD_NAME + ".cloudless");
+                File.Delete(path);
+                string slotPath = Path.Combine(workspaceFilesPath, UNDOLOAD_SLOT_NAME + ".cloudless");
+                File.Move(slotPath, path);
+            }
+            catch (Exception e)
+            {
+                Message("Error while managing system undoload files: " + e.Message);
+            }
         }
     }
 

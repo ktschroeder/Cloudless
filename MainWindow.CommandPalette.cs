@@ -437,6 +437,10 @@ namespace Cloudless
                 {
                     RevealDirectoryInExplorer(workspaceFilesPath);
                 }
+                else if (command.ToLower().Equals("ws undoload"))
+                {
+                    await UndoLoad();
+                }
                 else
                 {
                     Message("Could not parse your ws command: " + command);
