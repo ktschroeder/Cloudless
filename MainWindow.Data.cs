@@ -184,7 +184,9 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load the image at path \"{imagePath}\": {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // TODO remove these super obnoxious Windows MessageBox error windows. Handle their exceptions or use normal Message method
+                //MessageBox.Show($"Failed to load the image at path \"{imagePath}\": {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"Failed to load the image at path \"{imagePath}\": {ex.Message}");
             }
         }
         private async Task DisplayImage(int index, bool openedThroughApp)

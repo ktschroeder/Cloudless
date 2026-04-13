@@ -9,6 +9,7 @@ using System.Windows.Media;
 using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace Cloudless
 {
@@ -80,6 +81,11 @@ namespace Cloudless
             initialImageToLoad = filePath;
             Setup();
 
+            if ((Path.GetExtension(filePath) ?? "").ToLower().Equals(".cloudless"))
+            {
+                return;
+            }
+
             if (string.IsNullOrEmpty(initialImageToLoad))
             {
                 Zen(true);
@@ -91,9 +97,13 @@ namespace Cloudless
         public MainWindow(string? filePath)
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
-
             initialImageToLoad = filePath;
             Setup();
+
+            if ((Path.GetExtension(filePath) ?? "").ToLower().Equals(".cloudless"))
+            {
+                return;
+            }
 
             if (string.IsNullOrEmpty(initialImageToLoad))
             {
@@ -101,6 +111,12 @@ namespace Cloudless
             }
 
             CenterWindowForStartup();
+        }
+        private async Task ExecuteCloudlessFile(string filePath)
+        {
+            // TODO if things get too complicated here, we can just open a blank instance as normal, then execute merge command as normal. Consider whether there is already a cloudless instance open.
+            string workspaceName = Path.GetFileNameWithoutExtension(filePath);
+            await LoadWorkspace(workspaceName);  // TODO consider whether to merge instead here. Maybe user config to choose?
         }
         private void Setup()
         {
@@ -151,12 +167,17 @@ namespace Cloudless
         {
             await UpdateRecentFilesMenu();
 
-            if (!string.IsNullOrEmpty(initialImageToLoad) && WorkspaceLoadInProgress == false)
+            if ((Path.GetExtension(initialImageToLoad) ?? "").ToLower().Equals(".cloudless"))
+            {
+                await ExecuteCloudlessFile(initialImageToLoad);
+            }
+            else if (!string.IsNullOrEmpty(initialImageToLoad) && WorkspaceLoadInProgress == false)
             {
                 await LoadImage(initialImageToLoad, false);
+                Activate();
             }
 
-            Activate();
+            
 
             //Topmost = true;
             //Topmost = false;
