@@ -447,7 +447,7 @@ namespace Cloudless
                     string name = command.Substring(5);
                     bool success = await PreviewWorkspace(name.Trim());
                 }
-                else if (command.ToLower().Equals("ws p"))
+                else if (command.ToLower().Equals("ws p") || command.ToLower().Equals("ws preview"))
                 {
                     bool success = await PreviewWorkspace();
                 }

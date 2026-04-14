@@ -75,7 +75,7 @@
                                             <TextBlock Grid.Column="1" Grid.Row="2" Text="Cancel/exit the command palette"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="3" Text="(palette) Up and Down" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Traverse through history of commands in the current window"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Traverse through history of commands (globally)"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="Ctrl ';'" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="4" Text="Execute the most recent valid command"/>
@@ -291,6 +291,8 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="ws save | s [name]" FontWeight="Bold"/>
@@ -321,7 +323,7 @@
                                             <TextBlock Grid.Column="1" Grid.Row="8" Text="Quickmerge: merge the quicksave workspace (load it without closing any windows)"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="ws preview | p [name]" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Open gallery view of workspace preview"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Open gallery view of workspace preview. Or, use 'ws p' to open blank preview gallery window."/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="10" Text="ws rename | r [old] [new]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="10" Text="Rename workspace [old] to [new]"/>
@@ -331,6 +333,12 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="12" Text="ws origin" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="12" Text="Reveal the workspace's name from which this window's current image originated, if any"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="ws c | m | um origin" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="13" Text="Close, minimize, or unminimize all windows that share a workspace origin with the current window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="ws undoload" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="14" Text="Load the open workspace version that was present prior to the most recent 'ws load' or 'ws undoload' command."/>
 
                                         </Grid>
                                         <TextBlock Margin="0,10,0,1">With "ws l", "ws s", etc., press tab to autocomplete name (press repeatedly to traverse matches. Hold Shift to reverse direction)</TextBlock>
