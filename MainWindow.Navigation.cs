@@ -112,19 +112,25 @@ namespace Cloudless
                 CenterWindowOnCurrentScreen();
             }
         }
-        private void DuplicateWindow_Click(object sender, RoutedEventArgs e)
+        private async void DuplicateWindow_Click(object sender, RoutedEventArgs e)
         {
-            DuplicateWindow();
+            await DuplicateWindow();
         }
-        private void DuplicateWindow()
+        private async Task DuplicateWindow()
         {
-            //debugger shows binding errors but may not be real issue, see perhaps https://stackoverflow.com/questions/14526371/menuitem-added-programmatically-causes-binding-error
-            var duplicateWindow = new MainWindow(currentlyDisplayedImagePath ?? "", this.Width, this.Height);
-            // could also include viewing mode, possibly panning/zooming etc. But this can get messy and imperfect unless total state is matched properly (preferences may not be aligned)
+            var state = GetWindowState(GetZOrderForCurrentProcessWindows());
+            state.Left += 20;  // make new window appear a bit down and right to make it more clear there is a new window, similar to typical Windows behavior
+            state.Top += 20;
 
-            //setDimensionsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            var duplicateWindow = new MainWindow("");
+            if (!string.IsNullOrEmpty(currentlyDisplayedImagePath))
+            {
+                await duplicateWindow.LoadImage(currentlyDisplayedImagePath, false);
+            }
 
+            duplicateWindow.ApplyWindowState(state);
             duplicateWindow.Show();
+            duplicateWindow.PostProcessLoadedWindow(state);
         }
         private void About_Click(object sender, RoutedEventArgs e)
         {

@@ -393,7 +393,7 @@ namespace Cloudless
             // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
 
-        public void PostProcessLoadedWindow(CloudlessWindowState state, string workspaceName)
+        public void PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null)
         {
             if (state.IsMinimized)
                 MinimizeWindow(state);  // this must be done after calling Show() on window, or else image is re-rendered improperly later
