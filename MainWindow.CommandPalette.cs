@@ -409,9 +409,22 @@ namespace Cloudless
                     if (success)
                         Message("Deleted workspace: " + name);
                 }
-                else if (command.ToLower().StartsWith("ws origin"))
+                else if (command.ToLower().Equals("ws origin"))
                 {
                     RevealWorkspaceName();
+                }
+                else if (command.ToLower().Equals("ws origin s") || command.ToLower().Equals("ws origin s!"))
+                {
+                    if (imageOriginalWorkspaceName != null)
+                    {
+                        (int windowCount, string? error) = SaveWorkspace(imageOriginalWorkspaceName, true);
+                        if (windowCount == -1)
+                            Message("Failed to save workspace due to unexpected error: " + error);
+                        else
+                            Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows");
+                    }
+                    else
+                        Message("This window does not belong to a workspace");
                 }
                 else if (command.ToLower().StartsWith("ws rename ") && command.Length > 10)
                 {
