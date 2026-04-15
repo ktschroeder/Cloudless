@@ -33,24 +33,36 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
+        private bool _openDialogInProgress = false;  // lazy band-aid for odd bug where opening a WEBM from file dialog causes another Key.O to be registered, opening a second file dialog.
         private async Task OpenImage()
         {
-            string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif";
-            if (Properties.Settings.Default.WebmEnabled)
+            if (_openDialogInProgress)
+                return;
+
+            _openDialogInProgress = true;
+
+            try
             {
-                filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm";
+                string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif";
+                if (Properties.Settings.Default.WebmEnabled)
+                {
+                    filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm";
+                }
+
+                OpenFileDialog openFileDialog = new OpenFileDialog
+                {
+                    Filter = filter
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    await LoadImage(openFileDialog.FileName, true);
+                    Message("File loaded from dialog.");
+                }
             }
-            
-
-            OpenFileDialog openFileDialog = new OpenFileDialog
+            finally
             {
-                Filter = filter
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                await LoadImage(openFileDialog.FileName, true);
-                Message("File loaded from dialog.");
+                _openDialogInProgress = false;
             }
         }
         public async Task<string?> SelectWorkspaceFileToPreview()
