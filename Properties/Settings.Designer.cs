@@ -223,5 +223,16 @@ namespace Cloudless.Properties {
                 this["CommandHistory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection SystemMessageHistory {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["SystemMessageHistory"]));
+            }
+            set {
+                this["SystemMessageHistory"] = value;
+            }
+        }
     }
 }

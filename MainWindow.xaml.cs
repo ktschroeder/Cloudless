@@ -94,11 +94,11 @@ namespace Cloudless
             ResizeWindow(windowW, windowH);
             CenterWindowForStartup();  // maybe redundant call. at some point look for other redundant calls to improve cleanliness/performance
         }
-        public MainWindow(string? filePath)
+        public MainWindow(string? filePath, bool startUp = false)
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
             initialImageToLoad = filePath;
-            Setup();
+            Setup(startUp: startUp);
 
             if ((Path.GetExtension(filePath) ?? "").ToLower().Equals(".cloudless"))
             {
@@ -118,11 +118,13 @@ namespace Cloudless
             string workspaceName = Path.GetFileNameWithoutExtension(filePath);
             await LoadWorkspace(workspaceName);  // TODO consider whether to merge instead here. Maybe user config to choose?
         }
-        private void Setup()
+        private void Setup(bool startUp = false)
         {
             InitializeComponent();
-
+            
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
+            if (startUp)
+                overlayManager.ClearMessageHistory();
 
             isExplorationMode = false;
             ToggleCropMode(false);

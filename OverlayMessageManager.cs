@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 
 public class OverlayMessageManager
 {
@@ -17,6 +18,39 @@ public class OverlayMessageManager
     public OverlayMessageManager(StackPanel messageStack)
     {
         _messageStack = messageStack;
+    }
+
+    public void ClearMessageHistory()
+    {
+        Cloudless.Properties.Settings.Default.SystemMessageHistory = new StringCollection();
+        Cloudless.Properties.Settings.Default.Save();
+    }
+    public List<string> GetMessageHistoryFromSetting()
+    {
+        List<string> messages = new List<string>();
+        var stringCollection = Cloudless.Properties.Settings.Default.SystemMessageHistory;
+        if (stringCollection == null)
+        {
+            messages = new List<string>();
+        }
+        else
+        {
+            var list = stringCollection.Cast<string>().ToList();
+            messages = list;
+        }
+        return messages;
+    }
+
+    public void WriteToMessageHistory(string message)
+    {
+        var messages = GetMessageHistoryFromSetting();
+        messages.Add(message);
+
+        const int HISTORY_MAX_SIZE = 100;
+        StringCollection sc = new StringCollection();
+        sc.AddRange(messages.TakeLast(HISTORY_MAX_SIZE).ToArray());
+        Cloudless.Properties.Settings.Default.SystemMessageHistory = sc;
+        Cloudless.Properties.Settings.Default.Save();
     }
 
     public void ShowOverlayMessage(string message, TimeSpan duration)
@@ -36,13 +70,14 @@ public class OverlayMessageManager
         // Add the message to the queue
         OverlayMessage overlayMessage = new() { Text = message, Duration = duration };
         _messageQueue.Enqueue(overlayMessage);
+        WriteToMessageHistory(message);
 
         // Process the queue if not already active
         if (_activeMessages.Count == 0)
             DisplayNextMessage();
     }
 
-    public ObservableCollection<string> GetMessageHistory() => messageHistory;
+    public ObservableCollection<string> GetMessageHistory() => messageHistory;  // TODO remove redundant bits around here
 
     private void DisplayNextMessage()
     {

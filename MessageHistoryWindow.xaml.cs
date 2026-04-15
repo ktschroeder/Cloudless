@@ -10,14 +10,15 @@ namespace Cloudless
 
     public partial class MessageHistoryWindow : Window
     {
-        private readonly ObservableCollection<string> messageHistory;
+        private readonly List<string> messageHistory;
 
         public MessageHistoryWindow(OverlayMessageManager manager)
         {
             InitializeComponent();
 
             // Get the current session's message history
-            messageHistory = manager.GetMessageHistory();
+            //messageHistory = manager.GetMessageHistory();  TODO remove redundant
+            messageHistory = manager.GetMessageHistoryFromSetting();
 
             // Bind the ListBox to the message history
             MessageListBox.ItemsSource = messageHistory;

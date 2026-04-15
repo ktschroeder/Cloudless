@@ -36,7 +36,7 @@ namespace Cloudless
 
             base.OnStartup(e);
 
-            var mainWindow = new MainWindow(filePath);
+            var mainWindow = new MainWindow(filePath, startUp: true);
             MainWindow = mainWindow;
             mainWindow.Show();
         }
