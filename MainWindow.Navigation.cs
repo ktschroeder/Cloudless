@@ -237,8 +237,13 @@ namespace Cloudless
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {
+            OpenMessageHistory();
+        }
+
+        private void OpenMessageHistory()
+        {
             var historyWindow = new MessageHistoryWindow(overlayManager);
-            historyWindow.Owner = this; // Set the owner to the main window
+            historyWindow.Owner = this;
             historyWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             historyWindow.Show();
         }

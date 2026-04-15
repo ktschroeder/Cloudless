@@ -299,7 +299,15 @@ namespace Cloudless
 
             if (e.Key == Key.M)
             {
-                MinimizeWindow();
+                if (control)
+                {
+                    OpenMessageHistory();
+                }
+                else
+                {
+                    MinimizeWindow();
+                }
+
                 e.Handled = true;
                 return;
             }
