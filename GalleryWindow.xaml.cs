@@ -156,10 +156,10 @@ namespace Cloudless
 
                 if (Owner is MainWindow mw)
                 {
-                    //thumb = await RunStaAsync(async () =>
-                    //    (await mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Source);
+                    thumb = await RunStaAsync(() =>
+                        (mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Result.Source);
 
-                    thumb = (await mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Source;
+                    //thumb = (await mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Source;
                 }
 
                 if (thumb != null)
@@ -168,29 +168,29 @@ namespace Cloudless
         }
 
 
-        //private static Task<ImageSource> RunStaAsync(Func<Task<ImageSource>> func)  // "Single Thread Apartment". Tragic WPF shenanigans.
-        //{
-        //    var tcs = new TaskCompletionSource<ImageSource>();
+        private static Task<ImageSource> RunStaAsync(Func<ImageSource> func)  // "Single Thread Apartment". Tragic WPF shenanigans.
+        {
+            var tcs = new TaskCompletionSource<ImageSource>();
 
-        //    var thread = new Thread(() =>
-        //    {
-        //        try
-        //        {
-        //            var result = func();
-        //            tcs.SetResult(result);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            tcs.SetException(ex);
-        //        }
-        //    });
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    var result = func();
+                    tcs.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
 
-        //    thread.SetApartmentState(ApartmentState.STA);
-        //    thread.IsBackground = true;
-        //    thread.Start();
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.IsBackground = true;
+            thread.Start();
 
-        //    return tcs.Task;
-        //}
+            return tcs.Task;
+        }
 
         private async void Thumbnail_Click(object sender, MouseButtonEventArgs e)
         {
