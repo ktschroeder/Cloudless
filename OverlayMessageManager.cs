@@ -44,7 +44,8 @@ public class OverlayMessageManager
     public void WriteToMessageHistory(string message)
     {
         var messages = GetMessageHistoryFromSetting();
-        messages.Add(message);
+        string timestampedMessage = $"{DateTime.Now:HH:mm:ss} - {message}";
+        messages.Add(timestampedMessage);
 
         const int HISTORY_MAX_SIZE = 100;
         StringCollection sc = new StringCollection();

@@ -36,13 +36,16 @@ namespace Cloudless
             PathText.Text = $"{_imagePath}";
             SizeText.Text = $"{fileInfo.Length / 1024.0:0.##} KB";
 
-            try  // TODO add thumbnail support for WEBMs; without try/catch, exception when creating bitmap
+            try
             {
                 // Set format and dimensions
                 var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
                 DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
             }
-            catch { }
+            catch (Exception e)
+            {
+                (Parent as MainWindow).Message($"Error while getting image info: {e.Message}");
+            }
             
             FormatText.Text = $"{fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
 
