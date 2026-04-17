@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
-        Height="425"
+        Height="435"
         Width="830"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -33,7 +33,7 @@
                 <StackPanel>
 
                     <!-- Hotkey List -->
-                    <StackPanel Margin="0,0,0,0" Height="340">
+                    <StackPanel Margin="0,0,0,0" Height="350">
                         <TabControl Background="Transparent" BorderThickness="0">
 
                             <!-- Non-Command -->
@@ -84,7 +84,7 @@
                                             <TextBlock Grid.Column="1" Grid.Row="5" Text="Run custom commands stored at the respective index"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="6" Text="(palette) Tab" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="For workspace commands (e.g. 'ws l [name]'), autocomplete workstation name, or cycle through matches."/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="For workspace commands (e.g. 'ws l [name]'), autocomplete workspace name, or cycle through matches."/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="7" Text="(palette) Shift Tab" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Similar to above, but cycle in the reverse direction."/>
@@ -293,6 +293,7 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="ws save | s [name]" FontWeight="Bold"/>
@@ -334,11 +335,14 @@
                                             <TextBlock Grid.Column="0" Grid.Row="12" Text="ws origin" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="12" Text="Reveal the workspace's name from which this window's current image originated, if any"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="ws c | m | um origin" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="13" Text="Close, minimize, or unminimize all windows that share a workspace origin with the current window"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="ws origin s | s!" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="13" Text="Overwrite current window's origin workspace with the current global workspace state (no overwrite warning)"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="ws undoload" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="14" Text="Load the open workspace version that was present prior to the most recent 'ws load' or 'ws undoload' command."/>
+                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="ws c | m | um origin" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="14" Text="Close, minimize, or unminimize all windows that share a workspace origin with the current window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="15" Text="ws undoload" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="15" Text="Load the open workspace version that was present prior to the most recent 'ws load' or 'ws undoload' command."/>
 
                                         </Grid>
                                         <TextBlock Margin="0,10,0,1">With "ws l", "ws s", etc., press tab to autocomplete name (press repeatedly to traverse matches. Hold Shift to reverse direction)</TextBlock>

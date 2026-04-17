@@ -244,7 +244,7 @@ namespace Cloudless
                 }
                 if (File.Exists(newWorkspaceFilePath))
                 {
-                    Message("Failed to rename: there is already a workstation named " + to);
+                    Message("Failed to rename: there is already a workspace named " + to);
                     return false;
                 }
 

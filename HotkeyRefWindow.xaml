@@ -266,7 +266,10 @@
                                             <TextBlock Grid.Column="1" Grid.Row="4" Text="Open Image Info window (if one is loaded)"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="5" Text="Ctrl R" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Open recent images gallery"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Open Recent Images Gallery"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="Ctrl M" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Open System Messages window"/>
 
                                         </Grid>
 

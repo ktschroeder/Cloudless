@@ -63,20 +63,20 @@ namespace Cloudless
         {
             if (wsSelected) 
             {
-                WorkstationLoadButton.Visibility = Visibility.Visible;
-                WorkstationMergeButton.Visibility = Visibility.Visible;
-                WorkstationPreviewButton.Content = "Preview Another WS";
-                WorkstationPreviewButton.Visibility = Visibility.Visible;
+                WorkspaceLoadButton.Visibility = Visibility.Visible;
+                WorkspaceMergeButton.Visibility = Visibility.Visible;
+                WorkspacePreviewButton.Content = "Preview Another WS";
+                WorkspacePreviewButton.Visibility = Visibility.Visible;
             }
             
             if (!wsSelected)
             {
-                WorkstationPreviewButton.Content = "Preview a WS";
-                WorkstationPreviewButton.Visibility = Visibility.Visible;
+                WorkspacePreviewButton.Content = "Preview a WS";
+                WorkspacePreviewButton.Visibility = Visibility.Visible;
             }
         }
 
-        private async void Workstation_Load_Click(object sender, RoutedEventArgs e)
+        private async void Workspace_Load_Click(object sender, RoutedEventArgs e)
         {
             if (Owner is MainWindow mw)
             {
@@ -85,7 +85,7 @@ namespace Cloudless
             Close();
         }
 
-        private async void Workstation_Merge_Click(object sender, RoutedEventArgs e)
+        private async void Workspace_Merge_Click(object sender, RoutedEventArgs e)
         {
             if (Owner is MainWindow mw)
             {
@@ -94,7 +94,7 @@ namespace Cloudless
         }
 
         private bool OpenFileDialogIsOpen = false;  // Without managing anything, WPF weirdly receives a click event on an image thumb when double clicking a file in the OpenFileDialog. This guards against that.
-        private async void Workstation_Preview_Click(object sender, RoutedEventArgs e)
+        private async void Workspace_Preview_Click(object sender, RoutedEventArgs e)
         {
             if (Owner is MainWindow mw)
             {

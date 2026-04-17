@@ -8,4 +8,4 @@ Its advanced features are suited to advanced users and image/UI enthusiasts. It 
 - A command palette for advanced text-based features, such as...
 - Workspaces: Conveniently save, load, and otherwise manipulate full image arrangements (workspaces)
 - Plentiful other basic and advanced features
-  
+- Zen.
