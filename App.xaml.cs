@@ -61,7 +61,7 @@ namespace Cloudless
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to open file from IPC:\n{ex.Message}");
+                    MessageBox.Show($"Error: Failed to open file from IPC:\n{ex.Message}");  // rare MessageBox allowance
                 }
             });
         }

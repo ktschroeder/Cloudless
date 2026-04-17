@@ -533,7 +533,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load the dragged content: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"Failed to load the dragged content: {ex.Message}");
             }
         }
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)

@@ -140,8 +140,8 @@ namespace Cloudless
             {
                 var next = AutocompleteCandidates.First();
                 AutocompleteCandidates.RemoveFirst();
-                CommandTextBox.Text = commandBase + next;  // TODO adapt this to dynamically work with other commands?
-                if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction" so repeat the movement
+                CommandTextBox.Text = commandBase + next;
+                if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction", so repeat the movement
                 {
                     AutocompleteCandidates.AddLast(next);
                     next = AutocompleteCandidates.First();
@@ -348,7 +348,7 @@ namespace Cloudless
 
             if (command.ToLower().StartsWith("ws "))
             {
-                if (command.ToLower().StartsWith("ws save ") && command.Length > 8)  // TODO clean up this nonsense
+                if (command.ToLower().StartsWith("ws save ") && command.Length > 8)
                 {
                     string name = command.Substring(8);
                     (int windowCount, string? error) = SaveWorkspace(name);
@@ -562,12 +562,13 @@ namespace Cloudless
 
                 string dim = command.Substring(4);
                 var dims = dim.Split(' ');
-                if (dims.Length != 2)
-                    return false;
 
-                if (!int.TryParse(dims[0], out int width) || !int.TryParse(dims[1], out int height))
+                if (dims.Length != 2 || !int.TryParse(dims[0], out int width) || !int.TryParse(dims[1], out int height))
+                {
+                    Message("Unexpected format. Usage: dim [int] [int]");
                     return false;
-
+                }
+                    
                 ResizeWindow(width, height);
                 CenterWindowOnCurrentScreen();
 

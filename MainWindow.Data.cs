@@ -101,8 +101,9 @@ namespace Cloudless
             {
                 return new NaturalStringComparer();
             }
-            catch (Exception)
-            {  // TODO handle
+            catch (Exception ex)
+            {
+                Message("Error preparing sorting: " + ex.Message);
                 return null;
             }
         }
@@ -196,8 +197,6 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                // TODO remove these super obnoxious Windows MessageBox error windows. Handle their exceptions or use normal Message method
-                //MessageBox.Show($"Failed to load the image at path \"{imagePath}\": {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Message($"Failed to load the image at path \"{imagePath}\": {ex.Message}");
             }
         }
@@ -264,8 +263,6 @@ namespace Cloudless
                     {
                         try
                         {
-                            // TODO here, show "loading WEBM..." persistent message on solid black
-
                             var path = uri.OriginalString;
                             if (!File.Exists(path))
                                 return;
@@ -389,7 +386,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to display image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"Failed to display image: {ex.Message}");
             }
         }
         private void CopyCompressedImageToClipboardAsJpgFile()
@@ -475,7 +472,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to copy compressed image as file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"Failed to copy compressed image as file: {ex.Message}");
             }
         }
 
@@ -625,7 +622,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load image from URL: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"Failed to load image from URL: {ex.Message}");
             }
         }
         private void CopyImageToClipboard()
@@ -640,7 +637,7 @@ namespace Cloudless
             {
                 if (!File.Exists(currentlyDisplayedImagePath))
                 {
-                    MessageBox.Show("Image file does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Message("Path copy failed: Image file does not exist");
                     return;
                     // could just copy bitmap in this case
                 }
@@ -650,7 +647,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to copy image to clipboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"Failed to copy image to clipboard: {ex.Message}");
             }
         }
 
@@ -691,8 +688,6 @@ namespace Cloudless
 
             // Clear the existing items
             ZoomMenu.Items.Clear();
-
-            // TODO could add things like "fit window" here
 
             // Populate the menu
             foreach (int zoom in roundZooms)
@@ -762,15 +757,15 @@ namespace Cloudless
                     bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
                     bitmap.StreamSource = stream;
                     bitmap.EndInit();
-                    bitmap.Freeze();  // CRITICAL
+                    bitmap.Freeze();
                 }
 
                 return new System.Windows.Controls.Image { Source = bitmap, Width = width, Height = height };
             }
-            catch (Exception ex)  // TODO WEBMs will get us here
+            catch (Exception ex)
             {
-                Console.WriteLine($"Failed to load thumbnail: {ex.Message}");
-                return new System.Windows.Controls.Image { Source = null, Width = width, Height = height }; ;  // Return null if there's an issue loading the image
+                Message($"Failed to load thumbnail: {ex.Message}");
+                return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };
             }
         }
         private async Task UpdateRecentFilesMenu()  // no side effects beyond instance. Reads from static file at this time, does not write to it.
@@ -835,7 +830,7 @@ namespace Cloudless
         {
             if (!File.Exists(filePath))
             {
-                MessageBox.Show($"File not found: {filePath}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"File not found: {filePath}");
                 return;
             }
 
@@ -859,7 +854,7 @@ namespace Cloudless
             }
             else
             {
-                MessageBox.Show("Unable to write to recent files. Another instance may be busy.");  // TODO should this and other similar lines be replaced with Message()? These might be outdated.
+                Message("Unable to write to recent files. Another instance may be busy.");
             }
         }
         private async void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
@@ -891,7 +886,7 @@ namespace Cloudless
             }
             else
             {
-                MessageBox.Show("Unable to access recent files. Another instance may be busy.");
+                Message("Unable to access recent files. Another instance may be busy.");
             }
         }
 
@@ -1152,6 +1147,7 @@ namespace Cloudless
 
                     if (process.ExitCode == 0)
                     {
+                        // TODO clean up Console.WriteLine usages. Mostly old probably
                         Console.WriteLine("FFmpeg command executed successfully.");
                         return true;
                     }

@@ -45,7 +45,7 @@ namespace Cloudless
 
         private void Reveal_Click(object sender, RoutedEventArgs e)
         {
-            MainWindow.RevealImageInExplorer(_imagePath);
+            (Parent as MainWindow).RevealImageInExplorer(_imagePath);
         }
     }
 }

@@ -719,14 +719,14 @@ namespace Cloudless
             }
         }
 
-        public static void RevealDirectoryInExplorer(string path)
+        public void RevealDirectoryInExplorer(string path)
         {
             try
             {
                 // Validate that the file path exists
                 if (!Directory.Exists(path))
                 {
-                    MessageBox.Show("Directory does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Message($"Directory {path} does not exist");
                     return;
                 }
 
@@ -740,22 +740,20 @@ namespace Cloudless
             catch (Exception ex)
             {
                 // Handle unexpected errors
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"An error occurred while revealing directory {path}: {ex.Message}");
             }
         }
 
-        public static void RevealImageInExplorer(string imagePath)
+        public void RevealImageInExplorer(string imagePath)
         {
             try
             {
-                // Validate that the file path exists
                 if (!File.Exists(imagePath))
                 {
-                    MessageBox.Show("File does not exist!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Message("File does not exist: " + imagePath);
                     return;
                 }
 
-                // Use Process.Start to reveal the file in File Explorer
                 string argument = $"/select,\"{imagePath}\"";
                 Process.Start(new ProcessStartInfo("explorer.exe", argument)
                 {
@@ -764,8 +762,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                // Handle unexpected errors
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Message($"An error occurred while revealing image: {ex.Message}");
             }
         }
 

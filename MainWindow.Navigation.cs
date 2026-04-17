@@ -220,7 +220,7 @@ namespace Cloudless
 
             var zoomMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString().StartsWith("Zoom"));
             var scaleX = imageScaleTransform?.ScaleX;
-            var scaleY = imageScaleTransform?.ScaleY; // TODO do math to show user a user-friendly effective zoom level
+            var scaleY = imageScaleTransform?.ScaleY;
             if (zoomMenuItem != null)
             {
                 zoomMenuItem.Header = "Zoom";  // TODO maybe disable here, e.g. cannot use in zen mode

@@ -51,7 +51,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);  // rare MessageBox allowance: better UX here than normal Message. Could be maybe improved with common form error messages inline.
             }
         }
 

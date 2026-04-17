@@ -87,8 +87,6 @@ namespace Cloudless
             }
             catch (Exception e)
             {
-                // TODO does this need to be static? We could message failure here and return a bool to caller for success. Similar for the load function.
-                //Message(e.Message);
                 return (-1, e.Message);
             }
         }
@@ -165,7 +163,7 @@ namespace Cloudless
 
         public async Task<bool> PreviewWorkspace(string workspaceName = "")
         {
-            // TODO adjust gallery window to account for isMinimized, add a graphic or something.
+            // TODO adjust gallery window to account for isMinimized: add a graphic or something. Maybe reduced opacity thumb with a mini banner label.
 
             if (string.IsNullOrEmpty(workspaceName))
             {
@@ -323,8 +321,8 @@ namespace Cloudless
                 {
                     //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                     this.CloseAllOtherInstances();
-                    Thread.Sleep(150); // brief grace period (optional but helps UX)
-                    await CreateWindowsForWorkspace(workspace); // TODO critical failure point for UX here; what if nothing ever opens?
+                    //Thread.Sleep(150); // brief grace period (optional but helps UX)
+                    await CreateWindowsForWorkspace(workspace);
                     this.Close();
                 }
                 else
@@ -389,8 +387,6 @@ namespace Cloudless
 
                 //ToggleCropMode(false, true);  // toggling this here is too early and causes the image to be resized undesirably.
             }
-
-            // TODO maybe clamp windows to monitor bounds or something in case they get sent off screen? Though users may desire that. Anyway users can easily fix a window by focusing it with keyboard and then using something like 'f'.
         }
 
         public void PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null)

@@ -167,7 +167,7 @@ namespace Cloudless
         {
             string directory = Path.GetTempPath();
             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-            MainWindow.RevealDirectoryInExplorer(cloudlessTempPath);
+            (Parent as MainWindow).RevealDirectoryInExplorer(cloudlessTempPath);
         }
 
         private void OpenDefaultAppsSettings()
