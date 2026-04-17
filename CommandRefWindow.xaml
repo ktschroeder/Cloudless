@@ -132,7 +132,7 @@
                                             <TextBlock Grid.Column="1" Grid.Row="3" Text="Close all windows except this one"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="help" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Open hotkey reference window"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Open command palette reference window"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="5" Text="m all / others" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="5" Text="Minimize all windows, or all other windows"/>
