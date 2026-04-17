@@ -1112,8 +1112,6 @@ namespace Cloudless
                 CreateNoWindow = true
             };
 
-            Console.WriteLine($"Executing: {startInfo.FileName} {startInfo.Arguments}");
-
             try
             {
                 using (Process process = Process.Start(startInfo))
@@ -1122,22 +1120,22 @@ namespace Cloudless
                     if (process == null)
                         throw new Win32Exception("process was null");
 
-                    // Capture output (optional, but useful for debugging and progress monitoring)
-                    process.OutputDataReceived += (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            Console.WriteLine($"[FFmpeg OUT] {e.Data}");
-                        }
-                    };
-                    process.ErrorDataReceived += (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            // FFmpeg progress usually comes through the error stream
-                            Console.WriteLine($"[FFmpeg ERR] {e.Data}");
-                        }
-                    };
+                    //// Capture output (optional, but useful for debugging and progress monitoring)
+                    //process.OutputDataReceived += (sender, e) =>
+                    //{
+                    //    if (!string.IsNullOrEmpty(e.Data))
+                    //    {
+                    //        Console.WriteLine($"[FFmpeg OUT] {e.Data}");
+                    //    }
+                    //};
+                    //process.ErrorDataReceived += (sender, e) =>
+                    //{
+                    //    if (!string.IsNullOrEmpty(e.Data))
+                    //    {
+                    //        // FFmpeg progress usually comes through the error stream
+                    //        Console.WriteLine($"[FFmpeg ERR] {e.Data}");
+                    //    }
+                    //};
 
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
@@ -1147,28 +1145,24 @@ namespace Cloudless
 
                     if (process.ExitCode == 0)
                     {
-                        // TODO clean up Console.WriteLine usages. Mostly old probably
-                        Console.WriteLine("FFmpeg command executed successfully.");
+                        //Console.WriteLine("FFmpeg command executed successfully.");
                         return true;
                     }
                     else
                     {
-                        Console.WriteLine($"FFmpeg command failed with exit code: {process.ExitCode}");
-                        mainWindow.Message($"Failed to convert WEBM due to ffmpeg error.");
+                        mainWindow.Message($"Failed to convert WEBM due to ffmpeg error: {process.ExitCode}");
                         return false;
                     }
                 }
             }
             catch (Win32Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                mainWindow.Message($"Failed to convert WEBM: FFmpeg is not installed or cannot be found.");
+                mainWindow.Message($"Failed to convert WEBM: FFmpeg is not installed or cannot be found: {ex.Message}");
                 return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                mainWindow.Message("Failed to convert WEBM due to unexpected error.");
+                mainWindow.Message($"Failed to convert WEBM due to unexpected error: {ex.Message}");
                 return false;
             }
         }
