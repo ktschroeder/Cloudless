@@ -7,7 +7,7 @@ Its advanced features are suited to advanced users and image/UI enthusiasts. It 
 - Streamlined, efficient controls suiting users seeking accurate and fast image and window control
 - A command palette for advanced text-based features
 - "Workspaces": Conveniently save, load, and otherwise manipulate full image arrangements. Open a fully custom image arrangement in mere moments.
-- Easy reverse-image-search from various services, once configured (requires a free imgBB key. Services include Google, Bing, Yandex, TinEye, SauceNAO)
+- Easy reverse-image-search from various services, once configured (requires a free ImgBB key. Services include Google, Bing, Yandex, TinEye, SauceNAO)
 - Compressed-copy with configurable file size maximum, to allow easy image sharing, despite size restrictions in apps such as Discord
 - Plentiful other basic and advanced features
 - Zen.
