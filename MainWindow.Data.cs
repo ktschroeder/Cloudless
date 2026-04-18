@@ -28,12 +28,17 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using LibVLCSharp.Shared;
+using System.Windows.Media.Media3D;
+using MediaPlayer = LibVLCSharp.Shared.MediaPlayer;
+using System.Reflection;
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
         private bool _openDialogInProgress = false;  // lazy band-aid for odd bug where opening a WEBM from file dialog causes another Key.O to be registered, opening a second file dialog.
+        MediaPlayer _mediaPlayer;
         private async Task OpenImage()
         {
             if (_openDialogInProgress)
@@ -200,11 +205,17 @@ namespace Cloudless
                 Message($"Failed to load the image at path \"{imagePath}\": {ex.Message}");
             }
         }
+        
         private async Task DisplayImage(int index, bool openedThroughApp)
         {
             RemoveZen();
             autoResizingSpaceIsToggled = false;
             imageOriginalWorkspaceName = null;  // reset this whenever an image is loaded, e.g. left/right iteration. When loading workspaces, we define this in post-process.
+
+            VideoView.Height = 0;
+            VideoView.Width = 0;
+            if (_mediaPlayer != null)
+                _mediaPlayer.Dispose();
 
             try
             {
@@ -263,81 +274,96 @@ namespace Cloudless
                     {
                         try
                         {
-                            var path = uri.OriginalString;
-                            if (!File.Exists(path))
-                                return;
+                            LibVLC _libVLC;
+                            
+                            Core.Initialize(); // Initializes native libvlc
+                            _libVLC = new LibVLC();
+                            _mediaPlayer = new MediaPlayer(_libVLC);
+                            _mediaPlayer.EnableMouseInput = false;
+                            _mediaPlayer.EnableKeyInput = false;
+                            VideoView.MediaPlayer = _mediaPlayer;
+                            _mediaPlayer.Play(new Media(_libVLC, uri));
+                            //VideoView.Visibility = Visibility.Visible;
+                            VideoView.Height = double.NaN;
+                            VideoView.Width = double.NaN;
 
-                            string convertedGifPath = GetFilePathForWebmGifConversion();
-                            Random random = new Random();
+                            /////////////////////
 
-                            if (!File.Exists(convertedGifPath))
-                            {
-                                ShowLoadingOverlay($"Creating cached GIF from WEBM...", $"{Path.GetFileName(path)}");
-                                await Dispatcher.Yield(DispatcherPriority.Background);
+                            //var path = uri.OriginalString;
+                            //if (!File.Exists(path))
+                            //    return;
 
-                                string directory = Path.GetTempPath();
-                                string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-                                string tempThumbPath = Path.Combine(cloudlessTempPath, $"ThumbTemp{random.Next(int.MaxValue)}.jpg");
+                            //string convertedGifPath = GetFilePathForWebmGifConversion();
+                            //Random random = new Random();
 
-                                int height = -1;
-                                int width = -1;
+                            //if (!File.Exists(convertedGifPath))
+                            //{
+                            //    ShowLoadingOverlay($"Creating cached GIF from WEBM...", $"{Path.GetFileName(path)}");
+                            //    await Dispatcher.Yield(DispatcherPriority.Background);
 
-                                string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
-                                var ffmpeg = new FFmpegExecutor();
-                                await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
-                                using (var thumb = new Bitmap(tempThumbPath))
-                                {
-                                    height = thumb.Height;
-                                    width = thumb.Width;
-                                }
-                                File.Delete(tempThumbPath);
+                            //    string directory = Path.GetTempPath();
+                            //    string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
+                            //    string tempThumbPath = Path.Combine(cloudlessTempPath, $"ThumbTemp{random.Next(int.MaxValue)}.jpg");
 
-                                int convertedWidth = Math.Min(width, 500);
+                            //    int height = -1;
+                            //    int width = -1;
 
-                                //string ffmpegArgs = $"-i \"{path}\" \"{convertedGifPath}\"";
-                                string ffmpegArgs = 
-                                        $"-i \"{path}\" " +
-                                        $"-vf \"scale=-2:{convertedWidth}:flags=lanczos," +
-                                        "setsar=1," +
-                                        "format=rgba," +
-                                        "split[s0][s1];" +
-                                        "[s0]palettegen=stats_mode=diff[p];" +
-                                        "[s1][p]paletteuse=dither=sierra2_4a\" " +
-                                        $"\"{convertedGifPath}\"";
-                                await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
-                                HideLoadingOverlay();
-                            }
+                            //    string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
+                            //    var ffmpeg = new FFmpegExecutor();
+                            //    await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
+                            //    using (var thumb = new Bitmap(tempThumbPath))
+                            //    {
+                            //        height = thumb.Height;
+                            //        width = thumb.Width;
+                            //    }
+                            //    File.Delete(tempThumbPath);
 
-                            bool loadGif = true;
-                            var fileSizeMB = (double)(new FileInfo(convertedGifPath).Length) / 1024 / 1024;
-                            if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
-                            {
-                                var gifWarningWindow = new GifWarningWindow(convertedGifPath, fileSizeMB)
-                                {
-                                    Owner = this,
-                                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                                };
-                                gifWarningWindow.ShowDialog();
-                                loadGif = gifWarningWindow.Proceed;
-                            }
+                            //    int convertedWidth = Math.Min(width, 500);
 
-                            if (loadGif)
-                            {
-                                ShowLoadingOverlay($"Loading WEBM as GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(path)}");
-                                await Dispatcher.Yield(DispatcherPriority.Background);
+                            //    //string ffmpegArgs = $"-i \"{path}\" \"{convertedGifPath}\"";
+                            //    string ffmpegArgs = 
+                            //            $"-i \"{path}\" " +
+                            //            $"-vf \"scale=-2:{convertedWidth}:flags=lanczos," +
+                            //            "setsar=1," +
+                            //            "format=rgba," +
+                            //            "split[s0][s1];" +
+                            //            "[s0]palettegen=stats_mode=diff[p];" +
+                            //            "[s1][p]paletteuse=dither=sierra2_4a\" " +
+                            //            $"\"{convertedGifPath}\"";
+                            //    await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
+                            //    HideLoadingOverlay();
+                            //}
 
-                                var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
-                                ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                                await Dispatcher.Yield(DispatcherPriority.Background);
-                                ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
-                                HideLoadingOverlay();
+                            //bool loadGif = true;
+                            //var fileSizeMB = (double)(new FileInfo(convertedGifPath).Length) / 1024 / 1024;
+                            //if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
+                            //{
+                            //    var gifWarningWindow = new GifWarningWindow(convertedGifPath, fileSizeMB)
+                            //    {
+                            //        Owner = this,
+                            //        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                            //    };
+                            //    gifWarningWindow.ShowDialog();
+                            //    loadGif = gifWarningWindow.Proceed;
+                            //}
 
-                                gifController = ImageBehavior.GetAnimationController(ImageDisplay);
-                            }
-                            else
-                            {
-                                ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
-                            }
+                            //if (loadGif)
+                            //{
+                            //    ShowLoadingOverlay($"Loading WEBM as GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(path)}");
+                            //    await Dispatcher.Yield(DispatcherPriority.Background);
+
+                            //    var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
+                            //    ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                            //    await Dispatcher.Yield(DispatcherPriority.Background);
+                            //    ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
+                            //    HideLoadingOverlay();
+
+                            //    gifController = ImageBehavior.GetAnimationController(ImageDisplay);
+                            //}
+                            //else
+                            //{
+                            //    ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
+                            //}
                         }
                         catch (Exception ex)
                         {
@@ -347,6 +373,8 @@ namespace Cloudless
                     else  // WEBMs disabled
                     {
                         Message("Tried to load WEBM, but WEBMs are disabled. See preferences.");
+
+                        
                     }
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
@@ -361,7 +389,7 @@ namespace Cloudless
                         BitmapSizeOptions.FromEmptyOptions()
                     );
                     ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                    ImageDisplay.Source = bitmapSource;
+                        ImageDisplay.Source = bitmapSource;
                 }
                 else
                 {
