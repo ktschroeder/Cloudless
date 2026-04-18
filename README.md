@@ -9,5 +9,6 @@ Its advanced features are suited to advanced users and image/UI enthusiasts. It 
 - "Workspaces": Conveniently save, load, and otherwise manipulate full image arrangements. Open a fully custom image arrangement in mere moments.
 - Easy reverse-image-search from various services, once configured (requires a free ImgBB key. Services include Google, Bing, Yandex, TinEye, SauceNAO)
 - Compressed-copy with configurable file size maximum, to allow easy image sharing, despite size restrictions in apps such as Discord
+- Advanced desktop wallpaper assignment that fully considers a window's specific image view (best understood with an example)
 - Plentiful other basic and advanced features
 - Zen.
