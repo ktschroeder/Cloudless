@@ -4,11 +4,14 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Cloudless
 {
+    // Plugin framework adapted from https://learn.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
     public static class PluginManager
     {
         private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
@@ -16,7 +19,8 @@ namespace Cloudless
             string[] pluginPaths = new string[]
                 {
                     // Paths to plugins to load.
-                    @"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll"
+                    //@"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll"
+                    Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll")
                 };
 
             IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>
@@ -30,9 +34,16 @@ namespace Cloudless
 
         public static IPlugin? GetPluginForFiletype(string fileType)
         {
-            IEnumerable<IPlugin> plugins = GetPlugins(); 
-            var plugin = plugins.FirstOrDefault(p => p.SupportsFileType.Equals(fileType, StringComparison.OrdinalIgnoreCase));
-            return plugin;
+            try
+            {
+                IEnumerable<IPlugin> plugins = GetPlugins();
+                var plugin = plugins.FirstOrDefault(p => p.SupportsFileType.Equals(fileType, StringComparison.OrdinalIgnoreCase));
+                return plugin;
+            }
+            catch (Exception e)
+            {
+                return null;  // TODO probably should log this exception in system messages in case of some issue other than missing plugin
+            }
         }
 
         public static Assembly LoadPlugin(string relativePath)
@@ -82,6 +93,64 @@ namespace Cloudless
                 throw new ApplicationException(
                     $"Can't find any type which implements IPlugin in {assembly} from {assembly.Location}.\n" +
                     $"Available types: {availableTypes}");
+            }
+        }
+
+        public static async Task<bool> InstallPluginAsync(
+        string pluginName,
+        string downloadUrl,
+        IProgress<string>? progress = null)
+        {
+            try
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var pluginsDir = Path.Combine(baseDir, "Plugins");
+                var pluginDir = Path.Combine(pluginsDir, pluginName);
+
+                Directory.CreateDirectory(pluginsDir);
+
+                var tempZipPath = Path.Combine(Path.GetTempPath(), $"{pluginName}.zip");
+                var tempExtractDir = Path.Combine(Path.GetTempPath(), $"{pluginName}_extract");
+
+                progress?.Report("Downloading plugin...");
+
+                using (var client = new HttpClient())
+                {
+                    var data = await client.GetByteArrayAsync(downloadUrl);
+                    await File.WriteAllBytesAsync(tempZipPath, data);
+                }
+
+                progress?.Report("Extracting plugin...");
+
+                if (Directory.Exists(tempExtractDir))
+                    Directory.Delete(tempExtractDir, true);
+
+                ZipFile.ExtractToDirectory(tempZipPath, tempExtractDir);
+
+                // Optional: ensure expected folder exists
+                var extractedPluginDir = Path.Combine(tempExtractDir, pluginName);
+                if (!Directory.Exists(extractedPluginDir))
+                    throw new Exception("Invalid plugin structure.");
+
+                progress?.Report("Installing plugin...");
+
+                if (Directory.Exists(pluginDir))
+                    Directory.Delete(pluginDir, true);
+
+                Directory.Move(extractedPluginDir, pluginDir);
+
+                // Cleanup
+                File.Delete(tempZipPath);
+                Directory.Delete(tempExtractDir, true);
+
+                progress?.Report("Plugin installed successfully.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                progress?.Report($"Failed: {ex.Message}");
+                return false;
             }
         }
     }

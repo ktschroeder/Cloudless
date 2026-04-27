@@ -17,7 +17,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.3.100";
+        public const string CURRENT_VERION = "0.6.3.102";
 
         #region Fields
 
@@ -30,6 +30,10 @@ namespace Cloudless
         public static readonly string workspaceFilesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Cloudless");
+
+        public static readonly string pluginsFilesPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Cloudless", "plugins");
 
         public IntPtr WindowHandle =>
             new WindowInteropHelper(this).Handle;
