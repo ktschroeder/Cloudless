@@ -100,7 +100,8 @@ namespace Cloudless
         public static async Task<bool> InstallPluginAsync(
         string pluginName,
         string downloadUrl,
-        IProgress<string>? progress = null)
+        IProgress<string>? progress = null,
+        bool continuingInstallInParts = false)
         {
             try
             {
@@ -134,10 +135,10 @@ namespace Cloudless
 
                 progress?.Report("Installing plugin...");
 
-                if (Directory.Exists(pluginDir))
+                if (Directory.Exists(pluginDir) && !continuingInstallInParts)
                     Directory.Delete(pluginDir, true);
 
-                Directory.Move(extractedPluginDir, pluginDir);
+                MoveAndMerge(extractedPluginDir, pluginDir);  // used instead of Directory.Move to permit merge behavior for partial installs.
 
                 // Cleanup
                 File.Delete(tempZipPath);
@@ -152,6 +153,28 @@ namespace Cloudless
                 progress?.Report($"Failed: {ex.Message}");
                 return false;
             }
+        }
+
+        private static void MoveAndMerge(string sourcePath, string destPath)
+        {
+            Directory.CreateDirectory(destPath);
+
+            // Move all files
+            foreach (var file in Directory.GetFiles(sourcePath))
+            {
+                string destFile = Path.Combine(destPath, Path.GetFileName(file));
+                File.Move(file, destFile, overwrite: true);
+            }
+
+            // Recursively move subdirectories
+            foreach (var dir in Directory.GetDirectories(sourcePath))
+            {
+                string destDir = Path.Combine(destPath, Path.GetFileName(dir));
+                MoveAndMerge(dir, destDir);
+            }
+
+            // Delete source after it's empty
+            Directory.Delete(sourcePath, true);
         }
     }
 }

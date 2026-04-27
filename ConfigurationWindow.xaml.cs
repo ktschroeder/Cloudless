@@ -181,11 +181,11 @@ namespace Cloudless
 
         private async void InstallWebP_Click(object sender, RoutedEventArgs e)
         {
-            InstallButton.IsEnabled = false;
+            WebpInstallButton.IsEnabled = false;
 
             var progress = new Progress<string>(msg =>
             {
-                StatusText.Text = msg; // TextBlock in UI
+                WebpStatusText.Text = msg; // TextBlock in UI
             });
 
             var success = await PluginManager.InstallPluginAsync(
@@ -195,17 +195,53 @@ namespace Cloudless
 
             if (success)
             {
-                StatusText.Text = "WebP support installed!";
+                WebpStatusText.Text = "WebP support installed!";
 
                 // Optional: load plugin immediately
                 //PluginManager.LoadPlugins();
             }
             else
             {
-                StatusText.Text = "Installation failed.";
+                WebpStatusText.Text = "Installation failed.";
             }
 
-            InstallButton.IsEnabled = true;
+            WebpInstallButton.IsEnabled = true;
+        }
+
+        private async void InstallWebM_Click(object sender, RoutedEventArgs e)
+        {
+            WebmInstallButton.IsEnabled = false;
+
+            var progress = new Progress<string>(msg =>
+            {
+                WebmStatusText.Text = msg; // TextBlock in UI
+            });
+
+            var success = await PluginManager.InstallPluginAsync(
+                pluginName: "WebM",
+                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.WebmPlugin/HostedPlugin/WebMPlugin_0.zip",
+                progress: progress);
+
+            // TODO clean this up
+            success = await PluginManager.InstallPluginAsync(
+                pluginName: "WebM",
+                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.WebmPlugin/HostedPlugin/WebMPlugin_1.zip",
+                progress: progress,
+                continuingInstallInParts: true);  // this tells the installer to not delete the plugin folder
+
+            if (success)
+            {
+                WebmStatusText.Text = "WebM support installed!";
+
+                // Optional: load plugin immediately
+                //PluginManager.LoadPlugins();
+            }
+            else
+            {
+                WebmStatusText.Text = "Installation failed.";
+            }
+
+            WebmInstallButton.IsEnabled = true;
         }
     }
 }
