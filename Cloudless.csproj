@@ -10,9 +10,23 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
+	<!-- Prevent accidental compilation of the Cloudless.PluginBase project files
+       when Cloudless.PluginBase lives as a subfolder of this repo. -->
+	<ItemGroup>
+		<Compile Remove="Cloudless.PluginBase\**\*.cs" />
+	</ItemGroup>
+
   <ItemGroup>
+    <PackageReference Include="LibVLCSharp" Version="3.9.7" />
+    <PackageReference Include="LibVLCSharp.WPF" Version="3.9.7" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.6" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
     <PackageReference Include="WebP_Net" Version="1.1.1" />
     <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Cloudless.PluginBase\Cloudless.PluginBase.csproj" />
   </ItemGroup>
 
   <ItemGroup>

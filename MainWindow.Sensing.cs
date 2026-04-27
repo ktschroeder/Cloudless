@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using Cloudless.PluginBase;
+using System.Drawing;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using WpfAnimatedGif;
@@ -168,7 +170,7 @@ namespace Cloudless
             {
                 if (control && !alt)
                 {
-                    DuplicateWindow();
+                    await DuplicateWindow();
                     e.Handled = true;
                     return;
                 }
@@ -255,7 +257,25 @@ namespace Cloudless
 
             if (e.Key == Key.P)
             {
-                OpenPreferences();
+                string[] pluginPaths = new string[]
+                {
+                    // Paths to plugins to load.
+                    @"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll"
+                };
+
+                IEnumerable<IPlugin> commands = pluginPaths.SelectMany(pluginPath =>
+                {
+                    Assembly pluginAssembly = LoadPlugin(pluginPath);
+                    return CreateCommands(pluginAssembly);
+                }).ToList();
+
+
+
+
+
+
+
+                //OpenPreferences();
                 e.Handled = true;
                 return;
             }

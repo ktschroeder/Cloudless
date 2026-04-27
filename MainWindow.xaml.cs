@@ -1,15 +1,17 @@
-﻿using System.Windows;
+﻿using Cloudless.PluginBase;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WpfAnimatedGif;
-using Point = System.Windows.Point;
-using System.Windows.Media;
-using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
-using System.Runtime.InteropServices;
-using System.IO;
+using Path = System.IO.Path;
+using Point = System.Windows.Point;
 
 namespace Cloudless
 {
@@ -208,7 +210,55 @@ namespace Cloudless
         }
         #endregion
 
+        static Assembly LoadPlugin(string relativePath)
+        {
+            // Navigate up to the solution root
+            string root = Path.GetFullPath(
+                Path.Combine(typeof(MainWindow).Assembly.Location, "..", "..", "..", "..", ".."));
 
+            string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
+            Console.WriteLine($"Loading commands from: {pluginLocation}");
+            PluginLoadContext loadContext = new(pluginLocation);
+            //return loadContext.LoadFromAssemblyName(new(Path.GetFileNameWithoutExtension(pluginLocation)));
+            return loadContext.LoadFromAssemblyName(AssemblyName.GetAssemblyName(pluginLocation));
+        }
+
+        static IEnumerable<IPlugin> CreateCommands(Assembly assembly)
+        {
+            int count = 0;
+
+            //foreach (var type in assembly.GetTypes().Where(t => typeof(IPlugin).IsAssignableFrom(t)))
+            //foreach (var type in assembly.GetTypes().Where(t => typeof(IPlugin).IsAssignableFrom(t)))
+            //{
+            //    if (Activator.CreateInstance(type) is IPlugin result)
+            //    {
+            //        count++;
+            //        yield return result;
+            //    }
+            //}
+
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (typeof(IPlugin).IsAssignableFrom(type))
+                {
+                    IPlugin result = Activator.CreateInstance(type) as IPlugin;
+                    if (result != null)
+                    {
+                        count++;
+                        yield return result;
+                    }
+                }
+            }
+
+
+            if (count == 0)
+            {
+                string availableTypes = string.Join(",", assembly.GetTypes().Select(t => t.FullName));
+                throw new ApplicationException(
+                    $"Can't find any type which implements IPlugin in {assembly} from {assembly.Location}.\n" +
+                    $"Available types: {availableTypes}");
+            }
+        }
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {
