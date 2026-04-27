@@ -86,7 +86,6 @@ namespace Cloudless
                 }
             }
 
-
             if (count == 0)
             {
                 string availableTypes = string.Join(",", assembly.GetTypes().Select(t => t.FullName));

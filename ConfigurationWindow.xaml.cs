@@ -190,7 +190,7 @@ namespace Cloudless
 
             var success = await PluginManager.InstallPluginAsync(
                 pluginName: "WebP",
-                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/feature/pluginSupport/Cloudless.WebpPlugin/HostedPlugin/WebPPlugin.zip",
+                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.WebpPlugin/HostedPlugin/WebPPlugin.zip",
                 progress: progress);
 
             if (success)
