@@ -10,7 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <ProjectReference Include="..\Cloudless.PluginBase\Cloudless.PluginBase.csproj" >
+    <PackageReference Include="System.Drawing.Common" Version="10.0.7" />
+    <PackageReference Include="WebP_Net" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <ProjectReference Include="..\Cloudless.PluginBase\Cloudless.PluginBase.csproj">
 		  <Private>false</Private>
 		  <ExcludeAssets>runtime</ExcludeAssets>
 	  </ProjectReference>

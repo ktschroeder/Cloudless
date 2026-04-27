@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Cloudless.PluginBase;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -17,6 +19,8 @@ namespace Cloudless
             _resolver = new AssemblyDependencyResolver(pluginPath);
         }
 
+        
+
         protected override Assembly Load(AssemblyName assemblyName)
         {
             // Do not load the host's plugin base into the plugin context.
@@ -25,7 +29,7 @@ namespace Cloudless
             if (assemblyName.Name == "Cloudless.PluginBase")
             {
                 return null;
-            }
+            }  // TODO delete this if unneeded now
 
 
             string assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);

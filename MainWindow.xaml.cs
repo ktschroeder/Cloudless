@@ -17,7 +17,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.3";
+        public const string CURRENT_VERION = "0.6.3.100";
 
         #region Fields
 
@@ -210,55 +210,7 @@ namespace Cloudless
         }
         #endregion
 
-        static Assembly LoadPlugin(string relativePath)
-        {
-            // Navigate up to the solution root
-            string root = Path.GetFullPath(
-                Path.Combine(typeof(MainWindow).Assembly.Location, "..", "..", "..", "..", ".."));
-
-            string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
-            Console.WriteLine($"Loading commands from: {pluginLocation}");
-            PluginLoadContext loadContext = new(pluginLocation);
-            //return loadContext.LoadFromAssemblyName(new(Path.GetFileNameWithoutExtension(pluginLocation)));
-            return loadContext.LoadFromAssemblyName(AssemblyName.GetAssemblyName(pluginLocation));
-        }
-
-        static IEnumerable<IPlugin> CreateCommands(Assembly assembly)
-        {
-            int count = 0;
-
-            //foreach (var type in assembly.GetTypes().Where(t => typeof(IPlugin).IsAssignableFrom(t)))
-            //foreach (var type in assembly.GetTypes().Where(t => typeof(IPlugin).IsAssignableFrom(t)))
-            //{
-            //    if (Activator.CreateInstance(type) is IPlugin result)
-            //    {
-            //        count++;
-            //        yield return result;
-            //    }
-            //}
-
-            foreach (Type type in assembly.GetTypes())
-            {
-                if (typeof(IPlugin).IsAssignableFrom(type))
-                {
-                    IPlugin result = Activator.CreateInstance(type) as IPlugin;
-                    if (result != null)
-                    {
-                        count++;
-                        yield return result;
-                    }
-                }
-            }
-
-
-            if (count == 0)
-            {
-                string availableTypes = string.Join(",", assembly.GetTypes().Select(t => t.FullName));
-                throw new ApplicationException(
-                    $"Can't find any type which implements IPlugin in {assembly} from {assembly.Location}.\n" +
-                    $"Available types: {availableTypes}");
-            }
-        }
+        
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {

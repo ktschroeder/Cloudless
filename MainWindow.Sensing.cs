@@ -257,25 +257,7 @@ namespace Cloudless
 
             if (e.Key == Key.P)
             {
-                string[] pluginPaths = new string[]
-                {
-                    // Paths to plugins to load.
-                    @"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll"
-                };
-
-                IEnumerable<IPlugin> commands = pluginPaths.SelectMany(pluginPath =>
-                {
-                    Assembly pluginAssembly = LoadPlugin(pluginPath);
-                    return CreateCommands(pluginAssembly);
-                }).ToList();
-
-
-
-
-
-
-
-                //OpenPreferences();
+                OpenPreferences();
                 e.Handled = true;
                 return;
             }

@@ -11,17 +11,21 @@
   </PropertyGroup>
 
 	<!-- Prevent accidental compilation of the Cloudless.PluginBase project files
-       when Cloudless.PluginBase lives as a subfolder of this repo. -->
+       when Cloudless.PluginBase lives as a subfolder of this repo.
+	   Without this, the plugin logic fails to associate the plugins' implemented interfaces 
+	   with the interfaces known to the main app (Cloudless). -->
 	<ItemGroup>
 		<Compile Remove="Cloudless.PluginBase\**\*.cs" />
+
+		<Compile Remove="Cloudless.WebpPlugin\**\*.cs" />
 	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="LibVLCSharp" Version="3.9.7" />
     <PackageReference Include="LibVLCSharp.WPF" Version="3.9.7" />
     <PackageReference Include="System.ComponentModel.Composition" Version="10.0.6" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.7" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
-    <PackageReference Include="WebP_Net" Version="1.1.1" />
     <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
   </ItemGroup>
 
