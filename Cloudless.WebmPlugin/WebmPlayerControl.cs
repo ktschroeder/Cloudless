@@ -19,6 +19,8 @@ namespace Cloudless.WebmPlugin
         private IntPtr? _preloadedLibVlcHandle = null;
         private IntPtr? _preloadedLibVlcCoreHandle = null;
 
+        TaskCompletionSource<bool> _loadSignal;
+
         private const uint LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
 
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -29,6 +31,8 @@ namespace Cloudless.WebmPlugin
 
         public WebmPlayerControl()
         {
+            _loadSignal = new TaskCompletionSource<bool>();
+
             // Determine plugin assembly folder and expected libvlc RID subfolder
             string? pluginAsmFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if (string.IsNullOrEmpty(pluginAsmFolder))
@@ -131,20 +135,36 @@ namespace Cloudless.WebmPlugin
             // Finally initialize LibVLCSharp (will throw if native load still fails)
             Core.Initialize();
 
+            // TODO see https://stackoverflow.com/questions/66536923/how-do-i-stop-videoview-control-inside-a-grid-control-from-opening-a-new-window
+            //_libVLC = new LibVLC();  // takes like 9 seconds TODO
+            //_mediaPlayer = new MediaPlayer(_libVLC);
+
+            //_mediaPlayer.EnableMouseInput = false;
+            //_mediaPlayer.EnableKeyInput = false;
+
+            _videoView = new VideoView
+            {
+                //MediaPlayer = _mediaPlayer,
+                //HorizontalAlignment = HorizontalAlignment.Stretch,
+                //VerticalAlignment = VerticalAlignment.Stretch
+            };
+            // we need the VideoView to be fully loaded before setting a MediaPlayer on it.
+            _videoView.Loaded += VideoView_Loaded;
+
+            Content = _videoView;
+        }
+
+        private void VideoView_Loaded(object sender, RoutedEventArgs e)
+        {
             _libVLC = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVLC);
 
             _mediaPlayer.EnableMouseInput = false;
             _mediaPlayer.EnableKeyInput = false;
 
-            _videoView = new VideoView
-            {
-                MediaPlayer = _mediaPlayer,
-                //HorizontalAlignment = HorizontalAlignment.Stretch,
-                //VerticalAlignment = VerticalAlignment.Stretch
-            };
+            _videoView.MediaPlayer = _mediaPlayer;
 
-            Content = _videoView;
+            _loadSignal.SetResult(true);
         }
 
         private static void CopyDirectoryRecursive(string sourceDir, string destDir)
@@ -169,8 +189,10 @@ namespace Cloudless.WebmPlugin
             }
         }
 
-        public void Play(Uri uri)
+        public async Task Play(Uri uri)
         {
+            await _loadSignal.Task;  // ensure vide view is loaded, or else VLC will open the media in an external player
+
             using var media = new Media(_libVLC, uri);
             
             _mediaPlayer?.Play(media);

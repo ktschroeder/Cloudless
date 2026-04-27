@@ -9,7 +9,7 @@ namespace Cloudless.PluginBase
     /// </summary>
     public interface IVideoPlayer
     {
-        void Play(Uri uri);
+        Task Play(Uri uri);
         void Pause();
         void Stop();
         /// <summary>

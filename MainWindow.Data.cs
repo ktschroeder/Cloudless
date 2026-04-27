@@ -283,7 +283,7 @@ namespace Cloudless
 
                         if (view is Cloudless.PluginBase.IVideoPlayer player)
                         {
-                            player.Play(uri);
+                            await player.Play(uri);
                         } // TODO else?
 
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
