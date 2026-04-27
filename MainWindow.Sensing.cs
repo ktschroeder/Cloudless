@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using Cloudless.PluginBase;
+using System.Drawing;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using WpfAnimatedGif;
@@ -168,7 +170,7 @@ namespace Cloudless
             {
                 if (control && !alt)
                 {
-                    DuplicateWindow();
+                    await DuplicateWindow();
                     e.Handled = true;
                     return;
                 }

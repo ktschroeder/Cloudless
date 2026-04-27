@@ -1,21 +1,23 @@
-﻿using System.Windows;
+﻿using Cloudless.PluginBase;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WpfAnimatedGif;
-using Point = System.Windows.Point;
-using System.Windows.Media;
-using Path = System.IO.Path;
 using Brushes = System.Windows.Media.Brushes;
-using System.Runtime.InteropServices;
-using System.IO;
+using Path = System.IO.Path;
+using Point = System.Windows.Point;
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.3";
+        public const string CURRENT_VERION = "0.6.3.102";
 
         #region Fields
 
@@ -28,6 +30,10 @@ namespace Cloudless
         public static readonly string workspaceFilesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Cloudless");
+
+        public static readonly string pluginsFilesPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Cloudless", "plugins");
 
         public IntPtr WindowHandle =>
             new WindowInteropHelper(this).Handle;
@@ -208,7 +214,7 @@ namespace Cloudless
         }
         #endregion
 
-
+        
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {

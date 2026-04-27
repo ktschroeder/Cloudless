@@ -178,5 +178,34 @@ namespace Cloudless
                 UseShellExecute = true
             });
         }
+
+        private async void InstallWebP_Click(object sender, RoutedEventArgs e)
+        {
+            InstallButton.IsEnabled = false;
+
+            var progress = new Progress<string>(msg =>
+            {
+                StatusText.Text = msg; // TextBlock in UI
+            });
+
+            var success = await PluginManager.InstallPluginAsync(
+                pluginName: "WebP",
+                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.WebpPlugin/HostedPlugin/WebPPlugin.zip",
+                progress: progress);
+
+            if (success)
+            {
+                StatusText.Text = "WebP support installed!";
+
+                // Optional: load plugin immediately
+                //PluginManager.LoadPlugins();
+            }
+            else
+            {
+                StatusText.Text = "Installation failed.";
+            }
+
+            InstallButton.IsEnabled = true;
+        }
     }
 }

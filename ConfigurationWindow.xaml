@@ -130,7 +130,7 @@ Margin="0,2"/>
                             <StackPanel Margin="12" VerticalAlignment="Top">
 
                                 <TextBlock>WEBP support (1.1 MB)</TextBlock>
-                                <Button Name="InstallButton" Click="InstallWebP_Click" Style="{StaticResource CloudlessButton}">Install</Button>
+                                <Button Name="InstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebP_Click">Install</Button>
                                 <TextBlock Name="StatusText">Ready to install</TextBlock>
 
                                 <CheckBox x:Name="WebmEnabledCheckbox" 

@@ -9,7 +9,6 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using WebP.Net;
 using System.Collections.Specialized;
 using System.Text.Json;
 using Path = System.IO.Path;
@@ -352,14 +351,16 @@ namespace Cloudless
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
                     byte[] webpBytes = File.ReadAllBytes(imageFiles[index]);
-                    using var webp = new WebPObject(webpBytes);
-                    var webpImage = webp.GetImage();
-                    BitmapSource bitmapSource = Imaging.CreateBitmapSourceFromHBitmap(
-                        ((Bitmap)webpImage).GetHbitmap(),
-                        IntPtr.Zero,
-                        Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions()
-                    );
+
+                    var plugin = PluginManager.GetPluginForFiletype("webp");
+                    if (plugin == null)
+                    {
+                        Message("Load failed: No plugin found for WEBP files. See plugin tab in preferences window.");
+                        return;
+                    }
+
+                    var bitmapSource = plugin.Convert(webpBytes);
+
                     ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                     ImageDisplay.Source = bitmapSource;
                 }
