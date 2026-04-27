@@ -27,6 +27,9 @@
             <!-- Image Display -->
             <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
 
+            <!-- Host placeholder for plugin video controls -->
+            <ContentControl x:Name="VideoHost" Width="0" Height="0" />
+
             <!-- Loading Overlay -->
             <Border x:Name="LoadingOverlay"
             Background="Black"

@@ -18,6 +18,7 @@
 		<Compile Remove="Cloudless.PluginBase\**\*.cs" />
 
 		<Compile Remove="Cloudless.WebpPlugin\**\*.cs" />
+		<Compile Remove="Cloudless.WebmPlugin\**\*.cs" />
 	</ItemGroup>
 
   <ItemGroup>

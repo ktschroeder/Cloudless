@@ -26,5 +26,10 @@ namespace Cloudless.WebpPlugin
             );
             return bitmapSource;
         }
+
+        public UIElement? CreateView()
+        {
+            return null;
+        }
     }
 }

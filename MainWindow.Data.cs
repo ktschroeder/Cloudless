@@ -205,6 +205,10 @@ namespace Cloudless
             autoResizingSpaceIsToggled = false;
             imageOriginalWorkspaceName = null;  // reset this whenever an image is loaded, e.g. left/right iteration. When loading workspaces, we define this in post-process.
 
+            VideoHost.Height = 0;
+            VideoHost.Width = 0;
+            // TODO dispose? maybe in plugin method?
+
             try
             {
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
@@ -258,94 +262,35 @@ namespace Cloudless
                  }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
                 {
-                    if (Properties.Settings.Default.WebmEnabled)
+                    try
                     {
-                        try
+                        var plugin = PluginManager.GetPluginForFiletype("webm");
+                        if (plugin == null)
                         {
-                            var path = uri.OriginalString;
-                            if (!File.Exists(path))
-                                return;
-
-                            string convertedGifPath = GetFilePathForWebmGifConversion();
-                            Random random = new Random();
-
-                            if (!File.Exists(convertedGifPath))
-                            {
-                                ShowLoadingOverlay($"Creating cached GIF from WEBM...", $"{Path.GetFileName(path)}");
-                                await Dispatcher.Yield(DispatcherPriority.Background);
-
-                                string directory = Path.GetTempPath();
-                                string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-                                string tempThumbPath = Path.Combine(cloudlessTempPath, $"ThumbTemp{random.Next(int.MaxValue)}.jpg");
-
-                                int height = -1;
-                                int width = -1;
-
-                                string ffmpegThumbArgs = $"-i \"{path}\" -frames:v 1 \"{tempThumbPath}\"";
-                                var ffmpeg = new FFmpegExecutor();
-                                await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
-                                using (var thumb = new Bitmap(tempThumbPath))
-                                {
-                                    height = thumb.Height;
-                                    width = thumb.Width;
-                                }
-                                File.Delete(tempThumbPath);
-
-                                int convertedWidth = Math.Min(width, 500);
-
-                                //string ffmpegArgs = $"-i \"{path}\" \"{convertedGifPath}\"";
-                                string ffmpegArgs = 
-                                        $"-i \"{path}\" " +
-                                        $"-vf \"scale=-2:{convertedWidth}:flags=lanczos," +
-                                        "setsar=1," +
-                                        "format=rgba," +
-                                        "split[s0][s1];" +
-                                        "[s0]palettegen=stats_mode=diff[p];" +
-                                        "[s1][p]paletteuse=dither=sierra2_4a\" " +
-                                        $"\"{convertedGifPath}\"";
-                                await ffmpeg.ExecuteFFmpegCommand(ffmpegArgs, this);
-                                HideLoadingOverlay();
-                            }
-
-                            bool loadGif = true;
-                            var fileSizeMB = (double)(new FileInfo(convertedGifPath).Length) / 1024 / 1024;
-                            if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
-                            {
-                                var gifWarningWindow = new GifWarningWindow(convertedGifPath, fileSizeMB)
-                                {
-                                    Owner = this,
-                                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                                };
-                                gifWarningWindow.ShowDialog();
-                                loadGif = gifWarningWindow.Proceed;
-                            }
-
-                            if (loadGif)
-                            {
-                                ShowLoadingOverlay($"Loading WEBM as GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(path)}");
-                                await Dispatcher.Yield(DispatcherPriority.Background);
-
-                                var bitmap2 = new BitmapImage(new Uri(convertedGifPath));
-                                ImageDisplay.Source = bitmap2;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                                await Dispatcher.Yield(DispatcherPriority.Background);
-                                ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap2);  // This is the slow method
-                                HideLoadingOverlay();
-
-                                gifController = ImageBehavior.GetAnimationController(ImageDisplay);
-                            }
-                            else
-                            {
-                                ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
-                            }
+                            Message("Load failed: No plugin found for WEBM files. See plugin tab in preferences window.");
+                            return;
                         }
-                        catch (Exception ex)
+
+                        var view = plugin.CreateView();
+                        VideoHost.Content = view;
+
+                        VideoHost.Height = double.NaN;
+                        VideoHost.Width = double.NaN;
+                        //VideoHost.Height = 300;
+                        //VideoHost.Width = 300;
+
+                        
+
+                        if (view is Cloudless.PluginBase.IVideoPlayer player)
                         {
-                            Message($"An error occurred: {ex.Message}");
-                        }
+                            player.Play(uri);
+                        } // TODO else?
+
+                        ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                     }
-                    else  // WEBMs disabled
+                    catch (Exception ex)
                     {
-                        Message("Tried to load WEBM, but WEBMs are disabled. See preferences.");
+                        Message($"Failed to load WEBM file: {ex.Message}");
                     }
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))

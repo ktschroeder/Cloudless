@@ -19,8 +19,10 @@ namespace Cloudless
             string[] pluginPaths = new string[]
                 {
                     // Paths to plugins to load.
-                    //@"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll"
-                    Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll")
+                    //@"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll",
+                    //@"Cloudless\Cloudless.WebmPlugin\bin\Debug\net8.0-windows\Cloudless.WebmPlugin.dll",
+                    Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll"),
+                    Path.Join(MainWindow.pluginsFilesPath, "webm", "Cloudless.WebmPlugin.dll")
                 };
 
             IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>
