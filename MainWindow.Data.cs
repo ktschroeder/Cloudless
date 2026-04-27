@@ -42,12 +42,8 @@ namespace Cloudless
 
             try
             {
-                string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif";
-                if (Properties.Settings.Default.WebmEnabled)
-                {
-                    filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm";
-                }
-
+                string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm";
+                
                 OpenFileDialog openFileDialog = new OpenFileDialog
                 {
                     Filter = filter
@@ -535,12 +531,12 @@ namespace Cloudless
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || (Properties.Settings.Default.WebmEnabled && extension == ".webm");
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm");
         }
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || (Properties.Settings.Default.WebmEnabled && extension == ".webm");
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm");
         }
         private async void DownloadAndLoadImage(Uri uri)
         {
@@ -670,10 +666,13 @@ namespace Cloudless
                     var thumbPath = xref.ThumbnailPath;
                     if (!File.Exists(thumbPath))
                     {
-                        // must create the thumbnail
-                        string ffmpegThumbArgs = $"-i \"{filePath}\" -frames:v 1 \"{thumbPath}\"";
-                        var ffmpeg = new FFmpegExecutor();
-                        await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
+                        //// must create the thumbnail
+                        //string ffmpegThumbArgs = $"-i \"{filePath}\" -frames:v 1 \"{thumbPath}\"";
+                        //var ffmpeg = new FFmpegExecutor();
+                        //await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
+
+                        return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };
+                        // TODO restore webm thumbs
                     }
 
                     filePath = thumbPath;
@@ -1043,74 +1042,4 @@ namespace Cloudless
         public DateTime published_at { get; set; }
     }
 
-    public class FFmpegExecutor
-    {
-        // returns whether successful
-        public async Task<bool> ExecuteFFmpegCommand(string ffmpegArguments, MainWindow mainWindow)
-        {
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = "ffmpeg", // "ffmpeg.exe" on Windows, "ffmpeg" on Linux/macOS, relies on the system PATH
-                Arguments = ffmpegArguments,
-                UseShellExecute = false, // Must be false to redirect I/O streams
-                RedirectStandardOutput = true,
-                RedirectStandardError = true, // Often FFmpeg output is on StandardError
-                CreateNoWindow = true
-            };
-
-            try
-            {
-                using (Process process = Process.Start(startInfo))
-                {
-                    // process can be null if ffmpeg is not installed?
-                    if (process == null)
-                        throw new Win32Exception("process was null");
-
-                    //// Capture output (optional, but useful for debugging and progress monitoring)
-                    //process.OutputDataReceived += (sender, e) =>
-                    //{
-                    //    if (!string.IsNullOrEmpty(e.Data))
-                    //    {
-                    //        Console.WriteLine($"[FFmpeg OUT] {e.Data}");
-                    //    }
-                    //};
-                    //process.ErrorDataReceived += (sender, e) =>
-                    //{
-                    //    if (!string.IsNullOrEmpty(e.Data))
-                    //    {
-                    //        // FFmpeg progress usually comes through the error stream
-                    //        Console.WriteLine($"[FFmpeg ERR] {e.Data}");
-                    //    }
-                    //};
-
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
-
-                    // Wait for the process to exit
-                    await process.WaitForExitAsync(); // Use WaitForExitAsync() for async
-
-                    if (process.ExitCode == 0)
-                    {
-                        //Console.WriteLine("FFmpeg command executed successfully.");
-                        return true;
-                    }
-                    else
-                    {
-                        mainWindow.Message($"Failed to convert WEBM due to ffmpeg error: {process.ExitCode}");
-                        return false;
-                    }
-                }
-            }
-            catch (Win32Exception ex)
-            {
-                mainWindow.Message($"Failed to convert WEBM: FFmpeg is not installed or cannot be found: {ex.Message}");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                mainWindow.Message($"Failed to convert WEBM due to unexpected error: {ex.Message}");
-                return false;
-            }
-        }
-    }
 }

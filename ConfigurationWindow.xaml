@@ -133,9 +133,7 @@ Margin="0,2"/>
                                 <Button Name="WebpInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebP_Click">Install</Button>
                                 <TextBlock Name="WebpStatusText">Ready to install</TextBlock>
 
-                                <CheckBox x:Name="WebmEnabledCheckbox" 
-    Content="Enable limited WEBM support (FFmpeg must be installed and added to PATH. Only suited to small files)" 
-    Margin="0,2"/>
+                                <TextBlock></TextBlock>
 
                                 <TextBlock>WEBM support (279 MB)</TextBlock>
                                 <Button Name="WebmInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebM_Click">Install</Button>
