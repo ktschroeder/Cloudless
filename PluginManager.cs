@@ -103,9 +103,8 @@ namespace Cloudless
         {
             try
             {
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var pluginsDir = Path.Combine(baseDir, "Plugins");
-                var pluginDir = Path.Combine(pluginsDir, pluginName);
+                var pluginsDir = MainWindow.pluginsFilesPath;
+                var pluginDir = Path.Combine(pluginsDir, pluginName.ToLower());
 
                 Directory.CreateDirectory(pluginsDir);
 
