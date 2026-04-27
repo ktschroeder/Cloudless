@@ -18,9 +18,16 @@ namespace Cloudless.WebmPlugin
             return null;
         }
 
-        public UIElement? CreateView()
+        public async Task<UIElement?> CreateView()
         {
-            return new WebmPlayerControl();
+            var wpc = new WebmPlayerControl();
+            await wpc.Initialize();
+            return wpc;
+        }
+
+        public async Task WarmupAsync()
+        {
+            await LibVlcProvider.WarmupAsync();
         }
     }
 }

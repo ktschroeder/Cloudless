@@ -127,6 +127,8 @@ namespace Cloudless
         private void Setup(bool startUp = false)
         {
             InitializeComponent();
+
+            PluginManager.InitializePlugins();
             
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
             if (startUp)

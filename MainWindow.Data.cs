@@ -267,7 +267,7 @@ namespace Cloudless
                             return;
                         }
 
-                        var view = plugin.CreateView();
+                        var view = await plugin.CreateView();
                         VideoHost.Content = view;
 
                         VideoHost.Height = double.NaN;
@@ -531,12 +531,12 @@ namespace Cloudless
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm");
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
         }
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm");
+            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
         }
         private async void DownloadAndLoadImage(Uri uri)
         {

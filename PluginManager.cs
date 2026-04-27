@@ -14,6 +14,15 @@ namespace Cloudless
     // Plugin framework adapted from https://learn.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
     public static class PluginManager
     {
+        public static void InitializePlugins()
+        {
+            IEnumerable<IPlugin> plugins = GetPlugins();
+            foreach (IPlugin plugin in plugins)
+            {
+                Task.Run(() => plugin.WarmupAsync());
+            }
+        }
+
         private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
         {
             string[] pluginPaths = new string[]

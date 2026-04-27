@@ -31,116 +31,15 @@ namespace Cloudless.WebmPlugin
 
         public WebmPlayerControl()
         {
+        }
+
+        public async Task Initialize()
+        {
             _loadSignal = new TaskCompletionSource<bool>();
 
-            // Determine plugin assembly folder and expected libvlc RID subfolder
-            string? pluginAsmFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (string.IsNullOrEmpty(pluginAsmFolder))
-                pluginAsmFolder = AppContext.BaseDirectory;
+            _libVLC = await LibVlcProvider.GetInstance();
 
-            string pluginLibVlcRoot = Path.Combine(pluginAsmFolder, "libvlc");
-            string ridFolder = Environment.Is64BitProcess ? "win-x64" : "win-x86";
-            string pluginLibVlcPath = Path.Combine(pluginLibVlcRoot, ridFolder);
-
-            // Host app's libvlc path (where the process will probe)
-            string hostBase = AppContext.BaseDirectory ?? Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? "") ?? Environment.CurrentDirectory;
-            string hostLibVlcRoot = Path.Combine(hostBase, "libvlc");
-            string hostLibVlcPath = Path.Combine(hostLibVlcRoot, ridFolder);
-
-            try
-            {
-                // If plugin native files exist but host folder doesn't, copy them into host output.
-                if (Directory.Exists(pluginLibVlcPath))
-                {
-                    // Create host folder if missing
-                    Directory.CreateDirectory(hostLibVlcPath);
-
-                    // Copy files (overwrite to ensure latest)
-                    foreach (var file in Directory.GetFiles(pluginLibVlcPath))
-                    {
-                        var dest = Path.Combine(hostLibVlcPath, Path.GetFileName(file));
-                        try
-                        {
-                            File.Copy(file, dest, true);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Failed to copy native file '{file}' to '{dest}': {ex.Message}");
-                        }
-                    }
-
-                    // Also copy plugin subfolders (e.g., "plugins" folder) recursively
-                    foreach (var dir in Directory.GetDirectories(pluginLibVlcPath))
-                    {
-                        var destDir = Path.Combine(hostLibVlcPath, Path.GetFileName(dir));
-                        CopyDirectoryRecursive(dir, destDir);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Plugin libvlc path not found: {pluginLibVlcPath}");
-                }
-
-                // Now add host libvlc folder to the process DLL search path (modern API)
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-                    var addRes = AddDllDirectory(hostLibVlcPath);
-                    Console.WriteLine($"AddDllDirectory('{hostLibVlcPath}') returned: {addRes}");
-
-                    // Try preloading for clearer diagnostics
-                    string libvlcDll = Path.Combine(hostLibVlcPath, "libvlc.dll");
-                    string libvlccoreDll = Path.Combine(hostLibVlcPath, "libvlccore.dll");
-
-                    if (File.Exists(libvlcDll))
-                    {
-                        try
-                        {
-                            _preloadedLibVlcHandle = NativeLibrary.Load(libvlcDll);
-                            Console.WriteLine($"Preloaded {libvlcDll}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Failed to preload {libvlcDll}: {ex}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"libvlc.dll not found at: {libvlcDll}");
-                    }
-
-                    if (File.Exists(libvlccoreDll))
-                    {
-                        try
-                        {
-                            _preloadedLibVlcCoreHandle = NativeLibrary.Load(libvlccoreDll);
-                            Console.WriteLine($"Preloaded {libvlccoreDll}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Failed to preload {libvlccoreDll}: {ex}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"libvlccore.dll not found at: {libvlccoreDll}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception while preparing native libvlc: {ex}");
-            }
-
-            // Finally initialize LibVLCSharp (will throw if native load still fails)
-            Core.Initialize();
-
-            // TODO see https://stackoverflow.com/questions/66536923/how-do-i-stop-videoview-control-inside-a-grid-control-from-opening-a-new-window
-            //_libVLC = new LibVLC();  // takes like 9 seconds TODO
-            //_mediaPlayer = new MediaPlayer(_libVLC);
-
-            //_mediaPlayer.EnableMouseInput = false;
-            //_mediaPlayer.EnableKeyInput = false;
+            
 
             _videoView = new VideoView
             {

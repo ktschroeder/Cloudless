@@ -27,9 +27,14 @@ namespace Cloudless.WebpPlugin
             return bitmapSource;
         }
 
-        public UIElement? CreateView()
+        public Task<UIElement?> CreateView()
         {
             return null;
+        }
+
+        public async Task WarmupAsync()
+        {
+            return;
         }
     }
 }
