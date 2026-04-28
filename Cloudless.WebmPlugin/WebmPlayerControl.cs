@@ -2,6 +2,7 @@ using Cloudless.PluginBase;
 using Cloudless.WebmPlugin;
 using LibVLCSharp.Shared;
 using LibVLCSharp.WPF;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -15,9 +16,14 @@ namespace Cloudless.WebmPlugin
     {
         private LibVLC _libVLC;
         private MediaPlayer _mediaPlayer;
+        //private MediaPlayer _mediaPlayer2;
         private VideoView _videoView;
         private IntPtr? _preloadedLibVlcHandle = null;
         private IntPtr? _preloadedLibVlcCoreHandle = null;
+
+        private Uri _currentUri;
+        //private Media _media = null; 
+        //private Media _media2 = null; 
 
         TaskCompletionSource<bool> _loadSignal;
 
@@ -53,17 +59,36 @@ namespace Cloudless.WebmPlugin
             Content = _videoView;
         }
 
-        private void VideoView_Loaded(object sender, RoutedEventArgs e)
+        private async void VideoView_Loaded(object sender, RoutedEventArgs e)
         {
-            _libVLC = new LibVLC();
+            _libVLC = await LibVlcProvider.GetInstance();
             _mediaPlayer = new MediaPlayer(_libVLC);
 
             _mediaPlayer.EnableMouseInput = false;
             _mediaPlayer.EnableKeyInput = false;
 
+            _mediaPlayer.EndReached += (sender, args) =>
+            {
+                // IMPORTANT: Restart playback on a different thread to avoid deadlocks
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    //_mediaPlayer.Stop(); // Recommended to stop before re-playing
+                    _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
+                    //_videoView.MediaPlayer = _mediaPlayer2;
+                    //_mediaPlayer2.Play();
+                });
+            };
+
             _videoView.MediaPlayer = _mediaPlayer;
 
             _loadSignal.SetResult(true);
+
+            // init slot hack for smooth looping, which VLC doesn't support natively
+            //_mediaPlayer2 = new MediaPlayer(_libVLC);
+            //_mediaPlayer2.EnableMouseInput = false;
+            //_mediaPlayer2.EnableKeyInput = false;
+            //_mediaPlayer2.Play(_media2);
+            //_mediaPlayer2.Pause();
         }
 
         private static void CopyDirectoryRecursive(string sourceDir, string destDir)
@@ -93,7 +118,10 @@ namespace Cloudless.WebmPlugin
             await _loadSignal.Task;  // ensure vide view is loaded, or else VLC will open the media in an external player
 
             using var media = new Media(_libVLC, uri);
-            
+            //_media = media;
+            //_media2 = new Media(_libVLC, uri);
+            _currentUri = uri;
+
             _mediaPlayer?.Play(media);
         }
 
