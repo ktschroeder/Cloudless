@@ -263,7 +263,7 @@ namespace Cloudless
                         var plugin = PluginManager.GetPluginForFiletype("webm");
                         if (plugin == null)
                         {
-                            Message("Load failed: No plugin found for WEBM files. See plugin tab in preferences window.");
+                            Message("Load failed: No plugin found for WEBM files, or version is too old. See plugin tab in preferences window.");
                             return;
                         }
 
@@ -303,7 +303,7 @@ namespace Cloudless
                     var plugin = PluginManager.GetPluginForFiletype("webp");
                     if (plugin == null)
                     {
-                        Message("Load failed: No plugin found for WEBP files. See plugin tab in preferences window.");
+                        Message("Load failed: No plugin found for WEBP files, or version is too old. See plugin tab in preferences window.");
                         return;
                     }
 
