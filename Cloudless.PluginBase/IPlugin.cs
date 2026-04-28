@@ -12,6 +12,7 @@ namespace Cloudless.PluginBase
         ImageSource Convert(byte[] bytes);
         Task<System.Windows.UIElement?> CreateView();
         Task WarmupAsync();
+        
     }
 
 }

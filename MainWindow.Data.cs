@@ -280,9 +280,16 @@ namespace Cloudless
                         if (view is Cloudless.PluginBase.IVideoPlayer player)
                         {
                             await player.Play(uri);
+                            Thread.Sleep(100);  // slight delay to allow player to initialize and get dimensions. can be improved with an event or callback from the plugin when ready. TODO
+                            (var width, var height) = player.GetDimensions() ?? (0, 0);
+                            if (width > 0 && height > 0)
+                            {
+                                ResizeWindow(width, height);
+                            }
                         } // TODO else?
 
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                        ImageDisplay.Source = null;
                     }
                     catch (Exception ex)
                     {

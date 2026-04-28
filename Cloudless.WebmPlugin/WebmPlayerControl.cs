@@ -125,6 +125,23 @@ namespace Cloudless.WebmPlugin
             _mediaPlayer?.Play(media);
         }
 
+        public (int, int)? GetDimensions()
+        {
+            var tracks = _mediaPlayer.Media.Tracks;
+            foreach (var track in tracks)
+            {
+                if (track.TrackType == TrackType.Video)
+                {
+                    var videoTrack = track.Data;
+                    var width = videoTrack.Video.Width;
+                    var height = videoTrack.Video.Height;
+                    if (width > 0 && height > 0)
+                        return ((int)width, (int)height);
+                }
+            }
+            return null;
+        }
+
         public void Pause()
         {
             _mediaPlayer?.Pause();
