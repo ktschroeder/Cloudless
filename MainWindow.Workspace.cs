@@ -322,6 +322,7 @@ namespace Cloudless
                     //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                     this.CloseAllOtherInstances();
                     //Thread.Sleep(150); // brief grace period (optional but helps UX)
+                    MinimizeWindow();
                     await CreateWindowsForWorkspace(workspace);
                     this.Close();
                 }
