@@ -577,6 +577,12 @@ namespace Cloudless
 
             if (command.ToLower().Equals("cip"))  // copy image path
             {
+                if (currentlyDisplayedImagePath == null)
+                {
+                    Message("Cannot copy image path to clipboard because no image is loaded");
+                    return true;
+                }
+
                 Clipboard.SetText(currentlyDisplayedImagePath);
                 Message("Copied image path to clipboard");
                 return true;
