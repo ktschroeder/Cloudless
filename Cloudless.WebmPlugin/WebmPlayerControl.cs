@@ -113,7 +113,7 @@ namespace Cloudless.WebmPlugin
             }
         }
 
-        public async Task Play(Uri uri)
+        public async Task Play(Uri uri, Task? postPlayTask = null)
         {
             await _loadSignal.Task;  // ensure vide view is loaded, or else VLC will open the media in an external player
 
@@ -123,6 +123,11 @@ namespace Cloudless.WebmPlugin
             _currentUri = uri;
 
             _mediaPlayer?.Play(media);
+
+            if (postPlayTask != null)
+            {
+                await postPlayTask;
+            }
         }
 
         public (int, int)? GetDimensions()

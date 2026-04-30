@@ -275,19 +275,29 @@ namespace Cloudless
                         //VideoHost.Height = 300;
                         //VideoHost.Width = 300;
 
-                        
+
 
                         if (view is Cloudless.PluginBase.IVideoPlayer player)
                         {
-                            await player.Play(uri);
-                            Thread.Sleep(100);  // slight delay to allow player to initialize and get dimensions. can be improved with an event or callback from the plugin when ready. TODO
-                            (var width, var height) = player.GetDimensions() ?? (0, 0);
-                            if (width > 0 && height > 0)
+                            Task postPlayTask = new Task(() =>  // sync, to do an elegant concurrency dance with the below play method
                             {
-                                ResizeWindow(width, height);
-                            }
-                        } // TODO else?
+                                try
+                                {
+                                    (var width, var height) = player.GetDimensions() ?? (0, 0);
+                                    if (width > 0 && height > 0)
+                                    {
+                                        Dispatcher.Invoke(() => ResizeWindow(width, height));
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Dispatcher.Invoke(() => Message($"Failed to get video dimensions from plugin: {ex.Message}"));
+                                }
+                            });
 
+                            Task.Run(() => player.Play(uri, postPlayTask));  // sync, to avoid thread issues that occurred when using async play method
+
+                        }  // TODO else?
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                         ImageDisplay.Source = null;
                     }

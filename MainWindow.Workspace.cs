@@ -333,12 +333,12 @@ namespace Cloudless
                 
                 return true;
             }
-            catch (FileNotFoundException)
+            catch (FileNotFoundException ex)
             {
                 Message("Workspace file not found.");
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Message("Unexpected error loading workspace.");
                 return false;
