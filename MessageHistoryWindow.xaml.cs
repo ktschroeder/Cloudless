@@ -20,6 +20,9 @@ namespace Cloudless
             //messageHistory = manager.GetMessageHistory();  TODO remove redundant
             messageHistory = manager.GetMessageHistoryFromSetting();
 
+            // flip sort order so newer messages are at top
+            messageHistory.Reverse();
+
             // Bind the ListBox to the message history
             MessageListBox.ItemsSource = messageHistory;
 

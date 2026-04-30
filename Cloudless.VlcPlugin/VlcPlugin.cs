@@ -5,9 +5,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace Cloudless.WebmPlugin
+namespace Cloudless.VlcPlugin
 {
-    public class WebmPlugin : IPlugin
+    public class VlcPlugin : IPlugin
     {
         public string Name { get => "VLC Plugin"; }
         public string Description { get => "Prepares a WPF view for a WEBM/MKV/MP4 video using external VLC libraries"; }
@@ -20,7 +20,7 @@ namespace Cloudless.WebmPlugin
 
         public async Task<UIElement?> CreateView()
         {
-            var wpc = new WebmVideoPlayerControl();
+            var wpc = new VlcVideoPlayerControl();
             await wpc.Initialize();
             return wpc;
         }

@@ -118,7 +118,7 @@ namespace Cloudless
         }
 
         // MouseUp: Stop Dragging
-        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (isPanningImage)
             {
@@ -132,7 +132,7 @@ namespace Cloudless
 
             isDraggingWindow = false;
             isDraggingWindowFromFullscreen = false;
-            UpdateContextMenuState();  // for zoom amount, which may change when window is resized
+            await UpdateContextMenuState();  // for zoom amount, which may change when window is resized
         }
 
         private async void Window_KeyDown(object sender, KeyEventArgs e)
@@ -338,7 +338,7 @@ namespace Cloudless
 
             if (e.Key == Key.L)
             {
-                ResizeImageToFillWindow();
+                await ResizeImageToFillWindow();
                 e.Handled = true;
                 return;
             }
@@ -400,21 +400,42 @@ namespace Cloudless
                     }
                 }
 
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
+                {
+                    if (control && currentlyDisplayedImagePath != null)
+                    {
+                        //player.SetMedia(new Uri(currentlyDisplayedImagePath));
+                        //await player.Play(new Uri(currentlyDisplayedImagePath));
+                        player.Restart();
+                    }
+                    else
+                    {
+                        //if (player.GetDimensions() != null)  // crude check for whether media is loaded and can be played
+                        //{
+                            player.Pause();
+                        //}
+                    }
+                }
+
                 e.Handled = true;
                 return;
             }
 
             if (e.Key == Key.OemSemicolon) // && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':' but allow semicolon for convenience
             {
-                if (!control)
+                if (!control && !alt)
                 {
                     OpenCommandPalette();
+                }
+                else if (alt)  // TODO somehow, we don't get here for just ALT, even to this method apparently. Works for CTRL ALT.
+                {
+                    OpenPopOutCommandPaletteWindow();
                 }
                 else
                 {
                     // Repeat previous command when CTRL is held
                     LoadCommandHistory();
-                    await ExecuteCommand(_commandHistory.LastOrDefault() ?? "");
+                    await ExecuteCommand(CommandHistory.LastOrDefault() ?? "");
                 }
 
                 e.Handled = true;
@@ -441,12 +462,12 @@ namespace Cloudless
             {
                 if (e.Key == Key.OemPlus || e.Key == Key.Add) // Zoom In
                 {
-                    ZoomFromCenter(true);
+                    await ZoomFromCenter(true);
                     e.Handled = true;
                 }
                 else if (e.Key == Key.OemMinus || e.Key == Key.Subtract) // Zoom Out
                 {
-                    ZoomFromCenter(false);
+                    await ZoomFromCenter(false);
                     e.Handled = true;
                 }
                 else if (e.Key == Key.D0) // Reset to Best Fit
@@ -555,7 +576,7 @@ namespace Cloudless
                     zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;  // finer zooming for greater precision
                 }
 
-                Zoom(cursorPosition, zoomDelta: zoomDelta);
+                await Zoom(cursorPosition, zoomDelta: zoomDelta);
 
                 e.Handled = true;
             }

@@ -7,7 +7,7 @@ namespace Cloudless.PluginBase
     {
         string Name { get; }
         string Description { get; }
-        string SupportsFileType { get; }
+        List<string> SupportsFileTypes { get; }
 
         ImageSource Convert(byte[] bytes);
         Task<System.Windows.UIElement?> CreateView();

@@ -64,7 +64,7 @@ Margin="0,2"/>
                 Margin="0,6,0,6"
                 Style="{StaticResource CloudlessButton}"/>
 
-                                <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .jfif, and (with plugins) .webp and .webm" 
+                                <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .jfif, and (with plugins) .webp, .webm, .mkv., mp4" 
                    Foreground="#666" Margin="0,0,0,10"/>
 
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
@@ -135,9 +135,9 @@ Margin="0,2"/>
 
                                 <TextBlock></TextBlock>
 
-                                <TextBlock>WEBM support (279 MB)</TextBlock>
-                                <Button Name="WebmInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebM_Click">Install</Button>
-                                <TextBlock Name="WebmStatusText">Ready to install</TextBlock>
+                                <TextBlock>WEBM/MKV/MP4 support (279 MB)</TextBlock>
+                                <Button Name="VlcInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallVlc_Click">Install</Button>
+                                <TextBlock Name="VlcStatusText">Ready to install</TextBlock>
 
                             </StackPanel>
                         </TabItem>

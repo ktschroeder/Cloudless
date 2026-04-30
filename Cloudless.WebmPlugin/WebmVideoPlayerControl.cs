@@ -12,7 +12,7 @@ using MediaPlayer = LibVLCSharp.Shared.MediaPlayer;
 
 namespace Cloudless.WebmPlugin
 {
-    public class WebmPlayerControl : UserControl, IDisposable, IVideoPlayer
+    public class WebmVideoPlayerControl : UserControl, IDisposable, IVideoPlayer
     {
         private LibVLC _libVLC;
         private MediaPlayer _mediaPlayer;
@@ -35,7 +35,7 @@ namespace Cloudless.WebmPlugin
         [DllImport("kernel32", SetLastError = true)]
         private static extern bool SetDefaultDllDirectories(uint DirectoryFlags);
 
-        public WebmPlayerControl()
+        public WebmVideoPlayerControl()
         {
         }
 
@@ -149,7 +149,8 @@ namespace Cloudless.WebmPlugin
 
         public void Pause()
         {
-            _mediaPlayer?.Pause();
+            //_mediaPlayer?.Pause();
+            _mediaPlayer?.SetPause(_mediaPlayer.IsPlaying);
         }
 
         public void Stop()
@@ -161,6 +162,12 @@ namespace Cloudless.WebmPlugin
         {
             //_mediaPlayer?.Stop();
             //_mediaPlayer?.SetMedia(new Media(_libVLC, uri));
+        }
+
+        public void Restart()
+        {
+            _mediaPlayer?.Stop();
+            _mediaPlayer?.Play();
         }
 
         public void Dispose()

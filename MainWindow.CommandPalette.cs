@@ -15,7 +15,7 @@ namespace Cloudless
             CommandTextBox.Text = ":";
             CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
             LoadCommandHistory();
-            _historyIndex = _commandHistory.Count;
+            CommandHistoryIndex = CommandHistory.Count;
             TabScroll = false;
             CommandTextBox.Focus();
         }
@@ -83,7 +83,7 @@ namespace Cloudless
             }
         }
 
-        private async Task ExecuteCommand(string command)
+        public async Task ExecuteCommand(string command)
         {
             bool validCommand = await ExecuteCommandInner(command);
             // Originally it seemed better to oonly commit valid commands, but I find it more convenient to commit all commands, at least for now.
@@ -706,17 +706,17 @@ namespace Cloudless
             OpenUrl(finalUrl ?? $"https://www.google.com/searchbyimage?image_url={Encode(hostedImageUrl)}");
         }
 
-        private void LoadCommandHistory()
+        public void LoadCommandHistory()
         {
             var stringCollection = Cloudless.Properties.Settings.Default.CommandHistory;
             if (stringCollection == null)
             {
-                _commandHistory = new List<string>();
+                CommandHistory = new List<string>();
             }
             else
             {
                 var list = stringCollection.Cast<string>().ToList();
-                _commandHistory = list;
+                CommandHistory = list;
             }
         }
 
@@ -728,45 +728,45 @@ namespace Cloudless
             LoadCommandHistory();
 
             // Avoid duplicate consecutive entries
-            if (_commandHistory.Count == 0 || _commandHistory[^1] != command)
-                _commandHistory.Add(command);
+            if (CommandHistory.Count == 0 || CommandHistory[^1] != command)
+                CommandHistory.Add(command);
 
             const int HISTORY_MAX_SIZE = 100;
             StringCollection sc = new StringCollection();
-            sc.AddRange(_commandHistory.TakeLast(HISTORY_MAX_SIZE).ToArray());
+            sc.AddRange(CommandHistory.TakeLast(HISTORY_MAX_SIZE).ToArray());
             Cloudless.Properties.Settings.Default.CommandHistory = sc;
             Cloudless.Properties.Settings.Default.Save();
 
-            _historyIndex = _commandHistory.Count; // reset position
+            CommandHistoryIndex = CommandHistory.Count; // reset position
         }
 
         private void CommandPaletteTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (_commandHistory.Count == 0)
+            if (CommandHistory.Count == 0)
                 return;
 
             if (e.Key == Key.Up)
             {
                 e.Handled = true;
 
-                if (_historyIndex > 0)
-                    _historyIndex--;
+                if (CommandHistoryIndex > 0)
+                    CommandHistoryIndex--;
 
-                CommandTextBox.Text = _commandHistory[_historyIndex];
+                CommandTextBox.Text = CommandHistory[CommandHistoryIndex];
                 CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
             }
             else if (e.Key == Key.Down)
             {
                 e.Handled = true;
 
-                if (_historyIndex < _commandHistory.Count - 1)
+                if (CommandHistoryIndex < CommandHistory.Count - 1)
                 {
-                    _historyIndex++;
-                    CommandTextBox.Text = _commandHistory[_historyIndex];
+                    CommandHistoryIndex++;
+                    CommandTextBox.Text = CommandHistory[CommandHistoryIndex];
                 }
                 else
                 {
-                    _historyIndex = _commandHistory.Count;
+                    CommandHistoryIndex = CommandHistory.Count;
                     CommandTextBox.Text = ":";
                 }
 

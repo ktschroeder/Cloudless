@@ -27,6 +27,7 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Configuration;
 
 namespace Cloudless
 {
@@ -42,7 +43,7 @@ namespace Cloudless
 
             try
             {
-                string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm";
+                string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm, *.mkv, *.mp4)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm;*.mkv;*.mp4";
                 
                 OpenFileDialog openFileDialog = new OpenFileDialog
                 {
@@ -176,6 +177,8 @@ namespace Cloudless
                                                  s.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".webm", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase) ||
+                                                 s.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
                                                  s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
                 imageFiles = retrievedImageFiles.ToArray();
 
@@ -220,6 +223,11 @@ namespace Cloudless
                     gifController = null;  // can probably more efficiently reuse this. see https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/WpfAnimatedGif.Demo/MainWindow.xaml.cs
                 }
 
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                {
+                    videoPlayer.Dispose();
+                }
+
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))  // TODO fair bit of duplicate code shared with WEBM section of this method
                 {
                     var fileSizeMB = (double)(new FileInfo(uri.OriginalString).Length) / 1024 / 1024;
@@ -256,14 +264,14 @@ namespace Cloudless
                         ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
                     }
                  }
-                else if (uri.AbsolutePath.ToLower().EndsWith(".webm"))
+                else if (uri.AbsolutePath.ToLower().EndsWith(".webm") || uri.AbsolutePath.ToLower().EndsWith(".mkv") || uri.AbsolutePath.ToLower().EndsWith(".mp4"))
                 {
                     try
                     {
                         var plugin = PluginManager.GetPluginForFiletype("webm");
                         if (plugin == null)
                         {
-                            Message("Load failed: No plugin found for WEBM files, or version is too old. See plugin tab in preferences window.");
+                            Message("Load failed: No plugin found for WEBM/MKV/MP4 files, or version is too old. See plugin tab in preferences window.");
                             return;
                         }
 
@@ -277,7 +285,7 @@ namespace Cloudless
 
 
 
-                        if (view is Cloudless.PluginBase.IVideoPlayer player)
+                        if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {
                             Task postPlayTask = new Task(() =>  // sync, to do an elegant concurrency dance with the below play method
                             {
@@ -303,7 +311,7 @@ namespace Cloudless
                     }
                     catch (Exception ex)
                     {
-                        Message($"Failed to load WEBM file: {ex.Message}");
+                        Message($"Failed to load file: {ex.Message}");
                     }
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
@@ -341,7 +349,7 @@ namespace Cloudless
                 }
 
                 ApplyDisplayMode();
-                UpdateContextMenuState();
+                await UpdateContextMenuState();
             }
             catch (Exception ex)
             {
@@ -545,15 +553,16 @@ namespace Cloudless
         {
             return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
         }
+        public List<string> supportedFileTypes = new() { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".jfif", ".webm", ".mkv", ".mp4" };
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
+            return supportedFileTypes.Contains(extension);
         }
         private bool IsSupportedImageUri(Uri uri)
         {
             string? extension = Path.GetExtension(uri.LocalPath)?.ToLower();
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".gif" || extension == ".webp" || extension == ".jfif" || extension == ".webm";
+            return supportedFileTypes.Contains(extension);
         }
         private async void DownloadAndLoadImage(Uri uri)
         {
@@ -657,12 +666,12 @@ namespace Cloudless
                     ToolTip = zoom,
                     Tag = zoom
                 };
-                zoomItem.Click += (s, e) =>
+                zoomItem.Click += async (s, e) =>
                 {
                     var tag = ((MenuItem)s).Tag;
                     int zoom = (int)tag;
                     double scale = (double)zoom / 100d;
-                    ZoomFromCenterToGivenScale(scale);
+                    await ZoomFromCenterToGivenScale(scale);
                 };
                 ZoomMenu.Items.Add(zoomItem);
             }
@@ -726,13 +735,16 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                Message($"Failed to load thumbnail: {ex.Message}");
+                if (!isContextWindow)  // reduce spam
+                    Message($"Failed to load thumbnail: {ex.Message}");
                 return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };
             }
         }
-        private async Task UpdateRecentFilesMenu()  // no side effects beyond instance. Reads from static file at this time, does not write to it.
+        private async Task UpdateRecentFilesMenu(bool isStartUp = false)  // no side effects beyond instance. Reads from static file at this time, does not write to it.
         {
-            LoadRecentFiles(); // Always fetch the latest list
+            bool recentFilesChanged = LoadRecentFiles(); // Always fetch the latest list
+            if (!isStartUp && !recentFilesChanged)
+                return;
 
             // Clear the existing items
             RecentFilesMenu.Items.Clear();
@@ -821,11 +833,12 @@ namespace Cloudless
         }
         private async void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
         {
-            LoadRecentFiles();
             await UpdateRecentFilesMenu();
         }
 
-        private void LoadRecentFiles() // TODO handle exceptions: file corruption, access issues, launching with empty or missing list, manually deleting file outside of or inside of session(s).
+        public int recentFilesHash = -1;
+        // returns whether the list has been changed, based on stored hash.
+        private bool LoadRecentFiles() // TODO handle exceptions: file corruption, access issues, launching with empty or missing list, manually deleting file outside of or inside of session(s).
         {
             if (recentFilesMutex.WaitOne(2000)) // Wait for up to 2 seconds
             {
@@ -834,14 +847,26 @@ namespace Cloudless
                     if (File.Exists(recentFilesPath))
                     {
                         string json = File.ReadAllText(recentFilesPath);
+                        int newHash = json.GetHashCode();
+                        if (newHash == recentFilesHash)
+                        {
+                            return false;
+                        }
+
                         recentFiles = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+                        recentFilesHash = newHash;
                     }
                     else
                     {
+                        if (recentFilesHash == 0)
+                            return false;
                         recentFiles = new List<string>();
+                        recentFilesHash = 0;
                     }
+
+                    return true;
                 }
-                finally
+                finally  // This gets hit regardless of the returns in the try-block.
                 {
                     recentFilesMutex.ReleaseMutex();
                 }
@@ -849,6 +874,7 @@ namespace Cloudless
             else
             {
                 Message("Unable to access recent files. Another instance may be busy.");
+                return false;
             }
         }
 

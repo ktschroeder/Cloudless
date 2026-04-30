@@ -17,7 +17,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.3.120";
+        public const string CURRENT_VERION = "0.6.3.140";
 
         #region Fields
 
@@ -60,8 +60,8 @@ namespace Cloudless
         private const int MaxRecentFiles = 15;
         private List<string> recentFiles = new();
 
-        private List<string> _commandHistory = new();
-        private int _historyIndex = -1;
+        public List<string> CommandHistory = new();
+        public int CommandHistoryIndex = -1;
         public List<string> UserCommands = new List<string>(8);
 
         private Point lastMousePosition;
@@ -145,8 +145,6 @@ namespace Cloudless
             this.KeyDown += Window_KeyDown;
 
             LoadRecentFiles();
-            UpdateContextMenuState();
-            PrepareZoomMenu();
             
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
@@ -175,7 +173,10 @@ namespace Cloudless
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            await UpdateRecentFilesMenu();
+            await UpdateContextMenuState();
+            PrepareZoomMenu();
+
+            await UpdateRecentFilesMenu(isStartUp: true);
 
             if ((Path.GetExtension(initialImageToLoad) ?? "").ToLower().Equals(".cloudless"))
             {

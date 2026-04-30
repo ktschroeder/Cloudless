@@ -17,6 +17,8 @@ namespace Cloudless.PluginBase
         /// </summary>
         void SetMedia(Uri uri);
         (int, int)? GetDimensions();
+        void Dispose();
+        void Restart();
     }
 
 }

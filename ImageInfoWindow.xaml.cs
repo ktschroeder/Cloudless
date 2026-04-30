@@ -41,10 +41,12 @@ namespace Cloudless
                 // Set format and dimensions
                 var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
                 DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
+                // TODO add support for videos, which don't work with above. Should be able to use GetDimensions method from Webm plugin.
             }
             catch (Exception e)
             {
-                (Parent as MainWindow).Message($"Error while getting image info: {e.Message}");
+                if (Owner != null)
+                    (Owner as MainWindow).Message($"Error while getting image info: {e.Message}");
             }
             
             FormatText.Text = $"{fileInfo.Extension.ToUpperInvariant().TrimStart('.')}";
@@ -85,7 +87,7 @@ namespace Cloudless
 
         private void Reveal_Click(object sender, RoutedEventArgs e)
         {
-            (Parent as MainWindow).RevealImageInExplorer(_imagePath);
+            (Owner as MainWindow).RevealImageInExplorer(_imagePath);
         }
     }
 }

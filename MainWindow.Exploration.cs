@@ -321,7 +321,7 @@ namespace Cloudless
             }
         }
 
-        public void ResizeImageToFillWindow() 
+        public async Task ResizeImageToFillWindow() 
         {
             if (!isExplorationMode)
                 EnterExplorationMode();
@@ -342,13 +342,13 @@ namespace Cloudless
                 {
                     // zoom so that height matches wiwndow. width will be cut-off.
                     var targetRealScale = windowHeight / imageHeight;
-                    ZoomFromCenterToGivenScale(targetRealScale);
+                    await ZoomFromCenterToGivenScale(targetRealScale);
                 }
                 else
                 {
                     // zoom so that width matches wiwndow. height will be cut-off.
                     var targetRealScale = windowWidth / imageWidth;
-                    ZoomFromCenterToGivenScale(targetRealScale);
+                    await ZoomFromCenterToGivenScale(targetRealScale);
                 }
             }
         }
@@ -423,7 +423,7 @@ namespace Cloudless
 
             UpdateCropModeInfo();
         }
-        private void ZoomFromCenter(bool zoomIn)
+        private async Task ZoomFromCenter(bool zoomIn)
         {
             if (!isExplorationMode) EnterExplorationMode();
 
@@ -433,10 +433,10 @@ namespace Cloudless
             // Zoom factor
             double zoomDelta = zoomIn ? 1.1 : 1 / 1.1;
 
-            Zoom(windowCenter, zoomDelta: zoomDelta);
+            await Zoom(windowCenter, zoomDelta: zoomDelta);
         }
 
-        private void ZoomFromCenterToGivenScale(double scale)
+        private async Task ZoomFromCenterToGivenScale(double scale)
         {
             if (!isExplorationMode) EnterExplorationMode();
 
@@ -452,9 +452,9 @@ namespace Cloudless
                 scale *= imageTrueWidth / imageWidth;
             }
 
-            Zoom(windowCenter, zoomFinal: scale);
+            await Zoom(windowCenter, zoomFinal: scale);
         }
-        private void Zoom(Point zoomOrigin, double? zoomDelta = null, double? zoomFinal = null)
+        private async Task Zoom(Point zoomOrigin, double? zoomDelta = null, double? zoomFinal = null)
         {
             if (zoomDelta == null && zoomFinal == null)
                 throw new ArgumentException("Cannot zoom with null delta and null final");
@@ -520,7 +520,7 @@ namespace Cloudless
             imageScaleTransform.ScaleX = newScaleX;
             imageScaleTransform.ScaleY = newScaleY;
 
-            UpdateContextMenuState();
+            await UpdateContextMenuState();
 
             UpdateCropModeInfo();
         }

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using System.Windows.Controls.Primitives;
+using System.Threading.Tasks;
 
 namespace Cloudless
 {
@@ -210,7 +211,17 @@ namespace Cloudless
             };
             imageInfoWindow.ShowDialog();
         }
-        private void UpdateContextMenuState()
+        private PopOutCommandPaletteWindow OpenPopOutCommandPaletteWindow()
+        {
+            var pocpWindow = new PopOutCommandPaletteWindow();
+
+            pocpWindow.Owner = this;
+            pocpWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            pocpWindow.Show();
+            pocpWindow.CommandTextBox.Focus();
+            return pocpWindow;
+        }
+        private async Task UpdateContextMenuState()
         {
             // Enable/disable "Image Info" based on loaded image
             var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Image Info");
@@ -233,6 +244,8 @@ namespace Cloudless
                     zoomMenuItem.Header = $"Zoom ({(int)double.Round(realScale * 100)}%)";
                 }
             }
+
+            await UpdateRecentFilesMenu();
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {

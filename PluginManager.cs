@@ -29,11 +29,12 @@ namespace Cloudless
                 {
                     // Paths to plugins to load.
 
+                    // RemoveBeforeFlight
                     @"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll",
-                    @"Cloudless\Cloudless.WebmPlugin\bin\Debug\net8.0-windows\Cloudless.WebmPlugin.dll",
+                    @"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll",
 
                     //Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll"),
-                    //Path.Join(MainWindow.pluginsFilesPath, "webm", "Cloudless.WebmPlugin.dll")
+                    //Path.Join(MainWindow.pluginsFilesPath, "vlc", "Cloudless.VlcPlugin.dll")
                 };
 
             IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>
@@ -50,7 +51,7 @@ namespace Cloudless
             try
             {
                 IEnumerable<IPlugin> plugins = GetPlugins();
-                var plugin = plugins.FirstOrDefault(p => p.SupportsFileType.Equals(fileType, StringComparison.OrdinalIgnoreCase));
+                var plugin = plugins.FirstOrDefault(p => p.SupportsFileTypes.Contains(fileType, StringComparer.OrdinalIgnoreCase));
                 return plugin;
             }
             catch (Exception e)

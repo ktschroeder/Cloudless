@@ -202,40 +202,40 @@ namespace Cloudless
             WebpInstallButton.IsEnabled = true;
         }
 
-        private async void InstallWebM_Click(object sender, RoutedEventArgs e)
+        private async void InstallVlc_Click(object sender, RoutedEventArgs e)
         {
-            WebmInstallButton.IsEnabled = false;
+            VlcInstallButton.IsEnabled = false;
 
             var progress = new Progress<string>(msg =>
             {
-                WebmStatusText.Text = msg; // TextBlock in UI
+                VlcStatusText.Text = msg; // TextBlock in UI
             });
 
             var success = await PluginManager.InstallPluginAsync(
-                pluginName: "WebM",
-                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.WebmPlugin/HostedPlugin/WebMPlugin_0.zip",
+                pluginName: "Vlc",
+                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_0.zip",
                 progress: progress);
 
             // TODO clean this up
             success = await PluginManager.InstallPluginAsync(
-                pluginName: "WebM",
-                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.WebmPlugin/HostedPlugin/WebMPlugin_1.zip",
+                pluginName: "Vlc",
+                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_1.zip",
                 progress: progress,
                 continuingInstallInParts: true);  // this tells the installer to not delete the plugin folder
 
             if (success)
             {
-                WebmStatusText.Text = "WebM support installed!";
+                VlcStatusText.Text = "WebM/MKV/MP4 support installed!";
 
                 // Optional: load plugin immediately
                 //PluginManager.LoadPlugins();
             }
             else
             {
-                WebmStatusText.Text = "Installation failed.";
+                VlcStatusText.Text = "Installation failed.";
             }
 
-            WebmInstallButton.IsEnabled = true;
+            VlcInstallButton.IsEnabled = true;
         }
     }
 }

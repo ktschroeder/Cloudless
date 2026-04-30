@@ -108,7 +108,7 @@ VerticalAlignment="Center">
                      MinWidth="160"
                      KeyDown="CommandTextBox_KeyDown"
                      PreviewKeyDown="CommandPaletteTextBox_PreviewKeyDown"/>
-                    </Border>
+            </Border>
 
 
             <!-- Context Menu -->

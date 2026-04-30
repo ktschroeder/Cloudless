@@ -12,7 +12,7 @@ namespace Cloudless.WebpPlugin
     {
         public string Name { get => "WEBP Plugin"; }
         public string Description { get => "Converts a WEBP image to bitmap using an external WEBP library"; }
-        public string SupportsFileType { get => "webp"; }
+        public List<string> SupportsFileTypes { get => new List<string> { "webp" }; }
 
         public ImageSource Convert(byte[] bytes)
         {

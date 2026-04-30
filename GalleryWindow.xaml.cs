@@ -156,8 +156,16 @@ namespace Cloudless
 
                 if (Owner is MainWindow mw)
                 {
-                    thumb = await RunStaAsync(() =>
-                        (mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Result.Source);
+                    try
+                    {
+                        thumb = await RunStaAsync(() =>
+                            (mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Result.Source);
+                    }
+                    catch (Exception ex)
+                    {
+                        (Owner as MainWindow).Message($"Error loading thumbnail for {item.FilePath}: {ex.Message}");
+                    }
+
 
                     //thumb = (await mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Source;
                 }
