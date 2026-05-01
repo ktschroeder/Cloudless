@@ -39,10 +39,7 @@ namespace Cloudless
                         using var reader = new StreamReader(server, Encoding.UTF8);
                         string message = await reader.ReadToEndAsync();
 
-                        if (!string.IsNullOrWhiteSpace(message))
-                        {
-                            MessageReceived?.Invoke(message);
-                        }
+                        MessageReceived?.Invoke(message);
                     }
                     catch (OperationCanceledException)
                     {

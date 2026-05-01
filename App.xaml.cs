@@ -23,13 +23,8 @@ namespace Cloudless
 
             if (!isFirstInstance)
             {
-                // Send args to primary instance and exit (secondary instance)
-                if (!string.IsNullOrWhiteSpace(filePath))
-                {
-                    SingleInstanceIpc.SendMessageToPrimary(filePath);
-                }
-
-                Shutdown();
+                
+                SingleInstanceIpc.SendMessageToPrimary(filePath ?? "");
                 return;
             }
 
