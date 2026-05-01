@@ -18,6 +18,7 @@ namespace Cloudless
         private const int WM_LBUTTONDBLCLK = 0x0203;
         private const int WM_RBUTTONUP = 0x0205;
         private const int WM_CONTEXTMENU = 0x007B;
+        private const uint WM_NULL = 0x0000;
 
         // Shell_NotifyIcon messages
         private const uint NIM_ADD = 0x00000000;
@@ -211,6 +212,26 @@ namespace Cloudless
 
                 if (!GetCursorPos(out POINT pt)) return;
 
+                // Choose owner: prefer main window if available so menu attaches to it properly
+                IntPtr ownerHwnd = _hwndSource.Handle;
+                try
+                {
+                    var app = Application.Current;
+                    if (app?.MainWindow != null)
+                    {
+                        var mainHandle = new WindowInteropHelper(app.MainWindow).Handle;
+                        if (mainHandle != IntPtr.Zero)
+                            ownerHwnd = mainHandle;
+                    }
+                }
+                catch
+                {
+                    // fallback to message-only hwndSource
+                }
+
+                // Ensure proper activation/focus behavior for the popup menu
+                SetForegroundWindow(ownerHwnd);
+
                 // TrackPopupMenuEx returns the command id selected
                 uint cmd = TrackPopupMenuEx(
                     hMenu,
@@ -219,6 +240,9 @@ namespace Cloudless
                     pt.Y,
                     _hwndSource.Handle,
                     IntPtr.Zero);
+
+                // Post WM_NULL to the owner to fix focus ordering per MS recommendation
+                PostMessage(ownerHwnd, WM_NULL, IntPtr.Zero, IntPtr.Zero);
 
                 if (cmd == 0) return;
 
@@ -343,5 +367,11 @@ namespace Cloudless
 
         [DllImport("user32.dll")]
         private static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
     }
 }
