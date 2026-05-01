@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Cloudless.VlcPlugin
@@ -15,34 +14,55 @@ namespace Cloudless.VlcPlugin
     {
         private static readonly object _sync = new();
         private static LibVLC? _instance;
-        private static bool _initializedNative = false;
+        private static TaskCompletionSource<LibVLC>? _initTcs;
 
-        private static TaskCompletionSource<bool>? _warmUpSignal = null;
-
-        private static LibVLC Instance = null;
-
-        public static async Task<LibVLC> GetInstance(bool isWarmUp = false)
+        /// <summary>
+        /// Returns the shared LibVLC instance. If initialization is in progress, awaits it.
+        /// The first caller triggers background initialization.
+        /// </summary>
+        public static Task<LibVLC> GetInstance(bool isWarmUp = false)
         {
-            if (_instance != null) return _instance;
-
-            if (!isWarmUp && _warmUpSignal != null)
-            {
-                await _warmUpSignal.Task;
-                return _instance;
-            }
-
             lock (_sync)
             {
-                if (_instance != null) return _instance;
-                EnsureNativePlacedAndSearchPath();
-                Core.Initialize();
-                // Use a focused plugin-path and a few options to reduce probing and UI noise.
-                string hostBase = AppContext.BaseDirectory ?? Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? "") ?? Environment.CurrentDirectory;
-                string ridFolder = Environment.Is64BitProcess ? "win-x64" : "win-x86";
-                string hostLibVlcPath = Path.Combine(hostBase, "libvlc", ridFolder);
-                string pluginArg = $"--plugin-path={hostLibVlcPath}";
-                _instance = new LibVLC(new[] { pluginArg, "--no-video-title-show", "--no-osd" });
-                return _instance;
+                if (_instance != null)
+                    return Task.FromResult(_instance);
+
+                if (_initTcs != null)
+                    return _initTcs.Task;
+
+                _initTcs = new TaskCompletionSource<LibVLC>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                // Initialize on a background thread so callers don't block the UI thread.
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        EnsureNativePlacedAndSearchPath();
+
+                        // Initialize LibVLC core once.
+                        Core.Initialize();
+
+                        string hostBase = AppContext.BaseDirectory ?? Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? "") ?? Environment.CurrentDirectory;
+                        string ridFolder = Environment.Is64BitProcess ? "win-x64" : "win-x86";
+                        string hostLibVlcPath = Path.Combine(hostBase, "libvlc", ridFolder);
+                        string pluginArg = $"--plugin-path={hostLibVlcPath}";
+
+                        var lib = new LibVLC(new[] { pluginArg, "--no-video-title-show", "--no-osd" });
+
+                        lock (_sync)
+                        {
+                            _instance = lib;
+                        }
+
+                        _initTcs?.SetResult(lib);
+                    }
+                    catch (Exception ex)
+                    {
+                        _initTcs?.SetException(ex);
+                    }
+                });
+
+                return _initTcs.Task;
             }
         }
 
@@ -51,20 +71,17 @@ namespace Cloudless.VlcPlugin
         /// </summary>
         public static async Task WarmupAsync()
         {
-            await Task.Run(() =>
+            try
             {
-                try
-                {
-                    _warmUpSignal = new TaskCompletionSource<bool>();
-                    var _ = GetInstance(isWarmUp: true);
-                    _warmUpSignal.SetResult(true);
-                }
-                catch
-                {
-                    // swallow; caller can check logs or handle failures
-                }
-            });
+                await GetInstance(isWarmUp: true).ConfigureAwait(false);
+            }
+            catch
+            {
+                // swallow; callers may not care if warmup fails, actual usage can observe exceptions
+            }
         }
+
+        private static bool _initializedNative = false;
 
         private static void EnsureNativePlacedAndSearchPath()
         {
