@@ -91,6 +91,15 @@ namespace Cloudless
             }
         }
 
+        private void Shutdown()
+        {
+            CloseAllOtherInstances();
+
+            var app = Application.Current;
+            // Trigger normal shutdown (OnExit will run and cleanup)
+            app.Shutdown();
+        }
+
         private void CloseAllOtherInstances()
         {
             var windowsToClose = Application.Current.Windows
