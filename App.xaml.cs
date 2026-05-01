@@ -9,9 +9,13 @@ namespace Cloudless
     {
         private const string MutexName = "Cloudless.SingleInstance";
         private Mutex? _mutex;
+        private TrayIconService? _trayIconService;
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Prevent WPF from shutting down when the last window closes so tray/background stays alive
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             bool isFirstInstance;
             _mutex = new Mutex(true, MutexName, out isFirstInstance);
 
@@ -19,7 +23,7 @@ namespace Cloudless
 
             if (!isFirstInstance)
             {
-                // Send args to primary instance and exit
+                // Send args to primary instance and exit (secondary instance)
                 if (!string.IsNullOrWhiteSpace(filePath))
                 {
                     SingleInstanceIpc.SendMessageToPrimary(filePath);
@@ -29,10 +33,11 @@ namespace Cloudless
                 return;
             }
 
-            // Primary instance startup
             SingleInstanceIpc.StartServer();
-
             SingleInstanceIpc.MessageReceived += OnIpcMessageReceived;
+
+            _trayIconService = new TrayIconService();
+            _trayIconService.Start();
 
             base.OnStartup(e);
 
@@ -43,9 +48,22 @@ namespace Cloudless
 
         protected override void OnExit(ExitEventArgs e)
         {
+            // Dispose tray first to avoid tray callbacks during shutdown
+            _trayIconService?.Dispose();
+            _trayIconService = null;
+
             SingleInstanceIpc.StopServer();
             _mutex?.ReleaseMutex();
+
             base.OnExit(e);
+
+            // Force process exit to ensure the debugger detaches/ends the session.
+            // This is a safety measure: if a background thread/task remains it will be terminated here.
+            try
+            {
+                Environment.Exit(0);
+            }
+            catch {}
         }
 
         private void OnIpcMessageReceived(string message)
