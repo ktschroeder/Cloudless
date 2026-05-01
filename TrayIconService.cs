@@ -206,6 +206,7 @@ namespace Cloudless
                 if (hMenu == IntPtr.Zero) return;
 
                 AppendMenu(hMenu, MF_STRING, new UIntPtr(CMD_OPEN), "Open Cloudless");
+                AppendMenu(hMenu, MF_SEPARATOR, UIntPtr.Zero, null);
                 AppendMenu(hMenu, MF_STRING, new UIntPtr(CMD_CLOSE_ALL), "Close all Cloudless windows");
                 AppendMenu(hMenu, MF_SEPARATOR, UIntPtr.Zero, null);
                 AppendMenu(hMenu, MF_STRING, new UIntPtr(CMD_SHUTDOWN), "Shutdown Cloudless");
