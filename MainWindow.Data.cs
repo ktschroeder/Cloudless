@@ -464,83 +464,6 @@ namespace Cloudless
             return filePath;
         }
 
-        private string GetFilePathForWebmGifConversion()
-        {
-            string directory = Path.GetTempPath();
-            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-            if (!Directory.Exists(cloudlessTempPath))
-                Directory.CreateDirectory(cloudlessTempPath);
-
-            string gifDestination = Path.Combine(cloudlessTempPath, "GifsFromWebms");
-            if (!Directory.Exists(gifDestination))
-                Directory.CreateDirectory(gifDestination);
-
-            string thumbDestination = Path.Combine(cloudlessTempPath, "ThumbnailsFromWebms");
-            if (!Directory.Exists(thumbDestination))
-                Directory.CreateDirectory(thumbDestination);
-
-            var webmXrefDict = GetWebmGifConversionMap();
-            if (webmXrefDict.TryGetValue(currentlyDisplayedImagePath ?? "", out WebmXref? webmXref))
-                return Path.Combine(gifDestination, webmXref.GifPath);
-
-            string originalFileName = Path.GetFileNameWithoutExtension(currentlyDisplayedImagePath ?? "");
-            int index = 0;
-
-            string gifPath;
-            do
-            {
-                gifPath = Path.Combine(gifDestination, $"{originalFileName}_{index}.gif");
-                index++;
-            } while (File.Exists(gifPath));
-
-            string thumbPath;
-            index = 0;
-            do
-            {
-                thumbPath = Path.Combine(thumbDestination, $"{originalFileName}_{index}.jpg");
-                index++;
-            } while (File.Exists(thumbPath));
-
-            var xref = new WebmXref { GifPath = gifPath, ThumbnailPath = thumbPath };
-            webmXrefDict.Add(currentlyDisplayedImagePath ?? "", xref);
-            UpdateWebmGifConversionMap(webmXrefDict);
-
-            return gifPath;
-        }
-
-        class WebmXref
-        {
-            public string GifPath { get; set; } = "";
-            public string ThumbnailPath { get; set; } = "";
-        }
-
-        private static Dictionary<string, WebmXref> GetWebmGifConversionMap()  // (WEBM full path, GIF filename)
-        {
-            string directory = Path.GetTempPath();
-            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-            string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
-
-            Dictionary<string, WebmXref>? dict = null;
-
-            if (File.Exists(mapFile))
-            {
-                string text = File.ReadAllText(mapFile);
-                dict = JsonSerializer.Deserialize<Dictionary<string, WebmXref>>(text);
-            }
-
-            return dict ?? new Dictionary<string, WebmXref>();
-        }
-
-        private void UpdateWebmGifConversionMap(Dictionary<string, WebmXref> map)
-        {
-            string directory = Path.GetTempPath();
-            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-            string mapFile = Path.Combine(cloudlessTempPath, "WebmGifConversionMap.json");
-
-            var str = JsonSerializer.Serialize(map);
-            File.WriteAllText(mapFile, str);
-        }
-
         private Bitmap BitmapSourceToBitmap(BitmapSource source)
         {
             using var ms = new MemoryStream();
@@ -680,29 +603,6 @@ namespace Cloudless
         {
             try  // called 10+ times every time context menu is used/updated. Could be more efficient.
             {
-                // if WEBM then use the pre-created thumbnail if it exists
-                if (filePath.ToLower().EndsWith(".webm"))
-                {
-                    var xrefDict = GetWebmGifConversionMap();
-                    var xref = xrefDict.GetValueOrDefault(filePath);
-                    if (xref == null)
-                        return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };
-
-                    var thumbPath = xref.ThumbnailPath;
-                    if (!File.Exists(thumbPath))
-                    {
-                        //// must create the thumbnail
-                        //string ffmpegThumbArgs = $"-i \"{filePath}\" -frames:v 1 \"{thumbPath}\"";
-                        //var ffmpeg = new FFmpegExecutor();
-                        //await ffmpeg.ExecuteFFmpegCommand(ffmpegThumbArgs, this);
-
-                        return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };
-                        // TODO restore webm thumbs
-                    }
-
-                    filePath = thumbPath;
-                }
-
                 using var stream = File.OpenRead(filePath);
 
                 var bitmap = new BitmapImage();
