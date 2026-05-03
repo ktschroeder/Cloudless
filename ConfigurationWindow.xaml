@@ -130,13 +130,13 @@ Margin="0,2"/>
                             <StackPanel Margin="12" VerticalAlignment="Top">
 
                                 <TextBlock>WEBP support (1.1 MB)</TextBlock>
-                                <Button Name="WebpInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebP_Click">Install</Button>
+                                <Button Name="WebpInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebP_Click">Download and Install</Button>
                                 <TextBlock Name="WebpStatusText">Ready to install</TextBlock>
 
                                 <TextBlock></TextBlock>
 
                                 <TextBlock>WEBM/MKV/MP4 support (279 MB)</TextBlock>
-                                <Button Name="VlcInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallVlc_Click">Install</Button>
+                                <Button Name="VlcInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallVlc_Click">Download and Install</Button>
                                 <TextBlock Name="VlcStatusText">Ready to install</TextBlock>
 
                             </StackPanel>

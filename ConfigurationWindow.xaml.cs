@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Cloudless.PluginBase;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -98,6 +99,18 @@ namespace Cloudless
             var currentImgBBKey = Cloudless.Properties.Settings.Default.ImgBBKey;
             ImgBBKeyTextBox.Text = currentImgBBKey;
             ImgBBKey = currentImgBBKey;
+
+            bool foundWebpPlugin = PluginManager.GetPluginForFiletype("webp") != null;
+            bool foundVlcPlugin = PluginManager.GetPluginForFiletype("webm") != null;
+
+            if (foundWebpPlugin)
+            {
+                WebpStatusText.Text = "WebP support is already installed. You can re-install to fix/update the plugin.";
+            }
+            if (foundVlcPlugin)
+            {
+                VlcStatusText.Text = "WebM/MKV/MP4 support is already installed. You can re-install to fix/update the plugin.";
+            }
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
