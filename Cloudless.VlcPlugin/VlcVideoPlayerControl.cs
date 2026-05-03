@@ -196,7 +196,7 @@ namespace Cloudless.VlcPlugin
             }
 
             _mediaPlayer?.Dispose();
-            _libVLC?.Dispose();
+            //_libVLC?.Dispose();
 
             if (_preloadedLibVlcHandle.HasValue)
                 NativeLibrary.Free(_preloadedLibVlcHandle.Value);
