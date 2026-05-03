@@ -173,8 +173,19 @@ namespace Cloudless.VlcPlugin
 
         public void Restart()
         {
-            _mediaPlayer?.Stop();
-            _mediaPlayer?.Play();
+            if (_mediaPlayer == null || _mediaPlayer.Media == null)
+                return;
+
+            if (_mediaPlayer.IsSeekable)
+            {
+                TimeSpan start = TimeSpan.Zero;
+                _mediaPlayer?.SeekTo(start);
+            }
+            else
+            {
+                _mediaPlayer?.Stop();
+                _mediaPlayer?.Play();
+            }
         }
 
         public void Dispose()
