@@ -23,8 +23,10 @@ namespace Cloudless
 
             if (!isFirstInstance)
             {
-                
                 SingleInstanceIpc.SendMessageToPrimary(filePath ?? "");
+
+                // must kill this instance, or else we generate extra background processes in some flows
+                Shutdown();   // or Environment.Exit(0)
                 return;
             }
 
