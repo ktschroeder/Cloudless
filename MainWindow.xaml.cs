@@ -35,6 +35,10 @@ namespace Cloudless
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Cloudless", "plugins");
 
+        public static readonly string droppedInFilesPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Cloudless", "dropped_in_files");
+
         public IntPtr WindowHandle =>
             new WindowInteropHelper(this).Handle;
 

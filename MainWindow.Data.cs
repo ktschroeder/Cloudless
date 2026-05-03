@@ -572,21 +572,20 @@ namespace Cloudless
                 byte[] imageData = await client.GetByteArrayAsync(uri);
                 using MemoryStream stream = new MemoryStream(imageData);
 
-                BitmapImage bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.StreamSource = stream;
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
+                if (!Directory.Exists(droppedInFilesPath))
+                    Directory.CreateDirectory(droppedInFilesPath);
 
-                ImageDisplay.Source = bitmap;
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(uri.LocalPath);
+                string extension = Path.GetExtension(uri.LocalPath);
+                var destinationPath = Path.Combine(droppedInFilesPath, fileNameWithoutExtension + "_" + _random.NextInt64() + extension);
 
-                // Show the image and hide the no-image message
-                ImageDisplay.Visibility = Visibility.Visible;
-                if (NoImageMessage != null) 
-                    NoImageMessage.Visibility = Visibility.Collapsed;
+                using (var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+                {
+                    stream.Seek(0, SeekOrigin.Begin);
+                    await stream.CopyToAsync(fileStream);
+                }
 
-                ApplyDisplayMode();
+                await LoadImage(destinationPath, false);
             }
             catch (Exception ex)
             {
