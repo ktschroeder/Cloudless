@@ -19,6 +19,7 @@ namespace Cloudless.PluginBase
         (int, int)? GetDimensions();
         void Dispose();
         void Restart();
+        TimeSpan GetDuration();
     }
 
 }

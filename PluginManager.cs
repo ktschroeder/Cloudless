@@ -30,11 +30,11 @@ namespace Cloudless
                     // Paths to plugins to load.
 
                     // RemoveBeforeFlight
-                    @"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll",
-                    @"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll",
+                    //@"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll",
+                    //@"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll",
 
-                    //Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll"),
-                    //Path.Join(MainWindow.pluginsFilesPath, "vlc", "Cloudless.VlcPlugin.dll")
+                    Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll"),
+                    Path.Join(MainWindow.pluginsFilesPath, "vlc", "Cloudless.VlcPlugin.dll")
                 };
 
             IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>

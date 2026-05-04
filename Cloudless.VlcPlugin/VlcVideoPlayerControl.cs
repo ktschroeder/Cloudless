@@ -203,5 +203,10 @@ namespace Cloudless.VlcPlugin
             if (_preloadedLibVlcCoreHandle.HasValue)
                 NativeLibrary.Free(_preloadedLibVlcCoreHandle.Value);
         }
+
+        public TimeSpan GetDuration()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

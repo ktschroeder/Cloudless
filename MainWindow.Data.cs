@@ -287,6 +287,7 @@ namespace Cloudless
 
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {
+                            
                             Task postPlayTask = new Task(() =>  // sync, to do an elegant concurrency dance with the below play method
                             {
                                 try

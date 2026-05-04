@@ -17,7 +17,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERION = "0.6.3.3";
+        public const string CURRENT_VERION = "0.7.0";
 
         #region Fields
 
@@ -128,11 +128,38 @@ namespace Cloudless
             string workspaceName = Path.GetFileNameWithoutExtension(filePath);
             await LoadWorkspace(workspaceName);  // TODO consider whether to merge instead here. Maybe user config to choose?
         }
+        private void OnClose()
+        {
+            // Dispose of media elements to protect against memory leaks
+
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+            {
+                videoPlayer.Dispose();
+            }
+
+            if (gifController != null)
+            {
+                gifController.Dispose();
+                gifController = null;
+            }
+
+            ImageDisplay.Source = null;
+        }
         private void Setup(bool startUp = false)
         {
             InitializeComponent();
 
-            PluginManager.InitializePlugins();
+            Closing += (sender, e) => OnClose();
+
+            try
+            {
+                PluginManager.InitializePlugins();
+            }
+            catch (Exception ex)
+            {
+                Message("Error preparing plugins: " + ex.Message);
+            }
+            
             
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
             if (startUp)

@@ -85,7 +85,7 @@
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Start Zen on all open windows, or stop Zen on all open windows if already on everywhere"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="8" Text="Space" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Pause/resume GIF"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Pause/resume GIF/video"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl Space" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="9" Text="Restart GIF"/>
@@ -270,6 +270,9 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="6" Text="Ctrl M" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="6" Text="Open System Messages window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl Alt ;" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Open Pop-out Command Palette"/>
 
                                         </Grid>
 

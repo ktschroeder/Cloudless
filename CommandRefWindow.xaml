@@ -155,6 +155,9 @@
                                             <TextBlock Grid.Column="0" Grid.Row="11" Text="ris [service]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="11" Text="See above. [service] can be google, bing, yandex, tineye, or saucenao. Their first letters can also be used."/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="shutdown" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="12" Text="Close all open instances of Cloudless, and shutdown the Cloudless background process"/>
+
                                         </Grid>
 
                                     </StackPanel>
