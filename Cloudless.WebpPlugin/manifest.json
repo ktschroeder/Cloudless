@@ -1,5 +1,5 @@
 {
-  "id": "webp",
-  "version": "1.0.0",
-  "minAppVersion": "0.7.0"
+  "Id": "webp",
+  "PluginVersion": "1.0.0",
+  "MinAppVersion": "0.7.0"
 }
