@@ -275,7 +275,12 @@ namespace Cloudless
                             return;
                         }
 
-                        var view = await plugin.CreateView();
+                        UIElement? view;
+                        ShowLoadingOverlay($"Waiting for VLC plugin to initialize...");
+                        //await Dispatcher.Yield(DispatcherPriority.Background);
+                        view = await plugin.CreateView();  // We wait here a while if a WEBM is opened quickly in a fresh Cloudless instance/process. Plugin takes several seconds to init.
+                        HideLoadingOverlay();
+
                         VideoHost.Content = view;
 
                         VideoHost.Height = double.NaN;
@@ -288,15 +293,12 @@ namespace Cloudless
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {
                             
-                            Task postPlayTask = new Task(() =>  // sync, to do an elegant concurrency dance with the below play method
+                            Task postPlayTask = new Task(async () =>  // sync, to do an elegant concurrency dance with the below play method
                             {
                                 try
                                 {
-                                    (var width, var height) = player.GetDimensions() ?? (0, 0);
-                                    if (width > 0 && height > 0)
-                                    {
-                                        Dispatcher.Invoke(() => ResizeWindow(width, height));
-                                    }
+                                    await ResizeWindowToImage();
+                                    CenterWindowOnCurrentScreen();
                                 }
                                 catch (Exception ex)
                                 {
@@ -345,7 +347,7 @@ namespace Cloudless
 
                 if (WorkspaceLoadInProgress == false && (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp))
                 {
-                    ResizeWindowToImage();
+                    await ResizeWindowToImage();
                     CenterWindowOnCurrentScreen();
                 }
 
@@ -639,7 +641,7 @@ namespace Cloudless
                 return new System.Windows.Controls.Image { Source = bitmap, Width = width, Height = height };
             }
             catch (Exception ex)
-             {
+            {
                 if (!useFailureThumb)  // TODO hacky, could clean this up. Bool protects against infinite recursion.
                 {
                     return await GetImageThumbnail(filePath, width, height, isContextWindow, useFailureThumb: true);

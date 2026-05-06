@@ -16,7 +16,7 @@ namespace Cloudless.PluginBase
         /// Replace the current media source without starting playback.
         /// </summary>
         void SetMedia(Uri uri);
-        (int, int)? GetDimensions();
+        Task<(int, int)?> GetDimensions();
         void Dispose();
         void Restart();
         TimeSpan GetDuration();

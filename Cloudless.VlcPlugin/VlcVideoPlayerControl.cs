@@ -137,8 +137,10 @@ namespace Cloudless.VlcPlugin
             }
         }
 
-        public (int, int)? GetDimensions()
+        public async Task<(int, int)?> GetDimensions()
         {
+            await _loadSignal.Task;  // ensure vide view is loaded, or else _mediaPlayer is probably null
+
             var tracks = _mediaPlayer.Media.Tracks;
             foreach (var track in tracks)
             {

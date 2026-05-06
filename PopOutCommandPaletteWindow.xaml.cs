@@ -13,10 +13,10 @@ namespace Cloudless
         private MainWindow _mw;
 
         // TODO lots of duplicate and near-duplicate code in here, compared to main command palette code. Could clean up probably.
-        public PopOutCommandPaletteWindow()
+        public PopOutCommandPaletteWindow(MainWindow owner)
         {
             InitializeComponent();
-            _mw = Application.Current.MainWindow as MainWindow;
+            _mw = owner;
 
             ResetCommandPalette();
         }

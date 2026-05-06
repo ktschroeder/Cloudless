@@ -88,7 +88,7 @@
                                             <TextBlock Grid.Column="1" Grid.Row="8" Text="Pause/resume GIF/video"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl Space" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Restart GIF"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Restart GIF/video"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="10" Text="Ctrl C" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="10" Text="Copy image file to clipboard"/>

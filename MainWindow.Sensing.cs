@@ -190,7 +190,7 @@ namespace Cloudless
             if (e.Key == Key.F)
             {
                 autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
-                ResizeWindowToImage();
+                await ResizeWindowToImage();
                 CenterWindowOnCurrentScreen();
                 e.Handled = true;
                 return;
@@ -444,11 +444,12 @@ namespace Cloudless
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0 && !control && !alt)
             {
+                // TODO for some reason, these are hit twice per key press, specifically if the image to be loaded is a WEBM. Band-aid fix is to use a flag.
                 if (e.Key == Key.Left || e.Key == Key.A)
                 {
                     await GoToPreviousImage();
                     e.Handled = true;
-                    return;
+                    return; 
                 }
                 else if (e.Key == Key.Right || e.Key == Key.D)
                 {

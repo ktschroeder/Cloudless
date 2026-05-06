@@ -214,7 +214,7 @@ namespace Cloudless
         }
         private PopOutCommandPaletteWindow OpenPopOutCommandPaletteWindow()
         {
-            var pocpWindow = new PopOutCommandPaletteWindow();
+            var pocpWindow = new PopOutCommandPaletteWindow(this);
 
             pocpWindow.Owner = this;
             pocpWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -269,20 +269,53 @@ namespace Cloudless
             menu.IsOpen = true;
         }
 
+        public bool leftOrRightNavInProgress = false;  // to prevent multiple rapid left/right nav inputs from causing issues like skipping images or going to wrong image
         private async Task GoToPreviousImage()
         {
-            if (imageFiles == null) return;
-            // Go to the previous image
-            currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
-            await DisplayImage(currentImageIndex, true);
+            if (imageFiles == null || leftOrRightNavInProgress) return;
+
+            try
+            {
+                leftOrRightNavInProgress = true;
+
+                // Go to the previous image
+                currentImageIndex = (currentImageIndex == 0) ? imageFiles.Length - 1 : currentImageIndex - 1;
+                await DisplayImage(currentImageIndex, true);
+
+                if (Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                {
+                    await ResizeWindowToImage();
+                    CenterWindowOnCurrentScreen();
+                }
+            }
+            finally
+            {
+                leftOrRightNavInProgress = false;
+            }
         }
 
         private async Task GoToNextImage()
         {
-            if (imageFiles == null) return;
-            // Go to the next image
-            currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
-            await DisplayImage(currentImageIndex, true);
+            if (imageFiles == null || leftOrRightNavInProgress) return;
+
+            try
+            {
+                leftOrRightNavInProgress = true;
+
+                // Go to the next image
+                currentImageIndex = (currentImageIndex == imageFiles.Length - 1) ? 0 : currentImageIndex + 1;
+                await DisplayImage(currentImageIndex, true);
+
+                if (Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp)
+                {
+                    await ResizeWindowToImage();
+                    CenterWindowOnCurrentScreen();
+                }
+            }
+            finally
+            {
+                leftOrRightNavInProgress = false;
+            }
         }
     }
 }

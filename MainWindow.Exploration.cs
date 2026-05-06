@@ -265,7 +265,7 @@ namespace Cloudless
             this.Left = left;
             this.Top = top;
         }
-        private void ResizeWindowToImage()
+        private async Task ResizeWindowToImage()
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
             if (ImageDisplay.Source is BitmapSource bitmap)
@@ -318,6 +318,48 @@ namespace Cloudless
                 // Set the window size
                 this.Width = newWidth;
                 this.Height = newHeight;
+            }
+            else if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+            {
+                (int, int)? dims = null;
+                try
+                {
+                    dims = await videoPlayer.GetDimensions();
+                }
+                catch (NullReferenceException nre)
+                {
+                    Message("Error getting video dimensions: " + nre.Message);
+                }
+                if (dims != null)
+                {
+                    double videoWidth = dims.Value.Item1;
+                    double videoHeight = dims.Value.Item2;
+                    // Get the screen's working area (excluding taskbar)
+                    var workingArea = System.Windows.SystemParameters.WorkArea;
+                    double screenWidth = workingArea.Width;
+                    double screenHeight = workingArea.Height;
+                    bool widerThanScreen = videoWidth > screenWidth;
+                    double newWidth = videoWidth;
+                    double newHeight = videoHeight;
+                    if (widerThanScreen)
+                    {
+                        newWidth = screenWidth;
+                        newHeight *= screenWidth / videoWidth;
+                    }
+                    // even after adjusting when too wide, it may still be too tall, so check afterward.
+                    // for this to be the case, the image must be more portrait-oriented than the screen.
+                    bool tallerThanScreen = newHeight > screenHeight;
+                    if (tallerThanScreen)
+                    {
+                        double tempWidth = newWidth;
+                        double tempHeight = newHeight;
+                        newWidth = tempWidth * (screenHeight / tempHeight);
+                        newHeight = screenHeight;
+                    }
+                    // Set the window size
+                    this.Width = newWidth;
+                    this.Height = newHeight;
+                }
             }
         }
 
