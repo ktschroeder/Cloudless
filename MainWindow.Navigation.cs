@@ -131,6 +131,7 @@ namespace Cloudless
             duplicateWindow.ApplyWindowState(state);
             duplicateWindow.Show();
             duplicateWindow.PostProcessLoadedWindow(state);
+            duplicateWindow.Activate();
         }
         private void About_Click(object sender, RoutedEventArgs e)
         {
