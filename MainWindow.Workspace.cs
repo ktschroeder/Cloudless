@@ -364,6 +364,7 @@ namespace Cloudless
                 window.ApplyWindowState(state);
                 window.Show();
                 window.PostProcessLoadedWindow(state, workspace.WorkspaceName);
+                window.Activate();
             }
         }
 
