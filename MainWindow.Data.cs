@@ -600,10 +600,15 @@ namespace Cloudless
             }
         }
 
-        public async Task<System.Windows.Controls.Image?> GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false)
+        public async Task<System.Windows.Controls.Image?> GetImageThumbnail(string filePath, int width, int height, bool isContextWindow = false, bool useFailureThumb = false)
         {
             try  // called 10+ times every time context menu is used/updated. Could be more efficient.
             {
+                if (useFailureThumb)
+                {
+                    filePath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
+                }
+
                 using var stream = File.OpenRead(filePath);
 
                 var bitmap = new BitmapImage();
@@ -634,7 +639,12 @@ namespace Cloudless
                 return new System.Windows.Controls.Image { Source = bitmap, Width = width, Height = height };
             }
             catch (Exception ex)
-            {
+             {
+                if (!useFailureThumb)  // TODO hacky, could clean this up. Bool protects against infinite recursion.
+                {
+                    return await GetImageThumbnail(filePath, width, height, isContextWindow, useFailureThumb: true);
+                }
+
                 if (!isContextWindow)  // reduce spam
                     Message($"Failed to load thumbnail: {ex.Message}");
                 return new System.Windows.Controls.Image { Source = null, Width = width, Height = height };

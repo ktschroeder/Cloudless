@@ -20,6 +20,14 @@
 		<Compile Remove="Cloudless.WebpPlugin\**\*.cs" />
 		<Compile Remove="Cloudless.VlcPlugin\**\*.cs" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="no-thumbnail.png" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Content Include="no-thumbnail.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.ComponentModel.Composition" Version="10.0.6" />
