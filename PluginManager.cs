@@ -28,7 +28,7 @@ namespace Cloudless
         private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
         {
             // RemoveBeforeFlight
-            const bool DEBUG = true;
+            const bool DEBUG = false;
 
             
             if (DEBUG)
