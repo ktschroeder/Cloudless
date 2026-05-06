@@ -27,11 +27,7 @@ namespace Cloudless
 
         private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
         {
-            // RemoveBeforeFlight
-            const bool DEBUG = false;
-
-            
-            if (DEBUG)
+            if (LOCAL_DEV)
             {
                 string[] pluginPaths = new string[]
                 {

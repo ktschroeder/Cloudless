@@ -38,9 +38,14 @@ namespace Cloudless
 
             base.OnStartup(e);
 
-            var mainWindow = new MainWindow(filePath, startUp: true);
-            MainWindow = mainWindow;
-            mainWindow.Show();
+            bool startInBackground = e.Args.Contains("--background");
+
+            if (!startInBackground)
+            {
+                var mainWindow = new MainWindow(filePath, startUp: true);
+                MainWindow = mainWindow;
+                mainWindow.Show();
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)

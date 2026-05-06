@@ -57,6 +57,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
                 Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
                 Cloudless.Properties.Settings.Default.ImgBBKey = configWindow.ImgBBKey;
+                Cloudless.Properties.Settings.Default.StartOnWindowsStart = configWindow.StartOnWindowsStart;
 
                 Cloudless.Properties.Settings.Default.Save();
 
@@ -68,6 +69,8 @@ namespace Cloudless
                 SetBackground();
 
                 ApplyDisplayMode();
+
+                SetStartup(enable: Cloudless.Properties.Settings.Default.StartOnWindowsStart);
             }
         }
         private void OpenRecentImagesWindow()

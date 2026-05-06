@@ -222,5 +222,17 @@ namespace Cloudless.Properties {
                 this["SystemMessageHistory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool StartOnWindowsStart {
+            get {
+                return ((bool)(this["StartOnWindowsStart"]));
+            }
+            set {
+                this["StartOnWindowsStart"] = value;
+            }
+        }
     }
 }

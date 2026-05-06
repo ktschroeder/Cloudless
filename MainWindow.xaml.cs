@@ -1,4 +1,6 @@
 ﻿using Cloudless.PluginBase;
+using Microsoft.Win32;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -17,7 +19,11 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.1.1";
+        public const string CURRENT_VERSION = "0.7.1.2";
+        // RemoveBeforeFlight
+        public const bool LOCAL_DEV = false;
+
+
 
         #region Fields
 
@@ -368,6 +374,45 @@ namespace Cloudless
                     window.Zen(false);
                 }
             }
+        }
+
+        private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        private const string AppName = "Cloudless";
+
+        public void SetStartup(bool enable)
+        {
+            if (LOCAL_DEV)
+                return;
+
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
+
+                if (key == null)
+                    return;
+
+                if (enable)
+                {
+                    string exePath = Process.GetCurrentProcess().MainModule!.FileName!;
+                    key.SetValue(AppName, $"\"{exePath}\"  --background");
+                }
+                else
+                {
+                    key.DeleteValue(AppName, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Message("Error setting startup: " + ex.Message);
+            }
+        }
+
+        public bool IsStartupEnabled()
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKey, false);
+
+            var value = key?.GetValue(AppName) as string;
+            return !string.IsNullOrEmpty(value);
         }
     }
 }
