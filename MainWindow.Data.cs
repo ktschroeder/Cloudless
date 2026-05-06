@@ -824,7 +824,7 @@ namespace Cloudless
                 if (release == null)
                     return;
 
-                string currentVersion = CURRENT_VERION;
+                string currentVersion = CURRENT_VERSION;
 
                 if (IsNewerVersion(release.tag_name, currentVersion))
                 {

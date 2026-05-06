@@ -138,7 +138,7 @@ namespace Cloudless
         }
         private void About()
         {
-            var aboutWindow = new AboutWindow(CURRENT_VERION);
+            var aboutWindow = new AboutWindow(CURRENT_VERSION);
 
             // Center the window relative to the main application window
             aboutWindow.Owner = this; // Set the owner to the main window

@@ -12,7 +12,7 @@ namespace Cloudless
     {
         public string GetVersion()
         {
-            return CURRENT_VERION;
+            return CURRENT_VERSION;
         }
 
         public CloudlessWindowState GetWindowState(Dictionary<IntPtr, int> zOrderMap)
