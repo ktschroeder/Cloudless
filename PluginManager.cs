@@ -5,9 +5,11 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace Cloudless
 {
@@ -25,25 +27,80 @@ namespace Cloudless
 
         private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
         {
-            string[] pluginPaths = new string[]
+            // RemoveBeforeFlight
+            const bool DEBUG = true;
+
+            
+            if (DEBUG)
+            {
+                string[] pluginPaths = new string[]
                 {
-                    // Paths to plugins to load.
-
-                    // RemoveBeforeFlight
-                    //@"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll",
-                    //@"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll",
-
-                    Path.Join(MainWindow.pluginsFilesPath, "webp", "Cloudless.WebpPlugin.dll"),
-                    Path.Join(MainWindow.pluginsFilesPath, "vlc", "Cloudless.VlcPlugin.dll")
+                    @"Cloudless\Cloudless.WebpPlugin\bin\Debug\net8.0-windows\Cloudless.WebpPlugin.dll",
+                    @"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll"
                 };
 
-            IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>
-            {
-                Assembly pluginAssembly = PluginManager.LoadPlugin(pluginPath);
-                return PluginManager.CreateCommands(pluginAssembly);
-            }).ToList();
+                IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>
+                {
+                    Assembly pluginAssembly = PluginManager.LoadPlugin(pluginPath);
+                    return PluginManager.CreateCommands(pluginAssembly);
+                }).ToList();
 
-            return plugins;
+                return plugins;
+            }
+            else
+            {
+                var pluginRoots = new[]
+                {
+                    ("webp", "Cloudless.WebpPlugin.dll"),
+                    ("vlc", "Cloudless.VlcPlugin.dll")
+                };
+
+                var pluginPaths = pluginRoots
+                    .Select(p =>
+                        GetLatestPluginAssemblyPath(
+                            Path.Combine(MainWindow.pluginsFilesPath, p.Item1),
+                            p.Item2))
+                    .Where(p => p != null)!;
+
+                return pluginPaths.SelectMany(pluginPath =>
+                {
+                    var assembly = LoadPlugin(pluginPath);
+                    return CreateCommands(assembly);
+                }).ToList();
+            }
+                
+        }
+
+        private static string? GetLatestPluginAssemblyPath(string pluginRootDir, string dllName)
+        {
+            if (!Directory.Exists(pluginRootDir))
+                return null;
+
+            var versionDirs = Directory.GetDirectories(pluginRootDir);
+
+            var best = versionDirs
+                .Select(dir => new
+                {
+                    Path = dir,
+                    Version = TryParseVersion(Path.GetFileName(dir))
+                })
+                .Where(x => x.Version != null)
+                .OrderByDescending(x => x.Version)
+                .FirstOrDefault();
+
+            if (best == null)
+                return null;
+
+            var dllPath = Path.Combine(best.Path, dllName);
+            return File.Exists(dllPath) ? dllPath : null;
+        }
+
+        private static Version? TryParseVersion(string folderName)
+        {
+            // supports "v1.2.3" or "1.2.3"
+            folderName = folderName.TrimStart('v', 'V');
+
+            return Version.TryParse(folderName, out var v) ? v : null;
         }
 
         public static IPlugin? GetPluginForFiletype(string fileType)
@@ -52,6 +109,20 @@ namespace Cloudless
             {
                 IEnumerable<IPlugin> plugins = GetPlugins();
                 var plugin = plugins.FirstOrDefault(p => p.SupportsFileTypes.Contains(fileType, StringComparer.OrdinalIgnoreCase));
+                return plugin;
+            }
+            catch (Exception e)
+            {
+                return null;  // TODO probably should log this exception in system messages in case of some issue other than missing plugin
+            }
+        }
+
+        public static IPlugin? GetPluginByName(string pluginName)
+        {
+            try
+            {
+                IEnumerable<IPlugin> plugins = GetPlugins();
+                var plugin = plugins.FirstOrDefault(p => string.Equals(p.Name, pluginName, StringComparison.OrdinalIgnoreCase));
                 return plugin;
             }
             catch (Exception e)
@@ -109,6 +180,32 @@ namespace Cloudless
             }
         }
 
+        // TODO use me
+        private static void CleanupOldVersions(string pluginRootDir, int keepLatest = 2)
+        {
+            var dirs = Directory.GetDirectories(pluginRootDir)
+                .Select(d => new
+                {
+                    Path = d,
+                    Version = TryParseVersion(Path.GetFileName(d))
+                })
+                .Where(x => x.Version != null)
+                .OrderByDescending(x => x.Version)
+                .ToList();
+
+            foreach (var old in dirs.Skip(keepLatest))
+            {
+                try
+                {
+                    Directory.Delete(old.Path, true);
+                }
+                catch
+                {
+                    // still in use, so ignore
+                }
+            }
+        }
+
         public static async Task<bool> InstallPluginAsync(
         string pluginName,
         string downloadUrl,
@@ -118,9 +215,10 @@ namespace Cloudless
             try
             {
                 var pluginsDir = MainWindow.pluginsFilesPath;
-                var pluginDir = Path.Combine(pluginsDir, pluginName.ToLower());
+                //var pluginDir = Path.Combine(pluginsDir, pluginName.ToLower());
+                var pluginRootDir = Path.Combine(pluginsDir, pluginName.ToLower());
 
-                Directory.CreateDirectory(pluginsDir);
+                
 
                 var tempZipPath = Path.Combine(Path.GetTempPath(), $"{pluginName}.zip");
                 var tempExtractDir = Path.Combine(Path.GetTempPath(), $"{pluginName}_extract");
@@ -145,12 +243,40 @@ namespace Cloudless
                 if (!Directory.Exists(extractedPluginDir))
                     throw new Exception("Invalid plugin structure.");
 
+                var manifestPath = Path.Combine(extractedPluginDir, "manifest.json");
+                var json = File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<PluginManifest>(json);
+
+                string version = manifest.PluginVersion;
+                var versionDir = Path.Combine(pluginRootDir, version);
+
+                var existingPlugin = GetPluginByName(manifest.Name);
+                if (existingPlugin != null)
+                {
+                    Version existingVersion = Version.Parse(existingPlugin.PluginVersion);
+                    Version newVersion = Version.Parse(manifest.PluginVersion);
+                    if (existingVersion >= newVersion)
+                    {
+                        progress?.Report("Did not install: This plugin is already up-to-date.");
+                        return false;
+                    }
+                }
+
+                Directory.CreateDirectory(versionDir);
+
                 progress?.Report("Installing plugin...");
 
-                if (Directory.Exists(pluginDir) && !continuingInstallInParts)
-                    Directory.Delete(pluginDir, true);
+                try
+                {
+                    if (Directory.Exists(versionDir) && !continuingInstallInParts)
+                        Directory.Delete(versionDir, true);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    throw new Exception($"Access error: Failed to clear existing plugin directory: {ex.Message}");
+                }
 
-                MoveAndMerge(extractedPluginDir, pluginDir);  // used instead of Directory.Move to permit merge behavior for partial installs.
+                MoveAndMerge(extractedPluginDir, versionDir);  // used instead of Directory.Move to permit merge behavior for partial installs.
 
                 // Cleanup
                 File.Delete(tempZipPath);
@@ -188,5 +314,12 @@ namespace Cloudless
             // Delete source after it's empty
             Directory.Delete(sourcePath, true);
         }
+    }
+
+    public class PluginManifest
+    {
+        public string Name { get; set; }
+        public string PluginVersion { get; set; }
+        public string MinAppVersion { get; set; }
     }
 }

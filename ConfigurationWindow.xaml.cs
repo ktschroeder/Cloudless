@@ -105,11 +105,11 @@ namespace Cloudless
 
             if (foundWebpPlugin)
             {
-                WebpStatusText.Text = "WebP support is already installed. You can re-install to fix/update the plugin.";
+                WebpStatusText.Text = "WebP support is already installed.";  // TODO add: current version and new version to prompt for update
             }
             if (foundVlcPlugin)
             {
-                VlcStatusText.Text = "WebM/MKV/MP4 support is already installed. You can re-install to fix/update the plugin.";
+                VlcStatusText.Text = "WebM/MKV/MP4 support is already installed.";
             }
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
@@ -209,7 +209,7 @@ namespace Cloudless
             }
             else
             {
-                WebpStatusText.Text = "Installation failed.";
+                //WebpStatusText.Text = "Installation failed: " + progress.ToString();
             }
 
             WebpInstallButton.IsEnabled = true;
@@ -245,7 +245,7 @@ namespace Cloudless
             }
             else
             {
-                VlcStatusText.Text = "Installation failed.";
+                //VlcStatusText.Text = "Installation failed: " + progress.ToString();
             }
 
             VlcInstallButton.IsEnabled = true;
