@@ -862,6 +862,7 @@ namespace Cloudless
             LoadUserCommands();
             UserCommands[cIndex] = command;
             SaveUserCommands();
+            Message($"Set command at index {cIndex} to: {command}");
         }
 
         private void ViewUserCommand(int cIndex)
