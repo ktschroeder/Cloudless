@@ -23,9 +23,13 @@ namespace Cloudless
         public string ImgBBKey { get; private set; }
         public bool StartOnWindowsStart { get; private set; }
 
-        public ConfigurationWindow()
+        private MainWindow _mw;
+
+        public ConfigurationWindow(MainWindow mw)
         {
             InitializeComponent();
+
+            _mw = mw;
 
             var currentDisplayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             // Set the current selection
@@ -180,7 +184,7 @@ namespace Cloudless
         {
             string directory = Path.GetTempPath();
             string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-            (Parent as MainWindow).RevealDirectoryInExplorer(cloudlessTempPath);
+            _mw.RevealDirectoryInExplorer(cloudlessTempPath);
         }
 
         private void OpenDefaultAppsSettings()

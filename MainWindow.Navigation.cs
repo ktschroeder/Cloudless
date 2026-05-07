@@ -34,7 +34,7 @@ namespace Cloudless
         }
         private void OpenPreferences()
         {
-            var configWindow = new ConfigurationWindow();
+            var configWindow = new ConfigurationWindow(this);
 
             // Center the window relative to the main application window
             configWindow.Owner = this; // Set the owner to the main window
