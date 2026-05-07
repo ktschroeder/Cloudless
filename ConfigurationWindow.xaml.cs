@@ -161,6 +161,7 @@ namespace Cloudless
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
             DisableSmartZoom = DisableSmartZoomCheckbox.IsChecked ?? false;
+            StartOnWindowsStart = StartOnWindowsStartCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;
