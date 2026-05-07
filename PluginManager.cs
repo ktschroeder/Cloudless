@@ -27,7 +27,7 @@ namespace Cloudless
 
         private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
         {
-            if (LOCAL_DEV)
+            if (MainWindow.LOCAL_DEV)
             {
                 string[] pluginPaths = new string[]
                 {
