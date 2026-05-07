@@ -198,6 +198,13 @@ namespace Cloudless.VlcPlugin
         {
             if (_videoView != null)
             {
+                if (_videoView.MediaPlayer != null)
+                {
+                    _videoView.MediaPlayer.Dispose();
+                    _videoView.MediaPlayer = null;
+                }
+                
+                _videoView.Dispose();
                 _videoView.MediaPlayer = null;
             }
 

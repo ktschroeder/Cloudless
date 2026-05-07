@@ -3,7 +3,8 @@ using System.Drawing;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
-using WpfAnimatedGif;
+//using WpfAnimatedGif;
+using AnimatedImage.Wpf;
 using Point = System.Windows.Point;
 
 namespace Cloudless

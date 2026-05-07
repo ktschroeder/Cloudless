@@ -10,10 +10,12 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using WpfAnimatedGif;
+//using WpfAnimatedGif;
+using AnimatedImage;
 using Brushes = System.Windows.Media.Brushes;
 using Path = System.IO.Path;
 using Point = System.Windows.Point;
+using AnimatedImage.Wpf;
 
 namespace Cloudless
 {
@@ -153,9 +155,24 @@ namespace Cloudless
                 gifController = null;
             }
 
+            if (ImageDisplay.Source is BitmapImage bi)
+            {
+                bi.StreamSource?.Dispose();
+            }
+
+            var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
+
+            if (animatedSource is ImageSource src)
+            {
+                // TODO
+            }
+
             ImageBehavior.SetAnimatedSource(ImageDisplay, null);
 
             ImageDisplay.Source = null;
+
+            //System.GC.Collect();
+            //System.GC.WaitForPendingFinalizers();
         }
         private void Setup(bool startUp = false)
         {

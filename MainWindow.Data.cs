@@ -1,6 +1,7 @@
 ﻿using System.Windows.Controls;
 using System.Windows;
-using WpfAnimatedGif;
+//using WpfAnimatedGif;
+using AnimatedImage;
 using Microsoft.Win32;
 using System.Drawing.Imaging;
 using System.Drawing;
@@ -28,6 +29,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Configuration;
+using AnimatedImage.Wpf;
 
 namespace Cloudless
 {
@@ -228,6 +230,13 @@ namespace Cloudless
                     videoPlayer.Dispose();
                 }
 
+                if (ImageDisplay.Source is BitmapImage bi)
+                {
+                    bi.StreamSource?.Dispose();
+                }
+
+                //System.GC.Collect();
+
                 if (uri.AbsolutePath.ToLower().EndsWith(".gif"))  // TODO fair bit of duplicate code shared with WEBM section of this method
                 {
                     var fileSizeMB = (double)(new FileInfo(uri.OriginalString).Length) / 1024 / 1024;
@@ -249,7 +258,18 @@ namespace Cloudless
                         ShowLoadingOverlay($"Loading GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
                         await Dispatcher.Yield(DispatcherPriority.Background);
 
-                        var bitmap = new BitmapImage(uri);
+                        //var bitmap = new BitmapImage(uri);
+                        var bitmap = new BitmapImage();
+
+                        bitmap.BeginInit();
+                        bitmap.UriSource = uri;
+                        // This caches the image and releases the file lock
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+                        //bitmap.StreamSource.Dispose();
+                        bitmap.Freeze();
+
+
                         ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
 
                         await Dispatcher.Yield(DispatcherPriority.Background);
@@ -257,7 +277,7 @@ namespace Cloudless
                         HideLoadingOverlay();
 
 
-                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF
+                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
                     }
                     else
                     {
@@ -287,8 +307,6 @@ namespace Cloudless
                         VideoHost.Width = double.NaN;
                         //VideoHost.Height = 300;
                         //VideoHost.Width = 300;
-
-
 
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {

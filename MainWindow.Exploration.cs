@@ -1,13 +1,14 @@
 ﻿using System.Windows.Media.Animation;
 using System.Windows;
 using System.Windows.Input;
-using WpfAnimatedGif;
+//using WpfAnimatedGif;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
+using AnimatedImage.Wpf;
 
 namespace Cloudless
 {
