@@ -96,10 +96,10 @@
                                             <TextBlock Grid.Column="0" Grid.Row="11" Text="Ctrl Alt C" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="11" Text="Copy compressed image file to clipboard (configure size max in preferences)"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="W" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="12" Text="Ctrl W" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="12" Text="Set current image as desktop wallpaper"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="Ctrl W" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="Ctrl Alt W" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="13" Text="Apply the window's view to desktop wallpaper (includes pan/zoom/crop)"/>
 
                                         </Grid>
@@ -153,8 +153,8 @@
                                             <TextBlock Grid.Column="0" Grid.Row="5" Text="B" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="5" Text="Resize window to remove best-fit bars"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="G" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Switch background (black, white, transparent)"/>
+                                            <!--<TextBlock Grid.Column="0" Grid.Row="6" Text="G" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Switch background (black, white, transparent)"/>-->
 
                                             <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl + / -" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Zoom in / out"/>
@@ -165,8 +165,8 @@
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl 9" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="9" Text="Set zoom to image's true resolution"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="G" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Switch background (black, white, transparent)"/>
+                                            <!--<TextBlock Grid.Column="0" Grid.Row="10" Text="G" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Switch background (black, white, transparent)"/>-->
 
                                             <TextBlock Grid.Column="0" Grid.Row="11" Text="Ctrl, scroll mouse" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="11" Text="Zoom in or out. Additionally, hold ALT for fine zooming"/>

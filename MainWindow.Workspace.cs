@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
+using System.Collections.Specialized;
 
 namespace Cloudless
 {
@@ -47,10 +48,20 @@ namespace Cloudless
             return state;
         }
 
-        public static (int, string?) SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false)
+        public (int, string?) SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false, bool isSystem = false)
         {
             try
             {
+                if (!isSystem && IsReservedWorkspaceName(workspaceName))
+                {
+                    return (-3, null);  // TODO should clean up this error reporting
+                }
+
+                if (!Directory.Exists(workspaceFilesPath))
+                    Directory.CreateDirectory(workspaceFilesPath);
+
+                UpdateRecentlySavedAndLoadedWorkspaceNames(workspaceName);
+
                 var workspace = new CloudlessWorkspace();
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
 
@@ -231,7 +242,7 @@ namespace Cloudless
             }
         }
 
-        public bool RenameWorkspace(string[] workspaceNames)
+        public bool RenameWorkspace(string[] workspaceNames)  // TODO should update "recent workspaces" logic to be smart about this renaming
         {
             try
             {
@@ -304,7 +315,7 @@ namespace Cloudless
             // if loading undoload, we want to save to undoload_slot, load undoload, then delete undoload and replace it with renamed undoload_slot.
             try
             {
-                SaveWorkspace(workspaceName.Equals(UNDOLOAD_NAME) ? UNDOLOAD_SLOT_NAME : UNDOLOAD_NAME, true);
+                SaveWorkspace(workspaceName.Equals(UNDOLOAD_NAME) ? UNDOLOAD_SLOT_NAME : UNDOLOAD_NAME, allowOverwrite: true, isSystem: true);
             }
             catch (Exception e)
             {
@@ -313,6 +324,8 @@ namespace Cloudless
             
             try
             {
+                UpdateRecentlySavedAndLoadedWorkspaceNames(workspaceName);
+
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
                 // TODO I think this fails if user has the file open for reading in a text editor?
                 string json = File.ReadAllText(workspaceFilePath);
@@ -440,7 +453,7 @@ namespace Cloudless
         const string UNDOLOAD_SLOT_NAME = "_system_undoload_slot";
         private bool Quicksave()  // returns whether successful
         {
-            (int windowCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, true);
+            (int windowCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, allowOverwrite: true, isSystem: true);
             if (windowCount == -1)
             {
                 Message("Failed to quicksave due to unexpected error: " + error);
@@ -474,6 +487,47 @@ namespace Cloudless
             {
                 Message("Error while managing system undoload files: " + e.Message);
             }
+        }
+
+        public List<string> GetRecentlySavedAndLoadedWorkspaceNames()
+        {
+            var stringCollection = Cloudless.Properties.Settings.Default.RecentWorkspaces;
+            return stringCollection?.Cast<string>().ToList() ?? new List<string>();
+        }
+
+        public void UpdateRecentlySavedAndLoadedWorkspaceNames(string workspaceName)
+        {
+            if (string.IsNullOrWhiteSpace(workspaceName))
+                return;
+
+            var current = GetRecentlySavedAndLoadedWorkspaceNames();
+            while (current.Contains(workspaceName))
+                current.Remove(workspaceName);
+
+            current.Add(workspaceName);
+
+            const int HISTORY_MAX_SIZE = 100;
+            StringCollection sc = new StringCollection();
+            sc.AddRange(current.TakeLast(HISTORY_MAX_SIZE).ToArray());
+            Cloudless.Properties.Settings.Default.RecentWorkspaces = sc;
+            Cloudless.Properties.Settings.Default.Save();
+        }
+
+        public bool IsReservedWorkspaceName(string name)
+        {
+            name = name.ToLower().Trim();
+            List<string> reservedNames = new List<string>()
+            {
+                "origin", "undoload", "quicksave"
+            };
+
+            if (reservedNames.Contains(name))
+                return true;
+
+            if (name.StartsWith("_system_"))
+                return true;
+
+            return false;
         }
     }
 

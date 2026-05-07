@@ -135,6 +135,7 @@ namespace Cloudless
             await UpdateContextMenuState();  // for zoom amount, which may change when window is resized
         }
 
+        private bool _duplicating = false;  // TODO fix better; this is a band-aid for odd issue where hotkey D is recorded twice when duplicating specifically an open GIF.
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (CommandPalette.IsVisible && CommandTextBox.IsFocused)
@@ -168,10 +169,12 @@ namespace Cloudless
 
             if (e.Key == Key.D)
             {
-                if (control && !alt)
+                if (control && !alt && !_duplicating)
                 {
+                    _duplicating = true;
                     await DuplicateWindow();
                     e.Handled = true;
+                    _duplicating = false;
                     return;
                 }
                 else if (control && alt)
@@ -346,7 +349,7 @@ namespace Cloudless
             if (e.Key == Key.W)
             {
                 if (!string.IsNullOrEmpty(currentlyDisplayedImagePath)){
-                    if (control)
+                    if (control && alt)
                     {
                         try
                         {
@@ -359,7 +362,7 @@ namespace Cloudless
                             Message("Failed to set wallpaper from view. Make sure there are no visible margins.");
                         }
                     }
-                    else
+                    else if (control)
                     {
                         WallpaperHelper.SetWallpaper(currentlyDisplayedImagePath);
                         Message("Wallpaper set from image.");

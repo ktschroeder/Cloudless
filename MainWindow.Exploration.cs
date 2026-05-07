@@ -324,7 +324,7 @@ namespace Cloudless
                 (int, int)? dims = null;
                 try
                 {
-                    dims = await videoPlayer.GetDimensions();
+                    dims = await videoPlayer.GetDimensions().WaitAsync(TimeSpan.FromSeconds(0.25));
                 }
                 catch (NullReferenceException nre)
                 {

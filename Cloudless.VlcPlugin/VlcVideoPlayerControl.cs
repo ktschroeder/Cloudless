@@ -70,6 +70,8 @@ namespace Cloudless.VlcPlugin
             {
                 try
                 {
+                    // Note: App seems to crash here sometimes when this event is triggered but the window has been closed. I think in the QueueUserWorkItem method.
+
                     // IMPORTANT: Restart playback on a different thread to avoid deadlocks
                     ThreadPool.QueueUserWorkItem(_ =>
                     {
@@ -78,6 +80,8 @@ namespace Cloudless.VlcPlugin
                                                                              //_videoView.MediaPlayer = _mediaPlayer2;
                                                                              //_mediaPlayer2.Play();
                     });
+
+                    //Restart();
                 }
                 catch (Exception ex)
                 {
@@ -198,7 +202,9 @@ namespace Cloudless.VlcPlugin
             }
 
             _mediaPlayer?.Dispose();
-            //_libVLC?.Dispose();
+            _mediaPlayer = null;
+            _libVLC?.Dispose();
+            _libVLC = null;
 
             if (_preloadedLibVlcHandle.HasValue)
                 NativeLibrary.Free(_preloadedLibVlcHandle.Value);

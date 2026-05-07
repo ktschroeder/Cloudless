@@ -19,9 +19,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.2";
+        public const string CURRENT_VERSION = "0.7.2.2";
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = false;
+        public const bool LOCAL_DEV = true;
 
 
 
@@ -35,7 +35,11 @@ namespace Cloudless
 
         public static readonly string workspaceFilesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Cloudless");
+            "Cloudless", "workspaces");
+
+        //public static readonly string systemWorkspaceFilesPath = Path.Combine(
+        //    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        //    "Cloudless", "workspaces", "system");
 
         public static readonly string pluginsFilesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -67,7 +71,7 @@ namespace Cloudless
 
         private OverlayMessageManager? overlayManager;
 
-        private const int MaxRecentFiles = 15;
+        private const int MaxRecentFiles = 30;
         private List<string> recentFiles = new();
 
         public List<string> CommandHistory = new();
@@ -143,11 +147,13 @@ namespace Cloudless
                 videoPlayer.Dispose();
             }
 
-            if (gifController != null)
+            if (gifController != null)  // weirdly, this is somehow null sometimes when closing a window that has a GIF loaded. Could contribute to memory leak danger.
             {
                 gifController.Dispose();
                 gifController = null;
             }
+
+            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
 
             ImageDisplay.Source = null;
         }
