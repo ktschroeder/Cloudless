@@ -21,7 +21,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.2.2";
+        public const string CURRENT_VERSION = "0.7.2.3";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = true;
 
@@ -149,6 +149,9 @@ namespace Cloudless
                 videoPlayer.Dispose();
             }
 
+            // bandaid fix for issue where controller gets null upon opening app directly for a GIF
+            //if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
+            gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null when there isn't one
             if (gifController != null)  // weirdly, this is somehow null sometimes when closing a window that has a GIF loaded. Could contribute to memory leak danger.
             {
                 gifController.Dispose();
@@ -171,7 +174,7 @@ namespace Cloudless
 
             ImageDisplay.Source = null;
 
-            //System.GC.Collect();
+            System.GC.Collect();
             //System.GC.WaitForPendingFinalizers();
         }
         private void Setup(bool startUp = false)

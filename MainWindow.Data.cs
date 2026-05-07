@@ -219,6 +219,7 @@ namespace Cloudless
                 currentlyDisplayedImagePath = uri.LocalPath;
                 AddToRecentFiles(uri.LocalPath);
 
+                gifController = ImageBehavior.GetAnimationController(ImageDisplay);
                 if (gifController != null)
                 {
                     gifController.Dispose();
