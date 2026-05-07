@@ -352,6 +352,7 @@ namespace Cloudless
                         {
                             Bitmap wallpaperBitmap = CreateImageForWallpaper();
                             WallpaperHelper.SetWallpaper(wallpaperBitmap);
+                            Message("Wallpaper set from view");
                         }
                         catch
                         {
@@ -361,6 +362,7 @@ namespace Cloudless
                     else
                     {
                         WallpaperHelper.SetWallpaper(currentlyDisplayedImagePath);
+                        Message("Wallpaper set from image.");
                     }
                 }
 
