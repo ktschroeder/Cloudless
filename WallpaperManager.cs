@@ -35,7 +35,7 @@ namespace Cloudless
             if (!result)
                 throw new Exception("Failed to set wallpaper.");
 
-            File.Delete(path);
+            //File.Delete(path);  // Concurrency issue? If this is uncommented, sometimes wallpaper is set to solid black (i.e. presumably null)
         }
 
         public static void SetWallpaper(string path)
