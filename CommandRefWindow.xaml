@@ -89,6 +89,12 @@
                                             <TextBlock Grid.Column="0" Grid.Row="7" Text="(palette) Shift Tab" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Similar to above, but cycle in the reverse direction."/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="(palette) Ctrl Tab" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="For workspace commands (e.g. 'ws l [name]'), traverse workspace names sorted by recency of save/load."/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="(palette) Ctrl Shift Tab" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Similar to above, but cycle in the reverse direction."/>
+
                                         </Grid>
                                     </StackPanel>
                                 </ScrollViewer>
@@ -341,7 +347,7 @@
                                             <TextBlock Grid.Column="0" Grid.Row="13" Text="ws origin s | s!" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="13" Text="Overwrite current window's origin workspace with the current global workspace state (no overwrite warning)"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="ws c | m | um origin" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="c | m | um origin" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="14" Text="Close, minimize, or unminimize all windows that share a workspace origin with the current window"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="15" Text="ws undoload" FontWeight="Bold"/>
