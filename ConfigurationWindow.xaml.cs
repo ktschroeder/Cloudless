@@ -22,6 +22,7 @@ namespace Cloudless
         public bool DisableSmartZoom { get; private set; }
         public string ImgBBKey { get; private set; }
         public bool StartOnWindowsStart { get; private set; }
+        public int MouseLongHoldMs { get; private set; }
 
         private MainWindow _mw;
 
@@ -109,6 +110,10 @@ namespace Cloudless
             ImgBBKeyTextBox.Text = currentImgBBKey;
             ImgBBKey = currentImgBBKey;
 
+            var currentMouseLongHoldMs = Cloudless.Properties.Settings.Default.MouseLongPressMS;
+            MouseLongHoldMSTextBox.Text = currentMouseLongHoldMs.ToString();
+            MouseLongHoldMs = currentMouseLongHoldMs;
+
             bool foundWebpPlugin = PluginManager.GetPluginForFiletype("webp") != null;
             bool foundVlcPlugin = PluginManager.GetPluginForFiletype("webm") != null;
 
@@ -170,6 +175,8 @@ namespace Cloudless
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;
             ImgBBKey = ImgBBKeyTextBox.Text.Trim();
+            if (int.TryParse(MouseLongHoldMSTextBox.Text, out int ms))
+                MouseLongHoldMs = ms;
 
             DialogResult = true;
             Close();

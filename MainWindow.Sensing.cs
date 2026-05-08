@@ -1,10 +1,12 @@
-﻿using Cloudless.PluginBase;
+﻿//using WpfAnimatedGif;
+using AnimatedImage.Wpf;
+using Cloudless.PluginBase;
+using Cloudless.Properties;
 using System.Drawing;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
-//using WpfAnimatedGif;
-using AnimatedImage.Wpf;
+using System.Windows.Threading;
 using Point = System.Windows.Point;
 
 namespace Cloudless
@@ -23,15 +25,29 @@ namespace Cloudless
         // It isn't feasible to dynamically switch between DragMove (needed for Windows's native snapping) and constrained movement in the same drag. DragMove prevents hitting Window_MouseMove.
 
         // MouseDown: Start Dragging
+        public Point TargetCenterForQuickCommandDisplay;
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Pressed)
+            {
+                Point currentMousePosition = e.GetPosition(this);
+
+                TargetCenterForQuickCommandDisplay = currentMousePosition;
+
+                MiddleClickDown();
+                return;
+            }
+
+            CloseQuickCommandWindow();
+
             if (e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control)
+                if (Keyboard.Modifiers == ModifierKeys.Control || MouseControlMode)
                 {
                     if (!isExplorationMode) EnterExplorationMode();
 
-                    this.Cursor = Cursors.SizeAll;
+                    if (!MouseControlMode && !MouseCommandMode)
+                        this.Cursor = Cursors.SizeAll;
                     isPanningImage = true;
                     lastMousePosition = e.GetPosition(this);
                     ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
@@ -112,7 +128,7 @@ namespace Cloudless
                 }
             }
 
-            if (!isPanningImage && Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
+            if (!isPanningImage && Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver && !MouseControlMode && !MouseCommandMode)
             {
                 this.Cursor = Cursors.Hand;  // could be better custom cursor
             }
@@ -121,6 +137,12 @@ namespace Cloudless
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Released)
+            {
+                MiddleClickUp();
+                return;
+            }
+
             if (isPanningImage)
             {
                 StopPanning();
@@ -508,7 +530,7 @@ namespace Cloudless
 
             if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
             {
-                if (!isPanningImage && ImageDisplay.IsMouseOver)
+                if (!isPanningImage && ImageDisplay.IsMouseOver && !MouseControlMode && !MouseCommandMode)
                 {
                     this.Cursor = Cursors.Hand;
                 }
@@ -519,7 +541,7 @@ namespace Cloudless
             if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
             {
                 // Revert to the default cursor when Ctrl is released
-                if (!isPanningImage)
+                if (!isPanningImage && !MouseControlMode && !MouseCommandMode)
                 {
                     this.Cursor = Cursors.Arrow;
                 }
@@ -568,7 +590,7 @@ namespace Cloudless
         }
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
-            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || MouseControlMode)
             {
                 if (!isExplorationMode) EnterExplorationMode();
 
@@ -608,7 +630,75 @@ namespace Cloudless
         }
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            ImageContextMenu.IsOpen = true;
+            if (!SkipNextContextMenu)
+                ImageContextMenu.IsOpen = true;
+            //else
+            //    ImageContextMenu.IsOpen = false;
+
+            //SkipNextContextMenu = false;
+        }
+        private void MiddleClickDown()
+        {
+            _middleClickHoldTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Settings.Default.MouseLongPressMS) };
+
+            _middleClickHoldTimer.Tick += (s, args) =>
+            {
+                _middleClickHoldTimer.Stop();
+                ToggleMouseCommandMode();
+                //e.Handled = true;
+            };
+            _middleClickHoldTimer.Start();
+        }
+        private void MiddleClickUp()
+        {
+            bool timerStillLive = _middleClickHoldTimer?.IsEnabled ?? false;
+            _middleClickHoldTimer?.Stop();
+
+            if (timerStillLive)
+            {
+                ShortMiddleClick();
+            }
+        }
+        private void ShortMiddleClick()
+        {
+            OpenQuickCommandWindow();
+        }
+        public QuickCommandWindow? QuickCommandDisplay = null;
+        private void OpenQuickCommandWindow()
+        {
+            if (QuickCommandDisplay != null)
+                CloseQuickCommandWindow();
+
+            var quickCommandWindow = new QuickCommandWindow(this);
+            quickCommandWindow.Owner = this;
+            quickCommandWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+
+            var mousePos = TargetCenterForQuickCommandDisplay;
+
+            bool isMaximized = this.WindowState == WindowState.Maximized;
+            if (isMaximized)
+            {
+                // TODO not quite centered due to maximized window weirdness. Can reference existing pixel hack.
+                quickCommandWindow.Left = (mousePos.X) - (quickCommandWindow.Width / 2);
+                quickCommandWindow.Top = (mousePos.Y) - (quickCommandWindow.Height / 2);
+            }
+            else
+            {
+                quickCommandWindow.Left = this.Left + (mousePos.X) - (quickCommandWindow.Width / 2);
+                quickCommandWindow.Top = this.Top + (mousePos.Y) - (quickCommandWindow.Height / 2);
+            }
+
+                
+            quickCommandWindow.Show();
+            QuickCommandDisplay = quickCommandWindow;
+        }
+        public void CloseQuickCommandWindow()
+        {
+            if (QuickCommandDisplay != null)
+            {
+                QuickCommandDisplay.Close();
+                QuickCommandDisplay = null;
+            }
         }
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {

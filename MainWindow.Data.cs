@@ -588,11 +588,10 @@ namespace Cloudless
             recentFiles.Insert(0, filePath);
 
             // Enforce max size
-            if (recentFiles.Count > MaxRecentFiles)
+            if (recentFiles.Count > Math.Max(MaxRecentFilesInGallery, MaxRecentFilesInContextWindow))
                 recentFiles.RemoveAt(recentFiles.Count - 1);
 
             SaveRecentFiles();
-
         }
         private void PrepareZoomMenu()
         {
@@ -681,6 +680,7 @@ namespace Cloudless
             RecentFilesMenu.Items.Clear();
 
             // Populate the menu
+            int added = 0;
             foreach (string file in recentFiles)
             {
                 MenuItem fileItem = new MenuItem
@@ -692,6 +692,9 @@ namespace Cloudless
                 };
                 fileItem.Click += async (s, e) => await OpenRecentFile((string)((MenuItem)s).Tag);
                 RecentFilesMenu.Items.Add(fileItem);
+                added++;
+                if (added >= MaxRecentFilesInContextWindow)
+                    break;
             }
 
             // Add additional menu items

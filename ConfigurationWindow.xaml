@@ -160,6 +160,11 @@ Margin="0,2"/>
     Content="This window and all new windows have always-on-top enabled. (Toggle per-window with T.)" 
     Margin="0,2"/>
 
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
+                                    <TextBlock Text="Detection time for middle-click and right-click long-hold, in milliseconds:" VerticalAlignment="Center" Foreground="#555"/>
+                                    <TextBox x:Name="MouseLongHoldMSTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+
                             </StackPanel>
                         </TabItem>
                     </TabControl>

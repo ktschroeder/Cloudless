@@ -244,16 +244,21 @@ namespace Cloudless
         }
         private void StopPanning()
         {
-            // Revert to open hand cursor when mouse is released, if still applicable
-            if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
-                this.Cursor = Cursors.Hand;
-            // Otherwise return to default
-            else
-                this.Cursor = Cursors.Arrow;
+            if (!MouseControlMode && !MouseCommandMode)
+            {
+                // Revert to open hand cursor when mouse is released, if still applicable
+                if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
+                    this.Cursor = Cursors.Hand;
+                // Otherwise return to default
+                else
+                    this.Cursor = Cursors.Arrow;
+            }
+
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
 
             UpdateCropModeInfo();
+            
         }
         private void ResizeWindow(double width, double height)
         {

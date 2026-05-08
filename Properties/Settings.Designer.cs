@@ -245,5 +245,17 @@ namespace Cloudless.Properties {
                 this["RecentWorkspaces"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("150")]
+        public int MouseLongPressMS {
+            get {
+                return ((int)(this["MouseLongPressMS"]));
+            }
+            set {
+                this["MouseLongPressMS"] = value;
+            }
+        }
     }
 }

@@ -20,7 +20,10 @@
         AllowDrop="True"
         DragOver="Window_DragOver"
         Drop="Window_Drop"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        PreviewMouseRightButtonDown="Window_PreviewMouseRightButtonDown"
+        PreviewMouseRightButtonUp="Window_PreviewMouseRightButtonUp"
+        ContextMenuOpening="Window_ContextMenuOpening">
 
     <Border x:Name="MainBorder" BorderBrush="Black" BorderThickness="2">
         <Grid Name="MyGrid">

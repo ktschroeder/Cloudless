@@ -1,4 +1,8 @@
-﻿using Cloudless.PluginBase;
+﻿//using WpfAnimatedGif;
+using AnimatedImage;
+using AnimatedImage.Wpf;
+using Cloudless.PluginBase;
+using Cloudless.Properties;
 using Microsoft.Win32;
 using System.Diagnostics;
 using System.IO;
@@ -10,18 +14,16 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-//using WpfAnimatedGif;
-using AnimatedImage;
+using System.Windows.Threading;
 using Brushes = System.Windows.Media.Brushes;
 using Path = System.IO.Path;
 using Point = System.Windows.Point;
-using AnimatedImage.Wpf;
 
 namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.3";
+        public const string CURRENT_VERSION = "0.7.3.2";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -73,7 +75,8 @@ namespace Cloudless
 
         private OverlayMessageManager? overlayManager;
 
-        private const int MaxRecentFiles = 30;
+        private const int MaxRecentFilesInGallery = 30;
+        private const int MaxRecentFilesInContextWindow = 5;
         private List<string> recentFiles = new();
 
         public List<string> CommandHistory = new();
@@ -439,6 +442,73 @@ namespace Cloudless
 
             var value = key?.GetValue(AppName) as string;
             return !string.IsNullOrEmpty(value);
+        }
+
+        private DispatcherTimer _rightClickHoldTimer;
+        private DispatcherTimer _middleClickHoldTimer;
+        public bool SkipNextContextMenu = false;
+
+        private void Window_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            TimeSpan RIGHT_CLICK_LONG_HOLD = TimeSpan.FromMilliseconds(Settings.Default.MouseLongPressMS);
+
+            _rightClickHoldTimer = new DispatcherTimer { Interval = RIGHT_CLICK_LONG_HOLD };
+            
+            _rightClickHoldTimer.Tick += (s, args) =>
+            {
+                _rightClickHoldTimer.Stop();
+                ToggleMouseControlMode();
+                SkipNextContextMenu = true;
+                e.Handled = true;
+            };
+            _rightClickHoldTimer.Start();
+        }
+
+        private void Window_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            _rightClickHoldTimer?.Stop();
+        }
+
+        private void Window_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            if (SkipNextContextMenu)
+                e.Handled = true;
+
+            SkipNextContextMenu = false;
+        }
+
+        public bool MouseControlMode = false;
+        public bool MouseCommandMode = false;
+        private void ToggleMouseControlMode()
+        {
+            if (MouseControlMode)
+            {
+                this.Cursor = Cursors.Arrow;
+                MouseControlMode = false;
+            }
+            else if (!MouseControlMode) 
+            {
+                this.Cursor = Cursors.ScrollAll;
+                MouseControlMode = true;
+                MouseCommandMode = false;
+            }
+        }
+        private void ToggleMouseCommandMode()
+        {
+            if (MouseCommandMode)
+            {
+                this.Cursor = Cursors.Arrow;
+                MouseCommandMode = false;
+            }
+            else if (!MouseCommandMode)
+            {
+                var streamInfo = Application.GetResourceStream(new Uri("custom_cursor.cur", UriKind.Relative));
+                this.Cursor = new Cursor(streamInfo.Stream);
+
+                //this.Cursor = Cursors.Cross;
+                MouseControlMode = false;
+                MouseCommandMode = true;
+            }
         }
     }
 }

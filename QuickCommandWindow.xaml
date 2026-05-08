@@ -1,0 +1,62 @@
+﻿<Window x:Class="Cloudless.QuickCommandWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Quick Commands"
+        Height="300"
+        Width="300"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        MouseDown="Window_MouseDown"
+        KeyDown="Window_KeyDown"
+        AllowsTransparency="True">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Buttons around the perimeter -->
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="0" Grid.Column="0">
+            <TextBlock Name="Quick1" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="0" Grid.Column="1">
+            <TextBlock Name="Quick2" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="0" Grid.Column="2">
+            <TextBlock Name="Quick3" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="1" Grid.Column="0">
+            <TextBlock Name="Quick4" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <!-- Grid.Row=1, Grid.Column=1 is left empty for transparency -->
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="1" Grid.Column="2">
+            <TextBlock Name="Quick5" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="2" Grid.Column="0">
+            <TextBlock Name="Quick6" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="2" Grid.Column="1">
+            <TextBlock Name="Quick7" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+        <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="2" Grid.Column="2">
+            <TextBlock Name="Quick8" TextWrapping="Wrap" TextAlignment="Center">
+            </TextBlock>
+        </Button>
+    </Grid>
+
+</Window>

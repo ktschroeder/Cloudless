@@ -21,6 +21,7 @@
 		<Compile Remove="Cloudless.VlcPlugin\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup>
+	  <None Remove="custom_cursor.cur" />
 	  <None Remove="no-thumbnail.png" />
 	</ItemGroup>
 	<ItemGroup>
@@ -40,10 +41,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="custom_cursor.cur">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="CommandRefWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="GifWarningWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="QuickCommandWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="SetDimensionsWindow.xaml.cs">

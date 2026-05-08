@@ -286,7 +286,7 @@
                                     <StackPanel>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="140"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
@@ -314,6 +314,21 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="3" Text="; or :" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="3" Text="Open Command Palette (for more info, see Command Palette Reference)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="Long-hold right click" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Swap mouse mode to Mouse Control Mode (normal mouse behavior replaced by the 2 below)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="(MCM) Click and drag" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Pan image"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="(MCM) Scroll up/down" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Zoom in/out"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Middle click" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Open the quick command display, showing clickable buttons for custom user commands"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Long-hold middle click" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Swap mouse mode to an unused, third mouse mode (this currently has no effect on behavior)"/>
 
                                         </Grid>
                                     </StackPanel>

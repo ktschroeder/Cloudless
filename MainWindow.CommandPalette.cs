@@ -219,7 +219,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("shutdown"))  // close all instances
+            if (command.ToLower().Equals("shutdown") || command.ToLower().Equals("sd"))  // close all instances and shutdown background process
             {
                 Shutdown();
                 return true;  // should be essentially unreachable
@@ -892,7 +892,7 @@ namespace Cloudless
             LoadUserCommands();
             UserCommands[cIndex] = command;
             SaveUserCommands();
-            Message($"Set command at index {cIndex} to: {command}");
+            Message($"Set command at index {cIndex + 1} to: {command}");
         }
 
         private void ViewUserCommand(int cIndex)
@@ -923,7 +923,7 @@ namespace Cloudless
             }
         }
 
-        private void LoadUserCommands()
+        public void LoadUserCommands()
         {
             var stringCollection = Cloudless.Properties.Settings.Default.UserCommands;
             if (stringCollection == null)

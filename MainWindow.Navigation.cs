@@ -58,6 +58,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
                 Cloudless.Properties.Settings.Default.ImgBBKey = configWindow.ImgBBKey;
                 Cloudless.Properties.Settings.Default.StartOnWindowsStart = configWindow.StartOnWindowsStart;
+                Cloudless.Properties.Settings.Default.MouseLongPressMS = configWindow.MouseLongHoldMs;
 
                 Cloudless.Properties.Settings.Default.Save();
 
@@ -75,7 +76,7 @@ namespace Cloudless
         }
         private void OpenRecentImagesWindow()
         {
-            var win = new GalleryWindow(recentFiles, title: "Recent Images Gallery");
+            var win = new GalleryWindow(recentFiles.Take(MaxRecentFilesInGallery), title: "Recent Images Gallery");
             win.Owner = this;
             win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             win.Show();
