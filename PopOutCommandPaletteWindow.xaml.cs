@@ -54,12 +54,17 @@ namespace Cloudless
         }
 
         private bool TabScroll;  // whether next tab should try to find another autocomplete candidate
+        private bool TabScrollCtrl;
         private LinkedList<string> AutocompleteCandidates = new LinkedList<string>();
+        private LinkedList<string> AutocompleteCandidatesCtrl = new LinkedList<string>();
         private string PreviousTabScrollText = null;
-        private void TabPressed(bool shiftPressed = false)
+        private void TabPressed(bool shiftPressed = false, bool controlPressed = false)
         {
             if (PreviousTabScrollText != CommandTextBox.Text)
+            {
                 TabScroll = false;
+                TabScrollCtrl = false;
+            }
 
             string foundCommandBase = null;
             string[] tabbableCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p" };
@@ -75,11 +80,12 @@ namespace Cloudless
             if (foundCommandBase != null)
             {
                 string commandBase = $":{foundCommandBase} ";
-                if (!TabScroll)
+                if (!TabScroll && !controlPressed)
                 {
                     string query = CommandTextBox.Text.Length == commandBase.Length ? "" : CommandTextBox.Text.Substring(commandBase.Length);
                     var wsNames = Directory.GetFiles(MainWindow.workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
                     wsNames ??= new List<string>();
+                    wsNames = wsNames.Where(ws => !MainWindow.IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
                     wsNames = wsNames.Where(ws => ws.ToLower().StartsWith(query.ToLower())).ToList();
                     AutocompleteCandidates.Clear();
                     foreach (var wsName in wsNames)
@@ -88,46 +94,62 @@ namespace Cloudless
                     }
                     TabScroll = true;
                 }
-                CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed);
+                else if (!TabScrollCtrl && controlPressed)
+                {
+                    var wsNames = Directory.GetFiles(MainWindow.workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
+                    wsNames ??= new List<string>();
+                    var recentNames = MainWindow.GetRecentlySavedAndLoadedWorkspaceNames();
+                    wsNames = wsNames.Where(ws => recentNames.Contains(ws)).ToList();  // filter out names not present in recent history
+                    wsNames = wsNames.Where(ws => !MainWindow.IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
+                    AutocompleteCandidatesCtrl.Clear();
+                    foreach (var wsName in wsNames)
+                    {
+                        AutocompleteCandidatesCtrl.AddFirst(wsName);
+                    }
+                    TabScrollCtrl = true;
+                }
+                CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed, recency: controlPressed);
             }
         }
 
-        private void CycleToNextAutocompleteCandidate(string commandBase, bool reverse = false)
+        private void CycleToNextAutocompleteCandidate(string commandBase, bool reverse = false, bool recency = false)
         {
-            if (AutocompleteCandidates.Count == 0)
+            LinkedList<string> candidates = recency ? AutocompleteCandidatesCtrl : AutocompleteCandidates;
+
+            if (candidates.Count == 0)
                 return;
 
             // get next candidate
             if (!reverse)
             {
-                var next = AutocompleteCandidates.First();
-                AutocompleteCandidates.RemoveFirst();
+                var next = candidates.First();
+                candidates.RemoveFirst();
                 CommandTextBox.Text = commandBase + next;
                 if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction", so repeat the movement
                 {
-                    AutocompleteCandidates.AddLast(next);
-                    next = AutocompleteCandidates.First();
-                    AutocompleteCandidates.RemoveFirst();
+                    candidates.AddLast(next);
+                    next = candidates.First();
+                    candidates.RemoveFirst();
                     CommandTextBox.Text = commandBase + next;
                 }
                 PreviousTabScrollText = CommandTextBox.Text;
-                AutocompleteCandidates.AddLast(next);
+                candidates.AddLast(next);
                 CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
             }
             else
             {
-                var next = AutocompleteCandidates.Last();
-                AutocompleteCandidates.RemoveLast();
+                var next = candidates.Last();
+                candidates.RemoveLast();
                 CommandTextBox.Text = commandBase + next;
                 if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction" so repeat the movement
                 {
-                    AutocompleteCandidates.AddFirst(next);
-                    next = AutocompleteCandidates.Last();
-                    AutocompleteCandidates.RemoveLast();
+                    candidates.AddFirst(next);
+                    next = candidates.Last();
+                    candidates.RemoveLast();
                     CommandTextBox.Text = commandBase + next;
                 }
                 PreviousTabScrollText = CommandTextBox.Text;
-                AutocompleteCandidates.AddFirst(next);
+                candidates.AddFirst(next);
                 CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
             }
         }
@@ -141,7 +163,7 @@ namespace Cloudless
 
             if (e.Key == Key.Tab)
             {
-                TabPressed(shift);
+                TabPressed(shift, control);
                 e.Handled = true;
                 return;
             }

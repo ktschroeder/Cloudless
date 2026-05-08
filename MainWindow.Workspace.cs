@@ -489,7 +489,7 @@ namespace Cloudless
             }
         }
 
-        public List<string> GetRecentlySavedAndLoadedWorkspaceNames()
+        public static List<string> GetRecentlySavedAndLoadedWorkspaceNames()
         {
             var stringCollection = Cloudless.Properties.Settings.Default.RecentWorkspaces;
             return stringCollection?.Cast<string>().ToList() ?? new List<string>();
@@ -513,7 +513,7 @@ namespace Cloudless
             Cloudless.Properties.Settings.Default.Save();
         }
 
-        public bool IsReservedWorkspaceName(string name)
+        public static bool IsReservedWorkspaceName(string name)
         {
             name = name.ToLower().Trim();
             List<string> reservedNames = new List<string>()
