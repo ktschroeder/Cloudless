@@ -221,8 +221,8 @@ namespace Cloudless
             {
                 WebpStatusText.Text = "WebP support installed!";
 
-                // Optional: load plugin immediately
-                //PluginManager.LoadPlugins();
+                var plugin = PluginManager.GetPluginForFiletype("webp");
+                Task.Run(() => plugin.WarmupAsync());
             }
             else
             {
@@ -257,8 +257,8 @@ namespace Cloudless
             {
                 VlcStatusText.Text = "WebM/MKV/MP4 support installed!";
 
-                // Optional: load plugin immediately
-                //PluginManager.LoadPlugins();
+                var plugin = PluginManager.GetPluginForFiletype("webm");
+                Task.Run(() => plugin.WarmupAsync());
             }
             else
             {

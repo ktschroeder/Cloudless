@@ -25,7 +25,7 @@ namespace Cloudless
     {
         public const string CURRENT_VERSION = "0.7.4";
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = true;
+        public const bool LOCAL_DEV = false;
 
 
 
