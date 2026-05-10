@@ -1,5 +1,7 @@
 
+using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Cloudless.PluginBase
 {
@@ -14,7 +16,10 @@ namespace Cloudless.PluginBase
         ImageSource Convert(byte[] bytes);
         Task<System.Windows.UIElement?> CreateView();
         Task WarmupAsync();
-        
+
+        void SetAnimatedSource(Image imageDisplay, BitmapImage bitmap);
+        object? GetAnimationController(Image imageDisplay);
+
     }
 
 }

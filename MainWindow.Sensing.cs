@@ -406,25 +406,46 @@ namespace Cloudless
             if (e.Key == Key.Space)
             {
                 // bandaid fix for issue where controller gets null upon opening app directly for a GIF
-                if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
-                    gifController = ImageBehavior.GetAnimationController(ImageDisplay);
+                if (animationController == null && currentlyDisplayedImagePath != null)
+                {
+                    var animatedWebpPlugin = PluginManager.GetPluginForFiletype("webp");
+                    if (animatedWebpPlugin != null && animatedWebpPlugin.SupportsFileTypes.Contains("webp") && currentlyDisplayedImagePath.ToLower().EndsWith(".webp"))
+                    {
+                        try
+                        {
+                            var ac = (ImageAnimationController?)animatedWebpPlugin.GetAnimationController(ImageDisplay);
+                            animationController = ac;
+                            if (ac == null)
+                                throw new Exception("Got null from plugin");
+                        }
+                        catch (Exception ex)
+                        {
+                            Message("Failure retrieving animation controller: " + ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        animationController = ImageBehavior.GetAnimationController(ImageDisplay);
+                    }
+                }
+                    
 
                 // TODO changing loop preference while a gif is playing causes these controls to stop working until loading another GIF.
-                if (gifController != null)
+                if (animationController != null)
                 {
                     if (control)
                     {
-                        gifController.GotoFrame(0);
+                        animationController.GotoFrame(0);
                     }
                     else
                     {
                         // play or pause GIF
-                        if (gifController.IsComplete)
-                            gifController.GotoFrame(0);
-                        else if (gifController.IsPaused)
-                            gifController.Play();
+                        if (animationController.IsComplete)
+                            animationController.GotoFrame(0);
+                        else if (animationController.IsPaused)
+                            animationController.Play();
                         else
-                            gifController.Pause();
+                            animationController.Pause();
                     }
                 }
 

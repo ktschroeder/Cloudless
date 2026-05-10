@@ -131,7 +131,7 @@ Margin="0,2"/>
                         <TabItem Header="Plugins">
                             <StackPanel Margin="12" VerticalAlignment="Top">
 
-                                <TextBlock>WEBP support (1.1 MB)</TextBlock>
+                                <TextBlock>Animated WEBP support (7 MB)</TextBlock>
                                 <Button Name="WebpInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebP_Click">Download and Install/Update</Button>
                                 <TextBlock Name="WebpStatusText">Ready to install</TextBlock>
 

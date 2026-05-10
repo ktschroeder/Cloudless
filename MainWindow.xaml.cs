@@ -25,7 +25,7 @@ namespace Cloudless
     {
         public const string CURRENT_VERSION = "0.7.4";
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = false;
+        public const bool LOCAL_DEV = true;
 
 
 
@@ -93,7 +93,7 @@ namespace Cloudless
 
         private TextBlock? NoImageMessage = null;
 
-        private ImageAnimationController? gifController;
+        private ImageAnimationController? animationController;
 
         private string? initialImageToLoad;
 
@@ -154,11 +154,11 @@ namespace Cloudless
 
             // bandaid fix for issue where controller gets null upon opening app directly for a GIF
             //if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
-            gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null when there isn't one
-            if (gifController != null)  // weirdly, this is somehow null sometimes when closing a window that has a GIF loaded. Could contribute to memory leak danger.
+            animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null when there isn't one
+            if (animationController != null)  // weirdly, this is somehow null sometimes when closing a window that has a GIF loaded. Could contribute to memory leak danger.
             {
-                gifController.Dispose();
-                gifController = null;
+                animationController.Dispose();
+                animationController = null;
             }
 
             if (ImageDisplay.Source is BitmapImage bi)

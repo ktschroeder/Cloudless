@@ -219,11 +219,11 @@ namespace Cloudless
                 currentlyDisplayedImagePath = uri.LocalPath;
                 AddToRecentFiles(uri.LocalPath);
 
-                gifController = ImageBehavior.GetAnimationController(ImageDisplay);
-                if (gifController != null)
+                animationController = ImageBehavior.GetAnimationController(ImageDisplay);
+                if (animationController != null)
                 {
-                    gifController.Dispose();
-                    gifController = null;  // can probably more efficiently reuse this. see https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/WpfAnimatedGif.Demo/MainWindow.xaml.cs
+                    animationController.Dispose();
+                    animationController = null;  // can probably more efficiently reuse this. see https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/WpfAnimatedGif.Demo/MainWindow.xaml.cs
                 }
 
                 if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
@@ -278,7 +278,7 @@ namespace Cloudless
                         HideLoadingOverlay();
 
 
-                        gifController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
+                        animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
                     }
                     else
                     {
@@ -338,25 +338,50 @@ namespace Cloudless
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
-                    byte[] webpBytes = File.ReadAllBytes(imageFiles[index]);
+                    var bitmap = new BitmapImage();
 
-                    var plugin = PluginManager.GetPluginForFiletype("webp");
-                    if (plugin == null)
+                    bitmap.BeginInit();
+                    bitmap.UriSource = uri;
+                    // This caches the image and releases the file lock
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    //bitmap.StreamSource.Dispose();
+                    bitmap.Freeze();
+
+
+                    ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+
+                    var animatedWebpPlugin = PluginManager.GetPluginForFiletype("webp");
+                    if (animatedWebpPlugin != null && animatedWebpPlugin.SupportsFileTypes.Contains("webp"))
                     {
-                        Message("Load failed: No plugin found for WEBP files, or version is too old. See plugin tab in preferences window.");
-                        return;
+                        animatedWebpPlugin.SetAnimatedSource(ImageDisplay, bitmap);
+                    }
+                    else
+                    {
+                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
                     }
 
-                    var bitmapSource = plugin.Convert(webpBytes);
-
-                    ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                    ImageDisplay.Source = bitmapSource;
+                    animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
                 }
                 else
                 {
-                    var bitmap = new BitmapImage(uri);
-                    ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                    ImageDisplay.Source = bitmap;
+                    if (uri.AbsolutePath.ToLower().EndsWith(".png"))
+                    {
+                        var bitmap = new BitmapImage(uri);
+
+                        ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+
+                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
+
+                        animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
+                    }
+                    else
+                    {
+                        var bitmap = new BitmapImage(uri);
+                        ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                        ImageDisplay.Source = bitmap;
+                    }
+
                 }
 
                 // hide the no-image message if an image is loaded
