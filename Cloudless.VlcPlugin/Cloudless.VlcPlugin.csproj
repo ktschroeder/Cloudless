@@ -11,6 +11,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="manifest.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="manifest.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="LibVLCSharp" Version="3.9.7.1" />
 		<PackageReference Include="LibVLCSharp.WPF" Version="3.9.7.1" />
 		<PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />

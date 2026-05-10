@@ -10,6 +10,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="manifest.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="manifest.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="AnimatedImage.Wpf" Version="2.1.4" />
 		<PackageReference Include="AnimatedImage.Native" Version="2.1.2" />
 	</ItemGroup>
