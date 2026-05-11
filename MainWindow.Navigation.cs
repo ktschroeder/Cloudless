@@ -132,9 +132,9 @@ namespace Cloudless
                 await duplicateWindow.LoadImage(currentlyDisplayedImagePath, false);
             }
 
-            duplicateWindow.ApplyWindowState(state);
+            await duplicateWindow.ApplyWindowState(state);
             duplicateWindow.Show();
-            duplicateWindow.PostProcessLoadedWindow(state);
+            await duplicateWindow.PostProcessLoadedWindow(state);
             duplicateWindow.Activate();
         }
         private void About_Click(object sender, RoutedEventArgs e)
@@ -182,9 +182,9 @@ namespace Cloudless
             cprWindow.Show();
             return cprWindow;
         }
-        private void ToggleFullscreen()
+        private async Task ToggleFullscreen()
         {
-            ToggleCropMode(false);
+            await ToggleCropMode(false);
             if (WindowState == WindowState.Normal)
             {
                 WindowStyle = WindowStyle.None;

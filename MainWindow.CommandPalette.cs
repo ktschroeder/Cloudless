@@ -1,9 +1,11 @@
-﻿using System.Windows;
-using System.Windows.Input;
+﻿using System.Collections.Specialized;
 using System.IO;
-using System.Collections.Specialized;
-using System.Windows.Controls;
+using System.Runtime.InteropServices;
 using System.Web;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+
 
 namespace Cloudless
 {
@@ -650,6 +652,13 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().StartsWith("hotkey "))
+            {
+                string args = command.Substring(6);
+                await SimulateHotkey(args.Trim());
+                return true;
+            }
+
             int targetIndex;
             if (command.StartsWith("+") || command.StartsWith("-"))
             {
@@ -701,6 +710,42 @@ namespace Cloudless
 
             Message("Command not recognized");
             return false;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern short VkKeyScan(char ch);
+        private async Task SimulateHotkey(string argsString)
+        {
+            string[] args = argsString.Split(" ");
+            bool ctrl = args.Contains("ctrl");
+            bool alt = args.Contains("alt");
+            bool shift = args.Contains("shift");
+            List<string> coreHotkey = args.Where(a => a != "ctrl" && a != "alt" && a != "shift").ToList();
+            if (coreHotkey.Count != 1)
+            {
+                Message("Command failed: Expected format is exactly one character after any modifiers (ctrl alt shift)");
+                return;
+            }
+            if (coreHotkey.First().Length != 1)
+            {
+                Message("Command failed: Core hotkey (ignoring modifiers) must be exactly one character");
+                return;
+            }
+            char finalHotkeyChar = coreHotkey.First().ToCharArray().First();
+            Key finalHotkey;
+            try
+            {
+                var vkey = VkKeyScan(finalHotkeyChar);
+                byte virtualKeyCode = (byte)(vkey & 0xFF);
+                finalHotkey = KeyInterop.KeyFromVirtualKey(virtualKeyCode);
+            }
+            catch (Exception ex)
+            {
+                Message("Failed to parse hotkey: " + ex.ToString());
+                return;
+            }
+
+            await SimulateKeyEvent(finalHotkey, shift, ctrl, alt);
         }
 
         private async Task ReverseImageSearch(string filePath, string serviceArg) {

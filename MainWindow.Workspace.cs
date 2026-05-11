@@ -374,14 +374,16 @@ namespace Cloudless
             {
                 var window = new MainWindow(state.ImagePath, state.Width, state.Height);
                 await window.LoadImage(state.ImagePath, false);
-                window.ApplyWindowState(state);
+                await window.ApplyWindowState(state);
                 window.Show();
-                window.PostProcessLoadedWindow(state, workspace.WorkspaceName);
+                await window.PostProcessLoadedWindow(state, workspace.WorkspaceName);
+                window.ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workstation from File Explrorer
                 window.Activate();
+                window.ShowInTaskbar = true;
             }
         }
 
-        public void ApplyWindowState(CloudlessWindowState state)
+        public async Task ApplyWindowState(CloudlessWindowState state)
         {
             WorkspaceLoadInProgress = true;
 
@@ -393,14 +395,14 @@ namespace Cloudless
             ResizeWindow(state.Width, state.Height);
             RepositionWindow(state.Left, state.Top);
             if (state.IsMaximized)
-                ToggleFullscreen();
+                await ToggleFullscreen();
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
             {
                 if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
 
                 // This essentially applies cropping
-                ToggleCropMode(true, true);
+                await ToggleCropMode(true, true);
                 ImageDisplay.Width = state.RenderWidth;
                 ImageDisplay.Height = state.RenderHeight;
                 
@@ -413,12 +415,12 @@ namespace Cloudless
             }
         }
 
-        public void PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null)
+        public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null)
         {
             if (state.IsMinimized)
                 MinimizeWindow(state);  // this must be done after calling Show() on window, or else image is re-rendered improperly later
 
-            ToggleCropMode(setTo: false, silent: true);
+            await ToggleCropMode(setTo: false, silent: true);
 
             imageOriginalWorkspaceName = workspaceName;
 

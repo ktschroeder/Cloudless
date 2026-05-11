@@ -14,7 +14,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        private void EnterExplorationMode(bool silent = false)
+        private void EnterExplorationMode(bool silent = false, bool simulateZoomlessBestFit = false)
         {
             var wasExplorationMode = isExplorationMode;
 
@@ -28,11 +28,16 @@ namespace Cloudless
                     case "BestFit":
                         // To clear out weirdness and prepare for zooming/panning, apply display for zoomless best fit.
                         // This is cleaner than doing nothing, pending future work to make this more seamless (particularly for ZoomToFill).
-                        ApplyDisplayMode(true);
+                        simulateZoomlessBestFit = true;
                         break;
                     default:
                         break;
                 }
+
+            if (simulateZoomlessBestFit)
+            {
+                ApplyDisplayMode(true);
+            }
 
             isExplorationMode = true;
             ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
@@ -70,6 +75,7 @@ namespace Cloudless
                     break;
                 case "BestFit":
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
+                    UpdateMargins();  // TODO maybe not needed but added during crop madness
                     break;
                 case "BestFitWithoutZooming":
                     ImageDisplay.Stretch = System.Windows.Media.Stretch.None; // Prevent automatic stretching
@@ -449,8 +455,10 @@ namespace Cloudless
             double containerHeight = this.ActualHeight;
 
             // Calculate new translate values. Include translation from delta, if provided.
-            double newTranslateX = imageTranslateTransform.X + delta?.X ?? 0;
-            double newTranslateY = imageTranslateTransform.Y + delta?.Y ?? 0;
+            double newTranslateX = imageTranslateTransform.X + (delta?.X ?? 0);
+            double newTranslateY = imageTranslateTransform.Y + (delta?.Y ?? 0);
+            // Without the above parentheses, these get zeros when delta is null, inexplicably.
+            // This is the only time I've doubted you, C#.
 
             if (!Cloudless.Properties.Settings.Default.DisableSmartZoom)
             {
@@ -705,18 +713,25 @@ namespace Cloudless
             {
                 if (imageTranslateTransform != null)
                 {
-                    cropModeStartingImagePosX = imageTranslateTransform.X;
-                    cropModeStartingImagePosY = imageTranslateTransform.Y;
-                    cropModeStartingWindowHeight = this.ActualHeight;
-                    cropModeStartingWindowWidth = this.ActualWidth;
-                    cropModeStartingWindowTop = this.Top;
-                    cropModeStartingWindowLeft = this.Left;
+                    cropModeStartingImagePosX = imageTranslateTransform.X;  // 0
+                    cropModeStartingImagePosY = imageTranslateTransform.Y;  // 0
+                    cropModeStartingWindowHeight = this.ActualHeight;       // 1080
+                    cropModeStartingWindowWidth = this.ActualWidth;         // 1728
+                    cropModeStartingWindowTop = this.Top;                   // 0
+                    cropModeStartingWindowLeft = this.Left;                 // 2656
                 }
             }
         }
 
-        private void ToggleCropMode(bool? setTo = null, bool silent = false)
+        bool _currentImageEverCropped = false;
+        private async Task ToggleCropMode(bool? setTo = null, bool silent = false)
         {
+            if ((setTo == true || (setTo == null && isCropMode == false)) && !_currentImageEverCropped)
+            {
+                EnterExplorationMode(silent: true, simulateZoomlessBestFit: true);  // without this, we get an odd bug where the image display changes weirdly, if cropping prior to pan/zoom, permanently until loading new image.
+                _currentImageEverCropped = true;
+            }
+
             if (setTo.HasValue)
             {
                 if (setTo == isCropMode)
@@ -725,9 +740,6 @@ namespace Cloudless
             }
             else
                 isCropMode = !isCropMode;
-
-            // Without this, there's some weirdness: after loading a cropped image from a workspace and then zooming/panning, the zoom/pan resets.
-            if (isCropMode && !isExplorationMode) EnterExplorationMode(silent);
 
             UpdateCropModeInfo();
 

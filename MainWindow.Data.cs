@@ -166,6 +166,8 @@ namespace Cloudless
         {
             try
             {
+                _currentImageEverCropped = false;
+
                 if (imagePath == null)
                     throw new Exception("Path not specified for image.");
                 string selectedImagePath = imagePath;

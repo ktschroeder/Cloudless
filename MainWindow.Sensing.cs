@@ -76,7 +76,7 @@ namespace Cloudless
         }
 
         // MouseMove: Handle Dragging with Axis Constraining
-        private void Window_MouseMove(object sender, MouseEventArgs e)
+        private async void Window_MouseMove(object sender, MouseEventArgs e)
         {
             if (isPanningImage)
             {
@@ -91,7 +91,7 @@ namespace Cloudless
             {
                 // Handle dragging window out of fullscreen
                 Point cursorPosition = e.GetPosition(this);
-                ToggleFullscreen();
+                await ToggleFullscreen();
                 isDraggingWindow = true;  // this will then hit the below if-block
 
                 // TODO center window on cursor
@@ -139,7 +139,7 @@ namespace Cloudless
         {
             if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Released)
             {
-                MiddleClickUp();
+                await MiddleClickUp();
                 return;
             }
 
@@ -158,46 +158,65 @@ namespace Cloudless
             await UpdateContextMenuState();  // for zoom amount, which may change when window is resized
         }
 
-        private bool _duplicating = false;  // TODO fix better; this is a band-aid for odd issue where hotkey D is recorded twice when duplicating specifically an open GIF.
+        public async Task SimulateKeyEvent(Key key, bool shift, bool control, bool alt)
+        {
+            bool markEndOfDuplication = control && !alt && !_duplicating && key == Key.D;
+
+            await ProcessKeyEvent(key, shift, control, alt);
+
+            if (markEndOfDuplication)
+                _duplicating = true;
+        }
+
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            bool control = (modifiers & ModifierKeys.Control) != 0;
+            bool alt = (modifiers & ModifierKeys.Alt) != 0;
+            bool shift = (modifiers & ModifierKeys.Shift) != 0;
+
             if (CommandPalette.IsVisible && CommandTextBox.IsFocused)
             {
                 // Let the command palette handle this key; prevent main window hotkeys
                 return;
             }
 
-            ModifierKeys modifiers = Keyboard.Modifiers;
-            bool control = (modifiers & ModifierKeys.Control) != 0;
-            bool alt = (modifiers & ModifierKeys.Alt) != 0;
-            bool shift = (modifiers & ModifierKeys.Shift) != 0;
+            bool markEndOfDuplication = control && !alt && !_duplicating && e.Key == Key.D;
 
-            if (e.Key == Key.F11)
+            await ProcessKeyEvent(e.Key, shift, control, alt);
+
+            if (markEndOfDuplication)
+                _duplicating = false;
+
+            e.Handled = true;
+        }
+
+        private bool _duplicating = false;  // TODO fix better; this is a band-aid for odd issue where hotkey D is recorded twice when duplicating specifically an open GIF.
+
+        private async Task ProcessKeyEvent(Key key, bool shift, bool control, bool alt)
+        {
+            if (key == Key.F11)
             {
-                ToggleFullscreen();
-                e.Handled = true;
+                await ToggleFullscreen();
                 return;
             }
 
-            if (e.Key == Key.Escape)
+            if (key == Key.Escape)
             {
                 if (WindowState == WindowState.Maximized)
                 {
                     WindowStyle = WindowStyle.None;
                     WindowState = WindowState.Normal;
                 }
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.D)
+            if (key == Key.D)
             {
                 if (control && !alt && !_duplicating)
                 {
                     _duplicating = true;
                     await DuplicateWindow();
-                    e.Handled = true;
-                    _duplicating = false;
                     return;
                 }
                 else if (control && alt)
@@ -205,7 +224,6 @@ namespace Cloudless
                     DebugTextBlockBorder.Visibility = DebugTextBlockBorder.Visibility == Visibility.Visible
                     ? Visibility.Collapsed
                     : Visibility.Visible;
-                    e.Handled = true;
                     return;
                 }
 
@@ -213,23 +231,21 @@ namespace Cloudless
             }
 
             // set window dimensions to image if possible
-            if (e.Key == Key.F)
+            if (key == Key.F)
             {
                 autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
                 await ResizeWindowToImage();
                 CenterWindowOnCurrentScreen();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.O)
+            if (key == Key.O)
             {
                 await OpenImage();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.Z)
+            if (key == Key.Z)
             {
                 if (control)
                     ZenOrUnzenAllWindows();
@@ -241,28 +257,25 @@ namespace Cloudless
                         Zen(isWelcome);
                 }
                 
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.H)
+            if (key == Key.H)
             {
                 if (control)
                     CommandPaletteRef();
                 else
                     HotkeyRef();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.V && !(control))
+            if (key == Key.V && !(control))
             {
                 MaximizeVerticalDimension();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.C)
+            if (key == Key.C)
             {
                 if (control && alt)
                 {
@@ -277,55 +290,48 @@ namespace Cloudless
                     Close();
                 }
 
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.P)
+            if (key == Key.P)
             {
                 OpenPreferences();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.X)
+            if (key == Key.X)
             {
                 ShowContextMenu();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.A && control)
+            if (key == Key.A && control)
             {
                 About();
-                e.Handled = true;
                 return;
             }
 
             // Toggle Topmost (always-on-top) for this window
-            if (e.Key == Key.T)
+            if (key == Key.T)
             {
                 Topmost = !Topmost;
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.I)
+            if (key == Key.I)
             {
                 ImageInfo();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.Q)
+            if (key == Key.Q)
             {
                 if (WindowState != WindowState.Maximized)
-                    ToggleCropMode();
-                e.Handled = true;
+                    await ToggleCropMode();
                 return;
             }
 
-            if (e.Key == Key.M)
+            if (key == Key.M)
             {
                 if (control)
                 {
@@ -336,11 +342,10 @@ namespace Cloudless
                     MinimizeWindow();
                 }
 
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.R)
+            if (key == Key.R)
             {
                 if (control)
                 {
@@ -351,25 +356,22 @@ namespace Cloudless
                     RotateImage90Degrees();
                 }
 
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.B)
+            if (key == Key.B)
             {
                 ResizeWindowToRemoveBestFitBars();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.L)
+            if (key == Key.L)
             {
                 await ResizeImageToFillWindow();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.W)
+            if (key == Key.W)
             {
                 if (!string.IsNullOrEmpty(currentlyDisplayedImagePath)){
                     if (control && alt)
@@ -392,18 +394,16 @@ namespace Cloudless
                     }
                 }
 
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.G)
+            if (key == Key.G)
             {
                 NextBackground();
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.Space)
+            if (key == Key.Space)
             {
                 // bandaid fix for issue where controller gets null upon opening app directly for a GIF
                 if (animationController == null && currentlyDisplayedImagePath != null)
@@ -466,11 +466,10 @@ namespace Cloudless
                     }
                 }
 
-                e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.OemSemicolon) // && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':' but allow semicolon for convenience
+            if (key == Key.OemSemicolon) // && Keyboard.Modifiers == ModifierKeys.Shift)  // i.e. colon ':' but allow semicolon for convenience
             {
                 if (!control && !alt)
                 {
@@ -486,55 +485,47 @@ namespace Cloudless
                     LoadCommandHistory();
                     await ExecuteCommand(CommandHistory.LastOrDefault() ?? "");
                 }
-
-                e.Handled = true;
             }
 
             // navigating in directory
             if (imageFiles != null && imageFiles.Length != 0 && !control && !alt)
             {
                 // TODO for some reason, these are hit twice per key press, specifically if the image to be loaded is a WEBM. Band-aid fix is to use a flag.
-                if (e.Key == Key.Left || e.Key == Key.A)
+                if (key == Key.Left || key == Key.A)
                 {
                     await GoToPreviousImage();
-                    e.Handled = true;
                     return; 
                 }
-                else if (e.Key == Key.Right || e.Key == Key.D)
+                else if (key == Key.Right || key == Key.D)
                 {
                     await GoToNextImage();
-                    e.Handled = true;
                     return;
                 }
             }
 
             if (control)
             {
-                if (e.Key == Key.OemPlus || e.Key == Key.Add) // Zoom In
+                if (key == Key.OemPlus || key == Key.Add) // Zoom In
                 {
                     await ZoomFromCenter(true);
-                    e.Handled = true;
                 }
-                else if (e.Key == Key.OemMinus || e.Key == Key.Subtract) // Zoom Out
+                else if (key == Key.OemMinus || key == Key.Subtract) // Zoom Out
                 {
                     await ZoomFromCenter(false);
-                    e.Handled = true;
                 }
-                else if (e.Key == Key.D0) // Reset to Best Fit
+                else if (key == Key.D0) // Reset to Best Fit
                 {
                     ResetPan();
                     ResetZoom();
-                    e.Handled = true;
                 }
-                else if (e.Key == Key.D9) // True Resolution (100%)
+                else if (key == Key.D9) // True Resolution (100%)
                 {
                     //ResetPan();
                     ResetZoomToTrueResolution();
-                    e.Handled = true;
                 }
-                else if (e.Key >= Key.D1 && e.Key <= Key.D8) // Hotkeys for custom user commands
+                else if (key >= Key.D1 && key <= Key.D8) // Hotkeys for custom user commands
                 {
-                    switch (e.Key)
+                    switch (key)
                     {
                         case Key.D1: await RunUserCommand(0); break;
                         case Key.D2: await RunUserCommand(1); break;
@@ -545,11 +536,10 @@ namespace Cloudless
                         case Key.D7: await RunUserCommand(6); break;
                         case Key.D8: await RunUserCommand(7); break;
                     }
-                    e.Handled = true;
                 }
             }
 
-            if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
+            if (key == Key.LeftCtrl || key == Key.RightCtrl)
             {
                 if (!isPanningImage && ImageDisplay.IsMouseOver && !MouseControlMode && !MouseCommandMode)
                 {
@@ -642,11 +632,11 @@ namespace Cloudless
                 }
             }
         }
-        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private async void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
             {
-                ToggleFullscreen();
+                await ToggleFullscreen();
             }
         }
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
@@ -658,6 +648,7 @@ namespace Cloudless
 
             //SkipNextContextMenu = false;
         }
+        DispatcherTimer _middleClickDoubleClickTimer;
         private void MiddleClickDown()
         {
             _middleClickHoldTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Settings.Default.MouseLongPressMS) };
@@ -670,19 +661,40 @@ namespace Cloudless
             };
             _middleClickHoldTimer.Start();
         }
-        private void MiddleClickUp()
+        private async Task MiddleClickUp()
         {
             bool timerStillLive = _middleClickHoldTimer?.IsEnabled ?? false;
             _middleClickHoldTimer?.Stop();
 
-            if (timerStillLive)
+            if (_middleClickDoubleClickTimer?.IsEnabled ?? false)  // we got a second middle click within double click threshold
             {
-                ShortMiddleClick();
+                await DoubleMiddleClick();
             }
+            else
+            {
+                _middleClickDoubleClickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };  // 500 ms is standard in Windows
+                _middleClickDoubleClickTimer.Tick += (s, args) =>
+                {
+                    _middleClickDoubleClickTimer?.Stop();
+                };
+                _middleClickDoubleClickTimer.Start();
+
+                if (timerStillLive)
+                {
+                    ShortMiddleClick();
+                }
+            }            
         }
         private void ShortMiddleClick()
         {
             OpenQuickCommandWindow();
+        }
+        private async Task DoubleMiddleClick()
+        {
+            if (QuickCommandDisplay != null)
+                CloseQuickCommandWindow();
+
+            await ToggleCropMode();
         }
         public QuickCommandWindow? QuickCommandDisplay = null;
         private void OpenQuickCommandWindow()

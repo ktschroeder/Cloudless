@@ -23,7 +23,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.5"; 
+        public const string CURRENT_VERSION = "0.7.5.2"; 
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -201,7 +201,7 @@ namespace Cloudless
                 overlayManager.ClearMessageHistory();
 
             isExplorationMode = false;
-            ToggleCropMode(false);
+            //ToggleCropMode(false);  // this used to be uncommented, but I don't see how crop mode could be enabled at this line.
             //NoImageMessage.Visibility = Visibility.Visible;
             ImageDisplay.Visibility = Visibility.Collapsed;
             CompositionTarget.Rendering += UpdateDebugInfo;
@@ -358,7 +358,8 @@ namespace Cloudless
             $"Effective crop rect with TLO: Width={tloWidth ?? 0:F2}, Height={tloHeight ?? 0:F2}\n" +
             $"Cursor (Window): X={cursorPosition.X:F2}, Y={cursorPosition.Y:F2}\n" +
             $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
-            $"Display mode: {displayMode:F2}";
+            $"ImageDisplay stretch enum: {ImageDisplay.Stretch.ToString():F2}\n" +
+            $"Display mode setting: {displayMode:F2}";
         }
         public void Message(string message, TimeSpan? duration = null)
         {
