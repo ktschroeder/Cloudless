@@ -42,16 +42,16 @@ namespace Cloudless
             isExplorationMode = true;
             ImageDisplay.Stretch = System.Windows.Media.Stretch.Uniform;
 
-            if (!wasExplorationMode && !silent)
+            if (!wasExplorationMode && !silent && !isComicMode)
                 Message("Entered Exploration Mode (zoom and pan)");
         }
-        private void ApplyDisplayMode(bool simulateZoomlessBestFit = false)
+        private void ApplyDisplayMode(bool simulateZoomlessBestFit = false, bool silent = false)
         {
             var wasExplorationMode = isExplorationMode;
             isExplorationMode = false;
 
             string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
-            if (simulateZoomlessBestFit)
+            if (simulateZoomlessBestFit || isComicMode)
                 displayMode = "BestFitWithoutZooming";
             bool loopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             bool alwaysOnTopByDefault = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
@@ -61,8 +61,15 @@ namespace Cloudless
             ImageDisplay.Height = Double.NaN; // Reset explicit height  // TODO some weirdness here sometimes?
             ImageDisplay.Margin = new Thickness(0); // Reset margin
 
-            ResetPan();
-            ResetZoom();
+            if (!isComicMode)
+            {
+                ResetPan();
+                ResetZoom();
+            }
+            else
+            {
+                ApplyComicModePan();
+            }
 
             // Apply display mode for stretching
             switch (displayMode)
@@ -104,7 +111,7 @@ namespace Cloudless
 
             Topmost = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
 
-            if (wasExplorationMode)
+            if (wasExplorationMode && !silent && !isComicMode)
                 Message("Entered Display Mode");
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -277,9 +284,9 @@ namespace Cloudless
             this.Left = left;
             this.Top = top;
         }
-        private async Task ResizeWindowToImage()
+        private async Task ResizeWindowToImage(bool silent = false)
         {
-            if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
+            if (isExplorationMode) ApplyDisplayMode(silent: silent);  // exit exploration mode
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 double imageWidth = bitmap.PixelWidth;
@@ -380,7 +387,6 @@ namespace Cloudless
             if (!isExplorationMode)
                 EnterExplorationMode();
 
-            
             if (ImageDisplay.Source is BitmapSource bitmap)
             {
                 double imageWidth = bitmap.PixelWidth;
@@ -606,6 +612,27 @@ namespace Cloudless
             imageTranslateTransform.X = 0;
             imageTranslateTransform.Y = 0;
         }
+        private void ApplyComicModePan()
+        {
+            StopPanning();
+            if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
+
+            // slightly hacky but fine. We pan to a corner by setting transform to an extreme, then clamping.
+            if (Cloudless.Properties.Settings.Default.ComicModeTopRight)
+            {
+                // pan to top-right
+                imageTranslateTransform.X = -9999;
+                imageTranslateTransform.Y = 9999;
+            }
+            else
+            {
+                // pan to top-left
+                imageTranslateTransform.X = 9999;
+                imageTranslateTransform.Y = 9999;
+            }
+
+            ClampTransformToIntuitiveBounds();
+        }
         private void RotateImage90Degrees()
         {
             if (ImageDisplay.Source is not BitmapSource bitmapSource)
@@ -826,6 +853,20 @@ namespace Cloudless
             }
         }
 
+        private void ToggleComicMode()
+        {
+            if (!isComicMode)
+            {
+                EnterExplorationMode(silent: true);
+                isComicMode = true;
+                Message("Entered Comic Mode");
+            }
+            else
+            {
+                isComicMode = false;
+                Message("Exited Comic Mode");
+            }
+        }
 
         // Native structures for Monitor info
         [StructLayout(LayoutKind.Sequential)]

@@ -94,6 +94,8 @@ Margin="0,2"/>
     Content="Resize window to match new image when opening in app" Margin="0,2"/>
                                 <CheckBox x:Name="BorderOnMainWindowCheckbox" 
     Content="Show a border around the main window" Margin="0,2"/>
+                                <CheckBox x:Name="ComicModeTopRightCheckbox" 
+    Content="In comic mode, send pan to top-right (e.g. for manga). If this is unchecked, pan is sent to top-left." Margin="0,2"/>
 
                                 <TextBlock Text="Background:" FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
                                 <ComboBox x:Name="BackgroundDropdown" SelectedIndex="0" Margin="0,0,0,10">

@@ -371,6 +371,12 @@ namespace Cloudless
                 return;
             }
 
+            if (key == Key.E)
+            {
+                ToggleComicMode();
+                return;
+            }
+
             if (key == Key.W)
             {
                 if (!string.IsNullOrEmpty(currentlyDisplayedImagePath)){

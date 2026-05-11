@@ -257,5 +257,17 @@ namespace Cloudless.Properties {
                 this["MouseLongPressMS"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ComicModeTopRight {
+            get {
+                return ((bool)(this["ComicModeTopRight"]));
+            }
+            set {
+                this["ComicModeTopRight"] = value;
+            }
+        }
     }
 }

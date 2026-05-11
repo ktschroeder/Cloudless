@@ -23,7 +23,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.5.2"; 
+        public const string CURRENT_VERSION = "0.7.5.3"; 
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -61,6 +61,7 @@ namespace Cloudless
         private int currentImageIndex;
         private bool autoResizingSpaceIsToggled;
         private bool isExplorationMode;
+        private bool isComicMode = false;
         private string? currentlyDisplayedImagePath;
 
         private bool isCropMode;

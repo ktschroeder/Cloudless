@@ -15,6 +15,7 @@ namespace Cloudless
         public int SpaceAroundBounds {  get; private set; }
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
         public bool BorderOnMainWindow { get; private set; }
+        public bool ComicModeTopRight { get; private set; }
         public bool LoopGifs { get; private set; }
         public bool MuteMessages { get; private set; }
         public bool AlwaysOnTopByDefault { get; private set; }
@@ -59,6 +60,10 @@ namespace Cloudless
             var currentBorderOnMainWindow = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
             BorderOnMainWindowCheckbox.IsChecked = currentBorderOnMainWindow;
             BorderOnMainWindow = currentBorderOnMainWindow;
+
+            var currentComicModeTopRight = Cloudless.Properties.Settings.Default.ComicModeTopRight;
+            ComicModeTopRightCheckbox.IsChecked = currentComicModeTopRight;
+            ComicModeTopRight = currentComicModeTopRight;
 
             var currentLoopGifs = Cloudless.Properties.Settings.Default.LoopGifs;
             LoopGifsCheckbox.IsChecked = currentLoopGifs;
@@ -165,6 +170,8 @@ namespace Cloudless
             ResizeWindowToNewImageWhenOpeningThroughApp = ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked ?? false;
 
             BorderOnMainWindow = BorderOnMainWindowCheckbox.IsChecked ?? false;
+
+            ComicModeTopRight = ComicModeTopRightCheckbox.IsChecked ?? false;
 
             LoopGifs = LoopGifsCheckbox.IsChecked ?? false;
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;

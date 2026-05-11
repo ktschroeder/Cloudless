@@ -48,6 +48,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
                 Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
                 Cloudless.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
+                Cloudless.Properties.Settings.Default.ComicModeTopRight = configWindow.ComicModeTopRight;
                 Cloudless.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
                 Cloudless.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
                 Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;

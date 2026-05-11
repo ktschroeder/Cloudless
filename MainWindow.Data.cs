@@ -393,7 +393,7 @@ namespace Cloudless
 
                 if (WorkspaceLoadInProgress == false && (!openedThroughApp || Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp))
                 {
-                    await ResizeWindowToImage();
+                    await ResizeWindowToImage(silent: isComicMode);
                     CenterWindowOnCurrentScreen();
                 }
 
