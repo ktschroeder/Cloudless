@@ -1,35 +1,36 @@
-﻿using System.Windows.Controls;
-using System.Windows;
-//using WpfAnimatedGif;
+﻿//using WpfAnimatedGif;
 using AnimatedImage;
+using AnimatedImage.Wpf;
 using Microsoft.Win32;
-using System.Drawing.Imaging;
-using System.Drawing;
-using System.IO;
-using System.Net.Http;
-using System.Runtime.InteropServices;
-using System.Windows.Interop;
-using System.Windows.Media.Imaging;
-using System.Collections.Specialized;
-using System.Text.Json;
-using Path = System.IO.Path;
-using System.Diagnostics;
-using System.ComponentModel;
-using System.Windows.Threading;
-using System.Windows.Shapes;
 using System;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Configuration;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
+using Path = System.IO.Path;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
-using static System.Net.WebRequestMethods;
-using System.Net.Http.Headers;
-using File = System.IO.File;
-using System.Text.RegularExpressions;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
-using System.Configuration;
-using AnimatedImage.Wpf;
 
 namespace Cloudless
 {
@@ -202,6 +203,46 @@ namespace Cloudless
                 Message($"Failed to load the image at path \"{imagePath}\": {ex.Message}");
             }
         }
+        
+        public List<AnticipatoryMediaData> AnticipatoryCache;
+        private async Task UpdateAnticipatoryCache(int imageFilesIndex)
+        {
+            const int ALLOWED_CACHE_SIZE = 5;
+
+            /*
+             * 
+             * based on new index, ensure the next ALLOWED_CACHE_SIZE files in the current sort order are present in this list. For any that are not, boot out any in list that are not next N,
+             *   and then fire-and-forget to fetch those files for anticipatory cache. When ready to display that image, check if it's in the cache, and if so then use the data.
+             * This approach probably requires that we can A) load data ahead of time as desired, B) it is the data load that slows comic traversal, and C) that we can store this data in a feasible object.
+             * 
+             * Seems pretty likely that this will introduce some nasty concurrency complexity in actual use. Rethink this, look more into pre-existing specialized collections/caches.
+             * 
+             */
+
+            for (int i = 1; i <= ALLOWED_CACHE_SIZE; i++)
+            {
+                string path = imageFiles[imageFilesIndex + i];
+
+                var mediaData = AnticipatoryCache.Where(amd => amd.Path == path).FirstOrDefault();
+                if (mediaData != null)
+                {
+                    mediaData.Hit = true;
+                    continue;
+                }
+
+                // miss, so create entry
+
+            }
+
+            var toDispose = AnticipatoryCache.Where(amd => !amd.Hit);
+            AnticipatoryCache.RemoveAll(amd => !amd.Hit);
+
+            foreach (var mediaData in AnticipatoryCache)
+            {
+                mediaData.Hit = false;
+            }
+
+        }
         private async Task DisplayImage(int index, bool openedThroughApp)
         {
             RemoveZen();
@@ -245,16 +286,16 @@ namespace Cloudless
                     var fileSizeMB = (double)(new FileInfo(uri.OriginalString).Length) / 1024 / 1024;
                     bool loadGif = true;
 
-                    if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
-                    {
-                        var gifWarningWindow = new GifWarningWindow(currentlyDisplayedImagePath, fileSizeMB)
-                        {
-                            Owner = this,
-                            WindowStartupLocation = WindowStartupLocation.CenterOwner
-                        };
-                        gifWarningWindow.ShowDialog();
-                        loadGif = gifWarningWindow.Proceed;
-                    }
+                    //if (fileSizeMB > 50d)  // TODO maybe make this max configurable, and/or option to disable this warning. also magic number
+                    //{
+                    //    var gifWarningWindow = new GifWarningWindow(currentlyDisplayedImagePath, fileSizeMB)
+                    //    {
+                    //        Owner = this,
+                    //        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    //    };
+                    //    gifWarningWindow.ShowDialog();
+                    //    loadGif = gifWarningWindow.Proceed;
+                    //}
                     
                     if (loadGif)
                     {
@@ -286,7 +327,7 @@ namespace Cloudless
                     {
                         ImageDisplay.Source = null;  // show black screen rather than previous image to minimize confusion. TODO can improve on this UX probably.
                     }
-                 }
+                }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webm") || uri.AbsolutePath.ToLower().EndsWith(".mkv") || uri.AbsolutePath.ToLower().EndsWith(".mp4"))
                 {
                     try
@@ -1013,6 +1054,15 @@ namespace Cloudless
             }
             return null;
         }
+    }
+
+    public class AnticipatoryMediaData
+    {
+        public string Path;
+        public Bitmap? Bitmap;
+        public UIElement? VideoHostContent;
+        public bool Hit;
+        public bool Ready;
     }
 
     public class ImgBBResponse

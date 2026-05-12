@@ -195,8 +195,9 @@ namespace Cloudless
             {
                 Message("Error preparing plugins: " + ex.Message);
             }
-            
-            
+
+            AnticipatoryCache = new List<AnticipatoryMediaData>();
+
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
             if (startUp)
                 overlayManager.ClearMessageHistory();
