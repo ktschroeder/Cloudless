@@ -370,9 +370,10 @@ namespace Cloudless
                     if (uri.AbsolutePath.ToLower().EndsWith(".png"))
                     {
                         var bitmap = new BitmapImage(uri);
+                        bitmap.Freeze();
 
                         ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-
+                        
                         ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
 
                         animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
@@ -380,6 +381,7 @@ namespace Cloudless
                     else
                     {
                         var bitmap = new BitmapImage(uri);
+                        bitmap.Freeze();
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                         ImageDisplay.Source = bitmap;
                     }
