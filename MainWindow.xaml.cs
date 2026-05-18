@@ -23,9 +23,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.7.5.3"; 
+        public const string CURRENT_VERSION = "0.7.5.99"; 
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = false;
+        public const bool LOCAL_DEV = true;
 
 
 
@@ -151,16 +151,88 @@ namespace Cloudless
 
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
             {
-                videoPlayer.Dispose();
+                try { videoPlayer.Stop(); } catch { }
+                try { videoPlayer.Dispose(); } catch { }                
             }
 
             VideoHost.Content = null;
+
+
+
+            // Animated GIF cleanup
+            try
+            {
+                var controller = ImageBehavior.GetAnimationController(ImageDisplay);
+                var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
+
+                try
+                {
+                    ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                }
+                catch { }
+
+                // If we have a controller, try to stop it cleanly using any available API, then dispose it.
+                if (controller != null)
+                {
+                    try { Cloudless.Diagnostics.LeakTracker.Register(controller, "ImageAnimationController"); } catch { }
+
+                    try
+                    {
+                        // Prefer Stop if present, then Pause
+                        var t = controller.GetType();
+                        var stop = t.GetMethod("Stop", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        if (stop != null)
+                        {
+                            try { stop.Invoke(controller, null); } catch { }
+                        }
+
+                        var pause = t.GetMethod("Pause", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        if (pause != null)
+                        {
+                            try { pause.Invoke(controller, null); } catch { }
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        if (controller is IDisposable d)
+                        {
+                            d.Dispose();
+                        }
+                        else
+                        {
+                            // fallback: try calling Dispose via reflection if it exists but interface isn't visible
+                            var disp = controller.GetType().GetMethod("Dispose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                            if (disp != null)
+                                try { disp.Invoke(controller, null); } catch { }
+                        }
+                    }
+                    catch { }
+
+                    try { Cloudless.Diagnostics.LeakTracker.MarkClosed(controller); } catch { }
+
+                    animationController = null;
+                }
+
+                // If BitmapImage backed the Source, dispose its stream if present
+                if (ImageDisplay.Source is BitmapImage bim)
+                {
+                    try { bim.StreamSource?.Dispose(); } catch { }
+                }
+
+                try { ImageDisplay.Source = null; } catch { }
+            }
+            catch
+            {
+            }
 
             // bandaid fix for issue where controller gets null upon opening app directly for a GIF
             //if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
             animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null when there isn't one
             if (animationController != null)  // weirdly, this is somehow null sometimes when closing a window that has a GIF loaded. Could contribute to memory leak danger.
             {
+                animationController.Pause();
                 animationController.Dispose();
                 animationController = null;
             }
@@ -170,14 +242,14 @@ namespace Cloudless
                 bi.StreamSource?.Dispose();
             }
 
-            var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
+            //var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
 
-            if (animatedSource is ImageSource src)
-            {
-                // TODO
-            }
+            //if (animatedSource is ImageSource src)
+            //{
+            //    // TODO
+            //}
 
-            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+            //ImageBehavior.SetAnimatedSource(ImageDisplay, null);
 
             ImageDisplay.Source = null;
 

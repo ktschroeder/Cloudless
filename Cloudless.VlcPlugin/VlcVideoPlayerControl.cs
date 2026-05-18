@@ -5,9 +5,11 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using MediaPlayer = LibVLCSharp.Shared.MediaPlayer;
+//using Cloudless.Diagnostics;
 
 namespace Cloudless.VlcPlugin
 {
@@ -15,14 +17,12 @@ namespace Cloudless.VlcPlugin
     {
         private LibVLC _libVLC;
         private MediaPlayer _mediaPlayer;
-        //private MediaPlayer _mediaPlayer2;
         private VideoView _videoView;
         private IntPtr? _preloadedLibVlcHandle = null;
         private IntPtr? _preloadedLibVlcCoreHandle = null;
 
         private Uri _currentUri;
-        //private Media _media = null; 
-        //private Media _media2 = null; 
+        private Media _currentMedia = null;
 
         TaskCompletionSource<bool> _loadSignal;
 
@@ -40,11 +40,11 @@ namespace Cloudless.VlcPlugin
 
         public async Task Initialize()
         {
+            try { Cloudless.Diagnostics.LeakTracker.Register(this, "VlcVideoPlayerControl"); } catch { }
+
             _loadSignal = new TaskCompletionSource<bool>();
 
             _libVLC = await LibVlcProvider.GetInstance();
-
-            
 
             _videoView = new VideoView
             {
@@ -54,30 +54,40 @@ namespace Cloudless.VlcPlugin
             };
             // we need the VideoView to be fully loaded before setting a MediaPlayer on it.
             _videoView.Loaded += VideoView_Loaded;
+            this.Unloaded += VlcVideoPlayerControl_Unloaded;
 
             Content = _videoView;
         }
 
+        private void VlcVideoPlayerControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // Defensive: ensure we try to stop playback if the control is unloaded from visual tree.
+            try { Stop(); } catch { }
+        }
+
         private async void VideoView_Loaded(object sender, RoutedEventArgs e)
         {
-            _libVLC = await LibVlcProvider.GetInstance();
-            _mediaPlayer = new MediaPlayer(_libVLC);
+            try
+            {
+                _libVLC = await LibVlcProvider.GetInstance();
+                _mediaPlayer = new MediaPlayer(_libVLC);
 
-            _mediaPlayer.EnableMouseInput = false;
-            _mediaPlayer.EnableKeyInput = false;
+                try { Cloudless.Diagnostics.LeakTracker.Register(_mediaPlayer, "LibVLC.MediaPlayer"); } catch { }
 
-            // No EndReached handler to avoid captured closures keeping media player alive
+                _mediaPlayer.EnableMouseInput = false;
+                _mediaPlayer.EnableKeyInput = false;
 
-            _videoView.MediaPlayer = _mediaPlayer;
+                // No EndReached handler here to avoid captured closures keeping media player alive.
+                _videoView.MediaPlayer = _mediaPlayer;
 
-            _loadSignal.SetResult(true);
-
-            // init slot hack for smooth looping, which VLC doesn't support natively
-            //_mediaPlayer2 = new MediaPlayer(_libVLC);
-            //_mediaPlayer2.EnableMouseInput = false;
-            //_mediaPlayer2.EnableKeyInput = false;
-            //_mediaPlayer2.Play(_media2);
-            //_mediaPlayer2.Pause();
+                _loadSignal.SetResult(true);
+            }
+            catch (Exception ex)
+            {
+                // signal load to avoid deadlocks
+                _loadSignal.TrySetResult(true);
+                Console.WriteLine($"VlcVideoPlayerControl.VideoView_Loaded failed: {ex.Message}");
+            }
         }
 
         private static void CopyDirectoryRecursive(string sourceDir, string destDir)
@@ -104,24 +114,51 @@ namespace Cloudless.VlcPlugin
 
         public async Task Play(Uri uri, Task? postPlayTask = null)
         {
-            await _loadSignal.Task;  // ensure vide view is loaded, or else VLC will open the media in an external player
+            await _loadSignal.Task;  // ensure video view is loaded, or else VLC will open the media in an external player
 
-            using var media = new Media(_libVLC, uri);
-            //_media = media;
-            //_media2 = new Media(_libVLC, uri);
-            _currentUri = uri;
-
-            _mediaPlayer?.Play(media);
-
-            if (postPlayTask != null)
+            try
             {
-                await postPlayTask;
+                try
+                {
+                    _mediaPlayer?.Stop();
+                }
+                catch { }
+
+                try
+                {
+                    _currentMedia?.Dispose();
+                }
+                catch { }
+                _currentMedia = null;
+
+                // Create and keep the media for the lifetime of playback so we can reliably dispose it later.
+                var media = new Media(_libVLC, uri);
+                _currentMedia = media;
+
+                try { Cloudless.Diagnostics.LeakTracker.Register(media, "LibVLC.Media"); } catch { }
+
+                _currentUri = uri;
+
+                _mediaPlayer?.Play(media);
+
+                if (postPlayTask != null)
+                {
+                    await postPlayTask;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"VlcVideoPlayerControl.Play failed: {ex.Message}");
+                throw;
             }
         }
 
         public async Task<(int, int)?> GetDimensions()
         {
-            await _loadSignal.Task;  // ensure vide view is loaded, or else _mediaPlayer is probably null
+            await _loadSignal.Task;  // ensure video view is loaded, or else _mediaPlayer is probably null
+
+            if (_mediaPlayer?.Media == null)
+                return null;
 
             var tracks = _mediaPlayer.Media.Tracks;
             foreach (var track in tracks)
@@ -140,19 +177,44 @@ namespace Cloudless.VlcPlugin
 
         public void Pause()
         {
-            //_mediaPlayer?.Pause();
             _mediaPlayer?.SetPause(_mediaPlayer.IsPlaying);
         }
 
         public void Stop()
         {
-            _mediaPlayer?.Stop();
+            try
+            {
+                if (_mediaPlayer != null)
+                {
+                    try { _mediaPlayer.Stop(); } catch { }
+                    // Dispose the media used for playback
+                    try
+                    {
+                        _currentMedia?.Dispose();
+                    }
+                    catch { }
+                    _currentMedia = null;
+                }
+            }
+            catch { }
         }
 
         public void SetMedia(Uri uri)
         {
-            //_mediaPlayer?.Stop();
-            //_mediaPlayer?.SetMedia(new Media(_libVLC, uri));
+            // Replace the current media without starting playback.
+            //try
+            //{
+            //    var media = new Media(_libVLC, uri);
+            //    try
+            //    {
+            //        _currentMedia?.Dispose();
+            //    }
+            //    catch { }
+            //    _currentMedia = media;
+            //    try { LeakTracker.Register(media, "LibVLC.Media"); } catch { }
+            //    _mediaPlayer?.SetMedia(media);
+            //}
+            //catch { }
         }
 
         public void Restart()
@@ -179,13 +241,19 @@ namespace Cloudless.VlcPlugin
                 if (_videoView != null)
                 {
                     _videoView.Loaded -= VideoView_Loaded;
+                    this.Unloaded -= VlcVideoPlayerControl_Unloaded;
 
-                    if (_videoView.MediaPlayer != null)
+                    // Detach MediaPlayer from VideoView (MediaPlayer may be same as _mediaPlayer)
+                    try
                     {
-                        // The MediaPlayer attached to VideoView may be the same as _mediaPlayer.
-                        try { _videoView.MediaPlayer.Dispose(); } catch { }
-                        _videoView.MediaPlayer = null;
+                        if (_videoView.MediaPlayer != null)
+                        {
+                            try { _videoView.MediaPlayer.Stop(); } catch { }
+                            try { _videoView.MediaPlayer.Dispose(); } catch { }
+                            _videoView.MediaPlayer = null;
+                        }
                     }
+                    catch { }
 
                     try { _videoView.Dispose(); } catch { }
                 }
@@ -194,6 +262,18 @@ namespace Cloudless.VlcPlugin
 
             try
             {
+                // Stop and dispose managed media objects
+                //try { _mediaPlayer?.Stop(); } catch { }
+                try
+                {
+                    if (_currentMedia != null)
+                    {
+                        try { _currentMedia.Dispose(); } catch { }
+                        _currentMedia = null;
+                    }
+                }
+                catch { }
+
                 if (_mediaPlayer != null)
                 {
                     try { _mediaPlayer.Dispose(); } catch { }
@@ -213,6 +293,8 @@ namespace Cloudless.VlcPlugin
                     NativeLibrary.Free(_preloadedLibVlcCoreHandle.Value);
             }
             catch { }
+
+            try { Cloudless.Diagnostics.LeakTracker.MarkClosed(this); } catch { }
         }
 
         public TimeSpan GetDuration()

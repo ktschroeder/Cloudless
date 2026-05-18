@@ -230,6 +230,7 @@ namespace Cloudless
 
                 if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
                 {
+                    videoPlayer.Stop();
                     videoPlayer.Dispose();
                 }
 
@@ -412,6 +413,11 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
+                if (ex is TimeoutException)
+                {
+                    return;
+                }
+
                 Message($"Failed to display image: {ex.Message}");
             }
         }
