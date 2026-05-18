@@ -66,29 +66,7 @@ namespace Cloudless.VlcPlugin
             _mediaPlayer.EnableMouseInput = false;
             _mediaPlayer.EnableKeyInput = false;
 
-            _mediaPlayer.EndReached += (sender, args) =>
-            {
-                try
-                {
-                    // Note: App seems to crash here sometimes when this event is triggered but the window has been closed. I think in the QueueUserWorkItem method.
-
-                    // IMPORTANT: Restart playback on a different thread to avoid deadlocks
-                    ThreadPool.QueueUserWorkItem(_ =>
-                    {
-                        //_mediaPlayer.Stop(); // Recommended to stop before re-playing
-                        _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
-                                                                             //_videoView.MediaPlayer = _mediaPlayer2;
-                                                                             //_mediaPlayer2.Play();
-                    });
-
-                    //Restart();
-                }
-                catch (Exception ex)
-                {
-                    // TODO probably pass in messenger to plugins to be used like here
-                    Console.WriteLine($"Error in EndReached handler: {ex.Message}");
-                }
-            };
+            // No EndReached handler to avoid captured closures keeping media player alive
 
             _videoView.MediaPlayer = _mediaPlayer;
 
@@ -196,27 +174,45 @@ namespace Cloudless.VlcPlugin
 
         public void Dispose()
         {
-            if (_videoView != null)
+            try
             {
-                if (_videoView.MediaPlayer != null)
+                if (_videoView != null)
                 {
-                    _videoView.MediaPlayer.Dispose();
-                    _videoView.MediaPlayer = null;
-                }
-                
-                _videoView.Dispose();
-                _videoView.MediaPlayer = null;
-            }
+                    _videoView.Loaded -= VideoView_Loaded;
 
-            _mediaPlayer?.Dispose();
-            _mediaPlayer = null;
-            _libVLC?.Dispose();
+                    if (_videoView.MediaPlayer != null)
+                    {
+                        // The MediaPlayer attached to VideoView may be the same as _mediaPlayer.
+                        try { _videoView.MediaPlayer.Dispose(); } catch { }
+                        _videoView.MediaPlayer = null;
+                    }
+
+                    try { _videoView.Dispose(); } catch { }
+                }
+            }
+            catch { }
+
+            try
+            {
+                if (_mediaPlayer != null)
+                {
+                    try { _mediaPlayer.Dispose(); } catch { }
+                    _mediaPlayer = null;
+                }
+            }
+            catch { }
+
+            // Do NOT dispose the shared LibVLC instance provided by LibVlcProvider; it is shared across players.
             _libVLC = null;
 
-            if (_preloadedLibVlcHandle.HasValue)
-                NativeLibrary.Free(_preloadedLibVlcHandle.Value);
-            if (_preloadedLibVlcCoreHandle.HasValue)
-                NativeLibrary.Free(_preloadedLibVlcCoreHandle.Value);
+            try
+            {
+                if (_preloadedLibVlcHandle.HasValue)
+                    NativeLibrary.Free(_preloadedLibVlcHandle.Value);
+                if (_preloadedLibVlcCoreHandle.HasValue)
+                    NativeLibrary.Free(_preloadedLibVlcCoreHandle.Value);
+            }
+            catch { }
         }
 
         public TimeSpan GetDuration()

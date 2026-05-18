@@ -75,6 +75,7 @@ namespace Cloudless
         public string? imageOriginalWorkspaceName;
 
         private OverlayMessageManager? overlayManager;
+        private HwndSource? _hwndSource;
 
         private const int MaxRecentFilesInGallery = 30;
         private const int MaxRecentFilesInContextWindow = 5;
@@ -153,6 +154,8 @@ namespace Cloudless
                 videoPlayer.Dispose();
             }
 
+            VideoHost.Content = null;
+
             // bandaid fix for issue where controller gets null upon opening app directly for a GIF
             //if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
             animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null when there isn't one
@@ -178,12 +181,72 @@ namespace Cloudless
 
             ImageDisplay.Source = null;
 
+            // Unsubscribe from static/long-lived events so this window can be GC'd
+            try
+            {
+                CompositionTarget.Rendering -= UpdateDebugInfo;
+            }
+            catch { }
+
+            try
+            {
+                this.PreviewMouseWheel -= OnMouseWheelZoom;
+            }
+            catch { }
+
+            // Stop any timers that may be active
+            try { _rightClickHoldTimer?.Stop(); } catch { }
+            try { _middleClickHoldTimer?.Stop(); } catch { }
+            try { _resizeStarTimer?.Stop(); } catch { }
+
+            // Remove WndProc hook if present
+            try
+            {
+                _hwndSource?.RemoveHook(WndProc);
+                _hwndSource = null;
+            }
+            catch { }
+
+            // Dispose overlay manager to cancel any pending UI continuations and allow collection
+            try { overlayManager?.Dispose(); } catch { }
+            overlayManager = null;
+
+            // Mark this window as closed for diagnostics
+            Cloudless.Diagnostics.LeakTracker.MarkClosed(this);
+
+            // Schedule a delayed diagnostic run to generate a report and write it to temp
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(3000); // allow finalizers and queued operations to run
+                    string tempPath = Cloudless.Diagnostics.LeakTracker.WriteReportToTempFile();
+                    string report = System.IO.File.ReadAllText(tempPath);
+                    Debug.WriteLine(report);
+                    // Try to show a short overlay message with the path if window is still interactive.
+                    try
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            Message($"Leak diagnostic written: {tempPath}");
+                        });
+                    }
+                    catch { }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"LeakTracker run failed: {ex.Message}");
+                }
+            });
+
             System.GC.Collect();
-            //System.GC.WaitForPendingFinalizers();
+            System.GC.WaitForPendingFinalizers();
         }
         private void Setup(bool startUp = false)
         {
             InitializeComponent();
+
+            Cloudless.Diagnostics.LeakTracker.Register(this, "MainWindow");
 
             Closing += (sender, e) => OnClose();
 
@@ -265,8 +328,8 @@ namespace Cloudless
         private void Window_SourceInitialized(object sender, EventArgs e)
         {
             IntPtr handle = new WindowInteropHelper(this).Handle;
-            HwndSource source = HwndSource.FromHwnd(handle);
-            source.AddHook(WndProc);
+            _hwndSource = HwndSource.FromHwnd(handle);
+            _hwndSource?.AddHook(WndProc);
         }
         private void InitializeZooming()
         {

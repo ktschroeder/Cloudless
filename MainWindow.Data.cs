@@ -369,18 +369,26 @@ namespace Cloudless
                 {
                     if (uri.AbsolutePath.ToLower().EndsWith(".png"))
                     {
-                        var bitmap = new BitmapImage(uri);
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = uri;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
                         bitmap.Freeze();
 
                         ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
-                        
+
                         ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
 
                         animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
                     }
                     else
                     {
-                        var bitmap = new BitmapImage(uri);
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = uri;
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
                         bitmap.Freeze();
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                         ImageDisplay.Source = bitmap;
@@ -521,7 +529,11 @@ namespace Cloudless
             BitmapEncoder encoder = new JpegBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(source));
             encoder.Save(ms);
-            return new Bitmap(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            using var temp = new System.Drawing.Bitmap(ms);
+            var result = new System.Drawing.Bitmap(temp);
+            return result;
         }
         private ImageCodecInfo? GetEncoder(ImageFormat format)
         {
@@ -669,9 +681,11 @@ namespace Cloudless
                 {
                     bitmap.BeginInit();
                     bitmap.UriSource = new Uri(filePath);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.DecodePixelWidth = width;
                     bitmap.DecodePixelHeight = height;
                     bitmap.EndInit();
+                    bitmap.Freeze();
                 }
                 else
                 {
@@ -959,17 +973,6 @@ namespace Cloudless
             encoder.Save(ms);
             ms.Flush();
             return new Bitmap(ms);
-        }
-
-        private static Bitmap ConvertBitmapSourceToBitmap(BitmapSource source)
-        {
-            using var stream = new MemoryStream();
-
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(source));
-            encoder.Save(stream);
-
-            return new Bitmap(stream);
         }
 
         private void OpenUrl(string url)

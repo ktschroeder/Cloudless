@@ -12,6 +12,7 @@ namespace Cloudless
         private const string PipeName = "CloudlessPipe";
 
         private static CancellationTokenSource? _cts;
+        private static Task? _serverTask;
 
         // Fired when another instance sends us a message
         public static event Action<string>? MessageReceived;
@@ -21,7 +22,7 @@ namespace Cloudless
         {
             _cts = new CancellationTokenSource();
 
-            Task.Run(async () =>
+            _serverTask = Task.Run(async () =>
             {
                 while (!_cts.IsCancellationRequested)
                 {
@@ -39,7 +40,19 @@ namespace Cloudless
                         using var reader = new StreamReader(server, Encoding.UTF8);
                         string message = await reader.ReadToEndAsync();
 
-                        MessageReceived?.Invoke(message);
+                        // Invoke handlers on threadpool to avoid blocking the pipe loop
+                        var handlers = MessageReceived; // capture
+                        if (handlers != null)
+                        {
+                            foreach (Action<string> h in handlers.GetInvocationList())
+                            {
+                                Task.Run(() =>
+                                {
+                                    try { h(message); }
+                                    catch { }
+                                });
+                            }
+                        }
                     }
                     catch (OperationCanceledException)
                     {
@@ -56,7 +69,32 @@ namespace Cloudless
 
         public static void StopServer()
         {
-            _cts?.Cancel();
+            // Synchronous wrapper for callers that expect a blocking stop
+            StopServerAsync().GetAwaiter().GetResult();
+        }
+
+        public static async Task StopServerAsync()
+        {
+            try
+            {
+                _cts?.Cancel();
+
+                if (_serverTask != null)
+                {
+                    // Wait briefly for the server task to finish
+                    await Task.WhenAny(_serverTask, Task.Delay(2000)).ConfigureAwait(false);
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                try { _cts?.Dispose(); } catch { }
+                _cts = null;
+                _serverTask = null;
+            }
         }
 
         // Client (secondary instance)

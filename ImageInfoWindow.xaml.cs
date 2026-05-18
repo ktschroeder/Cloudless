@@ -39,7 +39,12 @@ namespace Cloudless
             try
             {
                 // Set format and dimensions
-                var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(_imagePath));
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(_imagePath);
+                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
                 DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
                 // TODO add support for videos, which don't work with above. Should be able to use GetDimensions method from Webm plugin.
             }

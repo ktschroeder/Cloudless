@@ -53,9 +53,12 @@ namespace Cloudless
             // Dispose tray first to avoid tray callbacks during shutdown
             _trayIconService?.Dispose();
             _trayIconService = null;
-
-            SingleInstanceIpc.StopServer();
-            _mutex?.ReleaseMutex();
+            // Stop IPC server and unsubscribe event handlers
+            try { SingleInstanceIpc.MessageReceived -= OnIpcMessageReceived; } catch { }
+            try { SingleInstanceIpc.StopServer(); } catch { }
+            try { _mutex?.ReleaseMutex(); } catch { }
+            try { _mutex?.Dispose(); } catch { }
+            _mutex = null;
 
             base.OnExit(e);
 

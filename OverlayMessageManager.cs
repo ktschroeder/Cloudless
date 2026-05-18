@@ -4,6 +4,8 @@ using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class OverlayMessageManager
 {
@@ -12,6 +14,7 @@ public class OverlayMessageManager
     private readonly List<TextBlock> _activeMessages = new();
 
     private ObservableCollection<string> messageHistory = new ObservableCollection<string>();
+    private readonly CancellationTokenSource _cts = new();
 
     public event Action<string>? MessageAdded;
 
@@ -108,9 +111,22 @@ public class OverlayMessageManager
         DoubleAnimation fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(200)));
         messageTextBlock.BeginAnimation(UIElement.OpacityProperty, fadeIn);
 
-        // Schedule fade-out and removal
-        Task.Delay(nextMessage.Duration).ContinueWith(_ =>
+        // Schedule fade-out and removal using a cancellable token so pending continuations don't keep window alive
+        var token = _cts.Token;
+        Task.Delay(nextMessage.Duration, token).ContinueWith(t =>
         {
+            if (t.IsCanceled)
+            {
+                // If cancelled, ensure the message is removed if present
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (_messageStack.Children.Contains(messageTextBlock))
+                        _messageStack.Children.Remove(messageTextBlock);
+                    _activeMessages.Remove(messageTextBlock);
+                });
+                return;
+            }
+
             Application.Current.Dispatcher.Invoke(() =>
             {
                 // Fade out the message
@@ -135,7 +151,36 @@ public class OverlayMessageManager
                 };
                 messageTextBlock.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             });
-        });
+        }, token, TaskContinuationOptions.None, TaskScheduler.Default);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            _cts.Cancel();
+        }
+        catch { }
+
+        try
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // Remove any active message visuals
+                foreach (var tb in _activeMessages.ToList())
+                {
+                    if (_messageStack.Children.Contains(tb))
+                        _messageStack.Children.Remove(tb);
+                }
+                _activeMessages.Clear();
+            });
+        }
+        catch { }
+
+        _messageQueue.Clear();
+        MessageAdded = null;
+
+        try { _cts.Dispose(); } catch { }
     }
 
     private class OverlayMessage
