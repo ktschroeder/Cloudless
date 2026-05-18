@@ -74,6 +74,30 @@ namespace Cloudless.VlcPlugin
 
                 try { Cloudless.Diagnostics.LeakTracker.Register(_mediaPlayer, "LibVLC.MediaPlayer"); } catch { }
 
+                _mediaPlayer.EndReached += (sender, args) =>
+                {
+                    try
+                    {
+                        // Note: App seems to crash here sometimes when this event is triggered but the window has been closed. I think in the QueueUserWorkItem method.
+
+                        // IMPORTANT: Restart playback on a different thread to avoid deadlocks
+                        ThreadPool.QueueUserWorkItem(_ =>
+                        {
+                            //_mediaPlayer.Stop(); // Recommended to stop before re-playing
+                            _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
+                                                                                 //_videoView.MediaPlayer = _mediaPlayer2;
+                                                                                 //_mediaPlayer2.Play();
+                        });
+
+                        //Restart();
+                    }
+                    catch (Exception ex)
+                    {
+                        // TODO probably pass in messenger to plugins to be used like here
+                        Console.WriteLine($"Error in EndReached handler: {ex.Message}");
+                    }
+                };
+
                 _mediaPlayer.EnableMouseInput = false;
                 _mediaPlayer.EnableKeyInput = false;
 
