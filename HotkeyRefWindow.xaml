@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
         Height="345"
-        Width="700"
+        Width="720"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -133,6 +133,9 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="F" FontWeight="Bold"/>
@@ -176,6 +179,9 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="13" Text="L" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="13" Text="Zoom image to fill view"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="E" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="14" Text="Toggle 'Comic Mode': when loading next image in directory, retain zoom, and send pan to upper corner"/>
 
                                         </Grid>
 
@@ -329,6 +335,9 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="8" Text="Long-hold middle click" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="8" Text="Swap mouse mode to an unused, third mouse mode (this currently has no effect on behavior)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="Double Middle click" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Toggle crop mode (same as hotkey Q)"/>
 
                                         </Grid>
                                     </StackPanel>

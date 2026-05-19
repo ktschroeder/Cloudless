@@ -14,8 +14,8 @@ namespace Cloudless.VlcPlugin
     public class AnimatedWebpPlugin : IPlugin
     {
         public string Name { get => "Animated WEBP Plugin"; }
-        public string PluginVersion { get => "1.0.0"; }
-        public string MinAppVersion { get => "0.7.4"; }
+        public string PluginVersion { get => "1.0.1"; }
+        public string MinAppVersion { get => "0.8.0"; }
         public string Description { get => "Animated WEBP Plugin"; }
         public List<string> SupportsFileTypes { get => new List<string> { "webp" }; }
 

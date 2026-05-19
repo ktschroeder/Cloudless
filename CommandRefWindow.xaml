@@ -123,6 +123,9 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="cip" FontWeight="Bold"/>
@@ -163,6 +166,9 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="12" Text="shutdown" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="12" Text="Close all open instances of Cloudless, and shutdown the Cloudless background process"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="13" Text="hotkey [modifiers] [key]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="13" Text="Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."/>
 
                                         </Grid>
 
