@@ -189,6 +189,7 @@ namespace Cloudless
                 SortImageFilesArray();
 
                 currentImageIndex = Array.IndexOf(imageFiles, selectedImagePath);
+                
                 if (currentImageIndex == -1)
                 {
                     Message("Image not found at path: " + imagePath);
@@ -262,16 +263,21 @@ namespace Cloudless
                         ShowLoadingOverlay($"Loading GIF... ({(int)fileSizeMB} MB)", $"{Path.GetFileName(uri.AbsolutePath)}");
                         await Dispatcher.Yield(DispatcherPriority.Background);
 
-                        //var bitmap = new BitmapImage(uri);
-                        var bitmap = new BitmapImage();
-
-                        bitmap.BeginInit();
-                        bitmap.UriSource = uri;
-                        // This caches the image and releases the file lock
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.EndInit();
-                        //bitmap.StreamSource.Dispose();
-                        bitmap.Freeze();
+                        BitmapImage bitmap;
+                        if (_preloadManager != null && _preloadManager.TryGet(uri.LocalPath, out var cachedGif))
+                        {
+                            bitmap = cachedGif;
+                        }
+                        else
+                        {
+                            var tmp = new BitmapImage();
+                            tmp.BeginInit();
+                            tmp.UriSource = uri;
+                            tmp.CacheOption = BitmapCacheOption.OnLoad;
+                            tmp.EndInit();
+                            tmp.Freeze();
+                            bitmap = tmp;
+                        }
 
 
                         ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
@@ -341,16 +347,21 @@ namespace Cloudless
                 }
                 else if (uri.AbsolutePath.ToLower().EndsWith(".webp"))
                 {
-                    var bitmap = new BitmapImage();
-
-                    bitmap.BeginInit();
-                    bitmap.UriSource = uri;
-                    // This caches the image and releases the file lock
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-                    //bitmap.StreamSource.Dispose();
-                    bitmap.Freeze();
-
+                    BitmapImage bitmap;
+                    if (_preloadManager != null && _preloadManager.TryGet(uri.LocalPath, out var cachedWebp))
+                    {
+                        bitmap = cachedWebp;
+                    }
+                    else
+                    {
+                        var tmp = new BitmapImage();
+                        tmp.BeginInit();
+                        tmp.UriSource = uri;
+                        tmp.CacheOption = BitmapCacheOption.OnLoad;
+                        tmp.EndInit();
+                        tmp.Freeze();
+                        bitmap = tmp;
+                    }
 
                     ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
 
@@ -370,12 +381,21 @@ namespace Cloudless
                 {
                     if (uri.AbsolutePath.ToLower().EndsWith(".png"))
                     {
-                        var bitmap = new BitmapImage();
-                        bitmap.BeginInit();
-                        bitmap.UriSource = uri;
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.EndInit();
-                        bitmap.Freeze();
+                        BitmapImage bitmap;
+                        if (_preloadManager != null && _preloadManager.TryGet(uri.LocalPath, out var cachedPng))
+                        {
+                            bitmap = cachedPng;
+                        }
+                        else
+                        {
+                            var tmp = new BitmapImage();
+                            tmp.BeginInit();
+                            tmp.UriSource = uri;
+                            tmp.CacheOption = BitmapCacheOption.OnLoad;
+                            tmp.EndInit();
+                            tmp.Freeze();
+                            bitmap = tmp;
+                        }
 
                         ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
 
@@ -385,12 +405,22 @@ namespace Cloudless
                     }
                     else
                     {
-                        var bitmap = new BitmapImage();
-                        bitmap.BeginInit();
-                        bitmap.UriSource = uri;
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.EndInit();
-                        bitmap.Freeze();
+                        BitmapImage bitmap;
+                        if (_preloadManager != null && _preloadManager.TryGet(uri.LocalPath, out var cachedImg))
+                        {
+                            bitmap = cachedImg;
+                        }
+                        else
+                        {
+                            var tmp = new BitmapImage();
+                            tmp.BeginInit();
+                            tmp.UriSource = uri;
+                            tmp.CacheOption = BitmapCacheOption.OnLoad;
+                            tmp.EndInit();
+                            tmp.Freeze();
+                            bitmap = tmp;
+                        }
+
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
                         ImageDisplay.Source = bitmap;
                     }
@@ -410,6 +440,8 @@ namespace Cloudless
 
                 ApplyDisplayMode();
                 await UpdateContextMenuState();
+
+                _preloadManager?.PreloadWindow(currentImageIndex, imageFiles);
             }
             catch (Exception ex)
             {

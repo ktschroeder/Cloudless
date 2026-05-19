@@ -60,6 +60,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.ImgBBKey = configWindow.ImgBBKey;
                 Cloudless.Properties.Settings.Default.StartOnWindowsStart = configWindow.StartOnWindowsStart;
                 Cloudless.Properties.Settings.Default.MouseLongPressMS = configWindow.MouseLongHoldMs;
+                Cloudless.Properties.Settings.Default.PreloadImages = configWindow.PreloadImages;
 
                 Cloudless.Properties.Settings.Default.Save();
 
@@ -73,6 +74,15 @@ namespace Cloudless
                 ApplyDisplayMode();
 
                 SetStartup(enable: Cloudless.Properties.Settings.Default.StartOnWindowsStart);
+
+                if (!Cloudless.Properties.Settings.Default.PreloadImages && _preloadManager != null)
+                {
+                    _preloadManager.Clear();
+                }
+                else
+                {
+                    _preloadManager?.PreloadWindow(currentImageIndex, imageFiles);
+                }
             }
         }
         private void OpenRecentImagesWindow()

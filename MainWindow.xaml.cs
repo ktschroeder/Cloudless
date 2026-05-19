@@ -100,6 +100,8 @@ namespace Cloudless
         private string? initialImageToLoad;
 
         private CloudlessWindowState? stateUponMinimizing = null;
+
+        private PreloadManager? _preloadManager;
         #endregion
 
         #region Setup
@@ -157,6 +159,14 @@ namespace Cloudless
 
             VideoHost.Content = null;
 
+
+            try
+            {
+                _preloadManager?.Clear();
+                _preloadManager?.Dispose();
+            }
+            catch { }
+            _preloadManager = null;
 
 
             // Animated GIF cleanup
@@ -320,6 +330,8 @@ namespace Cloudless
 
             Cloudless.Diagnostics.LeakTracker.Register(this, "MainWindow");
 
+            _preloadManager = new PreloadManager(Dispatcher);
+
             Closing += (sender, e) => OnClose();
 
             try
@@ -477,6 +489,8 @@ namespace Cloudless
                 tloHeight = windowHeight / realScale;
             }
 
+            var preloadKeys = _preloadManager != null ? _preloadManager.GetPreloadCacheKeys() : new List<string>();
+
             // Debug text
             DebugTextBlock.Text =
             $"Window Dimensions: {windowWidth:F2} x {windowHeight:F2}\n" +
@@ -495,7 +509,12 @@ namespace Cloudless
             $"Cursor (Window): X={cursorPosition.X:F2}, Y={cursorPosition.Y:F2}\n" +
             $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
             $"ImageDisplay stretch enum: {ImageDisplay.Stretch.ToString():F2}\n" +
-            $"Display mode setting: {displayMode:F2}";
+            $"Display mode setting: {displayMode:F2}\n";
+
+            foreach (var key in preloadKeys)
+            {
+                DebugTextBlock.Text += $"Preload Cache: {key}\n";
+            }
         }
         public void Message(string message, TimeSpan? duration = null)
         {

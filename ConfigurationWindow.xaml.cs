@@ -24,6 +24,7 @@ namespace Cloudless
         public string ImgBBKey { get; private set; }
         public bool StartOnWindowsStart { get; private set; }
         public int MouseLongHoldMs { get; private set; }
+        public bool PreloadImages { get; private set; }
 
         private MainWindow _mw;
 
@@ -84,6 +85,10 @@ namespace Cloudless
             var currentStartOnWindowsStartCheckbox = Cloudless.Properties.Settings.Default.StartOnWindowsStart;
             StartOnWindowsStartCheckbox.IsChecked = currentStartOnWindowsStartCheckbox;
             StartOnWindowsStart = currentStartOnWindowsStartCheckbox;
+
+            var currentPreloadImagesCheckbox = Cloudless.Properties.Settings.Default.PreloadImages;
+            PreloadImagesCheckbox.IsChecked = currentPreloadImagesCheckbox;
+            PreloadImages = currentPreloadImagesCheckbox;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -178,6 +183,7 @@ namespace Cloudless
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
             DisableSmartZoom = DisableSmartZoomCheckbox.IsChecked ?? false;
             StartOnWindowsStart = StartOnWindowsStartCheckbox.IsChecked ?? false;
+            PreloadImages = PreloadImagesCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

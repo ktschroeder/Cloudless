@@ -269,5 +269,17 @@ namespace Cloudless.Properties {
                 this["ComicModeTopRight"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool PreloadImages {
+            get {
+                return ((bool)(this["PreloadImages"]));
+            }
+            set {
+                this["PreloadImages"] = value;
+            }
+        }
     }
 }
