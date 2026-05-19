@@ -139,7 +139,7 @@ namespace Cloudless
                     var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
                     wsNames ??= new List<string>();
                     var recentNames = GetRecentlySavedAndLoadedWorkspaceNames();
-                    wsNames = wsNames.Where(ws => recentNames.Contains(ws)).ToList();  // filter out names not present in recent history
+                    wsNames = recentNames.Where(ws => wsNames.Contains(ws)).ToList();  // filter out names not present in recent history
                     wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
                     AutocompleteCandidatesCtrl.Clear();
                     foreach (var wsName in wsNames)
