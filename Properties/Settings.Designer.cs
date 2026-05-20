@@ -248,7 +248,7 @@ namespace Cloudless.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("150")]
+        [global::System.Configuration.DefaultSettingValueAttribute("300")]
         public int MouseLongPressMS {
             get {
                 return ((int)(this["MouseLongPressMS"]));
