@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hotkey Reference"
         Height="345"
-        Width="720"
+        Width="725"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -30,7 +30,7 @@
             <StackPanel Margin="12">
                 <StackPanel>
                     <StackPanel Margin="0,0,0,0" Height="260">
-                        <TabControl Background="Transparent" BorderThickness="0">
+                        <TabControl Background="Transparent" BorderThickness="0" SelectionChanged="TabControl_SelectionChanged">
 
                             <!-- GENERAL -->
                             <TabItem Header="General">
@@ -338,6 +338,9 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="Double Middle click" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="9" Text="Toggle crop mode (same as hotkey Q)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="Number keys 1-8" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Change view to the corresponding page. See command palette reference for more info about pages."/>
 
                                         </Grid>
                                     </StackPanel>

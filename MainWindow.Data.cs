@@ -1,34 +1,18 @@
 ﻿using System.Windows.Controls;
 using System.Windows;
-//using WpfAnimatedGif;
-using AnimatedImage;
 using Microsoft.Win32;
 using System.Drawing.Imaging;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.Collections.Specialized;
 using System.Text.Json;
 using Path = System.IO.Path;
 using System.Diagnostics;
-using System.ComponentModel;
 using System.Windows.Threading;
-using System.Windows.Shapes;
-using System;
-using System.Windows.Media;
-using Point = System.Windows.Point;
-using Size = System.Windows.Size;
-using static System.Net.WebRequestMethods;
-using System.Net.Http.Headers;
 using File = System.IO.File;
-using System.Text.RegularExpressions;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
-using System.Configuration;
 using AnimatedImage.Wpf;
 
 namespace Cloudless

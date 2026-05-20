@@ -1,6 +1,7 @@
 ﻿using System.Collections.Specialized;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Windows;
 using System.Windows.Controls;
@@ -78,8 +79,9 @@ namespace Cloudless
 
             if (e.Key == Key.Enter)
             {
+                CloseCommandPalette();  // if this is closed after execution of command, we get some sporadic weirdness with unreleased focus in a window that has been sent to a different page.
                 await ExecuteCommand(CommandTextBox.Text.Trim());
-                CloseCommandPalette();
+                
                 e.Handled = true;
                 return;
             }
@@ -392,7 +394,7 @@ namespace Cloudless
                 if (command.ToLower().StartsWith("ws save ") && command.Length > 8)
                 {
                     string name = command.Substring(8);
-                    (int windowCount, string? error) = SaveWorkspace(name);
+                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -2)
@@ -400,12 +402,12 @@ namespace Cloudless
                     else if (windowCount == -3)
                         Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
                     else
-                        Message($"Saved workspace {name} with {windowCount} windows");
+                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
                 else if (command.ToLower().StartsWith("ws s ") && command.Length > 5)
                 {
                     string name = command.Substring(5);
-                    (int windowCount, string? error) = SaveWorkspace(name);
+                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -2)
@@ -413,29 +415,29 @@ namespace Cloudless
                     else if (windowCount == -3)
                         Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
                     else
-                        Message($"Saved workspace {name} with {windowCount} windows");
+                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
                 else if (command.ToLower().StartsWith("ws save! ") && command.Length > 9)
                 {
                     string name = command.Substring(9);
-                    (int windowCount, string? error) = SaveWorkspace(name, true);
+                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name, true);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -3)
                         Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
                     else
-                        Message($"Saved workspace {name} with {windowCount} windows");
+                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
                 else if (command.ToLower().StartsWith("ws s! ") && command.Length > 6)
                 {
                     string name = command.Substring(6);
-                    (int windowCount, string? error) = SaveWorkspace(name, true);
+                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name, true);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
                     else if (windowCount == -3)
                         Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
                     else
-                        Message($"Saved workspace {name} with {windowCount} windows");
+                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
                 else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
                 {
@@ -466,11 +468,11 @@ namespace Cloudless
                 {
                     if (imageOriginalWorkspaceName != null)
                     {
-                        (int windowCount, string? error) = SaveWorkspace(imageOriginalWorkspaceName, true);
+                        (int windowCount, int pageCount, string? error) = SaveWorkspace(imageOriginalWorkspaceName, true);
                         if (windowCount == -1)
                             Message("Failed to save workspace due to unexpected error: " + error);
                         else
-                            Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows");
+                            Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows and {pageCount} pages");
                     }
                     else
                         Message("This window does not belong to a workspace");
@@ -667,6 +669,89 @@ namespace Cloudless
             {
                 string args = command.Substring(6);
                 await SimulateHotkey(args.Trim());
+                return true;
+            }
+
+            string pattern = @"^p(\d+) send$";  // e.g. "p2 send window"
+            Match match = Regex.Match(command.ToLower().Trim(), pattern);
+            int? matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            if (matchInt.HasValue)
+            {
+                SendWindowToPage((int)matchInt);
+                return true;
+            }
+
+            pattern = @"^p(\d+) bring$";  // e.g. "p2 bring window"
+            match = Regex.Match(command.ToLower().Trim(), pattern);
+            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            if (matchInt.HasValue)
+            {
+                SendWindowToPage((int)matchInt);
+                SwapViewToPage((int)matchInt);
+                return true;
+            }
+
+            pattern = @"^p(\d+) send page$";
+            match = Regex.Match(command.ToLower().Trim(), pattern);
+            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            if (matchInt.HasValue)
+            {
+                SendPageToPage((int)matchInt);
+                return true;
+            }
+
+            pattern = @"^p(\d+) bring page$";
+            match = Regex.Match(command.ToLower().Trim(), pattern);
+            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            if (matchInt.HasValue)
+            {
+                SendPageToPage((int)matchInt);
+                SwapViewToPage((int)matchInt);
+                return true;
+            }
+
+            pattern = @"^p(\d+) clear$";
+            match = Regex.Match(command.ToLower().Trim(), pattern);
+            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            if (matchInt.HasValue)
+            {
+                ClearPage((int)matchInt);
+                return true;
+            }
+
+            pattern = @"^p(\d+) swap p(\d+)$";
+            match = Regex.Match(command.ToLower().Trim(), pattern);
+            int? matchInt1 = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            int? matchInt2 = match.Success ? int.Parse(match.Groups[2].Value) : null;
+            if (matchInt1.HasValue && matchInt2.HasValue)
+            {
+                SwapPageWithPage((int)matchInt1, (int)matchInt2);
+                return true;
+            }
+
+            pattern = @"^p(\d+)$";  // e.g. "p2"
+            match = Regex.Match(command.ToLower().Trim(), pattern);
+            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+            if (matchInt.HasValue)
+            {
+                SwapViewToPage((int)matchInt);
+                return true;
+            }
+
+            if (command.ToLower().Equals("p?"))
+            {
+                var pages = GetNonemptyPages();
+                Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
+
+                return true;
+            }
+
+            if (command.ToLower().Equals("flatten"))
+            {
+                FlattenPages();
+
+                SwapViewToPage(1);
+
                 return true;
             }
 

@@ -293,5 +293,17 @@ namespace Cloudless.Properties {
                 this["ComicModeMouseControlScroll"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int CurrentPage {
+            get {
+                return ((int)(this["CurrentPage"]));
+            }
+            set {
+                this["CurrentPage"] = value;
+            }
+        }
     }
 }

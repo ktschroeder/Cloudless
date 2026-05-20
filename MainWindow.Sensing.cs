@@ -1,9 +1,7 @@
 ﻿//using WpfAnimatedGif;
 using AnimatedImage.Wpf;
-using Cloudless.PluginBase;
 using Cloudless.Properties;
 using System.Drawing;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -509,7 +507,7 @@ namespace Cloudless
                 }
             }
 
-            if (control)
+            if (control && !alt)
             {
                 if (key == Key.OemPlus || key == Key.Add) // Zoom In
                 {
@@ -541,6 +539,23 @@ namespace Cloudless
                         case Key.D6: await RunUserCommand(5); break;
                         case Key.D7: await RunUserCommand(6); break;
                         case Key.D8: await RunUserCommand(7); break;
+                    }
+                }
+            }
+            else if (!control)
+            {
+                if (key >= Key.D1 && key <= Key.D8) // Hotkeys for paging
+                {
+                    switch (key)
+                    {
+                        case Key.D1: SwapViewToPage(1); break;
+                        case Key.D2: SwapViewToPage(2); break;
+                        case Key.D3: SwapViewToPage(3); break;
+                        case Key.D4: SwapViewToPage(4); break;
+                        case Key.D5: SwapViewToPage(5); break;
+                        case Key.D6: SwapViewToPage(6); break;
+                        case Key.D7: SwapViewToPage(7); break;
+                        case Key.D8: SwapViewToPage(8); break;
                     }
                 }
             }

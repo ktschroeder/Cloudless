@@ -280,7 +280,6 @@
                                 </ScrollViewer>
                             </TabItem>
 
-                            <!-- WINDOWS -->
                             <TabItem Header="Workspace">
                                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
@@ -366,7 +365,67 @@
                                 </ScrollViewer>
                             </TabItem>
 
-                            
+                            <TabItem Header="Pages">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <TextBlock Margin="0,0,0,10">A "page" is similar to a simple workspace, but all pages' windows are kept in memory simultaneously. A workspace can contain up to 8 pages.<LineBreak /> The benefit of this is that you can swap full arrangements (pages) almost immediately, whereas loading a different workspace could take longer.<LineBreak /> It also enables more complex and organized workspaces with manageable layers. </TextBlock>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="180"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="p[int]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Change view to page [int]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="p?" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Display a message showing the currently open page index, and all indices of non-empty pages"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="p[int] send" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Send the current window to page [int]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="p[int] bring" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Send the current window to page [int], and change view to that page"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="p[int] send page" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Send all windows in the current page to page [int]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="p[int] bring page" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Send all windows in the current page to page [int], and change view to that page"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="6" Text="p[int] clear" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Close all windows on page [int]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="p[int] swap p[int]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Swap all windows between page [int] and page [int] (the order of the 2 ints does not matter)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="flatten" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Send all windows from all pages to page 1, and change view to page 1"/>
+
+                                        </Grid>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
 
                         </TabControl>
                     </StackPanel>

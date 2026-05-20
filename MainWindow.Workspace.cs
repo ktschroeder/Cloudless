@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
-using System.Security.Policy;
 using System.Collections.Specialized;
+using Cloudless.Properties;
 
 namespace Cloudless
 {
@@ -42,19 +42,23 @@ namespace Cloudless
                 PanY = imageTranslateTransform.Y,
                 ZOrder = zOrder,
                 RenderWidth = renderWidth,
-                RenderHeight = renderHeight
+                RenderHeight = renderHeight,
+                PageIndex = windowPageIndex,
+                WindowWasMaximizedPriorToHidingForPage = windowWasMaximizedPriorToHidingForPage,
+                WindowWasMinimizedPriorToHidingForPage = windowWasMinimizedPriorToHidingForPage
             };
 
             return state;
         }
 
-        public (int, string?) SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false, bool isSystem = false)
+        // returns (window count saved, distinct page count, error message if applicable). Former int can be negative for errors.
+        public (int, int, string?) SaveWorkspace(string workspaceName = "MainWorkspace", bool allowOverwrite = false, bool isSystem = false)
         {
             try
             {
                 if (!isSystem && IsReservedWorkspaceName(workspaceName))
                 {
-                    return (-3, null);  // TODO should clean up this error reporting
+                    return (-3, 0, null);  // TODO should clean up this error reporting
                 }
 
                 if (!Directory.Exists(workspaceFilesPath))
@@ -65,9 +69,9 @@ namespace Cloudless
                 var workspace = new CloudlessWorkspace();
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
 
-                if (!allowOverwrite && File.Exists(workspaceFilePath)) 
+                if (!allowOverwrite && File.Exists(workspaceFilePath))
                 {
-                    return (-2, null);
+                    return (-2, 0, null);
                 }
 
                 var zOrderMap = GetZOrderForCurrentProcessWindows();  // TODO unused? probably replace a few lines below.
@@ -86,6 +90,8 @@ namespace Cloudless
                     workspace.CloudlessWindows.Add(cws);
                 }
 
+                workspace.CurrentPageIndex = GetCurrentPageIndex();
+
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true
@@ -94,11 +100,13 @@ namespace Cloudless
                 string json = JsonSerializer.Serialize(workspace, options);
                 File.WriteAllText(workspaceFilePath, json);
 
-                return (workspace.CloudlessWindows.Count, null);
+                int distinctPages = workspace.CloudlessWindows.Select(w => w.PageIndex).Distinct().Count();
+
+                return (workspace.CloudlessWindows.Count, distinctPages, null);
             }
             catch (Exception e)
             {
-                return (-1, e.Message);
+                return (-1, 0, e.Message);
             }
         }
 
@@ -130,7 +138,7 @@ namespace Cloudless
             {
                 if (window.imageOriginalWorkspaceName != null && window.imageOriginalWorkspaceName.Equals(this.imageOriginalWorkspaceName) && window != this)
                     window.Close();
-                
+
             }
             Close();
         }
@@ -321,7 +329,7 @@ namespace Cloudless
             {
                 Message("Failed to save system undo file during loading");
             }
-            
+
             try
             {
                 UpdateRecentlySavedAndLoadedWorkspaceNames(workspaceName);
@@ -352,7 +360,7 @@ namespace Cloudless
                 {
                     await CreateWindowsForWorkspace(workspace);
                 }
-                
+
                 return true;
             }
             catch (FileNotFoundException ex)
@@ -377,7 +385,7 @@ namespace Cloudless
                 await window.LoadImage(state.ImagePath, false);
                 await window.ApplyWindowState(state);
                 window.Show();
-                await window.PostProcessLoadedWindow(state, workspace.WorkspaceName);
+                await window.PostProcessLoadedWindow(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
                 window.ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workstation from File Explrorer
                 window.Activate();
                 window.ShowInTaskbar = true;
@@ -406,7 +414,7 @@ namespace Cloudless
                 await ToggleCropMode(true, true);
                 ImageDisplay.Width = state.RenderWidth;
                 ImageDisplay.Height = state.RenderHeight;
-                
+
                 imageScaleTransform.ScaleX = state.Zoom;
                 imageScaleTransform.ScaleY = state.Zoom;
                 imageTranslateTransform.X = state.PanX;
@@ -416,10 +424,24 @@ namespace Cloudless
             }
         }
 
-        public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null)
+        public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null, int startingPageIndex = 1)
         {
-            if (state.IsMinimized)
-                MinimizeWindow(state);  // this must be done after calling Show() on window, or else image is re-rendered improperly later
+            SetCurrentPageIndex(startingPageIndex);
+
+            if (state.PageIndex == startingPageIndex)
+            {
+                if (state.IsMinimized)
+                    MinimizeWindow(state);  // this must be done after calling Show() on window, or else image is re-rendered improperly later
+            }
+            else
+            {
+                if (state.WindowWasMaximizedPriorToHidingForPage)
+                    WindowState = WindowState.Maximized;
+                if (state.WindowWasMinimizedPriorToHidingForPage)
+                    MinimizeWindow(state);
+
+                SendWindowToPage(state.PageIndex);
+            }
 
             await ToggleCropMode(setTo: false, silent: true);
 
@@ -456,7 +478,7 @@ namespace Cloudless
         const string UNDOLOAD_SLOT_NAME = "_system_undoload_slot";
         private bool Quicksave()  // returns whether successful
         {
-            (int windowCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, allowOverwrite: true, isSystem: true);
+            (int windowCount, int pageCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, allowOverwrite: true, isSystem: true);
             if (windowCount == -1)
             {
                 Message("Failed to quicksave due to unexpected error: " + error);
@@ -464,7 +486,7 @@ namespace Cloudless
             }
             else
             {
-                Message($"Quicksave done with {windowCount} windows");
+                Message($"Quicksave done with {windowCount} windows and {pageCount} pages");
                 return true;
             }
         }
@@ -532,13 +554,262 @@ namespace Cloudless
 
             return false;
         }
+
+        public int GetCurrentPageIndex()
+        {
+            int index = Settings.Default.CurrentPage;
+            return index;
+        }
+
+        // returns whether successful
+        public bool SetCurrentPageIndex(int index)
+        {
+            if (index < 1 || index > 8)
+            {
+                Message($"Invalid page index: {index}. Must be from 1 to 8.");
+                return false;
+            }
+
+            Settings.Default.CurrentPage = index;
+            Settings.Default.Save();
+            return true;
+        }
+
+        private bool windowWasMinimizedPriorToHidingForPage = false;
+        private bool windowWasMaximizedPriorToHidingForPage = false;
+
+        public void HideWindowForPages()
+        {
+            windowWasMinimizedPriorToHidingForPage = this.WindowState == WindowState.Minimized || windowWasMinimizedPriorToHidingForPage;
+            windowWasMaximizedPriorToHidingForPage = this.WindowState == WindowState.Maximized || windowWasMaximizedPriorToHidingForPage;
+
+            MinimizeWindow();
+            this.Hide();
+            this.ShowInTaskbar = false;
+        }
+
+        public void RevealWindowForPages()
+        {
+            this.Show();
+            this.ShowInTaskbar = true;
+
+            this.WindowState = windowWasMinimizedPriorToHidingForPage ? WindowState.Minimized 
+                : windowWasMaximizedPriorToHidingForPage ? WindowState.Maximized
+                : WindowState.Normal;
+
+            windowWasMinimizedPriorToHidingForPage = false;
+            windowWasMaximizedPriorToHidingForPage = false;
+        }
+
+        public void SendWindowToPage(int pageIndex, bool skipHide = false)
+        {
+            if (pageIndex < 1 || pageIndex > 8)
+            {
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                return;
+            }
+            
+            int currentPageIndex = GetCurrentPageIndex();
+            if (currentPageIndex == pageIndex)
+            {
+                Message($"Window is already on page {pageIndex}.");
+                return;
+            }
+
+            windowPageIndex = pageIndex;
+            if (!skipHide)
+                HideWindowForPages();
+
+            // we add one fresh Cloudless window to new pages for UX convenience. But if there is a window sent there, we should remove that convenience window for cleanliness.
+            var blankWindowsOnTargetPage = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w.windowPageIndex == pageIndex && string.IsNullOrEmpty(w.currentlyDisplayedImagePath))
+                .ToList();
+
+            if (blankWindowsOnTargetPage.Count == 1)
+            {
+                var windowToRemove = blankWindowsOnTargetPage.First();
+                windowToRemove.Close();
+            }
+        }
+
+        public void SendPageToPage(int pageIndex)
+        {
+            if (pageIndex < 1 || pageIndex > 8)
+            {
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                return;
+            }
+
+            int currentPageIndex = GetCurrentPageIndex();
+            if (currentPageIndex == pageIndex)
+            {
+                Message($"Window is already on page {pageIndex}.");
+                return;
+            }
+
+            var windowsToSend = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w.windowPageIndex == currentPageIndex)
+                .ToList();
+
+            foreach (var w in windowsToSend)
+            {
+                w.SendWindowToPage(pageIndex);
+            }
+        }
+
+        public void SwapViewToPage(int pageIndex, bool skipHide = false)
+        {
+            if (pageIndex < 1 || pageIndex > 8)
+            {
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                return;
+            }
+
+            int currentPageIndex = GetCurrentPageIndex();
+            if (currentPageIndex == pageIndex && !skipHide)
+            {
+                Message($"Already on page {pageIndex}.");
+                return;
+            }
+
+            if (!skipHide)
+            {
+                // minimize all windows on the current page, and also hide them from taskbar and alt-tab
+                var windowsToHide = Application.Current.Windows
+                    .OfType<MainWindow>()
+                    .Where(w => w.windowPageIndex == currentPageIndex)
+                    .ToList();
+
+                foreach (var w in windowsToHide)
+                {
+                    w.HideWindowForPages();
+                }
+            }
+            
+            // unminimize all windows on the new page, and show them in taskbar and alt-tab
+            var windowsToReveal = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w.windowPageIndex == pageIndex)
+                .ToList();
+
+            foreach (var w in windowsToReveal)
+            {
+                w.RevealWindowForPages();
+            }
+
+            // update current page index in settings
+            SetCurrentPageIndex(pageIndex);
+
+            if (windowsToReveal.Count == 0)  // improve UX by ensuring a window is present (to receive hotkeys/commands)
+            {
+                var freshWindow = new MainWindow("");
+                freshWindow.Show();
+                freshWindow.Activate();
+                freshWindow.Message($"Created new Cloudless window since page was empty");
+            }
+        }
+
+        public void SwapPageWithPage(int p1, int p2)
+        {
+            if (p1 < 1 || p1 > 8 || p2 < 1 || p2 > 8)
+            {
+                Message($"Invalid page index: {p1} or {p2}. Must be from 1 to 8.");
+                return;
+            }
+            if (p1 == p2)
+            {
+                Message($"Cannot swap page {p1} with itself.");
+                return;
+            }
+
+            var p1Windows = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w.windowPageIndex == p1)
+                .ToList();
+
+            var p2Windows = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w.windowPageIndex == p2)
+                .ToList();
+
+            foreach (var w in p1Windows)
+            {
+                w.SendWindowToPage(p2, skipHide: GetCurrentPageIndex() != p1);  // skip hiding if they are already hidden (i.e. not in current page)
+            }
+            foreach (var w in p2Windows)
+            {
+                w.SendWindowToPage(p1, skipHide: GetCurrentPageIndex() != p2);
+            }
+
+            List<MainWindow> windowsToNowReveal;
+            if (GetCurrentPageIndex() == p1)
+            {
+                windowsToNowReveal = p2Windows;
+            }
+            else if (GetCurrentPageIndex() == p2)
+            {
+                windowsToNowReveal = p1Windows;
+            }
+            else
+                return;
+
+            foreach (var w in windowsToNowReveal)  // revealing windows from the page that was just swapped with the current page, if any.
+            {
+                w.RevealWindowForPages();
+            }
+        }
+
+        public void ClearPage(int pageIndex)
+        {
+            if (pageIndex < 1 || pageIndex > 8)
+            {
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                return;
+            }
+            var windowsToClose = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w.windowPageIndex == pageIndex)
+                .ToList();
+            foreach (var w in windowsToClose)
+            {
+                w.Close();
+            }
+        }
+
+        public List<int> GetNonemptyPages()
+        {
+            var pages = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => !string.IsNullOrEmpty(w.currentlyDisplayedImagePath))
+                .Select(w => w.windowPageIndex)
+                .Distinct()
+                .Order()
+                .ToList();
+
+            return pages;
+        }
+
+        public void FlattenPages(int targetPage = 1)
+        {
+            var windows = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => !string.IsNullOrEmpty(w.currentlyDisplayedImagePath) && w.windowPageIndex != targetPage)
+                .ToList();
+            foreach (var w in windows)
+            {
+                w.SendWindowToPage(targetPage, skipHide: true);
+            }
+        }
     }
 
     public class CloudlessWorkspace
     {
-        public int SchemaVersion { get; set; } = 2;
+        public int SchemaVersion { get; set; } = 3;  // schema version 3 is backward-compatible with 2.
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
         public string? WorkspaceName { get; set; }
+        public int CurrentPageIndex { get; set; } = 1;
     }
 
     public class CloudlessWindowState
@@ -565,6 +836,10 @@ namespace Cloudless
         public int ZOrder { get; set; }  // relative order among Cloudless windows
 
         public string CloudlessAppVersion { get; set; } = "";
+
+        public int PageIndex { get; set; } = 1;
+        public bool WindowWasMinimizedPriorToHidingForPage { get; set; } = false;
+        public bool WindowWasMaximizedPriorToHidingForPage { get; set; } = false;
     }
 
     internal static class NativeMethods

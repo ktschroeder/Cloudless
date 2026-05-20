@@ -135,21 +135,21 @@ namespace Cloudless
                 if (app == null) return;
 
                 var main = app.MainWindow;
-                if (main != null)
-                {
-                    if (main.WindowState == WindowState.Minimized)
-                        main.WindowState = WindowState.Normal;
+                //if (false)
+                //{
+                //    if (main.WindowState == WindowState.Minimized)
+                //        main.WindowState = WindowState.Normal;
 
-                    main.Show();
-                    main.Activate();
-                }
-                else
-                {
+                //    main.Show();
+                //    main.Activate();
+                //}
+                //else
+                //{
                     var win = new MainWindow(null);
-                    app.MainWindow = win;
+                    //app.MainWindow = win;
                     win.Show();
                     win.Activate();
-                }
+                //}
             }
             catch
             {

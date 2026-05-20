@@ -4,7 +4,6 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Windows;
 using System.Windows.Media;
-using System.Diagnostics;
 using Rectangle = System.Windows.Shapes.Rectangle;
 using Brushes = System.Windows.Media.Brushes;
 

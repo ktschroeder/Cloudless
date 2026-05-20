@@ -1,13 +1,8 @@
 ﻿//using WpfAnimatedGif;
-using AnimatedImage;
 using AnimatedImage.Wpf;
-using Cloudless.PluginBase;
 using Cloudless.Properties;
 using Microsoft.Win32;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.8.0.2";
+        public const string CURRENT_VERSION = "0.8.0.3";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -102,6 +97,8 @@ namespace Cloudless
         private CloudlessWindowState? stateUponMinimizing = null;
 
         private PreloadManager? _preloadManager;
+
+        private int windowPageIndex = 0;  // "0" as not-yet-assigned. Valid indices here are 1-8.
         #endregion
 
         #region Setup
@@ -346,7 +343,11 @@ namespace Cloudless
             
             overlayManager = new OverlayMessageManager(MessageOverlayStack);
             if (startUp)
+            {
                 overlayManager.ClearMessageHistory();
+                SetCurrentPageIndex(1);
+            }
+            windowPageIndex = GetCurrentPageIndex();
 
             isExplorationMode = false;
             //ToggleCropMode(false);  // this used to be uncommented, but I don't see how crop mode could be enabled at this line.
@@ -509,7 +510,8 @@ namespace Cloudless
             $"Cursor (Window): X={cursorPosition.X:F2}, Y={cursorPosition.Y:F2}\n" +
             $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
             $"ImageDisplay stretch enum: {ImageDisplay.Stretch.ToString():F2}\n" +
-            $"Display mode setting: {displayMode:F2}\n";
+            $"Display mode setting: {displayMode:F2}\n" +
+            $"Window page index: {windowPageIndex:F2}\n";
 
             foreach (var key in preloadKeys)
             {
