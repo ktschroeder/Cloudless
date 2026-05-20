@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Cloudless
 {
@@ -73,12 +74,24 @@ namespace Cloudless
 
         private void OnIpcMessageReceived(string message)
         {
-            // Must marshal back to UI thread
-            Dispatcher.Invoke(() =>
+            // Marshal back to UI thread asynchronously to avoid blocking the pipe thread
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
                     var win = new MainWindow(message);
+
+                    // If there is no designated application MainWindow, prefer to set it so activation
+                    // and focus behavior match the tray-created fast-path.
+                    try
+                    {
+                        if (Application.Current?.MainWindow == null)
+                        {
+                            Application.Current.MainWindow = win;
+                        }
+                    }
+                    catch { }
+
                     win.Show();
                     win.Activate();
                 }
@@ -86,7 +99,7 @@ namespace Cloudless
                 {
                     MessageBox.Show($"Error: Failed to open file from IPC:\n{ex.Message}");  // rare MessageBox allowance
                 }
-            });
+            }), DispatcherPriority.Normal);
         }
     }
 }
