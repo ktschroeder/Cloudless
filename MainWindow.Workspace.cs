@@ -373,6 +373,7 @@ namespace Cloudless
             foreach (var state in zOrderedWindows)
             {
                 var window = new MainWindow(state.ImagePath, state.Width, state.Height);
+                window.WorkspaceLoadInProgress = true;
                 await window.LoadImage(state.ImagePath, false);
                 await window.ApplyWindowState(state);
                 window.Show();

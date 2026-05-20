@@ -441,7 +441,8 @@ namespace Cloudless
                 ApplyDisplayMode();
                 await UpdateContextMenuState();
 
-                _preloadManager?.PreloadWindow(currentImageIndex, imageFiles);
+                if (!WorkspaceLoadInProgress)  // skip this for faster workspace opening. User is unlikely to benefit from preloading anyway, for immediate images in a workspace load.
+                    _preloadManager?.PreloadWindow(currentImageIndex, imageFiles);
             }
             catch (Exception ex)
             {
