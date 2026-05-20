@@ -857,7 +857,8 @@ namespace Cloudless
         {
             if (!isComicMode)
             {
-                EnterExplorationMode(silent: true);
+                if (!isExplorationMode)
+                    EnterExplorationMode(silent: true);
                 isComicMode = true;
                 Message("Entered Comic Mode");
             }
