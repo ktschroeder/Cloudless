@@ -124,16 +124,16 @@ namespace Cloudless
             MouseLongHoldMSTextBox.Text = currentMouseLongHoldMs.ToString();
             MouseLongHoldMs = currentMouseLongHoldMs;
 
-            bool foundWebpPlugin = PluginManager.GetPluginForFiletype("webp") != null;
-            bool foundVlcPlugin = PluginManager.GetPluginForFiletype("webm") != null;
+            var webpPlugin = PluginManager.GetPluginForFiletype("webp");
+            var vlcPlugin = PluginManager.GetPluginForFiletype("webm");
 
-            if (foundWebpPlugin)
+            if (webpPlugin != null)
             {
-                WebpStatusText.Text = "WebP support is already installed.";  // TODO add: current version and new version to prompt for update
+                WebpStatusText.Text = $"WebP support is installed. Plugin version {webpPlugin.PluginVersion}, minimum Cloudless app version {webpPlugin.MinAppVersion}";  // TODO add: current version and new version to prompt for update
             }
-            if (foundVlcPlugin)
+            if (vlcPlugin != null)
             {
-                VlcStatusText.Text = "WebM/MKV/MP4 support is already installed.";
+                VlcStatusText.Text = $"WebM/MKV/MP4 support is installed. Plugin version {vlcPlugin.PluginVersion}, minimum Cloudless app version {vlcPlugin.MinAppVersion}";
             }
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
