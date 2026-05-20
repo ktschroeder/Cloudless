@@ -37,9 +37,7 @@ namespace Cloudless
             string buttonName = textBlock.Name;
             int index = int.Parse(buttonName[buttonName.Length - 1].ToString());
 
-            string? command = GetCommand(index);
-            if (!string.IsNullOrEmpty(command))
-                await _mw.ExecuteCommand(command);
+            await _mw.RunUserCommand(index - 1);
 
             Close();
         }

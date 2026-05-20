@@ -954,18 +954,29 @@ namespace Cloudless
             }
         }
 
-        private async Task RunUserCommand(int cIndex)
+        private List<int> UserCommandsInProgress = new List<int>();  // to prevent infinite loops if user sets command 1 to "c1 run" for example
+        public async Task RunUserCommand(int cIndex)
         {
+            if (UserCommandsInProgress.Contains(cIndex))
+            {
+                Message($"Command recursion detected and prevented at index {cIndex + 1}. This likely means you have a recursive loop in your commands (e.g. command 1 is \"c1 run\"), which would cause the program to freeze if allowed to continue. To fix this, edit your commands to remove the loop.");
+                return;
+            }
+
+            UserCommandsInProgress.Add(cIndex);
+
             LoadUserCommands();
             string command = UserCommands[cIndex];
             if (string.IsNullOrEmpty(command))
             {
-                Message($"No command found at index {cIndex}.");
+                Message($"No command found at index {cIndex + 1}.");
             }
             else
             {
                 await ExecuteCommand(command);
             }
+
+            UserCommandsInProgress.Remove(cIndex);
         }
 
         public void LoadUserCommands()
