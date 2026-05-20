@@ -87,9 +87,20 @@ namespace Cloudless
 
         public async Task ExecuteCommand(string command)
         {
-            bool validCommand = await ExecuteCommandInner(command);
-            // Originally it seemed better to oonly commit valid commands, but I find it more convenient to commit all commands, at least for now.
-            // ...especially when the user makes a sllight typo and would rather not fully re-type a longer command.
+            // The user may chain together commands in one line
+            List<string> individualCommands = command.Split(";").ToList();
+
+            foreach (string c in individualCommands)
+            {
+                string trimmedCommand = c.Trim();
+                if (!string.IsNullOrEmpty(trimmedCommand))
+                {
+                    bool validCommand = await ExecuteCommandInner(trimmedCommand);  // bool is currently unused
+                }
+            }
+
+            // Originally it seemed better to only commit valid commands, but I find it more convenient to commit all commands, at least for now.
+            // ...especially when the user makes a slight typo and would rather not fully re-type a longer command.
             CommitCommand(command);
         }
 
