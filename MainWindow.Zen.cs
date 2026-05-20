@@ -60,6 +60,9 @@ namespace Cloudless
             // via https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-animate-the-position-or-color-of-a-gradient-stop?view=netframeworkdesktop-4.8
 
             ImageDisplay.Visibility = Visibility.Collapsed;
+            VideoHost.Height = 0;
+            VideoHost.Width = 0;
+
             magicLayersCreated = 0;
             GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
             GenerateStars();
@@ -126,7 +129,11 @@ namespace Cloudless
             StarsCanvas = null;
 
             if (currentlyDisplayedImagePath != null)
+            {
                 ImageDisplay.Visibility = Visibility.Visible;
+                VideoHost.Height = double.NaN;
+                VideoHost.Width = double.NaN;
+            }
 
             isZen = false; // TODO check performance and that nothing is missed
         }
