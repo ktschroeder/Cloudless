@@ -25,6 +25,7 @@ namespace Cloudless
         public bool StartOnWindowsStart { get; private set; }
         public int MouseLongHoldMs { get; private set; }
         public bool PreloadImages { get; private set; }
+        public bool ComicModeMouseControlScroll { get; private set; }
 
         private MainWindow _mw;
 
@@ -89,6 +90,10 @@ namespace Cloudless
             var currentPreloadImagesCheckbox = Cloudless.Properties.Settings.Default.PreloadImages;
             PreloadImagesCheckbox.IsChecked = currentPreloadImagesCheckbox;
             PreloadImages = currentPreloadImagesCheckbox;
+
+            var currentComicModeMouseControlScroll = Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll;
+            ComicModeMouseControlScrollCheckbox.IsChecked = currentComicModeMouseControlScroll;
+            ComicModeMouseControlScroll = currentComicModeMouseControlScroll;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -184,6 +189,7 @@ namespace Cloudless
             DisableSmartZoom = DisableSmartZoomCheckbox.IsChecked ?? false;
             StartOnWindowsStart = StartOnWindowsStartCheckbox.IsChecked ?? false;
             PreloadImages = PreloadImagesCheckbox.IsChecked ?? false;
+            ComicModeMouseControlScroll = ComicModeMouseControlScrollCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

@@ -607,7 +607,9 @@ namespace Cloudless
         }
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
-            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || MouseControlMode)
+            bool comicScrollMode = Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll;
+
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || (MouseControlMode && !comicScrollMode))
             {
                 if (!isExplorationMode) EnterExplorationMode();
 
@@ -625,6 +627,17 @@ namespace Cloudless
                 await Zoom(cursorPosition, zoomDelta: zoomDelta);
 
                 e.Handled = true;
+            }
+            else if (MouseControlMode && comicScrollMode && isComicMode && imageTranslateTransform != null)
+            {
+                // In comic scroll mode, mouse wheel scrolls vertically.
+                imageTranslateTransform.Y += e.Delta > 0 ? 100 : -100;
+
+                // clamp vertically
+                if (!isCropMode)
+                {
+                    ClampTransformToIntuitiveBounds();
+                }
             }
             else
             {

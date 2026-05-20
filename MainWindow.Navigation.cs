@@ -61,6 +61,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.StartOnWindowsStart = configWindow.StartOnWindowsStart;
                 Cloudless.Properties.Settings.Default.MouseLongPressMS = configWindow.MouseLongHoldMs;
                 Cloudless.Properties.Settings.Default.PreloadImages = configWindow.PreloadImages;
+                Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll = configWindow.ComicModeMouseControlScroll;
 
                 Cloudless.Properties.Settings.Default.Save();
 

@@ -281,5 +281,17 @@ namespace Cloudless.Properties {
                 this["PreloadImages"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ComicModeMouseControlScroll {
+            get {
+                return ((bool)(this["ComicModeMouseControlScroll"]));
+            }
+            set {
+                this["ComicModeMouseControlScroll"] = value;
+            }
+        }
     }
 }

@@ -96,6 +96,10 @@ Margin="0,2"/>
     Content="Show a border around the main window" Margin="0,2"/>
                                 <CheckBox x:Name="ComicModeTopRightCheckbox" 
     Content="In comic mode, send pan to top-right (e.g. for manga). If this is unchecked, pan is sent to top-left." Margin="0,2"/>
+                                <CheckBox x:Name="ComicModeMouseControlScrollCheckbox" 
+    Content="In comic mode, in mouse control mode, use mousewheel to scroll image vertically (instead of zoom)" Margin="0,2"/>
+
+                                
 
                                 <TextBlock Text="Background:" FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
                                 <ComboBox x:Name="BackgroundDropdown" SelectedIndex="0" Margin="0,0,0,10">
