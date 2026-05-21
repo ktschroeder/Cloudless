@@ -180,6 +180,13 @@ namespace Cloudless
                     return;
                 }
 
+                // If film strip is visible, refresh it to reflect the new directory
+                try
+                {
+                    RefreshFilmStrip();
+                }
+                catch { }
+
                 await DisplayImage(currentImageIndex, openedThroughApp);
             }
             catch (Exception ex)

@@ -16,6 +16,20 @@ namespace Cloudless
             ToggleFilmStrip();
         }
 
+        // Refresh the film strip contents if visible. Safe to call from other parts of MainWindow.
+        public void RefreshFilmStrip()
+        {
+            try
+            {
+                if (_filmStripWindow != null && _filmStripWindow.IsVisible)
+                {
+                    var files = imageFiles ?? Array.Empty<string>();
+                    _ = _filmStripWindow.PopulateAsync(files, currentImageIndex, _preloadManager);
+                }
+            }
+            catch { }
+        }
+
         private void ToggleFilmStrip()
         {
             try

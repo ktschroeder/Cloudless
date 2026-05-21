@@ -45,7 +45,8 @@ namespace Cloudless
                 var win = Window.GetWindow(this);
                 if (win == null) return;
                 _isResizing = true;
-                _startMouseY = e.GetPosition(win).Y;
+                // Use screen coordinates for smooth resizing independent of window movement
+                _startMouseY = GetCursorScreenY();
                 _startWindowTop = win.Top;
                 _startWindowHeight = win.Height;
                 ((FrameworkElement)sender).CaptureMouse();
@@ -60,8 +61,8 @@ namespace Cloudless
                 if (!_isResizing) return;
                 var win = Window.GetWindow(this);
                 if (win == null) return;
-                double y = e.GetPosition(win).Y;
-                double delta = y - _startMouseY;
+                double currentY = GetCursorScreenY();
+                double delta = currentY - _startMouseY;
                 double newHeight = _startWindowHeight - delta;
                 double newTop = _startWindowTop + delta;
                 if (newHeight < 80) // minimum
@@ -85,6 +86,29 @@ namespace Cloudless
             }
             catch { }
         }
+
+        private static double GetCursorScreenY()
+        {
+            try
+            {
+                if (GetCursorPos(out POINT p))
+                {
+                    return p.Y;
+                }
+            }
+            catch { }
+            return 0;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool GetCursorPos(out POINT lpPoint);
 
         public void ShowFilmStrip()
         {
@@ -128,7 +152,10 @@ namespace Cloudless
                     {
                         Width = thumbWidth,
                         Height = thumbHeight,
-                        Stretch = Stretch.UniformToFill
+                        Stretch = Stretch.UniformToFill,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        SnapsToDevicePixels = true
                     };
 
                     border.Child = img;
@@ -146,6 +173,9 @@ namespace Cloudless
                     // hover handled via XAML style/animation; no code-behind transform here
 
                     PART_Panel.Children.Add(border);
+
+                    // ensure clipping within rounded border
+                    border.ClipToBounds = true;
 
                     BitmapImage? bmp = null;
                     if (preload != null && preload.TryGet(path, out var cached))
