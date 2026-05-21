@@ -136,8 +136,7 @@ namespace Cloudless
                         catch { }
                     };
 
-                    border.MouseEnter += (s, e) => border.RenderTransform = new System.Windows.Media.ScaleTransform(1.03, 1.03);
-                    border.MouseLeave += (s, e) => border.RenderTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
+                    // hover handled via XAML style/animation; no code-behind transform here
 
                     PART_Panel.Children.Add(border);
 
