@@ -14,20 +14,25 @@
 
             <!-- Dragger area -->
             <Grid Grid.Row="0" Background="#00111111">
-                <Rectangle Height="4" Fill="Transparent" Cursor="SizeNS" />
+                <Rectangle x:Name="PART_DragHandle" Height="6" Fill="Transparent" Cursor="SizeNS" />
             </Grid>
 
             <!-- Main film strip -->
-            <DockPanel Grid.Row="1">
-                <ScrollViewer x:Name="PART_ScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly">
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ScrollViewer x:Name="PART_ScrollViewer" Grid.Column="0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly" CanContentScroll="False">
                     <StackPanel x:Name="PART_Panel" Orientation="Horizontal" />
                 </ScrollViewer>
 
-                <StackPanel DockPanel.Dock="Right" Orientation="Vertical" Margin="8" VerticalAlignment="Top">
+                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="8" VerticalAlignment="Top">
                     <CheckBox x:Name="PART_CloseAfterSelect" Content="Close film strip afterward" Foreground="White" Background="Transparent" Margin="0,0,0,4" />
                     <CheckBox x:Name="PART_OpenInNewWindow" Content="Open image in new window" Foreground="White" Background="Transparent" />
                 </StackPanel>
-            </DockPanel>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

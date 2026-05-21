@@ -19,6 +19,7 @@ namespace Cloudless
             Background = System.Windows.Media.Brushes.Transparent;
             ShowInTaskbar = false;
             Topmost = false;
+            ShowActivated = false;
 
             _control = new FilmStripControl();
             _control.ThumbnailClicked += (p, open) => ThumbnailClicked?.Invoke(p, open);
@@ -52,6 +53,59 @@ namespace Cloudless
         public System.Threading.Tasks.Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload)
         {
             return _control.PopulateAsync(files, currentIndex, preload);
+        }
+
+        public void AlignToOwner(Window owner, double desiredHeight)
+        {
+            if (owner == null) return;
+            try
+            {
+                this.Owner = owner;
+                // Position and size to match owner width and bottom-aligned
+                this.Width = owner.ActualWidth;
+                this.Left = owner.Left;
+                this.Height = desiredHeight;
+                this.Top = owner.Top + owner.ActualHeight - this.Height;
+            }
+            catch { }
+        }
+
+        public void AttachOwnerHandlers(Window owner)
+        {
+            if (owner == null) return;
+            owner.LocationChanged += Owner_LocationOrSizeChanged;
+            owner.SizeChanged += Owner_LocationOrSizeChanged;
+            owner.StateChanged += Owner_StateChanged;
+        }
+
+        public void DetachOwnerHandlers(Window owner)
+        {
+            if (owner == null) return;
+            owner.LocationChanged -= Owner_LocationOrSizeChanged;
+            owner.SizeChanged -= Owner_LocationOrSizeChanged;
+            owner.StateChanged -= Owner_StateChanged;
+        }
+
+        private void Owner_LocationOrSizeChanged(object? s, EventArgs e)
+        {
+            try
+            {
+                if (this.Owner != null)
+                {
+                    AlignToOwner(this.Owner, this.Height);
+                }
+            }
+            catch { }
+        }
+
+        private void Owner_StateChanged(object? s, EventArgs e)
+        {
+            try
+            {
+                if (this.Owner != null && this.Owner.WindowState == WindowState.Minimized)
+                    this.Hide();
+            }
+            catch { }
         }
 
         public bool CloseAfterSelect => _control.CloseAfterSelect;

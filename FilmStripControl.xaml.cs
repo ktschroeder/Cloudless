@@ -15,6 +15,75 @@ namespace Cloudless
         public FilmStripControl()
         {
             InitializeComponent();
+            this.Loaded += FilmStripControl_Loaded;
+        }
+
+        private bool _isResizing = false;
+        private double _startMouseY = 0;
+        private double _startWindowTop = 0;
+        private double _startWindowHeight = 0;
+
+        private void FilmStripControl_Loaded(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var drag = this.FindName("PART_DragHandle") as FrameworkElement;
+                if (drag != null)
+                {
+                    drag.MouseLeftButtonDown += Drag_MouseLeftButtonDown;
+                    drag.MouseMove += Drag_MouseMove;
+                    drag.MouseLeftButtonUp += Drag_MouseLeftButtonUp;
+                }
+            }
+            catch { }
+        }
+
+        private void Drag_MouseLeftButtonDown(object? sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                var win = Window.GetWindow(this);
+                if (win == null) return;
+                _isResizing = true;
+                _startMouseY = e.GetPosition(win).Y;
+                _startWindowTop = win.Top;
+                _startWindowHeight = win.Height;
+                ((FrameworkElement)sender).CaptureMouse();
+            }
+            catch { }
+        }
+
+        private void Drag_MouseMove(object? sender, System.Windows.Input.MouseEventArgs e)
+        {
+            try
+            {
+                if (!_isResizing) return;
+                var win = Window.GetWindow(this);
+                if (win == null) return;
+                double y = e.GetPosition(win).Y;
+                double delta = y - _startMouseY;
+                double newHeight = _startWindowHeight - delta;
+                double newTop = _startWindowTop + delta;
+                if (newHeight < 80) // minimum
+                {
+                    newHeight = 80;
+                    newTop = _startWindowTop + (_startWindowHeight - 80);
+                }
+                win.Height = newHeight;
+                win.Top = newTop;
+            }
+            catch { }
+        }
+
+        private void Drag_MouseLeftButtonUp(object? sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                _isResizing = false;
+                var fe = sender as FrameworkElement;
+                fe?.ReleaseMouseCapture();
+            }
+            catch { }
         }
 
         public void ShowFilmStrip()

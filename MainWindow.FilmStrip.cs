@@ -23,19 +23,24 @@ namespace Cloudless
                 if (_filmStripWindow == null)
                 {
                     _filmStripWindow = new FilmStripWindow();
-                    _filmStripWindow.Owner = this;
                     _filmStripWindow.ThumbnailClicked += OnFilmStripThumbnailClicked;
                 }
 
                 if (_filmStripWindow.IsVisible)
                 {
                     _filmStripWindow.Hide();
+                    try { _filmStripWindow.DetachOwnerHandlers(this); } catch { }
                 }
                 else
                 {
-                    _filmStripWindow.Show();
                     try
                     {
+                        // Align to owner and attach handlers so it follows owner movements
+                        double desiredHeight = 140;
+                        _filmStripWindow.AlignToOwner(this, desiredHeight);
+                        _filmStripWindow.AttachOwnerHandlers(this);
+                        _filmStripWindow.Show();
+
                         var files = imageFiles ?? Array.Empty<string>();
                         _ = _filmStripWindow.PopulateAsync(files, currentImageIndex, _preloadManager);
                     }
