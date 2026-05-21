@@ -188,6 +188,39 @@ namespace Cloudless
             catch { }
         }
 
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            try
+            {
+                AdjustThumbnailSizes();
+            }
+            catch { }
+        }
+
+        internal void AdjustThumbnailSizes()
+        {
+            try
+            {
+                double availableHeight = PART_ScrollViewer.ActualHeight;
+                if (availableHeight < 40) availableHeight = 90;
+                double thumbHeight = Math.Max(48, availableHeight - 12);
+                double thumbWidth = Math.Round(thumbHeight * 1.6);
+
+                foreach (var child in PART_Panel.Children)
+                {
+                    if (child is Border b && b.Child is Image img)
+                    {
+                        b.Width = thumbWidth;
+                        b.Height = thumbHeight;
+                        img.Width = thumbWidth;
+                        img.Height = thumbHeight;
+                    }
+                }
+            }
+            catch { }
+        }
+
         public void ScrollByOffset(double offset)
         {
             try

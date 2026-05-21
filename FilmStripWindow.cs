@@ -28,6 +28,7 @@ namespace Cloudless
             // Basic key handling to allow arrow keys to scroll
             this.PreviewKeyDown += FilmStripWindow_PreviewKeyDown;
             this.PreviewMouseWheel += FilmStripWindow_PreviewMouseWheel;
+            this.SizeChanged += FilmStripWindow_SizeChanged;
         }
 
         private void FilmStripWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -63,11 +64,26 @@ namespace Cloudless
                 this.Owner = owner;
                 const double margin = 8.0;
                 // Position and size to match owner width with margins and bottom-aligned
-                double targetWidth = Math.Max(200, owner.ActualWidth - margin * 2);
+                double targetWidth;
+                double left;
+                double top;
+                if (owner.WindowState == WindowState.Maximized)
+                {
+                    var wa = SystemParameters.WorkArea;
+                    targetWidth = Math.Max(200, wa.Width - margin * 2);
+                    left = wa.Left + margin;
+                    top = wa.Bottom - desiredHeight - margin;
+                }
+                else
+                {
+                    targetWidth = Math.Max(200, owner.ActualWidth - margin * 2);
+                    left = owner.Left + margin;
+                    top = owner.Top + owner.ActualHeight - desiredHeight - margin;
+                }
+
                 this.Width = targetWidth;
-                this.Left = owner.Left + margin;
+                this.Left = left;
                 this.Height = desiredHeight;
-                double top = owner.Top + owner.ActualHeight - this.Height - margin;
                 if (top < 0) top = 0;
                 this.Top = top;
             }
@@ -97,6 +113,7 @@ namespace Cloudless
                 if (this.Owner != null)
                 {
                     AlignToOwner(this.Owner, this.Height);
+                    try { _control.AdjustThumbnailSizes(); } catch { }
                 }
             }
             catch { }
@@ -115,10 +132,16 @@ namespace Cloudless
 
                 // When owner is restored or maximized, realign and ensure visible
                 AlignToOwner(this.Owner, this.Height);
+                try { _control.AdjustThumbnailSizes(); } catch { }
                 if (!this.IsVisible)
                     this.Show();
             }
             catch { }
+        }
+
+        private void FilmStripWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            try { _control.AdjustThumbnailSizes(); } catch { }
         }
 
         public bool CloseAfterSelect => _control.CloseAfterSelect;
