@@ -61,11 +61,15 @@ namespace Cloudless
             try
             {
                 this.Owner = owner;
-                // Position and size to match owner width and bottom-aligned
-                this.Width = owner.ActualWidth;
-                this.Left = owner.Left;
+                const double margin = 8.0;
+                // Position and size to match owner width with margins and bottom-aligned
+                double targetWidth = Math.Max(200, owner.ActualWidth - margin * 2);
+                this.Width = targetWidth;
+                this.Left = owner.Left + margin;
                 this.Height = desiredHeight;
-                this.Top = owner.Top + owner.ActualHeight - this.Height;
+                double top = owner.Top + owner.ActualHeight - this.Height - margin;
+                if (top < 0) top = 0;
+                this.Top = top;
             }
             catch { }
         }
@@ -102,8 +106,17 @@ namespace Cloudless
         {
             try
             {
-                if (this.Owner != null && this.Owner.WindowState == WindowState.Minimized)
+                if (this.Owner == null) return;
+                if (this.Owner.WindowState == WindowState.Minimized)
+                {
                     this.Hide();
+                    return;
+                }
+
+                // When owner is restored or maximized, realign and ensure visible
+                AlignToOwner(this.Owner, this.Height);
+                if (!this.IsVisible)
+                    this.Show();
             }
             catch { }
         }

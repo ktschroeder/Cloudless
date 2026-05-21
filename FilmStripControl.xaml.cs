@@ -103,24 +103,31 @@ namespace Cloudless
                 PART_Panel.Children.Clear();
                 if (files == null || files.Length == 0) return;
 
+                // Wait a bit for layout to stabilize so we can measure available height
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+                double availableHeight = PART_ScrollViewer.ActualHeight;
+                if (availableHeight < 40) availableHeight = 90; // default
+                double thumbHeight = Math.Max(48, availableHeight - 12);
+                double thumbWidth = Math.Round(thumbHeight * 1.6);
+
                 for (int i = 0; i < files.Length; i++)
                 {
                     string path = files[i];
 
                     var border = new Border
                     {
-                        Width = 140,
-                        Height = 90,
+                        Width = thumbWidth,
+                        Height = thumbHeight,
                         Margin = new Thickness(6),
                         Background = new SolidColorBrush(Color.FromArgb(12, 255, 255, 255)),
-                        CornerRadius = new CornerRadius(4),
+                        CornerRadius = new CornerRadius(6),
                         Tag = path
                     };
 
                     var img = new Image
                     {
-                        Width = 140,
-                        Height = 90,
+                        Width = thumbWidth,
+                        Height = thumbHeight,
                         Stretch = Stretch.UniformToFill
                     };
 
