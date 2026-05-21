@@ -17,7 +17,7 @@ namespace Cloudless
     /// - Caches a small window of adjacent images (previous/next)
     /// Conservative: does not preload video files; only loads image file types (including GIF/WEBP/PNG/JPEG).
     /// </summary>
-    internal sealed class PreloadManager : IDisposable
+    public sealed class PreloadManager : IDisposable
     {
         private readonly Dispatcher _uiDispatcher;
         private readonly ConcurrentDictionary<string, BitmapImage> _cache = new(StringComparer.OrdinalIgnoreCase);

@@ -231,10 +231,18 @@ namespace Cloudless
             // set window dimensions to image if possible
             if (key == Key.F)
             {
-                autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
-                await ResizeWindowToImage();
-                CenterWindowOnCurrentScreen();
-                return;
+                if (control)
+                {
+                    ToggleFilmStrip();
+                    return;
+                }
+                else
+                {
+                    autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
+                    await ResizeWindowToImage();
+                    CenterWindowOnCurrentScreen();
+                    return;
+                }  
             }
 
             if (key == Key.O)
