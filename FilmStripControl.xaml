@@ -22,8 +22,9 @@
             </Grid>
 
             <!-- Main film strip -->
-            <ScrollViewer x:Name="PART_ScrollViewer" Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly" CanContentScroll="False">
-                <StackPanel x:Name="PART_Panel" Orientation="Horizontal">
+            <Grid Grid.Row="1">
+                <ScrollViewer x:Name="PART_ScrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly" CanContentScroll="False">
+                    <StackPanel x:Name="PART_Panel" Orientation="Horizontal">
                     <StackPanel.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="6" />
@@ -49,8 +50,27 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Resources>
-                </StackPanel>
-            </ScrollViewer>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Gradient overlays to indicate overflow (non-interactive) -->
+                <Rectangle x:Name="PART_LeftFade" HorizontalAlignment="Left" Width="96" IsHitTestVisible="False" Visibility="Collapsed">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FF000000" Offset="0" />
+                            <GradientStop Color="#00000000" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Rectangle x:Name="PART_RightFade" HorizontalAlignment="Right" Width="96" IsHitTestVisible="False" Visibility="Collapsed">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="1,0" EndPoint="0,0">
+                            <GradientStop Color="#FF000000" Offset="0" />
+                            <GradientStop Color="#00000000" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+            </Grid>
 
             <!-- Checkboxes below thumbnails -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="6">

@@ -34,6 +34,15 @@ namespace Cloudless
                     drag.MouseMove += Drag_MouseMove;
                     drag.MouseLeftButtonUp += Drag_MouseLeftButtonUp;
                 }
+                try
+                {
+                    var sv = this.FindName("PART_ScrollViewer") as ScrollViewer;
+                    if (sv != null)
+                    {
+                        sv.ScrollChanged += (s, ev) => UpdateOverflowIndicators();
+                    }
+                }
+                catch { }
             }
             catch { }
         }
@@ -251,6 +260,7 @@ namespace Cloudless
                 }
 
                 await Dispatcher.InvokeAsync(() => PART_ScrollViewer.ScrollToLeftEnd());
+                try { UpdateOverflowIndicators(); } catch { }
             }
             catch { }
         }
@@ -272,10 +282,26 @@ namespace Cloudless
                 var sv = PART_ScrollViewer;
                 if (sv == null) return;
 
-                // Preserve visual center ratio of the content so expansion happens around current view
-                double oldExtent = PART_Panel.ActualWidth;
-                double oldCenter = sv.HorizontalOffset + sv.ViewportWidth / 2.0;
-                double oldCenterRatio = (oldExtent > 0) ? (oldCenter / oldExtent) : 0.5;
+                // Determine which child is currently at the visual center of the viewport so
+                // we can keep that child visually stable during resize.
+                double viewportCenter = sv.HorizontalOffset + sv.ViewportWidth / 2.0;
+                FrameworkElement? centerChild = null;
+                double cumulative = 0;
+                for (int i = 0; i < PART_Panel.Children.Count; i++)
+                {
+                    if (PART_Panel.Children[i] is FrameworkElement fe)
+                    {
+                        double w = fe.ActualWidth;
+                        double left = cumulative;
+                        double right = left + w;
+                        if (viewportCenter >= left && viewportCenter <= right)
+                        {
+                            centerChild = fe;
+                            break;
+                        }
+                        cumulative += w;
+                    }
+                }
 
                 double availableHeight = PART_ScrollViewer.ActualHeight;
                 if (availableHeight < 40) availableHeight = 90;
@@ -292,22 +318,52 @@ namespace Cloudless
                         img.Height = thumbHeight;
                     }
                 }
-
-                // After layout updates, reposition scroll so center remains consistent
-                Dispatcher.BeginInvoke(new Action(() =>
+                // After layout updates, reposition scroll so the centerChild remains centered
+                if (centerChild != null)
                 {
-                    try
+                    Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        double newExtent = PART_Panel.ActualWidth;
-                        double newCenter = newExtent * oldCenterRatio;
-                        double newOffset = newCenter - sv.ViewportWidth / 2.0;
-                        if (newOffset < 0) newOffset = 0;
-                        double maxOffset = Math.Max(0, newExtent - sv.ViewportWidth);
-                        if (newOffset > maxOffset) newOffset = maxOffset;
-                        sv.ScrollToHorizontalOffset(newOffset);
-                    }
-                    catch { }
-                }), System.Windows.Threading.DispatcherPriority.Background);
+                        try
+                        {
+                            if (centerChild == null) return;
+                            var transform = centerChild.TransformToVisual(PART_Panel);
+                            var pt = transform.Transform(new Point(0, 0));
+                            double centerX = pt.X + centerChild.ActualWidth / 2.0;
+                            double newOffset = centerX - sv.ViewportWidth / 2.0;
+                            if (newOffset < 0) newOffset = 0;
+                            double maxOffset = Math.Max(0, PART_Panel.ActualWidth - sv.ViewportWidth);
+                            if (newOffset > maxOffset) newOffset = maxOffset;
+                            sv.ScrollToHorizontalOffset(newOffset);
+                        }
+                        catch { }
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+                else
+                {
+                    // fallback: keep leftmost offset
+                    Dispatcher.BeginInvoke(new Action(() => { try { sv.ScrollToHorizontalOffset(0); } catch { } }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+
+                try { UpdateOverflowIndicators(); } catch { }
+            }
+            catch { }
+        }
+
+        private void UpdateOverflowIndicators()
+        {
+            try
+            {
+                var sv = PART_ScrollViewer;
+                if (sv == null) return;
+                var leftRect = this.FindName("PART_LeftFade") as FrameworkElement;
+                var rightRect = this.FindName("PART_RightFade") as FrameworkElement;
+                if (leftRect == null || rightRect == null) return;
+
+                bool canScrollLeft = sv.HorizontalOffset > 1.0;
+                bool canScrollRight = sv.HorizontalOffset < (sv.ExtentWidth - sv.ViewportWidth - 1.0);
+
+                leftRect.Visibility = canScrollLeft ? Visibility.Visible : Visibility.Collapsed;
+                rightRect.Visibility = canScrollRight ? Visibility.Visible : Visibility.Collapsed;
             }
             catch { }
         }
