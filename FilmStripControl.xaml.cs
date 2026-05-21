@@ -177,17 +177,17 @@ namespace Cloudless
                     // ensure clipping within rounded border
                     border.ClipToBounds = true;
 
-                    BitmapImage? bmp = null;
+                    BitmapSource? src = null;
                     if (preload != null && preload.TryGet(path, out var cached))
                     {
-                        bmp = cached;
+                        src = cached;
                     }
                     else
                     {
-                        // try light-weight load
                         try
                         {
-                            await Dispatcher.InvokeAsync(() =>
+                            // load a decoded image suitable for thumbnailing on UI thread
+                            src = await Dispatcher.InvokeAsync(() =>
                             {
                                 try
                                 {
@@ -195,21 +195,58 @@ namespace Cloudless
                                     tmp.BeginInit();
                                     tmp.CacheOption = BitmapCacheOption.OnLoad;
                                     tmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-                                    tmp.DecodePixelHeight = 120;
+                                    // request a decoded height somewhat larger than target for quality
+                                    tmp.DecodePixelHeight = (int)Math.Max(64, thumbHeight * 2);
                                     tmp.UriSource = new Uri(path);
                                     tmp.EndInit();
                                     tmp.Freeze();
-                                    img.Source = tmp;
+                                    return (BitmapSource)tmp;
                                 }
                                 catch { }
-                            });
+                                return null;
+                            }, System.Windows.Threading.DispatcherPriority.Background);
                         }
                         catch { }
                     }
 
-                    if (bmp != null)
+                    if (src != null)
                     {
-                        await Dispatcher.InvokeAsync(() => img.Source = bmp);
+                        try
+                        {
+                            // center-crop the source to match thumbnail aspect ratio
+                            int sw = src.PixelWidth;
+                            int sh = src.PixelHeight;
+                            if (sw > 0 && sh > 0)
+                            {
+                                double targetRatio = thumbWidth / thumbHeight;
+                                int cropW, cropH, cropX, cropY;
+                                double srcRatio = (double)sw / (double)sh;
+                                if (srcRatio > targetRatio)
+                                {
+                                    // source is wider -> crop width
+                                    cropH = sh;
+                                    cropW = (int)Math.Round(sh * targetRatio);
+                                    cropX = (sw - cropW) / 2;
+                                    cropY = 0;
+                                }
+                                else
+                                {
+                                    // source is taller -> crop height
+                                    cropW = sw;
+                                    cropH = (int)Math.Round(sw / targetRatio);
+                                    cropX = 0;
+                                    cropY = (sh - cropH) / 2;
+                                }
+
+                                var cb = new CroppedBitmap(src, new Int32Rect(cropX, cropY, Math.Max(1, cropW), Math.Max(1, cropH)));
+                                await Dispatcher.InvokeAsync(() => img.Source = cb, System.Windows.Threading.DispatcherPriority.Background);
+                            }
+                            else
+                            {
+                                await Dispatcher.InvokeAsync(() => img.Source = src, System.Windows.Threading.DispatcherPriority.Background);
+                            }
+                        }
+                        catch { }
                     }
                 }
 
@@ -232,6 +269,14 @@ namespace Cloudless
         {
             try
             {
+                var sv = PART_ScrollViewer;
+                if (sv == null) return;
+
+                // Preserve visual center ratio of the content so expansion happens around current view
+                double oldExtent = PART_Panel.ActualWidth;
+                double oldCenter = sv.HorizontalOffset + sv.ViewportWidth / 2.0;
+                double oldCenterRatio = (oldExtent > 0) ? (oldCenter / oldExtent) : 0.5;
+
                 double availableHeight = PART_ScrollViewer.ActualHeight;
                 if (availableHeight < 40) availableHeight = 90;
                 double thumbHeight = Math.Max(48, availableHeight - 12);
@@ -247,6 +292,22 @@ namespace Cloudless
                         img.Height = thumbHeight;
                     }
                 }
+
+                // After layout updates, reposition scroll so center remains consistent
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        double newExtent = PART_Panel.ActualWidth;
+                        double newCenter = newExtent * oldCenterRatio;
+                        double newOffset = newCenter - sv.ViewportWidth / 2.0;
+                        if (newOffset < 0) newOffset = 0;
+                        double maxOffset = Math.Max(0, newExtent - sv.ViewportWidth);
+                        if (newOffset > maxOffset) newOffset = maxOffset;
+                        sv.ScrollToHorizontalOffset(newOffset);
+                    }
+                    catch { }
+                }), System.Windows.Threading.DispatcherPriority.Background);
             }
             catch { }
         }
