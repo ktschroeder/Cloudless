@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.8.0.3";
+        public const string CURRENT_VERSION = "0.8.0.4";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -667,6 +667,11 @@ namespace Cloudless
                 MouseControlMode = false;
                 MouseCommandMode = true;
             }
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

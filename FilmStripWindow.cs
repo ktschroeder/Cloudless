@@ -46,12 +46,23 @@ namespace Cloudless
 
         private void FilmStripWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            try
+            if (e.Key == Key.Left) { _control.ScrollByOffset(-200); e.Handled = true; return; }
+            else if (e.Key == Key.Right) { _control.ScrollByOffset(200); e.Handled = true; return; }
+            else if (e.Key == Key.F && Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) 
             {
-                if (e.Key == Key.Left) { _control.ScrollByOffset(-200); e.Handled = true; }
-                else if (e.Key == Key.Right) { _control.ScrollByOffset(200); e.Handled = true; }
+                if (Owner is MainWindow m)
+                {
+                    m.ToggleFilmStrip();
+                }
+                e.Handled = true; 
+                return; 
             }
-            catch { }
+
+            // else bubble key event up to owner
+            if (Owner is MainWindow mw)
+            {
+                mw.External_KeyDown(sender, e);
+            }
         }
 
         public System.Threading.Tasks.Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload)

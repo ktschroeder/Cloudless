@@ -30,10 +30,8 @@ namespace Cloudless
             catch { }
         }
 
-        private void ToggleFilmStrip()
+        public void ToggleFilmStrip()
         {
-            try
-            {
                 if (_filmStripWindow == null)
                 {
                     _filmStripWindow = new FilmStripWindow();
@@ -47,8 +45,6 @@ namespace Cloudless
                 }
                 else
                 {
-                    try
-                    {
                         // Align to owner and attach handlers so it follows owner movements
                         double desiredHeight = 140;
                         _filmStripWindow.AlignToOwner(this, desiredHeight);
@@ -57,11 +53,9 @@ namespace Cloudless
 
                         var files = imageFiles ?? Array.Empty<string>();
                         _ = _filmStripWindow.PopulateAsync(files, currentImageIndex, _preloadManager);
-                    }
-                    catch { }
+                    
                 }
-            }
-            catch { }
+            
         }
 
         private void OnFilmStripThumbnailClicked(string path, bool openInNewWindow)
@@ -78,7 +72,7 @@ namespace Cloudless
                     int idx = Array.IndexOf(imageFiles ?? Array.Empty<string>(), path);
                     if (idx >= 0)
                     {
-                        _ = DisplayImage(idx, openedThroughApp: false);
+                        _ = DisplayImage(idx, openedThroughApp: true);
                     }
                 }
 

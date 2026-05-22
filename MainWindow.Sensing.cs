@@ -166,6 +166,16 @@ namespace Cloudless
                 _duplicating = true;
         }
 
+        public async void External_KeyDown(object sender, KeyEventArgs e)
+        {
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            bool control = (modifiers & ModifierKeys.Control) != 0;
+            bool alt = (modifiers & ModifierKeys.Alt) != 0;
+            bool shift = (modifiers & ModifierKeys.Shift) != 0;
+
+            await SimulateKeyEvent(e.Key, shift, control, alt);
+        }
+
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
             ModifierKeys modifiers = Keyboard.Modifiers;

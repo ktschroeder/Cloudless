@@ -100,8 +100,9 @@
                     </Style>
                 </StackPanel.Resources>
 
-                <CheckBox x:Name="PART_CloseAfterSelect" Content="Close film strip afterward" Margin="6,4" />
-                <CheckBox x:Name="PART_OpenInNewWindow" Content="Open image in new window" Margin="6,4" />
+                <CheckBox x:Name="PART_CloseAfterSelect" Content="Close film strip afterward" Margin="6,4" Checked="PART_CloseAfterSelect_Checked" Unchecked="PART_CloseAfterSelect_Unchecked" />
+                <CheckBox x:Name="PART_OpenInNewWindow" Content="Open image in new window" Margin="6,4" Checked="PART_OpenInNewWindow_Checked" Unchecked="PART_OpenInNewWindow_Unchecked" />
+                <CheckBox x:Name="PART_Resize" Content="Resize window for image" Margin="6,4" Checked="PART_Resize_Checked" Unchecked="PART_Resize_Unchecked" />
             </StackPanel>
         </Grid>
     </Border>

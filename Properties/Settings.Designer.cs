@@ -305,5 +305,29 @@ namespace Cloudless.Properties {
                 this["CurrentPage"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool FilmStripCloseAfterward {
+            get {
+                return ((bool)(this["FilmStripCloseAfterward"]));
+            }
+            set {
+                this["FilmStripCloseAfterward"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool FilmStripOpenImageInNewWindow {
+            get {
+                return ((bool)(this["FilmStripOpenImageInNewWindow"]));
+            }
+            set {
+                this["FilmStripOpenImageInNewWindow"] = value;
+            }
+        }
     }
 }

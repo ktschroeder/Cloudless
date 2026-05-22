@@ -130,6 +130,7 @@ VerticalAlignment="Center">
                     <MenuItem x:Name="RecentFilesMenu" Header="Recent Images" SubmenuOpened="RecentFilesMenu_SubmenuOpened">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
+                    <MenuItem Header="Toggle Film Strip" Click="ToggleFilmStrip_Click" />
 
                     <MenuItem Header="Image Info" Click="ImageInfo_Click" />
                     <MenuItem Header="Set Dimensions" Click="SetDimensions_Click" />

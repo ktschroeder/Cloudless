@@ -1,3 +1,4 @@
+using Cloudless.Properties;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -16,12 +17,40 @@ namespace Cloudless
         {
             InitializeComponent();
             this.Loaded += FilmStripControl_Loaded;
+
+            UpdateCheckboxesFromSettings();
         }
 
         private bool _isResizing = false;
         private double _startMouseY = 0;
         private double _startWindowTop = 0;
         private double _startWindowHeight = 0;
+
+        private void UpdateCheckboxesFromSettings()
+        {
+            //try
+            //{
+                PART_CloseAfterSelect.IsChecked = Settings.Default.FilmStripCloseAfterward;
+                PART_OpenInNewWindow.IsChecked = Settings.Default.FilmStripOpenImageInNewWindow;
+                PART_Resize.IsChecked = Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp;
+            //}
+            //catch { }
+        }
+
+        private void UpdateSettingsFromCheckboxes()
+        {
+            Settings.Default.FilmStripCloseAfterward = PART_CloseAfterSelect.IsChecked == true;
+            Settings.Default.FilmStripOpenImageInNewWindow = PART_OpenInNewWindow.IsChecked == true;
+            Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = PART_Resize.IsChecked == true;
+            Settings.Default.Save();
+        }
+
+        private void PART_CloseAfterSelect_Checked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
+        private void PART_CloseAfterSelect_Unchecked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
+        private void PART_OpenInNewWindow_Checked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
+        private void PART_OpenInNewWindow_Unchecked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
+        private void PART_Resize_Checked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
+        private void PART_Resize_Unchecked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
 
         private void FilmStripControl_Loaded(object? sender, RoutedEventArgs e)
         {
@@ -121,6 +150,7 @@ namespace Cloudless
 
         public void ShowFilmStrip()
         {
+            UpdateCheckboxesFromSettings();
             this.Visibility = Visibility.Visible;
         }
 
@@ -383,5 +413,6 @@ namespace Cloudless
 
         public bool CloseAfterSelect => PART_CloseAfterSelect.IsChecked == true;
         public bool OpenInNewWindow => PART_OpenInNewWindow.IsChecked == true;
+        public bool ResizeWindow => PART_Resize.IsChecked == true;
     }
 }
