@@ -183,7 +183,7 @@ namespace Cloudless
             bool alt = (modifiers & ModifierKeys.Alt) != 0;
             bool shift = (modifiers & ModifierKeys.Shift) != 0;
 
-            if (CommandPalette.IsVisible && CommandTextBox.IsFocused)
+            if (_commandPaletteWindow != null && _commandPaletteWindow.IsVisible && _commandPaletteWindow.IsFocused)
             {
                 // Let the command palette handle this key; prevent main window hotkeys
                 return;

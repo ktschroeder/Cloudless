@@ -10,6 +10,7 @@ namespace Cloudless
         public static readonly RoutedUICommand ToggleFilmStripCommand = new RoutedUICommand("ToggleFilmStrip", "ToggleFilmStrip", typeof(MainWindow));
 
         private FilmStripWindow? _filmStripWindow;
+        private CommandPaletteWindow? _commandPaletteWindow;
 
         private void ToggleFilmStrip_Executed(object sender, ExecutedRoutedEventArgs e)
         {

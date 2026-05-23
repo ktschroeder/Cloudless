@@ -12,33 +12,75 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
+        private TextBox? GetCommandTextBox()
+        {
+            try
+            {
+                if (_commandPaletteWindow?.Control != null)
+                    return _commandPaletteWindow.Control.CommandTextBoxControl;
+                var tb = this.FindName("CommandTextBox") as TextBox;
+                return tb;
+            }
+            catch { return null; }
+        }
+
+        private bool IsCommandPaletteVisible()
+        {
+            try { return _commandPaletteWindow != null && _commandPaletteWindow.IsVisible; } catch { return false; }
+        }
+
         private void OpenCommandPalette()
         {
-            CommandPalette.Visibility = Visibility.Visible;
-            CommandTextBox.Text = ":";
-            CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+            if (IsCommandPaletteVisible())
+            {
+                var tb = GetCommandTextBox();
+                tb?.Focus();
+                return;
+            }
+
+            // ensure history refreshed
             LoadCommandHistory();
             CommandHistoryIndex = CommandHistory.Count;
             TabScroll = false;
-            CommandTextBox.Focus();
+
+            var textBox = GetCommandTextBox();
+            if (textBox != null)
+            {
+                //textBox.Text = ":";
+                textBox.CaretIndex = textBox.Text.Length;
+            }
+
+            // show floating palette if present
+            if (_commandPaletteWindow != null)
+            {
+                _commandPaletteWindow.ShowAndFocus(textBox, this);
+            }
+            else
+            {
+                textBox?.Focus();
+            }
         }
 
-        private void CommandPalette_TextChanged(object sender, TextChangedEventArgs e)
+        public void CommandPalette_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Executes every time a character is added or removed.
             // Ensure there is a colon at the start.
-            string currentText = CommandTextBox.Text;
+            var tb = GetCommandTextBox();
+            if (tb == null) return;
+            string currentText = tb.Text;
             if (string.IsNullOrEmpty(currentText))
-                CommandTextBox.Text = ":";
+                tb.Text = ":";
             else if (currentText[0] != ':')
-                CommandTextBox.Text = $":{currentText}";
+                tb.Text = $":{currentText}";
         }
 
-        private void CommandPalette_SelectionChanged(object sender, RoutedEventArgs e)
+        public void CommandPalette_SelectionChanged(object sender, RoutedEventArgs e)
         {
-            if (CommandTextBox.SelectionLength == 0 && CommandTextBox.CaretIndex == 0 && CommandTextBox.Text.Length > 0)
+            var tb = GetCommandTextBox();
+            if (tb == null) return;
+            if (tb.SelectionLength == 0 && tb.CaretIndex == 0 && tb.Text.Length > 0)
             {
-                CommandTextBox.CaretIndex = 1;
+                tb.CaretIndex = 1;
             }
 
             // TODO: make Ctrl A select all but first char. make Shift Left do nothing when at index 1.
@@ -46,14 +88,18 @@ namespace Cloudless
 
         private void CloseCommandPalette()
         {
-            CommandPalette.Visibility = Visibility.Collapsed;
+            var win = _commandPaletteWindow;
+            if (win != null)
+            {
+                win.Hide();
+            }
 
             // Restore focus to the main window
             FocusManager.SetFocusedElement(this, this);
             Keyboard.Focus(this);
         }
 
-        private async void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
+        public async void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             ModifierKeys modifiers = Keyboard.Modifiers;
             bool control = (modifiers & ModifierKeys.Control) != 0;
@@ -72,6 +118,8 @@ namespace Cloudless
 
             if (e.Key == Key.Escape)
             {
+                var tb = GetCommandTextBox();
+                tb.Text = "ZZZZZZZZZZZZZZZZZ";
                 CloseCommandPalette();
                 e.Handled = true;
                 return;
@@ -79,9 +127,16 @@ namespace Cloudless
 
             if (e.Key == Key.Enter)
             {
+                var tb = GetCommandTextBox();
+                string command = tb.Text.Trim();
+                tb.Text = "ZZZZZZZZZZZZZZZZZZZZZZZZZZ";
                 CloseCommandPalette();  // if this is closed after execution of command, we get some sporadic weirdness with unreleased focus in a window that has been sent to a different page.
-                await ExecuteCommand(CommandTextBox.Text.Trim());
                 
+                if (!string.IsNullOrEmpty(command))
+                {
+                    await ExecuteCommand(command);
+                }
+
                 e.Handled = true;
                 return;
             }
@@ -113,7 +168,9 @@ namespace Cloudless
         private string PreviousTabScrollText = null;
         private void TabPressed(bool shiftPressed = false, bool controlPressed = false)
         {
-            if (PreviousTabScrollText != CommandTextBox.Text)
+            var _tb_for_prev = GetCommandTextBox();
+            var _tbTextPrev = _tb_for_prev?.Text ?? "";
+            if (PreviousTabScrollText != _tbTextPrev)
             {
                 TabScroll = false;
                 TabScrollCtrl = false;
@@ -123,7 +180,8 @@ namespace Cloudless
             string[] tabbableCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p" };
             foreach (string tcb in tabbableCommandBases) 
             { 
-                if (CommandTextBox.Text.ToLower().StartsWith($":{tcb} "))
+                var _tb_for_check = GetCommandTextBox();
+                if (_tb_for_check != null && _tb_for_check.Text.ToLower().StartsWith($":{tcb} "))
                 {
                     foundCommandBase = tcb;
                     break;
@@ -135,7 +193,10 @@ namespace Cloudless
                 string commandBase = $":{foundCommandBase} ";
                 if (!TabScroll && !controlPressed)
                 {
-                    string query = CommandTextBox.Text.Length == commandBase.Length ? "" : CommandTextBox.Text.Substring(commandBase.Length);
+                    var _tb_for_query = GetCommandTextBox();
+                    string query = "";
+                    if (_tb_for_query != null)
+                        query = _tb_for_query.Text.Length == commandBase.Length ? "" : _tb_for_query.Text.Substring(commandBase.Length);
                     var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
                     wsNames ??= new List<string>();
                     wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
@@ -177,33 +238,41 @@ namespace Cloudless
             {
                 var next = candidates.First();
                 candidates.RemoveFirst();
-                CommandTextBox.Text = commandBase + next;
-                if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction", so repeat the movement
+                    var _tb_for_cycle = GetCommandTextBox();
+                    if (_tb_for_cycle != null)
+                        _tb_for_cycle.Text = commandBase + next;
+                    if ((_tb_for_cycle?.Text ?? "").Equals(PreviousTabScrollText))  // ...then the user is "changing direction", so repeat the movement
                 {
                     candidates.AddLast(next);
                     next = candidates.First();
                     candidates.RemoveFirst();
-                    CommandTextBox.Text = commandBase + next;
+                        if (_tb_for_cycle != null)
+                            _tb_for_cycle.Text = commandBase + next;
                 }
-                PreviousTabScrollText = CommandTextBox.Text;
+                PreviousTabScrollText = _tb_for_cycle?.Text ?? PreviousTabScrollText;
                 candidates.AddLast(next);
-                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+                if (_tb_for_cycle != null)
+                    _tb_for_cycle.CaretIndex = _tb_for_cycle.Text.Length;
             }
             else
             {
                 var next = candidates.Last();
                 candidates.RemoveLast();
-                CommandTextBox.Text = commandBase + next;
-                if (CommandTextBox.Text.Equals(PreviousTabScrollText))  // ...then the user is "changing direction" so repeat the movement
+                var _tb_for_cycle2 = GetCommandTextBox();
+                if (_tb_for_cycle2 != null)
+                    _tb_for_cycle2.Text = commandBase + next;
+                if ((_tb_for_cycle2?.Text ?? "").Equals(PreviousTabScrollText))  // ...then the user is "changing direction" so repeat the movement
                 {
                     candidates.AddFirst(next);
                     next = candidates.Last();
                     candidates.RemoveLast();
-                    CommandTextBox.Text = commandBase + next;
+                    if (_tb_for_cycle2 != null)
+                        _tb_for_cycle2.Text = commandBase + next;
                 }
-                PreviousTabScrollText = CommandTextBox.Text;
+                PreviousTabScrollText = _tb_for_cycle2?.Text ?? PreviousTabScrollText;
                 candidates.AddFirst(next);
-                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+                if (_tb_for_cycle2 != null)
+                    _tb_for_cycle2.CaretIndex = _tb_for_cycle2.Text.Length;
             }
         }
 
@@ -917,7 +986,7 @@ namespace Cloudless
             CommandHistoryIndex = CommandHistory.Count; // reset position
         }
 
-        private void CommandPaletteTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        public void CommandPaletteTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (CommandHistory.Count == 0)
                 return;
@@ -929,8 +998,12 @@ namespace Cloudless
                 if (CommandHistoryIndex > 0)
                     CommandHistoryIndex--;
 
-                CommandTextBox.Text = CommandHistory[CommandHistoryIndex];
-                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+                var tb = GetCommandTextBox();
+                if (tb != null)
+                {
+                    tb.Text = CommandHistory[CommandHistoryIndex];
+                    tb.CaretIndex = tb.Text.Length;
+                }
             }
             else if (e.Key == Key.Down)
             {
@@ -939,15 +1012,21 @@ namespace Cloudless
                 if (CommandHistoryIndex < CommandHistory.Count - 1)
                 {
                     CommandHistoryIndex++;
-                    CommandTextBox.Text = CommandHistory[CommandHistoryIndex];
+                    var tb = GetCommandTextBox();
+                    if (tb != null)
+                        tb.Text = CommandHistory[CommandHistoryIndex];
                 }
                 else
                 {
                     CommandHistoryIndex = CommandHistory.Count;
-                    CommandTextBox.Text = ":";
+                    var tb = GetCommandTextBox();
+                    if (tb != null)
+                        tb.Text = ":";
                 }
 
-                CommandTextBox.CaretIndex = CommandTextBox.Text.Length;
+                var tbb = GetCommandTextBox();
+                if (tbb != null)
+                    tbb.CaretIndex = tbb.Text.Length;
             }
 
             //// TODO revisit
