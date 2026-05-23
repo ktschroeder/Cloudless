@@ -46,7 +46,7 @@ namespace Cloudless
             var textBox = GetCommandTextBox();
             if (textBox != null)
             {
-                //textBox.Text = ":";
+                textBox.Text = ":";
                 textBox.CaretIndex = textBox.Text.Length;
             }
 
@@ -119,7 +119,7 @@ namespace Cloudless
             if (e.Key == Key.Escape)
             {
                 var tb = GetCommandTextBox();
-                tb.Text = "ZZZZZZZZZZZZZZZZZ";
+                tb.Text = ":";
                 CloseCommandPalette();
                 e.Handled = true;
                 return;
@@ -129,7 +129,7 @@ namespace Cloudless
             {
                 var tb = GetCommandTextBox();
                 string command = tb.Text.Trim();
-                tb.Text = "ZZZZZZZZZZZZZZZZZZZZZZZZZZ";
+                tb.Text = ":";
                 CloseCommandPalette();  // if this is closed after execution of command, we get some sporadic weirdness with unreleased focus in a window that has been sent to a different page.
                 
                 if (!string.IsNullOrEmpty(command))
