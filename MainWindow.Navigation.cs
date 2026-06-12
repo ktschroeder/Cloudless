@@ -45,7 +45,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
                 Cloudless.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
                 Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
-                Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
+                Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;  //
                 Cloudless.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
                 Cloudless.Properties.Settings.Default.ComicModeTopRight = configWindow.ComicModeTopRight;
                 Cloudless.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
@@ -61,6 +61,8 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.MouseLongPressMS = configWindow.MouseLongHoldMs;
                 Cloudless.Properties.Settings.Default.PreloadImages = configWindow.PreloadImages;
                 Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll = configWindow.ComicModeMouseControlScroll;
+                Cloudless.Properties.Settings.Default.FilmStripCloseAfterward = configWindow.FilmStripCloseAfterward;             //
+                Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow = configWindow.FilmStripOpenImageInNewWindow; //
 
                 Cloudless.Properties.Settings.Default.Save();
 
@@ -214,6 +216,10 @@ namespace Cloudless
         private void ImageInfo_Click(object sender, RoutedEventArgs e)
         {
             ImageInfo();
+        }
+        private void ToggleFilmStrip_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleFilmStrip();
         }
         private void ImageInfo()
         {

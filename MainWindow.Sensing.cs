@@ -166,6 +166,16 @@ namespace Cloudless
                 _duplicating = true;
         }
 
+        public async void External_KeyDown(object sender, KeyEventArgs e)
+        {
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            bool control = (modifiers & ModifierKeys.Control) != 0;
+            bool alt = (modifiers & ModifierKeys.Alt) != 0;
+            bool shift = (modifiers & ModifierKeys.Shift) != 0;
+
+            await SimulateKeyEvent(e.Key, shift, control, alt);
+        }
+
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
             ModifierKeys modifiers = Keyboard.Modifiers;
@@ -173,7 +183,7 @@ namespace Cloudless
             bool alt = (modifiers & ModifierKeys.Alt) != 0;
             bool shift = (modifiers & ModifierKeys.Shift) != 0;
 
-            if (CommandPalette.IsVisible && CommandTextBox.IsFocused)
+            if (_commandPaletteWindow != null && _commandPaletteWindow.IsVisible && _commandPaletteWindow.IsFocused)
             {
                 // Let the command palette handle this key; prevent main window hotkeys
                 return;
@@ -231,10 +241,18 @@ namespace Cloudless
             // set window dimensions to image if possible
             if (key == Key.F)
             {
-                autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
-                await ResizeWindowToImage();
-                CenterWindowOnCurrentScreen();
-                return;
+                if (control)
+                {
+                    ToggleFilmStrip();
+                    return;
+                }
+                else
+                {
+                    autoResizingSpaceIsToggled = !autoResizingSpaceIsToggled;
+                    await ResizeWindowToImage();
+                    CenterWindowOnCurrentScreen();
+                    return;
+                }  
             }
 
             if (key == Key.O)

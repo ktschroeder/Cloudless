@@ -26,6 +26,8 @@ namespace Cloudless
         public int MouseLongHoldMs { get; private set; }
         public bool PreloadImages { get; private set; }
         public bool ComicModeMouseControlScroll { get; private set; }
+        public bool FilmStripCloseAfterward { get; private set; }
+        public bool FilmStripOpenImageInNewWindow { get; private set; }
 
         private MainWindow _mw;
 
@@ -94,6 +96,14 @@ namespace Cloudless
             var currentComicModeMouseControlScroll = Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll;
             ComicModeMouseControlScrollCheckbox.IsChecked = currentComicModeMouseControlScroll;
             ComicModeMouseControlScroll = currentComicModeMouseControlScroll;
+
+            var currentFilmStripCloseAfterward = Cloudless.Properties.Settings.Default.FilmStripCloseAfterward;
+            FilmStripCloseAfterwardCheckbox.IsChecked = currentFilmStripCloseAfterward;
+            FilmStripCloseAfterward = currentFilmStripCloseAfterward;
+
+            var currentFilmStripOpenImageInNewWindow = Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow;
+            FilmStripOpenImageInNewWindowCheckbox.IsChecked = currentFilmStripOpenImageInNewWindow;
+            FilmStripOpenImageInNewWindow = currentFilmStripOpenImageInNewWindow;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -190,6 +200,8 @@ namespace Cloudless
             StartOnWindowsStart = StartOnWindowsStartCheckbox.IsChecked ?? false;
             PreloadImages = PreloadImagesCheckbox.IsChecked ?? false;
             ComicModeMouseControlScroll = ComicModeMouseControlScrollCheckbox.IsChecked ?? false;
+            FilmStripCloseAfterward = FilmStripCloseAfterwardCheckbox.IsChecked ?? false;
+            FilmStripOpenImageInNewWindow = FilmStripOpenImageInNewWindowCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

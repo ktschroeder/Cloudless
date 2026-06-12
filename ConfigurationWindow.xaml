@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Preferences"
-        Height="310"
+        Height="350"
         Width="600"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -29,7 +29,7 @@
             </Border>
             <StackPanel Margin="12">
 
-                <StackPanel Height="220">
+                <StackPanel Height="260">
 
                     <TabControl Background="Transparent" BorderThickness="0">
 
@@ -85,7 +85,7 @@ Margin="0,2"/>
                             <StackPanel Margin="12" VerticalAlignment="Top">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">
                                     <CheckBox x:Name="ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggleCheckbox" 
-        Content="Leave space around window bounds when near screen size"/>
+        Content="When opening image, leave space around window bounds when near screen size (px:)"/>
                                     <TextBox x:Name="SpaceAroundBoundsTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center" 
        ToolTip="# pixels space around window"/>
                                 </StackPanel>
@@ -99,7 +99,11 @@ Margin="0,2"/>
                                 <CheckBox x:Name="ComicModeMouseControlScrollCheckbox" 
     Content="In comic mode, in mouse control mode, use mousewheel to scroll image vertically (instead of zoom)" Margin="0,2"/>
 
-                                
+                                <CheckBox x:Name="FilmStripCloseAfterwardCheckbox" 
+Content="Close filmstrip after using it to open an image" Margin="0,2"/>
+                                <CheckBox x:Name="FilmStripOpenImageInNewWindowCheckbox" 
+Content="When clicking a thumbnail in the filmstrip, open it in a new window" Margin="0,2"/>
+
 
                                 <TextBlock Text="Background:" FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
                                 <ComboBox x:Name="BackgroundDropdown" SelectedIndex="0" Margin="0,0,0,10">

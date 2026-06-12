@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.8.0.3";
+        public const string CURRENT_VERSION = "0.8.0.4";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -408,6 +408,40 @@ namespace Cloudless
             //Topmost = true;
             //Topmost = false;
             //Focus();
+
+            //// Pre-create and pre-warm a CommandPaletteWindow so first open is fast
+            //try
+            //{
+            //    try
+            //    {
+            //        _commandPaletteWindow = new CommandPaletteWindow(this);
+            //        // Show invisibly to force WPF/DWM initialization (HWND, composition resources)
+            //        _commandPaletteWindow.Opacity = 0;
+            //        _commandPaletteWindow.Show();
+            //        Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            //        _commandPaletteWindow.AlignToOwner(this);
+            //        _commandPaletteWindow.AttachOwnerHandlers(this);
+            //        _commandPaletteWindow.Hide();
+            //        _commandPaletteWindow.Opacity = 1;
+            //    }
+            //    catch { }
+            //}
+            //catch { }
+            PrepareCommandPalette();
+
+            //_commandPaletteWindow.Opacity = 0;
+            //_commandPaletteWindow.Show();
+            //Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            //_commandPaletteWindow.Hide();
+            //_commandPaletteWindow.Opacity = 1;
+        }
+
+        public void PrepareCommandPalette()
+        {
+            _commandPaletteWindow = new CommandPaletteWindow(this);
+            _commandPaletteWindow.AlignToOwner(this);
+            _commandPaletteWindow.AttachOwnerHandlers(this);
+            _commandPaletteWindow.Hide();
         }
 
         private void Window_SourceInitialized(object sender, EventArgs e)
@@ -668,5 +702,10 @@ namespace Cloudless
                 MouseCommandMode = true;
             }
         }
+
+        //private void MenuItem_Click(object sender, RoutedEventArgs e)
+        //{
+
+        //}
     }
 }
