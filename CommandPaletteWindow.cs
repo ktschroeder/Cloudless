@@ -7,7 +7,7 @@ namespace Cloudless
 {
     public class CommandPaletteWindow : Window
     {
-        public CommandPaletteControl? Control { get; private set; }
+        public CommandPaletteControl? Control { get; set; }
         //private MainWindow _mw;
 
         public CommandPaletteWindow(MainWindow mw)

@@ -43,6 +43,10 @@ namespace Cloudless
             CommandHistoryIndex = CommandHistory.Count;
             TabScroll = false;
 
+            //_commandPaletteWindow.Control = null;
+
+            _commandPaletteWindow.Show();
+
             var textBox = GetCommandTextBox();
             if (textBox != null)
             {
@@ -53,7 +57,32 @@ namespace Cloudless
             // show floating palette if present
             if (_commandPaletteWindow != null)
             {
-                _commandPaletteWindow.ShowAndFocus(textBox, this);
+                try
+                {
+                    // Set desired text while hidden to avoid showing stale content
+                    //if (textBox != null)
+                    //{
+                    //    textBox.Text = ":";
+                    //    textBox.CaretIndex = textBox.Text.Length;
+                    //    // force layout pass on the control so its visual state is ready
+                    //    try { textBox.UpdateLayout(); } catch { }
+                    //}
+
+                    // Make window temporarily transparent during show to avoid flicker of previous content
+                    double prevOpacity = _commandPaletteWindow.Opacity;
+                    //_commandPaletteWindow.Opacity = 0;
+                    _commandPaletteWindow.ShowAndFocus(textBox, this);
+
+                    // Restore opacity after layout/focus so the control is visible without flicker
+                    //_commandPaletteWindow.Dispatcher.BeginInvoke(new Action(() =>
+                    //{
+                    //    try { _commandPaletteWindow.Opacity = prevOpacity; } catch { }
+                    //}), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                }
+                catch
+                {
+                    _commandPaletteWindow.ShowAndFocus(textBox, this);
+                }
             }
             else
             {
@@ -88,11 +117,25 @@ namespace Cloudless
 
         private void CloseCommandPalette()
         {
-            var win = _commandPaletteWindow;
-            if (win != null)
+            var textBox = GetCommandTextBox();
+            if (textBox != null)
             {
-                win.Hide();
+                textBox.Text = ":";
+                textBox.CaretIndex = textBox.Text.Length;
             }
+
+            var win = _commandPaletteWindow;
+            if (win != null && win.Control != null)
+            {
+                //win.Hide();
+                win.Close();
+            }
+
+            _commandPaletteWindow = new CommandPaletteWindow(this);
+            _commandPaletteWindow.AlignToOwner(this);
+            _commandPaletteWindow.AttachOwnerHandlers(this);
+            // keep it hidden until used
+            _commandPaletteWindow.Hide();
 
             // Restore focus to the main window
             FocusManager.SetFocusedElement(this, this);

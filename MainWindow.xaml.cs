@@ -412,13 +412,23 @@ namespace Cloudless
             // Create a dedicated floating CommandPaletteWindow so the palette can appear above plugin video surfaces
             try
             {
-                _commandPaletteWindow = new CommandPaletteWindow(this);
-                _commandPaletteWindow.AlignToOwner(this);
-                _commandPaletteWindow.AttachOwnerHandlers(this);
-                // keep it hidden until used
-                _commandPaletteWindow.Hide();
+                //_commandPaletteWindow = new CommandPaletteWindow(this);
+                //_commandPaletteWindow.AlignToOwner(this);
+                //_commandPaletteWindow.AttachOwnerHandlers(this);
+                //// keep it hidden until used
+                //_commandPaletteWindow.Hide();
             }
             catch { }
+            PrepareCommandPalette();
+        }
+
+        public void PrepareCommandPalette()
+        {
+            _commandPaletteWindow = new CommandPaletteWindow(this);
+            _commandPaletteWindow.AlignToOwner(this);
+            _commandPaletteWindow.AttachOwnerHandlers(this);
+            // keep it hidden until used
+            _commandPaletteWindow.Hide();
         }
 
         private void Window_SourceInitialized(object sender, EventArgs e)
