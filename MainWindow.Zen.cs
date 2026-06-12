@@ -20,6 +20,7 @@ namespace Cloudless
         private int staticStarSession = -1;  // smelly technique for determining in star child generation whether they should proceed (if in old session, then no).
         private bool isWelcome = true;
         private DispatcherTimer? _resizeStarTimer;
+        private DispatcherTimer? _shootingStarTimer;
         //private int brushKey = 0;
         //private Storyboard? orchStoryboard;
 
@@ -48,6 +49,35 @@ namespace Cloudless
                 _resizeStarTimer.Start();
             };
             _resizeStarTimer.Start();
+            _shootingStarTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _shootingStarTimer.Tick += (s, e) =>
+            {
+                if (isZen)
+                {
+                    double rand = _random.NextDouble();
+                    if (rand < 0.01)
+                    {
+                        int count = 3 + _random.Next(0, 5);
+                        for (int i = 0; i < count; i++)
+                        {
+                            Task.Delay(i * 200).ContinueWith(_ =>
+                            {
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (isZen)
+                                        LaunchShootingStar();
+                                });
+                            });
+                        }
+                    }
+                    else if (rand < 0.1)
+                        LaunchShootingStar();
+                }
+            };
+            _shootingStarTimer.Start();
         }
 
         private void Zen(bool includeInfoText)
@@ -126,6 +156,9 @@ namespace Cloudless
 
             // Set StarsCanvas to null to allow garbage collection
             StarsCanvas = null;
+
+            try { _shootingStarTimer?.Stop(); } catch { }
+            _shootingStarTimer = null;
 
             if (currentlyDisplayedImagePath != null)
             {
@@ -251,6 +284,48 @@ namespace Cloudless
 
             star.Tag = storyboard;
 
+            try
+            {
+                star.RenderTransformOrigin = new Point(0.5, 0.5);
+                var scale = new ScaleTransform(1.0, 1.0);
+                star.RenderTransform = scale;
+
+                var twinkleFrames = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = new Duration(TimeSpan.FromSeconds(withDelay)),
+                    BeginTime = TimeSpan.FromSeconds(periodDelay)
+                };
+
+                // Start at normal scale
+                twinkleFrames.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0))));
+
+                // Add a few random twinkle keyframes
+                int twinkleCount = 2 + (int)(_random.NextDouble() * 3);
+                for (int k = 0; k < twinkleCount; k++)
+                {
+                    double frac = 0.1 + _random.NextDouble() * 0.8; // between 10% and 90%
+                    double tSeconds = frac * withDelay;
+                    double scaleValue = 0.7 + _random.NextDouble() * 0.7;
+                    twinkleFrames.KeyFrames.Add(new SplineDoubleKeyFrame(scaleValue, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(tSeconds)), new KeySpline(0.25, 0.1, 0.25, 1)));
+                }
+
+                // End back at normal scale
+                twinkleFrames.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(withDelay))));
+
+                var twinkleFramesY = twinkleFrames.Clone();
+
+                Storyboard.SetTarget(twinkleFrames, star);
+                Storyboard.SetTargetProperty(twinkleFrames, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleX)"));
+                Storyboard.SetTarget(twinkleFramesY, star);
+                Storyboard.SetTargetProperty(twinkleFramesY, new PropertyPath("(UIElement.RenderTransform).(ScaleTransform.ScaleY)"));
+
+                storyboard.Children.Add(twinkleFrames);
+                storyboard.Children.Add(twinkleFramesY);
+            }
+            catch
+            {
+            }
+
             storyboard.Completed += (s, e) =>
             {
                 // looks like we get here after clearing/freeing star still, similar to rect issue.
@@ -270,6 +345,162 @@ namespace Cloudless
 
             // Start the animation
             storyboard.Begin(this);
+        }
+
+        private void LaunchShootingStar()
+        {
+            if (!isZen) return;
+
+            double width = MyGrid.ActualWidth;
+            double height = MyGrid.ActualHeight;
+            if (width <= 0 || height <= 0) return;
+
+            // Choose start off-screen on the left/top area and end off-screen on the right/bottom area
+            double startX = -(140 + 40); // start well off left so it always enters the visible area
+            double startY = -(_random.NextDouble() * (height * 0.2)); // may start slightly above
+
+            double endX = width + (140 + 40); // end well off right
+            double endY = height + (_random.NextDouble() * (height * 0.2)); // may end slightly below
+
+            double durationSeconds = 1.0 + _random.NextDouble() * 0.8;
+
+            var headSize = 6 + _random.Next(0, 4);
+            var head = new Ellipse
+            {
+                Width = headSize,
+                Height = headSize,
+                Fill = Brushes.White,
+                Opacity = 0
+            };
+
+            var tail = new Rectangle
+            {
+                Width = 140,
+                Height = 3,
+                RadiusX = 1,
+                RadiusY = 1,
+                Opacity = 0,
+                RenderTransformOrigin = new Point(0, 0.5)
+            };
+
+            // Tail gradient from white to transparent
+            var gbrush = new LinearGradientBrush();
+            gbrush.StartPoint = new Point(0, 0.5);
+            gbrush.EndPoint = new Point(1, 0.5);
+            gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF), 0.0));
+            gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF), 0.3));
+            gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 1.0));
+            tail.Fill = gbrush;
+
+            try
+            {
+                head.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 2 };
+                tail.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 1.5 };
+            }
+            catch { }
+
+            // Place both on a container canvas so we can rotate the tail to match trajectory
+            var container = new Canvas { IsHitTestVisible = false };
+            container.Children.Add(tail);
+            container.Children.Add(head);
+
+            // initial placement: position container such that (0,0) is the head center
+            Canvas.SetLeft(container, startX);
+            Canvas.SetTop(container, startY);
+            // Place head so its center is at (0,0) inside container
+            Canvas.SetLeft(head, -head.Width / 2);
+            Canvas.SetTop(head, -head.Height / 2);
+            // Place tail so its right end meets the head center at (0,0)
+            Canvas.SetLeft(tail, -tail.Width);
+            Canvas.SetTop(tail, -tail.Height / 2);
+
+            // compute angle of trajectory
+            double dx = endX - startX;
+            double dy = endY - startY;
+            double angle = Math.Atan2(dy, dx) * (180.0 / Math.PI);
+            // Combine scale and rotation so we can animate tail shortening via ScaleX.
+            // Set RenderTransformOrigin so rotation and scaling pivot at the tail's right end (attached to head).
+            tail.RenderTransformOrigin = new Point(1.0, 0.5);
+            var scale = new ScaleTransform(1.0, 1.0);
+            var rotate = new RotateTransform(angle);
+            var tg = new TransformGroup();
+            tg.Children.Add(scale);
+            tg.Children.Add(rotate);
+            tail.RenderTransform = tg;
+
+            // add to visual tree above star canvas
+            container.Opacity = 1;
+            // Prefer adding to the StarsCanvas (a Canvas) so Canvas.Left/Top animations work.
+            if (StarsCanvas != null)
+            {
+                if (!StarsCanvas.Children.Contains(container))
+                    StarsCanvas.Children.Add(container);
+                Canvas.SetZIndex(container, 100000);
+            }
+            else
+            {
+                if (!MyGrid.Children.Contains(container))
+                    MyGrid.Children.Add(container);
+                Canvas.SetZIndex(container, 100000);
+            }
+
+            // Animations: move container from start to end; fade head/tail in/out; tail shortens via ScaleX
+            var moveX = new DoubleAnimation
+            {
+                From = startX,
+                To = endX,
+                Duration = TimeSpan.FromSeconds(durationSeconds),
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+            };
+            var moveY = new DoubleAnimation
+            {
+                From = startY,
+                To = endY,
+                Duration = TimeSpan.FromSeconds(durationSeconds),
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+            };
+
+            var headFade = new DoubleAnimationUsingKeyFrames();
+            headFade.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            headFade.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.03))));
+            headFade.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds - 0.03))));
+
+            var tailFade = new DoubleAnimationUsingKeyFrames();
+            tailFade.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            tailFade.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.03))));
+            tailFade.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds - 0.03))));
+
+            // Animate tail shortening via ScaleX on its RenderTransform (first child of TransformGroup)
+            var tailShorten = new DoubleAnimation
+            {
+                From = 1.0,
+                To = 0.08,
+                Duration = TimeSpan.FromSeconds(durationSeconds * 0.9),
+                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            // Apply animations
+            moveX.Completed += (s, e) =>
+            {
+                try
+                {
+                    MyGrid.Children.Remove(container);
+                }
+                catch { }
+            };
+
+            // Use composition: animate Canvas.Left/Top via attached properties
+            container.BeginAnimation(Canvas.LeftProperty, moveX);
+            container.BeginAnimation(Canvas.TopProperty, moveY);
+
+            head.BeginAnimation(UIElement.OpacityProperty, headFade);
+            tail.BeginAnimation(UIElement.OpacityProperty, tailFade);
+            try
+            {
+                // scale is first child in TransformGroup
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, tailShorten);
+            }
+            catch { }
         }
 
         
