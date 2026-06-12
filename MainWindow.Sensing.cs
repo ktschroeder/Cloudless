@@ -238,6 +238,17 @@ namespace Cloudless
                 // do nothing for unmodified Key.D. We handle that near Key.Right later in this method.
             }
 
+            if (key == Key.N)
+            {
+                if (control && !alt)
+                {
+                    var newWin = new MainWindow("");
+                    newWin.Show();
+                    newWin.Activate();
+                    return;
+                }
+            }
+
             // set window dimensions to image if possible
             if (key == Key.F)
             {
