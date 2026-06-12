@@ -409,17 +409,31 @@ namespace Cloudless
             //Topmost = false;
             //Focus();
 
-            // Create a dedicated floating CommandPaletteWindow so the palette can appear above plugin video surfaces
+            // Pre-create and pre-warm a CommandPaletteWindow so first open is fast
             try
             {
-                //_commandPaletteWindow = new CommandPaletteWindow(this);
-                //_commandPaletteWindow.AlignToOwner(this);
-                //_commandPaletteWindow.AttachOwnerHandlers(this);
-                //// keep it hidden until used
-                //_commandPaletteWindow.Hide();
+                try
+                {
+                    _commandPaletteWindow = new CommandPaletteWindow(this);
+                    // Show invisibly to force WPF/DWM initialization (HWND, composition resources)
+                    _commandPaletteWindow.Opacity = 0;
+                    _commandPaletteWindow.Show();
+                    Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                    _commandPaletteWindow.AlignToOwner(this);
+                    _commandPaletteWindow.AttachOwnerHandlers(this);
+                    _commandPaletteWindow.Hide();
+                    _commandPaletteWindow.Opacity = 1;
+                }
+                catch { }
             }
             catch { }
             PrepareCommandPalette();
+
+            _commandPaletteWindow.Opacity = 0;
+            _commandPaletteWindow.Show();
+            Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            _commandPaletteWindow.Hide();
+            _commandPaletteWindow.Opacity = 1;
         }
 
         public void PrepareCommandPalette()
