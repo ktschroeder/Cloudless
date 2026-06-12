@@ -48,6 +48,16 @@ namespace Cloudless
                 WindowWasMinimizedPriorToHidingForPage = windowWasMinimizedPriorToHidingForPage
             };
 
+            // Persist video loop start/end if set for this window
+            try
+            {
+                if (this._videoLoopStart.HasValue)
+                    state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
+                if (this._videoLoopEnd.HasValue)
+                    state.LoopEndMs = this._videoLoopEnd.Value.TotalMilliseconds;
+            }
+            catch { }
+
             return state;
         }
 
@@ -446,6 +456,24 @@ namespace Cloudless
             await ToggleCropMode(setTo: false, silent: true);
 
             imageOriginalWorkspaceName = workspaceName;
+            // Apply any saved video loop range for this window
+            try
+            {
+                if ((state.LoopStartMs.HasValue || state.LoopEndMs.HasValue) && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer vp)
+                {
+                    TimeSpan? s = state.LoopStartMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopStartMs.Value) : null;
+                    TimeSpan? e = state.LoopEndMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopEndMs.Value) : null;
+                    vp.SetLoopRange(s, e);
+                    // update host-side tracking fields so UI/commands reflect the loaded state
+                    try { this._videoLoopStart = s; } catch { }
+                    try { this._videoLoopEnd = e; } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Non-fatal: plugin may not support loop ranges or may not be ready yet
+                Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
+            }
 
             WorkspaceLoadInProgress = false;
         }
@@ -806,7 +834,7 @@ namespace Cloudless
 
     public class CloudlessWorkspace
     {
-        public int SchemaVersion { get; set; } = 3;  // schema version 3 is backward-compatible with 2.
+        public int SchemaVersion { get; set; } = 4;  // schema version 4 adds per-window loop start/end (backward-compatible)
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
         public string? WorkspaceName { get; set; }
         public int CurrentPageIndex { get; set; } = 1;
@@ -829,6 +857,10 @@ namespace Cloudless
         public double PanY { get; set; }
         public double RenderWidth { get; set; }  // width of image rendering including "beyond what is visible in the window". Useful for cropping.
         public double RenderHeight { get; set; }  // similar to above
+
+        // Optional video loop bounds in milliseconds. Null indicates no custom bound saved in workspace.
+        public double? LoopStartMs { get; set; }
+        public double? LoopEndMs { get; set; }
 
         // Optional but useful
         public bool IsMaximized { get; set; }

@@ -45,7 +45,45 @@ namespace Cloudless.VlcPlugin
         {
             _loopStart = start;
             _loopEnd = end;
-            
+
+            // If a loop start is provided, try to seek to it now so playback begins at the loop boundary.
+            if (start.HasValue)
+            {
+                // If media view has not finished loading yet, wait for load signal then seek.
+                try
+                {
+                    Action seekAction = () =>
+                    {
+                        try
+                        {
+                            if (_mediaPlayer != null && _mediaPlayer.IsSeekable)
+                            {
+                                _mediaPlayer.SeekTo(start.Value);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error seeking to loop start: {ex.Message}");
+                        }
+                    };
+
+                    if (_loadSignal != null && !_loadSignal.Task.IsCompleted)
+                    {
+                        _ = _loadSignal.Task.ContinueWith(t =>
+                        {
+                            Application.Current.Dispatcher.BeginInvoke(seekAction);
+                        });
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(seekAction);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"SetLoopRange error: {ex.Message}");
+                }
+            }
         }
 
 
