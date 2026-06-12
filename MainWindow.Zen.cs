@@ -27,6 +27,7 @@ namespace Cloudless
         private List<GradientStopContext> gradientStopContexts = new List<GradientStopContext>();
         private int magicLayersCreated = 0;
         private const int CONCURRENT_ZEN_LAYERS = 4;
+        private int shootingStarCount = 0;
 
         private void InitializeZenMode()
         {
@@ -58,26 +59,16 @@ namespace Cloudless
                 if (isZen)
                 {
                     double rand = _random.NextDouble();
-                    if (rand < 0.01)
+                    if (rand < 0.0005)
                     {
-                        int count = 3 + _random.Next(0, 5);
-                        for (int i = 0; i < count; i++)
-                        {
-                            Task.Delay(i * 200).ContinueWith(_ =>
-                            {
-                                Dispatcher.Invoke(() =>
-                                {
-                                    if (isZen)
-                                        LaunchShootingStar();
-                                });
-                            });
-                        }
+                        LaunchMeteorShower();
                     }
-                    else if (rand < 0.1)
+                    else if (rand < 0.01)
                         LaunchShootingStar();
                 }
             };
             _shootingStarTimer.Start();
+            shootingStarCount = 0;
         }
 
         private void Zen(bool includeInfoText)
@@ -157,8 +148,8 @@ namespace Cloudless
             // Set StarsCanvas to null to allow garbage collection
             StarsCanvas = null;
 
-            try { _shootingStarTimer?.Stop(); } catch { }
-            _shootingStarTimer = null;
+            //try { _shootingStarTimer?.Stop(); } catch { }
+            //_shootingStarTimer = null;
 
             if (currentlyDisplayedImagePath != null)
             {
@@ -347,6 +338,22 @@ namespace Cloudless
             storyboard.Begin(this);
         }
 
+        private void LaunchMeteorShower()
+        {
+            int count = 10 + _random.Next(0, 5);
+            for (int i = 0; i < count; i++)
+            {
+                Task.Delay(Math.Max(0, i * 200 + _random.Next(-100, 100))).ContinueWith(_ =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (isZen)
+                            LaunchShootingStar();
+                    });
+                });
+            }
+        }
+
         private void LaunchShootingStar()
         {
             if (!isZen) return;
@@ -355,82 +362,105 @@ namespace Cloudless
             double height = MyGrid.ActualHeight;
             if (width <= 0 || height <= 0) return;
 
-            // Choose start off-screen on the left/top area and end off-screen on the right/bottom area
-            double startX = -(140 + 40); // start well off left so it always enters the visible area
-            double startY = -(_random.NextDouble() * (height * 0.2)); // may start slightly above
+            // Start off-screen left/top and end off-screen right/bottom
+            double startX = -(400); // far off left
+            double startY = -(_random.NextDouble() * (height * 0.25));
+            double endX = width + 400; // far off right
+            double endY = height + (_random.NextDouble() * (height * 0.25));
 
-            double endX = width + (140 + 40); // end well off right
-            double endY = height + (_random.NextDouble() * (height * 0.2)); // may end slightly below
+            double durationSeconds = 0.9 + _random.NextDouble() * 2.6;
 
-            double durationSeconds = 1.0 + _random.NextDouble() * 0.8;
+            // Color/tint selection
+            var r = _random.NextDouble();
+            Color headColor;
+            if (r < 0.03)
+                headColor = Color.FromRgb(0xFF, 0xD6, 0xA8); // warm orange (3%)
+            else if (r < 0.10)
+                headColor = Color.FromRgb(0xD6, 0xF6, 0xFF); // cool cyan (7%)
+            else
+                headColor = Color.FromRgb(0xFF, 0xFB, 0xE6); // warm white (90%)
 
-            var headSize = 6 + _random.Next(0, 4);
+            // Head
+            var headSize = 6 + _random.Next(0, 6); // 6..11
             var head = new Ellipse
             {
                 Width = headSize,
                 Height = headSize,
-                Fill = Brushes.White,
+                Fill = new RadialGradientBrush(new GradientStopCollection()
+                {
+                    new GradientStop(Color.FromArgb(0xFF, headColor.R, headColor.G, headColor.B), 0.0),
+                    new GradientStop(Color.FromArgb(0xCC, headColor.R, headColor.G, headColor.B), 0.4),
+                    new GradientStop(Color.FromArgb(0x00, headColor.R, headColor.G, headColor.B), 1.0)
+                }),
                 Opacity = 0
             };
 
-            var tail = new Rectangle
+            // Create layered tails
+            int layers = 2;
+            var tails = new List<Rectangle>();
+            for (int li = 0; li < layers; li++)
             {
-                Width = 140,
-                Height = 3,
-                RadiusX = 1,
-                RadiusY = 1,
-                Opacity = 0,
-                RenderTransformOrigin = new Point(0, 0.5)
-            };
+                var tail = new Rectangle
+                {
+                    Width = 120 + _random.Next(60, 220),
+                    Height = li == 0 ? 3 : 6,
+                    RadiusX = 1,
+                    RadiusY = 1,
+                    Opacity = 0,
+                    RenderTransformOrigin = new Point(1.0, 0.5)
+                };
 
-            // Tail gradient from white to transparent
-            var gbrush = new LinearGradientBrush();
-            gbrush.StartPoint = new Point(0, 0.5);
-            gbrush.EndPoint = new Point(1, 0.5);
-            gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF), 0.0));
-            gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF), 0.3));
-            gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 1.0));
-            tail.Fill = gbrush;
+                var gbrush = new LinearGradientBrush();
+                gbrush.StartPoint = new Point(0, 0.5);
+                gbrush.EndPoint = new Point(1, 0.5);
+                byte alpha0 = li == 0 ? (byte)0xFF : (byte)0x66;
+                byte alpha1 = li == 0 ? (byte)0x99 : (byte)0x33;
+                gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(alpha0, headColor.R, headColor.G, headColor.B), 0.0));
+                gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(alpha1, headColor.R, headColor.G, headColor.B), 0.35));
+                gbrush.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, headColor.R, headColor.G, headColor.B), 1.0));
+                tail.Fill = gbrush;
 
-            try
-            {
-                head.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 2 };
-                tail.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 1.5 };
+                tail.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = li == 0 ? 1.5 : 3.0 };
+
+                tails.Add(tail);
             }
-            catch { }
 
-            // Place both on a container canvas so we can rotate the tail to match trajectory
+            // Container: (0,0) is head center
             var container = new Canvas { IsHitTestVisible = false };
-            container.Children.Add(tail);
+            foreach (var t in tails) container.Children.Add(t);
             container.Children.Add(head);
 
-            // initial placement: position container such that (0,0) is the head center
             Canvas.SetLeft(container, startX);
             Canvas.SetTop(container, startY);
-            // Place head so its center is at (0,0) inside container
             Canvas.SetLeft(head, -head.Width / 2);
             Canvas.SetTop(head, -head.Height / 2);
-            // Place tail so its right end meets the head center at (0,0)
-            Canvas.SetLeft(tail, -tail.Width);
-            Canvas.SetTop(tail, -tail.Height / 2);
+            for (int i = 0; i < tails.Count; i++)
+            {
+                var tail = tails[i];
+                Canvas.SetLeft(tail, -tail.Width);
+                Canvas.SetTop(tail, -tail.Height / 2);
+            }
 
-            // compute angle of trajectory
+            // Trajectory angle
             double dx = endX - startX;
             double dy = endY - startY;
             double angle = Math.Atan2(dy, dx) * (180.0 / Math.PI);
-            // Combine scale and rotation so we can animate tail shortening via ScaleX.
-            // Set RenderTransformOrigin so rotation and scaling pivot at the tail's right end (attached to head).
-            tail.RenderTransformOrigin = new Point(1.0, 0.5);
-            var scale = new ScaleTransform(1.0, 1.0);
-            var rotate = new RotateTransform(angle);
-            var tg = new TransformGroup();
-            tg.Children.Add(scale);
-            tg.Children.Add(rotate);
-            tail.RenderTransform = tg;
 
-            // add to visual tree above star canvas
+            // Transforms for tails
+            var tailScales = new List<ScaleTransform>();
+            foreach (var tail in tails)
+            {
+                var scale = new ScaleTransform(1.0, 1.0);
+                var rotate = new RotateTransform(angle);
+                var tg = new TransformGroup();
+                tg.Children.Add(scale);
+                tg.Children.Add(rotate);
+                tail.RenderTransform = tg;
+                tailScales.Add(scale);
+            }
+
+            // add to visual tree on StarsCanvas so Canvas animations work
             container.Opacity = 1;
-            // Prefer adding to the StarsCanvas (a Canvas) so Canvas.Left/Top animations work.
             if (StarsCanvas != null)
             {
                 if (!StarsCanvas.Children.Contains(container))
@@ -444,7 +474,7 @@ namespace Cloudless
                 Canvas.SetZIndex(container, 100000);
             }
 
-            // Animations: move container from start to end; fade head/tail in/out; tail shortens via ScaleX
+            // Move with slight arc (keyframes)
             var moveX = new DoubleAnimation
             {
                 From = startX,
@@ -452,55 +482,70 @@ namespace Cloudless
                 Duration = TimeSpan.FromSeconds(durationSeconds),
                 EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
             };
-            var moveY = new DoubleAnimation
-            {
-                From = startY,
-                To = endY,
-                Duration = TimeSpan.FromSeconds(durationSeconds),
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-            };
+
+            var midY = (startY + endY) / 2.0;
+            double arcHeight = 30 + _random.NextDouble() * 90; // arc magnitude
+            var moveY = new DoubleAnimationUsingKeyFrames();
+            moveY.KeyFrames.Add(new SplineDoubleKeyFrame(startY, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            moveY.KeyFrames.Add(new SplineDoubleKeyFrame(midY - arcHeight, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds * 0.5))));
+            moveY.KeyFrames.Add(new SplineDoubleKeyFrame(endY, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds))));
+
+            // Head pulse and fade
+            var headPulse = new DoubleAnimationUsingKeyFrames();
+            headPulse.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            headPulse.KeyFrames.Add(new SplineDoubleKeyFrame(1.25, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.02))));
+            headPulse.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.08))));
 
             var headFade = new DoubleAnimationUsingKeyFrames();
             headFade.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
             headFade.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.03))));
             headFade.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds - 0.03))));
 
-            var tailFade = new DoubleAnimationUsingKeyFrames();
-            tailFade.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-            tailFade.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.03))));
-            tailFade.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds - 0.03))));
-
-            // Animate tail shortening via ScaleX on its RenderTransform (first child of TransformGroup)
-            var tailShorten = new DoubleAnimation
+            // Tail fades and shorten (staggered)
+            var tailFades = new List<AnimationTimeline>();
+            var tailShortens = new List<DoubleAnimation>();
+            for (int i = 0; i < tails.Count; i++)
             {
-                From = 1.0,
-                To = 0.08,
-                Duration = TimeSpan.FromSeconds(durationSeconds * 0.9),
-                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut }
+                var tf = new DoubleAnimationUsingKeyFrames();
+                tf.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                tf.KeyFrames.Add(new SplineDoubleKeyFrame(1.0 - i * 0.25, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.03 + i * 0.02))));
+                tf.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds - 0.03))));
+                tailFades.Add(tf);
+
+                var shorten = new DoubleAnimation
+                {
+                    From = 1.0,
+                    To = 0.05 + i * 0.05,
+                    Duration = TimeSpan.FromSeconds(durationSeconds * (0.8 + i * 0.1)),
+                    EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut }
+                };
+                tailShortens.Add(shorten);
+            }
+
+            moveX.Completed += (s, e) =>
+            {
+                if (StarsCanvas != null) StarsCanvas.Children.Remove(container); else MyGrid.Children.Remove(container);
             };
 
             // Apply animations
-            moveX.Completed += (s, e) =>
-            {
-                try
-                {
-                    MyGrid.Children.Remove(container);
-                }
-                catch { }
-            };
-
-            // Use composition: animate Canvas.Left/Top via attached properties
             container.BeginAnimation(Canvas.LeftProperty, moveX);
             container.BeginAnimation(Canvas.TopProperty, moveY);
 
+            // head animations
             head.BeginAnimation(UIElement.OpacityProperty, headFade);
-            tail.BeginAnimation(UIElement.OpacityProperty, tailFade);
-            try
+            var headScale = new ScaleTransform(1.0, 1.0);
+            head.RenderTransformOrigin = new Point(0.5, 0.5);
+            head.RenderTransform = headScale;
+            headScale.BeginAnimation(ScaleTransform.ScaleXProperty, headPulse);
+            headScale.BeginAnimation(ScaleTransform.ScaleYProperty, headPulse);
+
+            // tail animations
+            for (int i = 0; i < tails.Count; i++)
             {
-                // scale is first child in TransformGroup
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty, tailShorten);
+                var tail = tails[i];
+                tail.BeginAnimation(UIElement.OpacityProperty, tailFades[i]);
+                tailScales[i].BeginAnimation(ScaleTransform.ScaleXProperty, tailShortens[i]);
             }
-            catch { }
         }
 
         
@@ -794,6 +839,11 @@ namespace Cloudless
             }
         }
 
+        private float GetTweak()
+        {
+            return (float)(_random.NextDouble() * 0.3 - 0.1);
+        }
+
         private List<GradientStopContext> CreateGradientStopContexts(int layer, Storyboard storyboard)
         {
             GradientStopContext gsc0 = new GradientStopContext();
@@ -802,11 +852,10 @@ namespace Cloudless
             GradientStopContext gsc3 = new GradientStopContext();
 
             // Create gradient stops for the brush.
-            var tweak = (float)(_random.NextDouble() * 0.3 - 0.1);
-            gsc0.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.5F - tweak, 0F, 0.5F + tweak), 0.0);
-            gsc1.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + tweak), 0.3);
-            gsc2.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.6F + tweak, 0F, 0.8F - tweak), 0.6);
-            gsc3.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.4F + tweak, 0.63F + tweak), 1.0);
+            gsc0.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.4F - GetTweak(), 0F, 0.5F + GetTweak()), 0.0);
+            gsc1.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0F, 0.5F + GetTweak()), 0.3);
+            gsc2.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0.3F + GetTweak(), 0F, 0.8F - GetTweak()), 0.6);
+            gsc3.stop = new GradientStop(System.Windows.Media.Color.FromScRgb(1F, 0F, 0.4F + GetTweak(), 0.63F + GetTweak()), 1.0);
 
             gsc0.name = "GradientStop0Layer" + layer;
             gsc1.name = "GradientStop1Layer" + layer;

@@ -75,20 +75,13 @@
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="F11 or double-click" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="4" Text="Toggle fullscreen"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="Ctrl D" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Duplicate window"/>
-
                                             <TextBlock Grid.Column="0" Grid.Row="6" Text="Z" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="6" Text="Toggle Zen"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl Z" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Start Zen on all open windows, or stop Zen on all open windows if already on everywhere"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Space" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="Pause/resume GIF/video"/>
-
-                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl Space" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Restart GIF/video"/>
+                                            
 
                                             <TextBlock Grid.Column="0" Grid.Row="10" Text="Ctrl C" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="10" Text="Copy image file to clipboard"/>
@@ -226,6 +219,56 @@
                                             <TextBlock Grid.Column="0" Grid.Row="2" Text="Mousewheel up/down" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="2" Text="Similar to above"/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="Ctrl F" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Open or close Film Strip"/>
+
+                                        </Grid>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <TabItem Header="Video">
+                                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="140"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="0" Text="Space" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="0" Text="Pause/resume GIF/video"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="1" Text="Ctrl Space" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="1" Text="Restart GIF/video"/>
+                                            
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="Ctrl Left/Right" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Seek backward/forward 5 seconds"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="Ctrl Alt Left/Right" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Seek backward/forward 60 seconds"/>
+                                            
+                                            
+
                                         </Grid>
 
                                     </StackPanel>
@@ -277,8 +320,11 @@
                                             <TextBlock Grid.Column="0" Grid.Row="6" Text="Ctrl M" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="6" Text="Open System Messages window"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl Alt ;" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Open Pop-out Command Palette"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl D" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="7" Text="Duplicate window"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="8" Text="Ctrl N" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="8" Text="New window"/>
 
                                         </Grid>
 

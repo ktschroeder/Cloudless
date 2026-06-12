@@ -233,16 +233,6 @@ namespace Cloudless
             };
             imageInfoWindow.ShowDialog();
         }
-        private PopOutCommandPaletteWindow OpenPopOutCommandPaletteWindow()
-        {
-            var pocpWindow = new PopOutCommandPaletteWindow(this);
-
-            pocpWindow.Owner = this;
-            pocpWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            pocpWindow.Show();
-            pocpWindow.CommandTextBox.Focus();
-            return pocpWindow;
-        }
         private async Task UpdateContextMenuState()
         {
             // Enable/disable "Image Info" based on loaded image

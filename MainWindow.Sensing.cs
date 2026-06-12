@@ -534,7 +534,7 @@ namespace Cloudless
                 }
                 else if (alt)  // TODO somehow, we don't get here for just ALT, even to this method apparently. Works for CTRL ALT.
                 {
-                    OpenPopOutCommandPaletteWindow();
+                    //OpenPopOutCommandPaletteWindow();
                 }
                 else
                 {
@@ -788,27 +788,36 @@ namespace Cloudless
         {
             if (QuickCommandDisplay != null)
                 CloseQuickCommandWindow();
-
             var quickCommandWindow = new QuickCommandWindow(this);
             quickCommandWindow.Owner = this;
             quickCommandWindow.WindowStartupLocation = WindowStartupLocation.Manual;
 
+            // Convert the stored target (window-relative) point to screen coordinates; this works across monitors and fullscreen.
             var mousePos = TargetCenterForQuickCommandDisplay;
+            var screenPoint = this.PointToScreen(new Point(mousePos.X, mousePos.Y));
 
-            bool isMaximized = this.WindowState == WindowState.Maximized;
-            if (isMaximized)
+            // Position after loaded so ActualWidth/ActualHeight are available and DPI/measure is settled.
+            RoutedEventHandler? loadedHandler = null;
+            loadedHandler = (s, e) =>
             {
-                // TODO not quite centered due to maximized window weirdness. Can reference existing pixel hack.
-                quickCommandWindow.Left = (mousePos.X) - (quickCommandWindow.Width / 2);
-                quickCommandWindow.Top = (mousePos.Y) - (quickCommandWindow.Height / 2);
-            }
-            else
-            {
-                quickCommandWindow.Left = this.Left + (mousePos.X) - (quickCommandWindow.Width / 2);
-                quickCommandWindow.Top = this.Top + (mousePos.Y) - (quickCommandWindow.Height / 2);
-            }
+                try
+                {
+                    quickCommandWindow.Loaded -= loadedHandler;
+                }
+                catch { }
 
-                
+                try
+                {
+                    quickCommandWindow.Left = screenPoint.X - (quickCommandWindow.ActualWidth / 2);
+                    quickCommandWindow.Top = screenPoint.Y - (quickCommandWindow.ActualHeight / 2);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to position quick command window: {ex.Message}");
+                }
+            };
+            quickCommandWindow.Loaded += loadedHandler;
+
             quickCommandWindow.Show();
             QuickCommandDisplay = quickCommandWindow;
         }

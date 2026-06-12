@@ -208,7 +208,14 @@ namespace Cloudless
                                 return (BitmapSource)tmp;
                         }, System.Windows.Threading.DispatcherPriority.Background);
                     }
-                    catch { }  // TODO failure in this catch block causes the entire strip to stop populating if not caught. Maybe video thumb issue.
+                    catch 
+                    { 
+                        string failPath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
+                        if (File.Exists(failPath))
+                        {
+                            src = new BitmapImage(new Uri(failPath));
+                        }
+                    }  // TODO failure in this catch block causes the entire strip to stop populating if not caught. Maybe video thumb issue.
                 }
 
                 if (src != null)
@@ -299,27 +306,27 @@ namespace Cloudless
                     img.Height = thumbHeight;
                 }
             }
-            // After layout updates, reposition scroll so the centerChild remains centered
-            if (centerChild != null)
-            {
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    if (centerChild == null) return;
-                    var transform = centerChild.TransformToVisual(PART_Panel);
-                    var pt = transform.Transform(new Point(0, 0));
-                    double centerX = pt.X + centerChild.ActualWidth / 2.0;
-                    double newOffset = centerX - sv.ViewportWidth / 2.0;
-                    if (newOffset < 0) newOffset = 0;
-                    double maxOffset = Math.Max(0, PART_Panel.ActualWidth - sv.ViewportWidth);
-                    if (newOffset > maxOffset) newOffset = maxOffset;
-                    sv.ScrollToHorizontalOffset(newOffset);
-                }), System.Windows.Threading.DispatcherPriority.Background);
-            }
-            else
-            {
+            //// After layout updates, reposition scroll so the centerChild remains centered
+            //if (centerChild != null)
+            //{
+            //    Dispatcher.BeginInvoke(new Action(() =>
+            //    {
+            //        if (centerChild == null) return;
+            //        var transform = centerChild.TransformToVisual(PART_Panel);
+            //        var pt = transform.Transform(new Point(0, 0));
+            //        double centerX = pt.X + centerChild.ActualWidth / 2.0;
+            //        double newOffset = centerX - sv.ViewportWidth / 2.0;
+            //        if (newOffset < 0) newOffset = 0;
+            //        double maxOffset = Math.Max(0, PART_Panel.ActualWidth - sv.ViewportWidth);
+            //        if (newOffset > maxOffset) newOffset = maxOffset;
+            //        sv.ScrollToHorizontalOffset(newOffset);
+            //    }), System.Windows.Threading.DispatcherPriority.Background);
+            //}
+            //else
+            //{
                 // fallback: keep leftmost offset
                 Dispatcher.BeginInvoke(new Action(() => { sv.ScrollToHorizontalOffset(0); }), System.Windows.Threading.DispatcherPriority.Background);
-            }
+            //}
 
             UpdateOverflowIndicators();
         }

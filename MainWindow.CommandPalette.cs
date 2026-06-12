@@ -360,6 +360,18 @@ namespace Cloudless
                 return true;
             }
 
+            if (command.ToLower().Equals("meteor shower"))
+            {
+                LaunchMeteorShower();
+                return true;
+            }
+
+            if (command.ToLower().Equals("meteor"))
+            {
+                LaunchShootingStar();
+                return true;
+            }
+
             if (command.StartsWith("/"))
             {
                 await ExecuteFilenameSearch(command.Substring(1));
