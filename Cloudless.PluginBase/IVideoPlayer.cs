@@ -20,6 +20,15 @@ namespace Cloudless.PluginBase
         void Dispose();
         void Restart();
         TimeSpan GetDuration();
+        /// <summary>
+        /// Get the current playback position.
+        /// </summary>
+        TimeSpan GetPosition();
+
+        /// <summary>
+        /// Seek to the specified position (clamped by host if necessary).
+        /// </summary>
+        void SeekTo(TimeSpan position);
     }
 
 }

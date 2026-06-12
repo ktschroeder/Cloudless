@@ -1,5 +1,6 @@
 ﻿//using WpfAnimatedGif;
 using AnimatedImage.Wpf;
+using Cloudless.PluginBase;
 using Cloudless.Properties;
 using System.Drawing;
 using System.Windows;
@@ -245,6 +246,29 @@ namespace Cloudless
                     var newWin = new MainWindow("");
                     newWin.Show();
                     newWin.Activate();
+                    return;
+                }
+            }
+
+            // Video seeking: Ctrl+Left/Right to seek 5s, Ctrl+Alt+Left/Right to seek 60s
+            if ((key == Key.Left || key == Key.Right) && control)
+            {
+                var vp = VideoHost.Content as IVideoPlayer;
+                if (vp != null)
+                {
+                    int seconds = alt ? 60 : 5;
+                    TimeSpan delta = TimeSpan.FromSeconds(seconds * (key == Key.Right ? 1 : -1));
+
+                    TimeSpan current = vp.GetPosition();
+                    TimeSpan duration = vp.GetDuration();
+
+                    TimeSpan target = current + delta;
+                    if (target < TimeSpan.Zero)
+                        target = TimeSpan.Zero;
+                    if (duration > TimeSpan.Zero && target > duration)
+                        target = duration;
+
+                    vp.SeekTo(target);
                     return;
                 }
             }

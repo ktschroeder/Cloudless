@@ -258,6 +258,55 @@ namespace Cloudless.VlcPlugin
             }
         }
 
+        public TimeSpan GetPosition()
+        {
+            // return current playback time in TimeSpan. If not available, return TimeSpan.Zero
+            if (_mediaPlayer == null)
+                return TimeSpan.Zero;
+
+            // LibVLC MediaPlayer.Time is long milliseconds
+            try
+            {
+                long ms = _mediaPlayer.Time;
+                if (ms < 0) return TimeSpan.Zero;
+                return TimeSpan.FromMilliseconds(ms);
+            }
+            catch
+            {
+                return TimeSpan.Zero;
+            }
+        }
+
+        public void SeekTo(TimeSpan position)
+        {
+            if (_mediaPlayer == null)
+                return;
+
+            // Clamp to valid range if possible
+            try
+            {
+                if (_mediaPlayer.IsSeekable)
+                {
+                    if (position < TimeSpan.Zero)
+                        position = TimeSpan.Zero;
+
+                    // If length available, clamp to it
+                    try
+                    {
+                        long lengthMs = _mediaPlayer.Length;
+                        if (lengthMs > 0 && position.TotalMilliseconds > lengthMs)
+                            position = TimeSpan.FromMilliseconds(lengthMs);
+                    }
+                    catch { }
+
+                    _mediaPlayer?.SeekTo(position);
+                }
+            }
+            catch
+            {
+            }
+        }
+
         public void Dispose()
         {
             try
@@ -323,7 +372,20 @@ namespace Cloudless.VlcPlugin
 
         public TimeSpan GetDuration()
         {
-            throw new NotImplementedException();
+            if (_mediaPlayer == null)
+                return TimeSpan.Zero;
+
+            try
+            {
+                long lengthMs = _mediaPlayer.Length;
+                if (lengthMs <= 0)
+                    return TimeSpan.Zero;
+                return TimeSpan.FromMilliseconds(lengthMs);
+            }
+            catch
+            {
+                return TimeSpan.Zero;
+            }
         }
     }
 }
