@@ -23,6 +23,9 @@ namespace Cloudless.VlcPlugin
 
         private Uri _currentUri;
         private Media _currentMedia = null;
+        private TimeSpan? _loopStart = null;
+        private TimeSpan? _loopEnd = null;
+        private DateTime _lastLoopSeek = DateTime.MinValue;
 
         TaskCompletionSource<bool> _loadSignal;
 
@@ -38,6 +41,15 @@ namespace Cloudless.VlcPlugin
         {
         }
 
+        public void SetLoopRange(TimeSpan? start, TimeSpan? end)
+        {
+            _loopStart = start;
+            _loopEnd = end;
+            
+        }
+
+
+
         public async Task Initialize()
         {
             try { Cloudless.Diagnostics.LeakTracker.Register(this, "VlcVideoPlayerControl"); } catch { }
@@ -52,6 +64,8 @@ namespace Cloudless.VlcPlugin
                 //HorizontalAlignment = HorizontalAlignment.Stretch,
                 //VerticalAlignment = VerticalAlignment.Stretch
             };
+            // Use MediaPlayer.TimeChanged event for precise loop detection instead of polling timer.
+            // TimeChanged will be subscribed when media player is created.
             // we need the VideoView to be fully loaded before setting a MediaPlayer on it.
             _videoView.Loaded += VideoView_Loaded;
             this.Unloaded += VlcVideoPlayerControl_Unloaded;
@@ -72,7 +86,10 @@ namespace Cloudless.VlcPlugin
                 _libVLC = await LibVlcProvider.GetInstance();
                 _mediaPlayer = new MediaPlayer(_libVLC);
 
-                try { Cloudless.Diagnostics.LeakTracker.Register(_mediaPlayer, "LibVLC.MediaPlayer"); } catch { }
+                Cloudless.Diagnostics.LeakTracker.Register(_mediaPlayer, "LibVLC.MediaPlayer");
+
+                // subscribe to time changed for precise loop handling
+                _mediaPlayer.TimeChanged += MediaPlayer_TimeChanged;
 
                 _mediaPlayer.EndReached += (sender, args) =>
                 {
@@ -114,6 +131,47 @@ namespace Cloudless.VlcPlugin
             }
         }
 
+        private void MediaPlayer_TimeChanged(object? sender, MediaPlayerTimeChangedEventArgs e)
+        {
+            try
+            {
+                if (_mediaPlayer == null) return;
+                if (!_loopEnd.HasValue) return;
+
+                long currentMs = e.Time; // milliseconds
+                if (currentMs < 0) return;
+
+                long endMs = (long)_loopEnd.Value.TotalMilliseconds;
+
+                if (currentMs >= endMs)
+                {
+                    // debounce rapid repeated seeks
+                    var now = DateTime.UtcNow;
+                    if ((now - _lastLoopSeek).TotalMilliseconds < 100)
+                        return;
+                    _lastLoopSeek = now;
+
+                    var start = _loopStart ?? TimeSpan.Zero;
+                    // Seek on UI thread to avoid threading issues
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            _mediaPlayer.SeekTo(start);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error seeking to loop start: {ex.Message}");
+                        }
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"MediaPlayer_TimeChanged error: {ex.Message}");
+            }
+        }
+
         private static void CopyDirectoryRecursive(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
@@ -142,17 +200,8 @@ namespace Cloudless.VlcPlugin
 
             try
             {
-                try
-                {
-                    _mediaPlayer?.Stop();
-                }
-                catch { }
-
-                try
-                {
-                    _currentMedia?.Dispose();
-                }
-                catch { }
+                _mediaPlayer?.Stop();
+                _currentMedia?.Dispose();
                 _currentMedia = null;
 
                 // Create and keep the media for the lifetime of playback so we can reliably dispose it later.
@@ -161,8 +210,14 @@ namespace Cloudless.VlcPlugin
 
                 try { Cloudless.Diagnostics.LeakTracker.Register(media, "LibVLC.Media"); } catch { }
 
-                _currentUri = uri;
+                // If a different URI is being played, reset any loop ranges
+                if (_currentUri == null || !_currentUri.Equals(uri))
+                {
+                    _loopStart = null;
+                    _loopEnd = null;
+                }
 
+                _currentUri = uri;
                 _mediaPlayer?.Play(media);
 
                 if (postPlayTask != null)
@@ -315,6 +370,15 @@ namespace Cloudless.VlcPlugin
                 {
                     _videoView.Loaded -= VideoView_Loaded;
                     this.Unloaded -= VlcVideoPlayerControl_Unloaded;
+
+                    if (_mediaPlayer != null)
+                    {
+                        try
+                        {
+                            _mediaPlayer.TimeChanged -= MediaPlayer_TimeChanged;
+                        }
+                        catch { }
+                    }
 
                     // Detach MediaPlayer from VideoView (MediaPlayer may be same as _mediaPlayer)
                     try

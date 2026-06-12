@@ -12,6 +12,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
+        // Current user-defined loop range for video playback. Null means use media bounds.
+        private TimeSpan? _videoLoopStart = null;
+        private TimeSpan? _videoLoopEnd = null;
         private TextBox? GetCommandTextBox()
         {
             if (_commandPaletteWindow?.Control != null)
@@ -291,6 +294,71 @@ namespace Cloudless
 
             if (string.IsNullOrEmpty(command))
                 return false;
+
+            if (command.ToLower().Equals("set start"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                var pos = vp.GetPosition();
+                _videoLoopStart = pos;
+                // update plugin
+                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                Message($"Set loop start to {pos}");
+                return true;
+            }
+
+            if (command.ToLower().Equals("clear start"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                _videoLoopStart = null;
+                // update plugin
+                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                Message($"Reset loop start");
+                return true;
+            }
+
+            if (command.ToLower().Equals("set end"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                var pos = vp.GetPosition();
+                _videoLoopEnd = pos;
+                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                Message($"Set loop end to {pos}");
+                return true;
+            }
+
+            if (command.ToLower().Equals("clear end"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                _videoLoopEnd = null;
+                // update plugin
+                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                Message($"Reset loop end");
+                return true;
+            }
 
             if (command.StartsWith("/"))
             {

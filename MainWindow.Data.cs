@@ -304,6 +304,19 @@ namespace Cloudless
 
                         VideoHost.Content = view;
 
+                        // Reset any previously set loop range when loading a new video
+                        if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer playerReset)
+                        {
+                            try
+                            {
+                                playerReset.SetLoopRange(null, null);
+                            }
+                            catch
+                            {
+                                // if plugin does not support loops, ignore
+                            }
+                        }
+
                         VideoHost.Height = double.NaN;
                         VideoHost.Width = double.NaN;
                         //VideoHost.Height = 300;

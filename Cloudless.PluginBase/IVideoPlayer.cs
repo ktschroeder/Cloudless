@@ -29,6 +29,10 @@ namespace Cloudless.PluginBase
         /// Seek to the specified position (clamped by host if necessary).
         /// </summary>
         void SeekTo(TimeSpan position);
+        /// <summary>
+        /// Set a loop range for playback. If start or end is null, the media start/end will be used.
+        /// </summary>
+        void SetLoopRange(TimeSpan? start, TimeSpan? end);
     }
 
 }
