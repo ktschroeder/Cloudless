@@ -108,23 +108,25 @@ namespace Cloudless
                 if (!this.IsVisible)
                     this.Show();
 
+                focusTarget.Focus();
+
                 // Focus the provided element synchronously so input is accepted immediately
-                if (focusTarget != null)
-                {
-                    try
-                    {
-                        focusTarget.Dispatcher.Invoke(() =>
-                        {
-                            try
-                            {
-                                focusTarget.Focus();
-                                System.Windows.Input.Keyboard.Focus(focusTarget);
-                            }
-                            catch { }
-                        }, System.Windows.Threading.DispatcherPriority.Input);
-                    }
-                    catch { }
-                }
+                //if (focusTarget != null)
+                //{
+                //    try
+                //    {
+                //        focusTarget.Dispatcher.Invoke(() =>
+                //        {
+                //            try
+                //            {
+                //                focusTarget.Focus();
+                //                System.Windows.Input.Keyboard.Focus(focusTarget);
+                //            }
+                //            catch { }
+                //        }, System.Windows.Threading.DispatcherPriority.Input);
+                //    }
+                //    catch { }
+                //}
             }
             catch { }
         }

@@ -38,14 +38,13 @@ namespace Cloudless
                 return;
             }
 
-            // ensure history refreshed
-            LoadCommandHistory();
-            CommandHistoryIndex = CommandHistory.Count;
-            TabScroll = false;
+            
 
             //_commandPaletteWindow.Control = null;
 
-            _commandPaletteWindow.Show();
+            //_commandPaletteWindow.AlignToOwner(owner, 7, 7, desiredHeight);
+
+            
 
             var textBox = GetCommandTextBox();
             if (textBox != null)
@@ -54,40 +53,55 @@ namespace Cloudless
                 textBox.CaretIndex = textBox.Text.Length;
             }
 
+
+
+
+
+
+            _commandPaletteWindow.ShowAndFocus(textBox, this);
+
+
+            // ensure history refreshed
+            LoadCommandHistory();
+            CommandHistoryIndex = CommandHistory.Count;
+            TabScroll = false;
+
+
+
             // show floating palette if present
-            if (_commandPaletteWindow != null)
-            {
-                try
-                {
-                    // Set desired text while hidden to avoid showing stale content
-                    //if (textBox != null)
-                    //{
-                    //    textBox.Text = ":";
-                    //    textBox.CaretIndex = textBox.Text.Length;
-                    //    // force layout pass on the control so its visual state is ready
-                    //    try { textBox.UpdateLayout(); } catch { }
-                    //}
+            //if (_commandPaletteWindow != null)
+            //{
+            //    try
+            //    {
+            //        // Set desired text while hidden to avoid showing stale content
+            //        //if (textBox != null)
+            //        //{
+            //        //    textBox.Text = ":";
+            //        //    textBox.CaretIndex = textBox.Text.Length;
+            //        //    // force layout pass on the control so its visual state is ready
+            //        //    try { textBox.UpdateLayout(); } catch { }
+            //        //}
 
-                    // Make window temporarily transparent during show to avoid flicker of previous content
-                    double prevOpacity = _commandPaletteWindow.Opacity;
-                    //_commandPaletteWindow.Opacity = 0;
-                    _commandPaletteWindow.ShowAndFocus(textBox, this);
+            //        // Make window temporarily transparent during show to avoid flicker of previous content
+            //        double prevOpacity = _commandPaletteWindow.Opacity;
+            //        //_commandPaletteWindow.Opacity = 0;
+            //_commandPaletteWindow.ShowAndFocus(textBox, this);
 
-                    // Restore opacity after layout/focus so the control is visible without flicker
-                    //_commandPaletteWindow.Dispatcher.BeginInvoke(new Action(() =>
-                    //{
-                    //    try { _commandPaletteWindow.Opacity = prevOpacity; } catch { }
-                    //}), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-                }
-                catch
-                {
-                    _commandPaletteWindow.ShowAndFocus(textBox, this);
-                }
-            }
-            else
-            {
-                textBox?.Focus();
-            }
+            //        // Restore opacity after layout/focus so the control is visible without flicker
+            //        //_commandPaletteWindow.Dispatcher.BeginInvoke(new Action(() =>
+            //        //{
+            //        //    try { _commandPaletteWindow.Opacity = prevOpacity; } catch { }
+            //        //}), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            //    }
+            //    catch
+            //    {
+            //        _commandPaletteWindow.ShowAndFocus(textBox, this);
+            //    }
+            //}
+            //else
+            //{
+            //    textBox?.Focus();
+            //}
         }
 
         public void CommandPalette_TextChanged(object sender, TextChangedEventArgs e)
