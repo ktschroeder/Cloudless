@@ -198,6 +198,7 @@ namespace Cloudless
         private async Task DisplayImage(int index, bool openedThroughApp)
         {
             RemoveZen();
+            _currentImageEverCropped = false;
             autoResizingSpaceIsToggled = false;
             imageOriginalWorkspaceName = null;  // reset this whenever an image is loaded, e.g. left/right iteration. When loading workspaces, we define this in post-process.
 
