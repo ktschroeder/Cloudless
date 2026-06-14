@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Linq;
 using Path = System.IO.Path;
 
 namespace Cloudless
@@ -147,31 +149,88 @@ namespace Cloudless
 
         private async Task LoadThumbnailsAsync()
         {
+            var tasks = new List<Task>();
             foreach (var item in GalleryImages)
             {
                 if (!File.Exists(item.FilePath))
                     continue;
 
-                ImageSource? thumb = null;
+                // Fire-and-forget per-item thumbnail load so the UI stays responsive and thumbnails appear as they arrive.
+                tasks.Add(LoadAndSetThumbnailAsync(item, 128, 128));
+            }
 
-                if (Owner is MainWindow mw)
+            // Don't await all to keep UI responsive; but ensure background exceptions are observed
+            _ = Task.WhenAll(tasks).ContinueWith(t =>
+            {
+                if (t.Exception != null)
+                {
+                    try { (Owner as MainWindow)?.Message("One or more thumbnails failed to load in gallery."); } catch { }
+                }
+            });
+        }
+
+        private async Task LoadAndSetThumbnailAsync(GalleryItem item, int width, int height)
+        {
+            ImageSource? thumb = null;
+            try
+            {
+                string path = item.FilePath ?? "";
+                string ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
+                bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+
+                if (isVideo)
+                {
+                    // ThumbnailService returns a frozen BitmapSource and does IO off-thread
+                    thumb = await ThumbnailService.GetThumbnailAsync(path, width, height);
+                }
+                else
+                {
+                    // Load image on a background thread and freeze it so it can be assigned from UI thread
+                    thumb = await Task.Run(() =>
+                    {
+                        try
+                        {
+                            using var fs = File.OpenRead(path);
+                            var decoder = BitmapDecoder.Create(fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                            var frame = decoder.Frames.FirstOrDefault();
+                            if (frame != null)
+                            {
+                                frame.Freeze();
+                                return (ImageSource)frame;
+                            }
+                        }
+                        catch { }
+                        return (ImageSource?)null;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                try { (Owner as MainWindow)?.Message($"Error loading thumbnail for {item.FilePath}: {ex.Message}"); } catch { }
+            }
+
+            if (thumb == null)
+            {
+                string failPath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
+                if (File.Exists(failPath))
                 {
                     try
                     {
-                        thumb = await RunStaAsync(() =>
-                            (mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Result.Source);
+                        var bi = new BitmapImage(new Uri(failPath));
+                        bi.Freeze();
+                        thumb = bi;
                     }
-                    catch (Exception ex)
-                    {
-                        (Owner as MainWindow).Message($"Error loading thumbnail for {item.FilePath}: {ex.Message}");
-                    }
-
-
-                    //thumb = (await mw.GetImageThumbnail(filePath: item.FilePath, width: 128, height: 128))?.Source;
+                    catch { }
                 }
+            }
 
-                if (thumb != null)
-                    item.Thumbnail = thumb;
+            if (thumb != null)
+            {
+                try
+                {
+                    await Dispatcher.InvokeAsync(() => item.Thumbnail = thumb);
+                }
+                catch { }
             }
         }
 

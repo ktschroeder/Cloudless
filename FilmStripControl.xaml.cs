@@ -191,31 +191,57 @@ namespace Cloudless
                 }
                 else
                 {
-                    try
+                    string ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
+                    bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+
+                    if (isVideo)
                     {
-                        // load a decoded image suitable for thumbnailing on UI thread
-                        src = await Dispatcher.InvokeAsync(() =>
+                        try
                         {
-                                var tmp = new BitmapImage();
-                                tmp.BeginInit();
-                                tmp.CacheOption = BitmapCacheOption.OnLoad;
-                                tmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-                                // request a decoded height somewhat larger than target for quality
-                                tmp.DecodePixelHeight = (int)Math.Max(64, thumbHeight * 2);
-                                tmp.UriSource = new Uri(path);
-                                tmp.EndInit();
-                                tmp.Freeze();
-                                return (BitmapSource)tmp;
-                        }, System.Windows.Threading.DispatcherPriority.Background);
-                    }
-                    catch 
-                    { 
-                        string failPath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
-                        if (File.Exists(failPath))
-                        {
-                            src = new BitmapImage(new Uri(failPath));
+                            // Ask ThumbnailService for a cached/generated thumbnail
+                            src = await ThumbnailService.GetThumbnailAsync(path, (int)thumbWidth, (int)thumbHeight);
                         }
-                    }  // TODO failure in this catch block causes the entire strip to stop populating if not caught. Maybe video thumb issue.
+                        catch
+                        {
+                            src = null;
+                        }
+                        if (src == null)
+                        {
+                            string failPath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
+                            if (File.Exists(failPath))
+                            {
+                                src = new BitmapImage(new Uri(failPath));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            // load a decoded image suitable for thumbnailing on UI thread
+                            src = await Dispatcher.InvokeAsync(() =>
+                            {
+                                    var tmp = new BitmapImage();
+                                    tmp.BeginInit();
+                                    tmp.CacheOption = BitmapCacheOption.OnLoad;
+                                    tmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                                    // request a decoded height somewhat larger than target for quality
+                                    tmp.DecodePixelHeight = (int)Math.Max(64, thumbHeight * 2);
+                                    tmp.UriSource = new Uri(path);
+                                    tmp.EndInit();
+                                    tmp.Freeze();
+                                    return (BitmapSource)tmp;
+                            }, System.Windows.Threading.DispatcherPriority.Background);
+                        }
+                        catch 
+                        { 
+                            string failPath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
+                            if (File.Exists(failPath))
+                            {
+                                src = new BitmapImage(new Uri(failPath));
+                            }
+                        }
+                    }
                 }
 
                 if (src != null)

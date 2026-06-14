@@ -1,19 +1,20 @@
-﻿using System.Windows.Controls;
-using System.Windows;
+﻿using AnimatedImage.Wpf;
 using Microsoft.Win32;
-using System.Drawing.Imaging;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Windows.Media.Imaging;
-using System.Collections.Specialized;
 using System.Text.Json;
-using Path = System.IO.Path;
-using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 using File = System.IO.File;
-using AnimatedImage.Wpf;
+using Path = System.IO.Path;
 
 namespace Cloudless
 {
@@ -746,6 +747,22 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
+                string ext = Path.GetExtension(filePath)?.ToLowerInvariant() ?? "";
+                bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+
+                if (isVideo)
+                {
+                    try
+                    {
+                        // Ask ThumbnailService for a cached/generated thumbnail
+                        BitmapSource src = await ThumbnailService.GetThumbnailAsync(filePath, width, height);
+                        return new System.Windows.Controls.Image { Source = src };
+                    }
+                    catch
+                    {
+                    }
+                }
+
                 if (!useFailureThumb)  // TODO hacky, could clean this up. Bool protects against infinite recursion.
                 {
                     return await GetImageThumbnail(filePath, width, height, isContextWindow, useFailureThumb: true);
