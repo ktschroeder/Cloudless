@@ -170,6 +170,10 @@
                                             <TextBlock Grid.Column="0" Grid.Row="13" Text="hotkey [modifiers] [key]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="13" Text="Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="[command 1]; [command 2]; ..." FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="14" Text="Chain multiple commands together using semicolons. Each command will be executed in sequence."/>
+
+
                                         </Grid>
 
                                     </StackPanel>
