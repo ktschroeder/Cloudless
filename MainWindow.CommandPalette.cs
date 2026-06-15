@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using Cloudless.PluginBase;
+using System.Collections.Specialized;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -6,6 +7,8 @@ using System.Web;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
 
 
 namespace Cloudless
@@ -829,6 +832,27 @@ namespace Cloudless
             {
                 string args = command.Substring(6);
                 await SimulateHotkey(args.Trim());
+                return true;
+            }
+
+            if (command.ToLower().StartsWith("time"))
+            {
+                string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? "";
+                bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+                if (!isVideo)
+                {
+                    Message("The 'time' command only works when a video is loaded");
+                    return true;
+                }   
+
+                var vp = VideoHost.Content as IVideoPlayer;
+                if (vp != null)
+                {
+                    TimeSpan position = vp.GetPosition();
+                    TimeSpan duration = vp.GetDuration();
+                    Message($"Current position: {position}, Duration: {duration}");
+                }
+
                 return true;
             }
 
