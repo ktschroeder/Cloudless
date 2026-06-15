@@ -46,6 +46,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Text="Filename:" Grid.Row="0" Grid.Column="0" Foreground="#555" Margin="0,2"/>
@@ -65,14 +66,17 @@
                     <TextBlock Text="Dimensions:" Grid.Row="2" Grid.Column="0" Foreground="#555" Margin="0,2"/>
                     <TextBlock x:Name="DimensionsText" Grid.Row="2" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
 
-                    <TextBlock Text="Size:" Grid.Row="3" Grid.Column="0" Foreground="#555" Margin="0,2"/>
-                    <TextBlock x:Name="SizeText" Grid.Row="3" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
+                    <TextBlock Text="Duration:" Grid.Row="3" Grid.Column="0" Foreground="#555" Margin="0,2"/>
+                    <TextBlock x:Name="DurationText" Grid.Row="3" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
 
-                    <TextBlock Text="Format:" Grid.Row="4" Grid.Column="0" Foreground="#555" Margin="0,2"/>
-                    <TextBlock x:Name="FormatText" Grid.Row="4" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
+                    <TextBlock Text="Size:" Grid.Row="4" Grid.Column="0" Foreground="#555" Margin="0,2"/>
+                    <TextBlock x:Name="SizeText" Grid.Row="4" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
 
-                    <TextBlock Text="Last Modified:" Grid.Row="5" Grid.Column="0" Foreground="#555" Margin="0,2"/>
-                    <TextBlock x:Name="LastModifiedText" Grid.Row="5" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
+                    <TextBlock Text="Format:" Grid.Row="5" Grid.Column="0" Foreground="#555" Margin="0,2"/>
+                    <TextBlock x:Name="FormatText" Grid.Row="5" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
+
+                    <TextBlock Text="Last Modified:" Grid.Row="6" Grid.Column="0" Foreground="#555" Margin="0,2"/>
+                    <TextBlock x:Name="LastModifiedText" Grid.Row="6" Grid.Column="1" Foreground="#666" Margin="6,2,0,2"/>
                 </Grid>
 
                 <!-- Buttons -->

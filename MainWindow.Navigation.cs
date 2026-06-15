@@ -226,7 +226,7 @@ namespace Cloudless
             if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
                 return;
 
-            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePath)
+            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePath, this)
             {
                 Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner

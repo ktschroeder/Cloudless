@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Cloudless.PluginBase;
+using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,19 +15,21 @@ namespace Cloudless
         private string _imagePath;
         private readonly string _originalCopyButtonText;
         private CancellationTokenSource? _copyAnimationCancellationTokenSource;
+        private MainWindow _mw;
 
-        public ImageInfoWindow(string imagePath)
+        public ImageInfoWindow(string imagePath, MainWindow mainWindow)
         {
             InitializeComponent();
             _imagePath = imagePath;
             _originalCopyButtonText = CopyButton.Content.ToString() ?? "";
-            LoadImageInfo();
+            _mw = mainWindow;
+            LoadImageInfo();  // TODO consider async here. Can invoke from main window after creation.
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
         private void Close_Click(object sender, RoutedEventArgs e) { WindowHelper.Close_Click(this, e); }
 
-        private void LoadImageInfo()
+        private async void LoadImageInfo()
         {
             if (string.IsNullOrEmpty(_imagePath))
                 return;
@@ -38,15 +42,35 @@ namespace Cloudless
 
             try
             {
-                // Set format and dimensions
-                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(_imagePath);
-                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
-                // TODO add support for videos, which don't work with above. Should be able to use GetDimensions method from Webm plugin.
+                string ext = Path.GetExtension(_imagePath)?.ToLowerInvariant() ?? "";
+                bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+                if (isVideo)
+                {
+                    var vp = _mw.VideoHost.Content as IVideoPlayer;
+                    if (vp != null)
+                    {
+                        TimeSpan duration = vp.GetDuration();
+                        var dims = await vp.GetDimensions();
+                        if (dims != null)
+                        {
+                            int dimX = dims.Value.Item1;
+                            int dimY = dims.Value.Item2;
+                            DimensionsText.Text = $"{dimX} x {dimY}";
+                        }
+                        DurationText.Text = $"{duration}";
+                    }
+                }
+                else
+                {
+                    var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(_imagePath);
+                    bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    DimensionsText.Text = $"{bitmap.PixelWidth} x {bitmap.PixelHeight}";
+                    DurationText.Text = $"N/A";
+                }
             }
             catch (Exception e)
             {
