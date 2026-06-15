@@ -394,7 +394,13 @@ namespace Cloudless
                 return true;  // should be essentially unreachable
             }
 
-            if (command.ToLower().Equals("c all"))  // close all instances
+            if (command.ToLower().Equals("c"))
+            {
+                this.Close();
+                return true;  // should be essentially unreachable
+            }
+
+            if (command.ToLower().Equals("c all"))
             {
                 CloseAllOtherInstances();
                 this.Close();
