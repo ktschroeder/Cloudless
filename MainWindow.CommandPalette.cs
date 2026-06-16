@@ -288,17 +288,17 @@ namespace Cloudless
         }
 
         // returns whether successful (i.e. valid) command
-        private async Task<bool> ExecuteCommandInner(string command)
+        private async Task<bool> ExecuteCommandInner(string cmd)
         {
-            command = command.Trim();
+            cmd = cmd.Trim().ToLower();
 
-            if (command.StartsWith(":"))
-                command = command[1..];
+            if (cmd.StartsWith(":"))
+                cmd = cmd[1..];
 
-            if (string.IsNullOrEmpty(command))
+            if (string.IsNullOrEmpty(cmd))
                 return false;
 
-            if (command.ToLower().Equals("set start"))
+            if (cmd.Equals("set start"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -315,7 +315,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("clear start"))
+            if (cmd.Equals("clear start"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -331,7 +331,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("set end"))
+            if (cmd.Equals("set end"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -347,7 +347,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("clear end"))
+            if (cmd.Equals("clear end"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -363,25 +363,25 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("meteor shower"))
+            if (cmd.Equals("meteor shower"))
             {
                 LaunchMeteorShower();
                 return true;
             }
 
-            if (command.ToLower().Equals("meteor"))
+            if (cmd.Equals("meteor"))
             {
                 LaunchShootingStar();
                 return true;
             }
 
-            if (command.StartsWith("/"))
+            if (cmd.StartsWith("/"))
             {
-                await ExecuteFilenameSearch(command.Substring(1));
+                await ExecuteFilenameSearch(cmd.Substring(1));
                 return true;
             }
 
-            if (command.ToLower().Equals("p"))  // load most recently opened image
+            if (cmd.Equals("p"))  // load most recently opened image
             {
                 string? path = recentFiles?.FirstOrDefault();
                 if (path != null)
@@ -391,69 +391,69 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("shutdown") || command.ToLower().Equals("sd"))  // close all instances and shutdown background process
+            if (cmd.Equals("shutdown") || cmd.Equals("sd"))  // close all instances and shutdown background process
             {
                 Shutdown();
                 return true;  // should be essentially unreachable
             }
 
-            if (command.ToLower().Equals("c"))
+            if (cmd.Equals("c"))
             {
                 this.Close();
                 return true;  // should be essentially unreachable
             }
 
-            if (command.ToLower().Equals("c all"))
+            if (cmd.Equals("c all"))
             {
                 CloseAllOtherInstances();
                 this.Close();
                 return true;  // should be essentially unreachable
             }
 
-            if (command.ToLower().Equals("m all"))
+            if (cmd.Equals("m all"))
             {
                 MinimizeAllOtherInstances();
                 MinimizeWindow();
                 return true;
             }
 
-            if (command.ToLower().Equals("um all"))
+            if (cmd.Equals("um all"))
             {
                 UnminimizeAllOtherInstances();
                 return true;
             }
 
-            if (command.ToLower().Equals("um origin"))
+            if (cmd.Equals("um origin"))
             {
                 UnminimizeWorkspaceOriginInstances();
                 return true;
             }
 
-            if (command.ToLower().Equals("c others"))  // close all other instances
+            if (cmd.Equals("c others"))  // close all other instances
             {
                 CloseAllOtherInstances();
                 return true;
             }
 
-            if (command.ToLower().Equals("c origin"))  // close all instances showing an image from this window's workspace
+            if (cmd.Equals("c origin"))  // close all instances showing an image from this window's workspace
             {
                 CloseWorkspaceOriginInstances();
                 return true;
             }
 
-            if (command.ToLower().Equals("m others"))
+            if (cmd.Equals("m others"))
             {
                 MinimizeAllOtherInstances();
                 return true;
             }
 
-            if (command.ToLower().Equals("m origin"))
+            if (cmd.Equals("m origin"))
             {
                 MinimizeWorkspaceOriginInstances();
                 return true;
             }
 
-            if (command.ToLower().Equals("help"))
+            if (cmd.Equals("help"))
             {
                 var window = CommandPaletteRef();
                 window.Activate(); // TODO bug
@@ -466,7 +466,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("first"))
+            if (cmd.Equals("first"))
             {
                 if (imageFiles == null)
                     return true;
@@ -475,7 +475,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("last"))
+            if (cmd.Equals("last"))
             {
                 if (imageFiles == null)
                     return true;
@@ -484,15 +484,15 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().StartsWith("sort"))
+            if (cmd.StartsWith("sort"))
             {
-                if (command.ToLower().Equals("sort name asc"))
+                if (cmd.ToLower().Equals("sort name asc"))
                     Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "FileNameAscending";
-                else if (command.ToLower().Equals("sort name desc"))
+                else if (cmd.ToLower().Equals("sort name desc"))
                     Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "FileNameDescending";
-                else if (command.ToLower().Equals("sort date asc"))
+                else if (cmd.ToLower().Equals("sort date asc"))
                     Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedAscending";
-                else if (command.ToLower().Equals("sort date desc"))
+                else if (cmd.ToLower().Equals("sort date desc"))
                     Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedDescending";
                 else
                 {
@@ -505,15 +505,15 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().StartsWith("dm"))
+            if (cmd.StartsWith("dm"))
             {
-                if (command.ToLower().Equals("dm stretch") || command.ToLower().Equals("dm 1"))
+                if (cmd.Equals("dm stretch") || cmd.Equals("dm 1"))
                     Cloudless.Properties.Settings.Default.DisplayMode = "StretchToFit";
-                else if (command.ToLower().Equals("dm zoom") || command.ToLower().Equals("dm 2"))
+                else if (cmd.Equals("dm zoom") || cmd.Equals("dm 2"))
                     Cloudless.Properties.Settings.Default.DisplayMode = "ZoomToFill";
-                else if (command.ToLower().Equals("dm best") || command.ToLower().Equals("dm 3"))
+                else if (cmd.Equals("dm best") || cmd.Equals("dm 3"))
                     Cloudless.Properties.Settings.Default.DisplayMode = "BestFit";
-                else if (command.ToLower().Equals("dm bestnozoom") || command.ToLower().Equals("dm 4"))
+                else if (cmd.Equals("dm bestnozoom") || cmd.Equals("dm 4"))
                     Cloudless.Properties.Settings.Default.DisplayMode = "BestFitWithoutZooming";
                 else
                 {
@@ -526,12 +526,12 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("qs"))
+            if (cmd.Equals("qs"))
             {
                 Quicksave();
                 return true;
             }
-            if (command.ToLower().Equals("qs c"))
+            if (cmd.Equals("qs c"))
             {
                 bool success = Quicksave();
                 if (success)
@@ -541,22 +541,22 @@ namespace Cloudless
                 }
                 return true;
             }
-            if (command.ToLower().Equals("ql"))
+            if (cmd.Equals("ql"))
             {
                 await Quickload();
                 return true;
             }
-            if (command.ToLower().Equals("qm"))
+            if (cmd.Equals("qm"))
             {
                 await Quickmerge();
                 return true;
             }
 
-            if (command.ToLower().StartsWith("ws "))
+            if (cmd.StartsWith("ws "))
             {
-                if (command.ToLower().StartsWith("ws save ") && command.Length > 8)
+                if (cmd.StartsWith("ws save ") && cmd.Length > 8)
                 {
-                    string name = command.Substring(8);
+                    string name = cmd.Substring(8);
                     (int windowCount, int pageCount, string? error) = SaveWorkspace(name);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
@@ -567,9 +567,9 @@ namespace Cloudless
                     else
                         Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
-                else if (command.ToLower().StartsWith("ws s ") && command.Length > 5)
+                else if (cmd.StartsWith("ws s ") && cmd.Length > 5)
                 {
-                    string name = command.Substring(5);
+                    string name = cmd.Substring(5);
                     (int windowCount, int pageCount, string? error) = SaveWorkspace(name);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
@@ -580,9 +580,9 @@ namespace Cloudless
                     else
                         Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
-                else if (command.ToLower().StartsWith("ws save! ") && command.Length > 9)
+                else if (cmd.StartsWith("ws save! ") && cmd.Length > 9)
                 {
-                    string name = command.Substring(9);
+                    string name = cmd.Substring(9);
                     (int windowCount, int pageCount, string? error) = SaveWorkspace(name, true);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
@@ -591,9 +591,9 @@ namespace Cloudless
                     else
                         Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
-                else if (command.ToLower().StartsWith("ws s! ") && command.Length > 6)
+                else if (cmd.StartsWith("ws s! ") && cmd.Length > 6)
                 {
-                    string name = command.Substring(6);
+                    string name = cmd.Substring(6);
                     (int windowCount, int pageCount, string? error) = SaveWorkspace(name, true);
                     if (windowCount == -1)
                         Message("Failed to save workspace due to unexpected error: " + error);
@@ -602,32 +602,32 @@ namespace Cloudless
                     else
                         Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
                 }
-                else if (command.ToLower().StartsWith("ws load ") && command.Length > 8)
+                else if (cmd.StartsWith("ws load ") && cmd.Length > 8)
                 {
-                    string name = command.Substring(8);
+                    string name = cmd.Substring(8);
                     bool success = await LoadWorkspace(name);
                     if (success)
                         Message("Loaded workspace: " + name);
                 }
-                else if (command.ToLower().StartsWith("ws l ") && command.Length > 5)
+                else if (cmd.StartsWith("ws l ") && cmd.Length > 5)
                 {
-                    string name = command.Substring(5);
+                    string name = cmd.Substring(5);
                     bool success = await LoadWorkspace(name);
                     if (success)
                         Message("Loaded workspace: " + name);
                 }
-                else if (command.ToLower().StartsWith("ws delete ") && command.Length > 10)
+                else if (cmd.StartsWith("ws delete ") && cmd.Length > 10)
                 {
-                    string name = command.Substring(10);
+                    string name = cmd.Substring(10);
                     bool success = DeleteWorkspace(name);
                     if (success)
                         Message("Deleted workspace: " + name);
                 }
-                else if (command.ToLower().Equals("ws origin"))
+                else if (cmd.Equals("ws origin"))
                 {
                     RevealWorkspaceName();
                 }
-                else if (command.ToLower().Equals("ws origin s") || command.ToLower().Equals("ws origin s!"))
+                else if (cmd.Equals("ws origin s") || cmd.Equals("ws origin s!"))
                 {
                     if (imageOriginalWorkspaceName != null)
                     {
@@ -640,64 +640,64 @@ namespace Cloudless
                     else
                         Message("This window does not belong to a workspace");
                 }
-                else if (command.ToLower().StartsWith("ws rename ") && command.Length > 10)
+                else if (cmd.StartsWith("ws rename ") && cmd.Length > 10)
                 {
-                    string renameParams = command.Substring(10);
+                    string renameParams = cmd.Substring(10);
                     bool success = RenameWorkspace(renameParams.Split(' '));
                 }
-                else if (command.ToLower().StartsWith("ws r ") && command.Length > 5)
+                else if (cmd.StartsWith("ws r ") && cmd.Length > 5)
                 {
-                    string renameParams = command.Substring(5);
+                    string renameParams = cmd.Substring(5);
                     bool success = RenameWorkspace(renameParams.Split(' '));
                 }
-                else if (command.ToLower().StartsWith("ws merge ") && command.Length > 9)
+                else if (cmd.StartsWith("ws merge ") && cmd.Length > 9)
                 {
-                    string name = command.Substring(9);
+                    string name = cmd.Substring(9);
                     bool success = await LoadWorkspace(name, true);
                     if (success)
                         Message("Merged workspace: " + name);
                 }
-                else if (command.ToLower().StartsWith("ws m ") && command.Length > 5)
+                else if (cmd.StartsWith("ws m ") && cmd.Length > 5)
                 {
-                    string name = command.Substring(5);
+                    string name = cmd.Substring(5);
                     bool success = await LoadWorkspace(name, true);
                     if (success)
                         Message("Merged workspace: " + name);
                 }
-                else if (command.ToLower().StartsWith("ws preview ") && command.Length > 9)
+                else if (cmd.StartsWith("ws preview ") && cmd.Length > 9)
                 {
-                    string name = command.Substring(11);
+                    string name = cmd.Substring(11);
                     bool success = await PreviewWorkspace(name.Trim());
                 }
-                else if (command.ToLower().StartsWith("ws p ") && command.Length > 5)
+                else if (cmd.StartsWith("ws p ") && cmd.Length > 5)
                 {
-                    string name = command.Substring(5);
+                    string name = cmd.Substring(5);
                     bool success = await PreviewWorkspace(name.Trim());
                 }
-                else if (command.ToLower().Equals("ws p") || command.ToLower().Equals("ws preview"))
+                else if (cmd.Equals("ws p") || cmd.Equals("ws preview"))
                 {
                     bool success = await PreviewWorkspace();
                 }
-                else if (command.ToLower().Equals("ws rev"))
+                else if (cmd.Equals("ws rev"))
                 {
                     RevealDirectoryInExplorer(workspaceFilesPath);
                 }
-                else if (command.ToLower().Equals("ws undoload"))
+                else if (cmd.Equals("ws undoload"))
                 {
                     await UndoLoad();
                 }
                 else
                 {
-                    Message("Could not parse your ws command: " + command);
+                    Message("Could not parse your ws command: " + cmd);
                     return false;
                 }
 
                 return true;
             }
 
-            if (command.ToLower().StartsWith("c") && command.Length > 1 && int.TryParse(command.Substring(1,2), out int cIndex))
+            if (cmd.StartsWith("c") && cmd.Length > 1 && int.TryParse(cmd.Substring(1,2), out int cIndex))
             {
-                string param = command.ToLower().Substring(3);
+                string param = cmd.Substring(3);
                 if (param.StartsWith("set ") && param.Length > 4)
                 {
                     SetUserCommand(cIndex-1, param.Substring(4));
@@ -715,10 +715,10 @@ namespace Cloudless
                 }
             }
 
-            if (command.ToLower().StartsWith("o "))
+            if (cmd.StartsWith("o "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
-                string relativeOrAbsolutePath = command.Substring(2);
+                string relativeOrAbsolutePath = cmd.Substring(2);
                 string resolvedPath = relativeOrAbsolutePath;
                 if (currentDirectory != null)
                     resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
@@ -733,10 +733,10 @@ namespace Cloudless
                 }
                 return true;
             }
-            if (command.ToLower().StartsWith("o! "))
+            if (cmd.StartsWith("o! "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
-                string relativeOrAbsolutePath = command.Substring(3);
+                string relativeOrAbsolutePath = cmd.Substring(3);
                 string resolvedPath = relativeOrAbsolutePath;
                 if (currentDirectory != null)
                     resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
@@ -752,9 +752,9 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().StartsWith("rec "))
+            if (cmd.StartsWith("rec "))
             {
-                if (int.TryParse(command.Substring(4), out int count) && count > 0)
+                if (int.TryParse(cmd.Substring(4), out int count) && count > 0)
                 {
                     var paths = recentFiles?.Take(count) ?? new List<string>();
                     foreach (var path in paths)
@@ -769,12 +769,12 @@ namespace Cloudless
                 return false;
             }
 
-            if (command.ToLower().StartsWith("dim "))
+            if (cmd.StartsWith("dim "))
             {
-                if (command.Length < 5)
+                if (cmd.Length < 5)
                     return false;
 
-                string dim = command.Substring(4);
+                string dim = cmd.Substring(4);
                 var dims = dim.Split(' ');
 
                 if (dims.Length != 2 || !int.TryParse(dims[0], out int width) || !int.TryParse(dims[1], out int height))
@@ -789,7 +789,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("cip"))  // copy image path
+            if (cmd.Equals("cip"))  // copy image path
             {
                 if (currentlyDisplayedImagePath == null)
                 {
@@ -802,19 +802,19 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Trim().Equals("ris"))  // reverse image search
+            if (cmd.Equals("ris"))  // reverse image search
             {
                 await ReverseImageSearch(currentlyDisplayedImagePath, "g");
                 return true;
             }
 
-            if (command.ToLower().StartsWith("ris ") && command.Length > 4)  // reverse image search
+            if (cmd.StartsWith("ris ") && cmd.Length > 4)  // reverse image search
             {
-                await ReverseImageSearch(currentlyDisplayedImagePath, command.Split(' ')[1].Trim().ToLower());
+                await ReverseImageSearch(currentlyDisplayedImagePath, cmd.Split(' ')[1].Trim().ToLower());
                 return true;
             }
 
-            if (command.ToLower().Equals("rev"))  // reveal current image in file explorer
+            if (cmd.Equals("rev"))  // reveal current image in file explorer
             {
                 string? path = currentlyDisplayedImagePath;
                 if (path == null)
@@ -828,14 +828,14 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().StartsWith("hotkey "))
+            if (cmd.StartsWith("hotkey "))
             {
-                string args = command.Substring(6);
+                string args = cmd.Substring(6);
                 await SimulateHotkey(args.Trim());
                 return true;
             }
 
-            if (command.ToLower().StartsWith("time"))
+            if (cmd.StartsWith("time"))
             {
                 string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? "";
                 bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
@@ -857,7 +857,7 @@ namespace Cloudless
             }
 
             string pattern = @"^p(\d+) send$";  // e.g. "p2 send window"
-            Match match = Regex.Match(command.ToLower().Trim(), pattern);
+            Match match = Regex.Match(cmd, pattern);
             int? matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
             if (matchInt.HasValue)
             {
@@ -866,7 +866,7 @@ namespace Cloudless
             }
 
             pattern = @"^p(\d+) bring$";  // e.g. "p2 bring window"
-            match = Regex.Match(command.ToLower().Trim(), pattern);
+            match = Regex.Match(cmd, pattern);
             matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
             if (matchInt.HasValue)
             {
@@ -876,7 +876,7 @@ namespace Cloudless
             }
 
             pattern = @"^p(\d+) send page$";
-            match = Regex.Match(command.ToLower().Trim(), pattern);
+            match = Regex.Match(cmd, pattern);
             matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
             if (matchInt.HasValue)
             {
@@ -885,7 +885,7 @@ namespace Cloudless
             }
 
             pattern = @"^p(\d+) bring page$";
-            match = Regex.Match(command.ToLower().Trim(), pattern);
+            match = Regex.Match(cmd, pattern);
             matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
             if (matchInt.HasValue)
             {
@@ -895,7 +895,7 @@ namespace Cloudless
             }
 
             pattern = @"^p(\d+) clear$";
-            match = Regex.Match(command.ToLower().Trim(), pattern);
+            match = Regex.Match(cmd, pattern);
             matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
             if (matchInt.HasValue)
             {
@@ -904,7 +904,7 @@ namespace Cloudless
             }
 
             pattern = @"^p(\d+) swap p(\d+)$";
-            match = Regex.Match(command.ToLower().Trim(), pattern);
+            match = Regex.Match(cmd, pattern);
             int? matchInt1 = match.Success ? int.Parse(match.Groups[1].Value) : null;
             int? matchInt2 = match.Success ? int.Parse(match.Groups[2].Value) : null;
             if (matchInt1.HasValue && matchInt2.HasValue)
@@ -914,7 +914,7 @@ namespace Cloudless
             }
 
             pattern = @"^p(\d+)$";  // e.g. "p2"
-            match = Regex.Match(command.ToLower().Trim(), pattern);
+            match = Regex.Match(cmd, pattern);
             matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
             if (matchInt.HasValue)
             {
@@ -922,7 +922,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("p?"))
+            if (cmd.Equals("p?"))
             {
                 var pages = GetNonemptyPages();
                 Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
@@ -930,7 +930,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (command.ToLower().Equals("flatten"))
+            if (cmd.Equals("flatten"))
             {
                 FlattenPages();
 
@@ -940,13 +940,13 @@ namespace Cloudless
             }
 
             int targetIndex;
-            if (command.StartsWith("+") || command.StartsWith("-"))
+            if (cmd.StartsWith("+") || cmd.StartsWith("-"))
             {
                 if (imageFiles == null)
                     return true;
 
                 // Relative jump
-                if (int.TryParse(command, out int offset))
+                if (int.TryParse(cmd, out int offset))
                 {
                     targetIndex = currentImageIndex + offset;
                 }
@@ -969,7 +969,7 @@ namespace Cloudless
                 await JumpToIndex(clampedIndex);
                 return true;
             }
-            else if (int.TryParse(command, out targetIndex))  // Absolute jump
+            else if (int.TryParse(cmd, out targetIndex))  // Absolute jump
             {
                 if (imageFiles == null)
                     return true;
