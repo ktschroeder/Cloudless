@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.9.0";
+        public const string CURRENT_VERSION = "0.9.0.1";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = true;
 
@@ -70,6 +70,7 @@ namespace Cloudless
         public string? imageOriginalWorkspaceName;
 
         private OverlayMessageManager? overlayManager;
+        private OverlayMessageWindow? overlayWindow;
         private HwndSource? _hwndSource;
 
         private const int MaxRecentFilesInGallery = 30;
@@ -99,6 +100,8 @@ namespace Cloudless
         private PreloadManager? _preloadManager;
 
         private int windowPageIndex = 0;  // "0" as not-yet-assigned. Valid indices here are 1-8.
+
+        public bool GlobalStartup = false;
         #endregion
 
         #region Setup
@@ -124,7 +127,8 @@ namespace Cloudless
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
             initialImageToLoad = filePath;
-            Setup(startUp: startUp);
+            GlobalStartup = startUp;
+            Setup();
 
             if ((Path.GetExtension(filePath) ?? "").ToLower().Equals(".cloudless"))
             {
@@ -321,7 +325,7 @@ namespace Cloudless
             System.GC.Collect();
             System.GC.WaitForPendingFinalizers();
         }
-        private void Setup(bool startUp = false)
+        private void Setup()
         {
             InitializeComponent();
 
@@ -331,22 +335,8 @@ namespace Cloudless
 
             Closing += (sender, e) => OnClose();
 
-            try
-            {
-                PluginManager.InitializePlugins();
-            }
-            catch (Exception ex)
-            {
-                Message("Error preparing plugins: " + ex.Message);
-            }
+
             
-            
-            overlayManager = new OverlayMessageManager(MessageOverlayStack);
-            if (startUp)
-            {
-                overlayManager.ClearMessageHistory();
-                SetCurrentPageIndex(1);
-            }
             windowPageIndex = GetCurrentPageIndex();
 
             isExplorationMode = false;
@@ -388,6 +378,19 @@ namespace Cloudless
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+
+            // Prepare overlay message window using same pattern as command palette/film strip
+            PrepareOverlayWindow();
+
+            try
+            {
+                PluginManager.InitializePlugins();
+            }
+            catch (Exception ex)
+            {
+                Message("Error preparing plugins: " + ex.Message);
+            }
+
             await UpdateContextMenuState();
             PrepareZoomMenu();
 
@@ -442,6 +445,26 @@ namespace Cloudless
             _commandPaletteWindow.AlignToOwner(this);
             _commandPaletteWindow.AttachOwnerHandlers(this);
             _commandPaletteWindow.Hide();
+        }
+
+        public void PrepareOverlayWindow()
+        {
+            overlayWindow = new OverlayMessageWindow();
+            overlayWindow.AlignToOwner(this);
+            overlayWindow.AttachOwnerHandlers(this);
+            overlayWindow.Hide();
+
+            // Use the overlay window's message stack if available
+            if (overlayWindow.MessageStack != null)
+                overlayManager = new OverlayMessageManager(overlayWindow.MessageStack);
+            else
+                overlayManager = new OverlayMessageManager(MessageOverlayStack);
+
+            if (GlobalStartup)
+            {
+                overlayManager.ClearMessageHistory();
+                SetCurrentPageIndex(1);
+            }
         }
 
         private void Window_SourceInitialized(object sender, EventArgs e)
@@ -555,6 +578,19 @@ namespace Cloudless
         public void Message(string message, TimeSpan? duration = null)
         {
             duration ??= TimeSpan.FromSeconds(1.5);
+
+            // Ensure overlay window is visible and aligned so it appears above HwndHost-based video players
+            if (overlayWindow != null)
+            {
+                overlayWindow.Owner = this;
+                overlayWindow.AlignToOwner(this);
+                if (!overlayWindow.IsVisible)
+                {
+                    // Show without activating owner
+                    overlayWindow.Show();
+                }
+            }
+
             overlayManager?.ShowOverlayMessage(message, (TimeSpan)duration);
         }
 
