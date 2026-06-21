@@ -132,7 +132,7 @@ namespace Cloudless
         private void CloseAllOtherInstances()
         {
             var windowsToClose = Application.Current.Windows
-                .OfType<Window>()
+                .OfType<MainWindow>()
                 .Where(w => w != this)
                 .ToList();
 
@@ -157,7 +157,7 @@ namespace Cloudless
         private void MinimizeAllOtherInstances()
         {
             var windowsToMinimize = Application.Current.Windows
-                .OfType<Window>()
+                .OfType<MainWindow>()
                 .Where(w => w != this)
                 .ToList();
 
@@ -179,7 +179,7 @@ namespace Cloudless
         private void UnminimizeAllOtherInstances()
         {
             var windowsToUnminimize = Application.Current.Windows
-                .OfType<Window>()
+                .OfType<MainWindow>()
                 .Where(w => w != this)
                 .ToList();
 

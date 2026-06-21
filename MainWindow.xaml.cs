@@ -151,6 +151,10 @@ namespace Cloudless
         }
         private void OnClose()
         {
+            _filmStripWindow?.Close();
+            _commandPaletteWindow?.Close();
+            overlayWindow?.Close();
+
             // Dispose of media elements to protect against memory leaks
 
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
