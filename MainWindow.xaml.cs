@@ -102,6 +102,7 @@ namespace Cloudless
         private int windowPageIndex = 0;  // "0" as not-yet-assigned. Valid indices here are 1-8.
 
         public bool GlobalStartup = false;
+        public double MemoryMB = 0;
         #endregion
 
         #region Setup
@@ -374,6 +375,21 @@ namespace Cloudless
             InitializeZenMode();
 
             _ = CheckForUpdatesAsync();  // fire and forget check for newer app version
+
+            
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(1);
+            timer.Tick += (s, e) =>
+            {
+                using (Process currentProcess = Process.GetCurrentProcess())
+                {
+                    long memoryBytes = currentProcess.PrivateMemorySize64;
+                    double memoryMegaBytes = memoryBytes / (1024.0 * 1024.0);
+
+                    MemoryMB = memoryMegaBytes;
+                }
+            };
+            timer.Start();
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -568,13 +584,15 @@ namespace Cloudless
             $"Cursor (Image): X={cursorPositionImage.X:F2}, Y={cursorPositionImage.Y:F2}\n" +
             $"ImageDisplay stretch enum: {ImageDisplay.Stretch.ToString():F2}\n" +
             $"Display mode setting: {displayMode:F2}\n" +
-            $"Window page index: {windowPageIndex:F2}\n";
+            $"Window page index: {windowPageIndex:F2}\n" +
+            $"Allocated memory (global): {MemoryMB:F2} MB";
 
             foreach (var key in preloadKeys)
             {
                 DebugTextBlock.Text += $"Preload Cache: {key}\n";
             }
         }
+
         public void Message(string message, TimeSpan? duration = null)
         {
             duration ??= TimeSpan.FromSeconds(1.5);
