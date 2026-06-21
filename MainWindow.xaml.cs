@@ -18,9 +18,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.9.0.1";
+        public const string CURRENT_VERSION = "0.9.0.2";
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = true;
+        public const bool LOCAL_DEV = false;
 
 
 
@@ -604,13 +604,20 @@ namespace Cloudless
             // Ensure overlay window is visible and aligned so it appears above HwndHost-based video players
             if (overlayWindow != null)
             {
-                overlayWindow.Owner = this;
-                overlayWindow.AlignToOwner(this);
-                if (!overlayWindow.IsVisible)
+                // Some extraneous flows cause exceptions here due to e.g. setting this for a closed window, crashing app. Harmless to swallow this; can clean up eventually TODO
+                try 
                 {
-                    // Show without activating owner
-                    overlayWindow.Show();
+                    overlayWindow.Owner = this;
+                    overlayWindow.AlignToOwner(this);
+                    if (!overlayWindow.IsVisible)
+                    {
+                        // Show without activating owner
+                        overlayWindow.Show();
+                    }
                 }
+                catch { }
+
+
             }
 
             overlayManager?.ShowOverlayMessage(message, (TimeSpan)duration);

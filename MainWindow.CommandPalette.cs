@@ -606,15 +606,11 @@ namespace Cloudless
                 {
                     string name = cmd.Substring(8);
                     bool success = await LoadWorkspace(name);
-                    if (success)
-                        Message("Loaded workspace: " + name);
                 }
                 else if (cmd.StartsWith("ws l ") && cmd.Length > 5)
                 {
                     string name = cmd.Substring(5);
                     bool success = await LoadWorkspace(name);
-                    if (success)
-                        Message("Loaded workspace: " + name);
                 }
                 else if (cmd.StartsWith("ws delete ") && cmd.Length > 10)
                 {
