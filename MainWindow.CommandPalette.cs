@@ -798,6 +798,12 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("deflash"))
+            {
+                Deflash();
+                return true;
+            }
+
             if (cmd.Equals("ris"))  // reverse image search
             {
                 await ReverseImageSearch(currentlyDisplayedImagePath, "g");

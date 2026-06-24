@@ -176,6 +176,37 @@ namespace Cloudless
             }
         }
 
+        private void Deflash()
+        {
+            int APPROACH = 2;
+            foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (window.WindowState != WindowState.Minimized)  // window != this && 
+                {
+                    if (APPROACH == 1)
+                    {
+                        WindowState prevState = window.WindowState;
+                        window.WindowState = WindowState.Minimized;
+                        window.WindowState = prevState;
+                    }
+                    else if (APPROACH == 2)
+                    {
+                        window.Hide();
+                        window.Show();
+                    }
+                    else if (APPROACH == 3)
+                    {
+                        window.Hide();
+                        window.ShowInTaskbar = false;
+                        window.ShowInTaskbar = true;
+                        window.Show();
+                    }
+                    //window.ShowInTaskbar = false;
+                    //window.ShowInTaskbar = true;
+                }
+            }
+        }
+
         private void UnminimizeAllOtherInstances()
         {
             var windowsToUnminimize = Application.Current.Windows

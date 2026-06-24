@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.9.0.2";
+        public const string CURRENT_VERSION = "0.9.0.3";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
