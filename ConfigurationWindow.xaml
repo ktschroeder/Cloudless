@@ -11,7 +11,7 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
@@ -19,13 +19,13 @@
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="Preferences"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
             <StackPanel Margin="12">
 
@@ -45,21 +45,11 @@ Content="Prevent non-critical messages from being displayed on the main window"
 Margin="0,2"/>
 
                                 <CheckBox x:Name="LoopGifsCheckbox" Content="Loop GIFs" Margin="0,2"/>
-                            
-                                
-                            
-                            
-
-                            
 
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
-                                    <TextBlock Text="Max size (MBs) when compressed copying image (CTRL ALT C):" VerticalAlignment="Center" Foreground="#555"/>
+                                    <TextBlock Text="Max size (MBs) when compressed copying image (CTRL ALT C):" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryForeground}"/>
                                     <TextBox x:Name="MaxCompressedCopySizeMBTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
-
-                            
-
-                            
 
                                 <Button Content="Open Windows settings to manually configure Cloudless as default image viewer"
                 Click="SetDefaultButton_Click" 
@@ -67,14 +57,20 @@ Margin="0,2"/>
                 Style="{StaticResource CloudlessButton}"/>
 
                                 <TextBlock Text="Cloudless supports: .jpg, .jpeg, .png, .bmp, .gif, .jfif, .webp, and (with plugins) .webm, .mkv., mp4" 
-                   Foreground="#666" Margin="0,0,0,10"/>
+                   Foreground="{DynamicResource SecondaryForeground}" Margin="0,0,0,10"/>
 
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
-                                    <TextBlock Text="ImgBB key (can be created for free; needed to enable reverse-image search):" VerticalAlignment="Center" Foreground="#555"/>
+                                    <TextBlock Text="ImgBB key (can be created for free; needed to enable reverse-image search):" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryForeground}"/>
                                     <TextBox x:Name="ImgBBKeyTextBox" Width="100" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
 
-                            
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,6,0,6">
+                                    <TextBlock Text="Theme:" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryForeground}"/>
+                                    <ComboBox x:Name="ThemeDropdown" SelectedIndex="0" Width="140" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="Light" />
+                                        <ComboBoxItem Content="Dark" />
+                                    </ComboBox>
+                                </StackPanel>
 
                             </StackPanel>
                         </TabItem>
@@ -105,7 +101,7 @@ Content="Close filmstrip after using it to open an image" Margin="0,2"/>
 Content="When clicking a thumbnail in the filmstrip, open it in a new window" Margin="0,2"/>
 
 
-                                <TextBlock Text="Background:" FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
+                                <TextBlock Text="Background:" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryForeground}" Margin="0,10,0,6"/>
                                 <ComboBox x:Name="BackgroundDropdown" SelectedIndex="0" Margin="0,0,0,10">
                                     <ComboBoxItem Content="Black" />
                                     <ComboBoxItem Content="White" />
@@ -116,7 +112,7 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
 
                         <TabItem Header="Image">
                             <StackPanel Margin="12" VerticalAlignment="Top">
-                                <TextBlock Text="Image Display Mode:" FontWeight="SemiBold" Foreground="#555" Margin="0,0,0,6"/>
+                                <TextBlock Text="Image Display Mode:" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryForeground}" Margin="0,0,0,6"/>
 
                                 <ComboBox x:Name="DisplayModeDropdown" SelectedIndex="0" Margin="0,0,0,10">
                                     <ComboBoxItem Content="Stretch to Fit" />
@@ -126,7 +122,7 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
                                 </ComboBox>
 
                                 <TextBlock Text="Directory sort order when navigating with left/right arrow keys:" 
-    FontWeight="SemiBold" Foreground="#555" Margin="0,10,0,6"/>
+    FontWeight="SemiBold" Foreground="{DynamicResource SecondaryForeground}" Margin="0,10,0,6"/>
                                 <ComboBox x:Name="SortDropdown" SelectedIndex="0" Margin="0,0,0,10">
                                     <ComboBoxItem Content="File Name (Ascending)" />
                                     <ComboBoxItem Content="File Name (Descending)" />
@@ -134,8 +130,8 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
                                     <ComboBoxItem Content="Date Modified (Descending)" />
                                 </ComboBox>
                             </StackPanel>
-                        
-                        
+
+
                         </TabItem>
 
                         <TabItem Header="Plugins">
@@ -175,14 +171,13 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
     Margin="0,2"/>
 
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
-                                    <TextBlock Text="Detection time for middle-click and right-click long-hold, in milliseconds:" VerticalAlignment="Center" Foreground="#555"/>
+                                    <TextBlock Text="Detection time for middle-click and right-click long-hold, in milliseconds:" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryForeground}"/>
                                     <TextBox x:Name="MouseLongHoldMSTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
 
                             </StackPanel>
                         </TabItem>
                     </TabControl>
-
                 </StackPanel>
 
                 <!-- Buttons -->

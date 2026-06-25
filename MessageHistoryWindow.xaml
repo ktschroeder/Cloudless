@@ -11,7 +11,7 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
@@ -19,13 +19,13 @@
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="System Messages"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content -->
@@ -33,12 +33,12 @@
 
                 <TextBlock Text="Messages:"
                            FontSize="12"
-                           Foreground="#666"
+                           Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,8"/>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Height="300">
                     <ListBox x:Name="MessageListBox" KeyDown="MessageListBox_KeyDown"
-                             Background="White" BorderBrush="#DDD" BorderThickness="1"
+                             Background="{DynamicResource TextBoxBackground}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1"
                              Padding="4" />
                 </ScrollViewer>
 

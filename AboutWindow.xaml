@@ -11,20 +11,20 @@
         MouseDown="Window_MouseDown"
         KeyDown="Window_KeyDown">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="About Cloudless"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content -->
@@ -32,24 +32,24 @@
 
                 <TextBlock Text="You are using Cloudless, a lightweight, minimal-UI image viewing and arranging app. It was created by ktschroeder."
                            TextWrapping="Wrap"
-                           Foreground="#666"
+                           Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
 
                 <TextBlock Name="VersionText"
                            Text="Version ___"
                            TextWrapping="Wrap"
-                           Foreground="#666"
+                           Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
 
                 <TextBlock Text="This app was designed to provide a visually simple, efficient image viewing experience, along with quiet but plentiful features. Some configurations are available in the preferences window."
                            TextWrapping="Wrap"
-                           Foreground="#666"
+                           Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
 
                 <TextBlock Name="MomentOfZen"
                            Text="You are loved."
                            TextWrapping="Wrap"
-                           Foreground="#666"
+                           Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
 
                 <StackPanel Orientation="Horizontal"

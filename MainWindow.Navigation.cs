@@ -63,8 +63,11 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll = configWindow.ComicModeMouseControlScroll;
                 Cloudless.Properties.Settings.Default.FilmStripCloseAfterward = configWindow.FilmStripCloseAfterward;             //
                 Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow = configWindow.FilmStripOpenImageInNewWindow; //
+                Cloudless.Properties.Settings.Default["Theme"] = configWindow.SelectedTheme ?? "Light";
 
                 Cloudless.Properties.Settings.Default.Save();
+
+                ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
 
                 if (!previousSortOrder.Equals(configWindow.SelectedSortOrder))
                 {
@@ -236,11 +239,11 @@ namespace Cloudless
         private async Task UpdateContextMenuState()
         {
             // Enable/disable "Image Info" based on loaded image
-            var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString() == "Image Info");
+            var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => ((m.Header as string) ?? m.Header?.ToString() ?? "").Equals("Image Info"));
             if (imageInfoMenuItem != null)
                 imageInfoMenuItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
 
-            var zoomMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => m.Header.ToString().StartsWith("Zoom"));
+            var zoomMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => ((m.Header as string) ?? m.Header?.ToString() ?? "").StartsWith("Zoom"));
             var scaleX = imageScaleTransform?.ScaleX;
             var scaleY = imageScaleTransform?.ScaleY;
             if (zoomMenuItem != null)
@@ -258,6 +261,7 @@ namespace Cloudless
             }
 
             await UpdateRecentFilesMenu();
+            await UpdateBookmarksMenuState();
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {

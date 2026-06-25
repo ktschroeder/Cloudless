@@ -87,6 +87,16 @@ namespace Cloudless
             Close();
         }
 
+        private async void FilmstripButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Owner is MainWindow mw)
+            {
+                mw.OpenFilmStrip();
+                mw.NonstandardPopulateFilmStrip(GalleryImages.Select(i => i.FilePath)?.ToArray() ?? Array.Empty<string>());
+            }
+            Close();
+        }
+
         private async void Workspace_Merge_Click(object sender, RoutedEventArgs e)
         {
             if (Owner is MainWindow mw)

@@ -410,9 +410,52 @@ namespace Cloudless
                 return;
             }
 
-            if (key == Key.B)
+            if (key == Key.K)
             {
                 ResizeWindowToRemoveBestFitBars();
+                return;
+            }
+
+            if (key == Key.B)
+            {
+                if (control)
+                {
+                    OpenBookmarksGalleryWindow();
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+                {
+                    Message("No image is displayed.");
+                    return;
+                }
+
+                bool isCurrentBookmarked = bookmarkManager.IsBookmarked(currentlyDisplayedImagePath);
+
+                if (shift)
+                {
+                    if (isCurrentBookmarked)
+                    {
+                        bookmarkManager.RemoveBookmark(currentlyDisplayedImagePath);
+                        Message("Bookmark removed.");
+                    }
+                    else
+                    {
+                        Message("Cannot un-bookmark: Image isn't bookmarked.");
+                    }
+                }
+                else
+                {
+                    if (!isCurrentBookmarked)
+                    {
+                        bookmarkManager.AddBookmark(currentlyDisplayedImagePath);
+                        Message("Bookmark added.");
+                    }
+                    else
+                    {
+                        Message("Cannot bookmark: Image is already bookmarked.");
+                    }
+                }
                 return;
             }
 
@@ -677,7 +720,18 @@ namespace Cloudless
         {
             bool comicScrollMode = Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll;
 
-            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || (MouseControlMode && !comicScrollMode))
+            if (MouseControlMode && comicScrollMode && isComicMode && imageTranslateTransform != null)
+            {
+                // In comic scroll mode, mouse wheel scrolls vertically.
+                imageTranslateTransform.Y += e.Delta > 0 ? 100 : -100;
+
+                // clamp vertically
+                if (!isCropMode)
+                {
+                    ClampTransformToIntuitiveBounds();
+                }
+            }
+            else if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || MouseControlMode)
             {
                 if (!isExplorationMode) EnterExplorationMode();
 
@@ -695,17 +749,6 @@ namespace Cloudless
                 await Zoom(cursorPosition, zoomDelta: zoomDelta);
 
                 e.Handled = true;
-            }
-            else if (MouseControlMode && comicScrollMode && isComicMode && imageTranslateTransform != null)
-            {
-                // In comic scroll mode, mouse wheel scrolls vertically.
-                imageTranslateTransform.Y += e.Delta > 0 ? 100 : -100;
-
-                // clamp vertically
-                if (!isCropMode)
-                {
-                    ClampTransformToIntuitiveBounds();
-                }
             }
             else
             {

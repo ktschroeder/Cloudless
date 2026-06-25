@@ -11,7 +11,7 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
@@ -19,13 +19,13 @@
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="Command Palette Reference"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content with ScrollViewer -->

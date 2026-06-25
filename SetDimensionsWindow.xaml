@@ -11,7 +11,7 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
@@ -19,19 +19,19 @@
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="Set Window Dimensions"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content -->
             <StackPanel Margin="12">
 
-                <TextBlock Foreground="#666"
+                <TextBlock Foreground="{DynamicResource SecondaryForeground}"
                            FontSize="12"
                            Margin="0,0,0,10">
                     Current size:
@@ -52,7 +52,7 @@
                                Grid.Row="0"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Foreground="#555"/>
+                               Foreground="{DynamicResource SecondaryForeground}"/>
 
                     <TextBox x:Name="WidthTextBox"
                              Grid.Row="0"
@@ -64,7 +64,7 @@
                                Grid.Row="1"
                                Grid.Column="0"
                                VerticalAlignment="Center"
-                               Foreground="#555"/>
+                               Foreground="{DynamicResource SecondaryForeground}"/>
 
                     <TextBox x:Name="HeightTextBox"
                              Grid.Row="1"

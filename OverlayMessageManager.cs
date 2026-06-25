@@ -96,12 +96,16 @@ public class OverlayMessageManager
         {
             Text = nextMessage.Text,
             FontSize = 16,
-            Foreground = Brushes.White,
-            Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)), // Semi-transparent black
+            Foreground = (Brush)Application.Current.Resources["OverlayForeground"],
+            Background = (Brush)Application.Current.Resources["OverlayBackground"],
             Padding = new Thickness(10),
             Margin = new Thickness(0, 0, 0, 5), // Space between messages
             Opacity = 0, // Start hidden
         };
+
+        // Bind to dynamic resources so messages update when theme changes
+        messageTextBlock.SetResourceReference(TextBlock.ForegroundProperty, "OverlayForeground");
+        messageTextBlock.SetResourceReference(TextBlock.BackgroundProperty, "OverlayBackground");
 
         // Add to the stack and active list
         _messageStack.Children.Add(messageTextBlock);

@@ -10,6 +10,7 @@ namespace Cloudless
     {
         public string SelectedDisplayMode { get; private set; }
         public string SelectedBackground { get; private set; }
+        public string SelectedTheme { get; private set; }
         public string SelectedSortOrder { get; private set; }
         public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle { get; private set; }
         public int SpaceAroundBounds {  get; private set; }
@@ -135,6 +136,13 @@ namespace Cloudless
             ImgBBKeyTextBox.Text = currentImgBBKey;
             ImgBBKey = currentImgBBKey;
 
+            var currentTheme = Cloudless.Properties.Settings.Default["Theme"] as string;
+            if (string.IsNullOrEmpty(currentTheme) || currentTheme == "Light")
+                ThemeDropdown.SelectedIndex = 0;
+            else if (currentTheme == "Dark")
+                ThemeDropdown.SelectedIndex = 1;
+            SelectedTheme = currentTheme ?? "Light";
+
             var currentMouseLongHoldMs = Cloudless.Properties.Settings.Default.MouseLongPressMS;
             MouseLongHoldMSTextBox.Text = currentMouseLongHoldMs.ToString();
             MouseLongHoldMs = currentMouseLongHoldMs;
@@ -208,6 +216,14 @@ namespace Cloudless
             ImgBBKey = ImgBBKeyTextBox.Text.Trim();
             if (int.TryParse(MouseLongHoldMSTextBox.Text, out int ms))
                 MouseLongHoldMs = ms;
+
+            // Theme selection
+            if (ThemeDropdown.SelectedIndex == 0)
+                SelectedTheme = "Light";
+            else if (ThemeDropdown.SelectedIndex == 1)
+                SelectedTheme = "Dark";
+            else
+                SelectedTheme = "Light";
 
             DialogResult = true;
             Close();

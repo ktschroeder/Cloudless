@@ -13,20 +13,20 @@
         KeyDown="Window_KeyDown"
         Loaded="Window_Loaded">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6">
 
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Name="TitleText"
                            Text="Image Gallery"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content -->
@@ -37,6 +37,13 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Margin="0,10,0,0">
+                    <Button Content="Send to filmstrip"
+                            Style="{StaticResource CloudlessButton}"
+                            Name="FilmstripButton"
+                            Click="FilmstripButton_Click"
+                            Width="120"
+                            FontWeight="SemiBold"
+                            Margin="0,0,8,0"/>
                     <Button Content="Preview Another WS"
                             Style="{StaticResource CloudlessButton}"
                             Name="WorkspacePreviewButton"
@@ -45,19 +52,19 @@
                             FontWeight="SemiBold"
                             Margin="0,0,8,0"
                             Visibility="Collapsed"/>
-                    <Button Content="Load WS"
+                    <Button Content="Load"
                             Style="{StaticResource CloudlessButton}"
                             Name="WorkspaceLoadButton"
                             Click="Workspace_Load_Click"
-                            Width="100"
+                            Width="60"
                             FontWeight="SemiBold"
                             Margin="0,0,8,0"
                             Visibility="Collapsed"/>
-                    <Button Content="Merge WS"
+                    <Button Content="Merge"
                             Style="{StaticResource CloudlessButton}"
                             Name="WorkspaceMergeButton"
                             Click="Workspace_Merge_Click"
-                            Width="100"
+                            Width="60"
                             FontWeight="SemiBold"
                             Margin="0,0,8,0"
                             Visibility="Collapsed"/>
@@ -82,10 +89,10 @@
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="4"
+                    <Border CornerRadius="4"
                                         Margin="6"
-                                        Background="White"
-                                        BorderBrush="#DDD"
+                                        Background="{DynamicResource ControlBackground}"
+                                        BorderBrush="{DynamicResource ControlBorderBrush}"
                                         BorderThickness="1"
                                         Cursor="Hand">
 
@@ -99,7 +106,7 @@
 
                                         <TextBlock Text="{Binding FileName}"
                                                    FontSize="11"
-                                                   Foreground="#555"
+                                                   Foreground="{DynamicResource SecondaryForeground}"
                                                    TextTrimming="CharacterEllipsis"
                                                    HorizontalAlignment="Center"
                                                    Margin="4,4,4,6"/>

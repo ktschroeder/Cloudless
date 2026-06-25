@@ -181,12 +181,8 @@ namespace Cloudless
                     return;
                 }
 
-                // If film strip is visible, refresh it to reflect the new directory
-                try
-                {
+                if (!NonstandardFilmstrip)  // we want to leave the contents sent to the filmstrip in scenarios like viewing the bookmarks gallery.
                     RefreshFilmStrip();
-                }
-                catch { }
 
                 await DisplayImage(currentImageIndex, openedThroughApp);
             }
@@ -814,10 +810,11 @@ namespace Cloudless
                 };
 
                 RecentFilesMenu.Items.Insert(0, openGalleryItem);
-                RecentFilesMenu.Items.Insert(1, new Separator());
+                RecentFilesMenu.Items.Insert(1, CreateFullWidthSeparator());
 
 
-                RecentFilesMenu.Items.Add(new Separator());
+                RecentFilesMenu.Items.Add(CreateFullWidthSeparator());
+
 
                 MenuItem clearHistoryItem = new MenuItem
                 {
@@ -872,6 +869,149 @@ namespace Cloudless
         private async void RecentFilesMenu_SubmenuOpened(object sender, RoutedEventArgs e)
         {
             await UpdateRecentFilesMenu();
+        }
+
+        private async Task UpdateBookmarksMenu()
+        {
+            if (bookmarkManager == null)
+                return;
+
+            var bookmarks = bookmarkManager.GetBookmarks();
+            bool isCurrentBookmarked = !string.IsNullOrEmpty(currentlyDisplayedImagePath) && 
+                                      bookmarkManager.IsBookmarked(currentlyDisplayedImagePath);
+
+            BookmarksMenu.Items.Clear();
+            MenuItem viewGalleryItem = new()
+            {
+                Header = "View Bookmarks Gallery"
+            };
+            viewGalleryItem.Click += (s, e) =>
+            {
+                OpenBookmarksGalleryWindow();
+            };
+            BookmarksMenu.Items.Add(viewGalleryItem);
+
+            MenuItem bookmarkCurrentItem = new()
+            {
+                Header = isCurrentBookmarked ? "Unbookmark Current Image" : "Bookmark Current Image",
+                IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath)
+            };
+            bookmarkCurrentItem.Click += (s, e) =>
+            {
+                if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+                    return;
+
+                if (isCurrentBookmarked)
+                {
+                    bookmarkManager.RemoveBookmark(currentlyDisplayedImagePath);
+                    Message("Bookmark removed.");
+                }
+                else
+                {
+                    bookmarkManager.AddBookmark(currentlyDisplayedImagePath);
+                    Message("Bookmark added.");
+                }
+
+                // Rebuild menu to reflect change
+                _ = UpdateBookmarksMenu();
+            };
+            BookmarksMenu.Items.Add(bookmarkCurrentItem);
+
+            if (bookmarks.Count > 0)
+            {
+                BookmarksMenu.Items.Add(CreateFullWidthSeparator());
+            }
+
+            // Populate bookmarks in reverse order (most recent at top)
+            int added = 0;
+            for (int i = bookmarks.Count - 1; i >= 0; i--)
+            {
+                string file = bookmarks[i];
+                MenuItem fileItem = new MenuItem
+                {
+                    Header = System.IO.Path.GetFileName(file),
+                    ToolTip = file,
+                    Tag = file,
+                    Icon = await GetImageThumbnail(file, 16, 16, true)
+                };
+                fileItem.Click += async (s, e) => await OpenRecentFile((string)((MenuItem)s).Tag);
+                BookmarksMenu.Items.Add(fileItem);
+                added++;
+                if (added >= MaxRecentFilesInContextWindow)
+                    break;
+            }
+
+            // Add additional menu items
+            if (bookmarks.Count > 0 && added < bookmarks.Count)
+            {
+                BookmarksMenu.Items.Add(CreateFullWidthSeparator());
+
+                MenuItem viewAllItem = new()
+                {
+                    Header = $"View All Bookmarks ({bookmarks.Count} total)"
+                };
+                viewAllItem.Click += (s, e) =>
+                {
+                    OpenBookmarksGalleryWindow();
+                };
+                BookmarksMenu.Items.Add(viewAllItem);
+            }
+            else if (bookmarks.Count == 0)
+            {
+                BookmarksMenu.Items.Add(CreateFullWidthSeparator());
+                MenuItem noBookmarksItem = new()
+                {
+                    Header = "No Bookmarks",
+                    IsEnabled = false
+                };
+                BookmarksMenu.Items.Add(noBookmarksItem);
+            }
+        }
+
+        private void OpenBookmarksGalleryWindow()
+        {
+            if (bookmarkManager == null)
+                return;
+
+            var bookmarks = bookmarkManager.GetBookmarks();
+            if (bookmarks.Count == 0)
+            {
+                Message("No bookmarks to display.");
+                return;
+            }
+
+            // Reverse list to show most recent first
+            var reversedBookmarks = new List<string>(bookmarks);
+            reversedBookmarks.Reverse();
+
+            var win = new GalleryWindow(reversedBookmarks, title: $"Bookmarks Gallery ({bookmarks.Count} bookmarks)");
+            win.Owner = this;
+            win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            win.Show();
+        }
+
+        private async void BookmarksMenu_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            await UpdateBookmarksMenu();
+        }
+
+        private async Task UpdateBookmarksMenuState()
+        {
+            // Quick update of just the bookmark button state (whether it says bookmark or unbookmark)
+            if (bookmarkManager == null || BookmarksMenu == null)
+                return;
+
+            bool isCurrentBookmarked = !string.IsNullOrEmpty(currentlyDisplayedImagePath) && 
+                                      bookmarkManager.IsBookmarked(currentlyDisplayedImagePath);
+
+            var bookmarkCurrentItem = BookmarksMenu.Items.OfType<MenuItem>().FirstOrDefault(m => 
+                ((m.Header as string) ?? m.Header?.ToString() ?? "").Contains("Bookmark Current Image"));
+
+            if (bookmarkCurrentItem != null)
+            {
+                bookmarkCurrentItem.Header = isCurrentBookmarked ? "Unbookmark Current Image" : "Bookmark Current Image";
+                bookmarkCurrentItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
+            }
         }
 
         public int recentFilesHash = -1;
@@ -1111,5 +1251,5 @@ namespace Cloudless
         public bool draft { get; set; }
         public DateTime published_at { get; set; }
     }
-
 }
+

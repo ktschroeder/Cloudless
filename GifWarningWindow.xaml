@@ -13,7 +13,7 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
@@ -21,19 +21,19 @@
         <DockPanel>
 
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="Load Time Warning"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content -->
             <StackPanel Margin="12">
 
-                <TextBlock>You're about to load a large GIF. It could take a while to load.</TextBlock>
+                <TextBlock Foreground="{DynamicResource SecondaryForeground}">You're about to load a large GIF. It could take a while to load.</TextBlock>
                 <!-- Info Grid -->
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
@@ -49,18 +49,18 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Filename:" Grid.Row="0" Grid.Column="0" Foreground="#555" Margin="0,2"/>
+                    <TextBlock Text="Filename:" Grid.Row="0" Grid.Column="0" Foreground="{DynamicResource SecondaryForeground}" Margin="0,2"/>
                     <TextBlock x:Name="FilenameText"
                        Grid.Row="0" Grid.Column="1"
                        TextWrapping="Wrap"
-                       Foreground="#555"
+                       Foreground="{DynamicResource SecondaryForeground}"
                        Margin="6,2,0,2"/>
 
-                    <TextBlock Text="Size:" Grid.Row="1" Grid.Column="0" Foreground="#555" Margin="0,2"/>
+                    <TextBlock Text="Size:" Grid.Row="1" Grid.Column="0" Foreground="{DynamicResource SecondaryForeground}" Margin="0,2"/>
                     <TextBlock x:Name="SizeText"
                        Grid.Row="1" Grid.Column="1"
                        TextWrapping="Wrap"
-                       Foreground="#777"
+                       Foreground="{DynamicResource SecondaryForeground}"
                        Margin="6,2,0,2"/>
                 </Grid>
 

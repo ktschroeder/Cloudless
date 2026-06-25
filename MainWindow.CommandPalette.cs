@@ -623,7 +623,7 @@ namespace Cloudless
                 {
                     RevealWorkspaceName();
                 }
-                else if (cmd.Equals("ws origin s") || cmd.Equals("ws origin s!"))
+                else if (cmd.Equals("ws origin s") || cmd.Equals("ws origin s!") || cmd.Equals("ws origin save") || cmd.Equals("ws origin save!"))
                 {
                     if (imageOriginalWorkspaceName != null)
                     {
@@ -632,6 +632,15 @@ namespace Cloudless
                             Message("Failed to save workspace due to unexpected error: " + error);
                         else
                             Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows and {pageCount} pages");
+                    }
+                    else
+                        Message("This window does not belong to a workspace");
+                }
+                else if (cmd.Equals("ws origin l") || cmd.Equals("ws origin load"))
+                {
+                    if (imageOriginalWorkspaceName != null)
+                    {
+                        await LoadWorkspace(imageOriginalWorkspaceName);
                     }
                     else
                         Message("This window does not belong to a workspace");

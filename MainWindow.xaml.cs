@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.9.0.3";
+        public const string CURRENT_VERSION = "0.9.0.4";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -76,6 +76,9 @@ namespace Cloudless
         private const int MaxRecentFilesInGallery = 30;
         private const int MaxRecentFilesInContextWindow = 5;
         private List<string> recentFiles = new();
+
+        private BookmarkManager? bookmarkManager;
+        public bool NonstandardFilmstrip = false;
 
         public List<string> CommandHistory = new();
         public int CommandHistoryIndex = -1;
@@ -375,6 +378,13 @@ namespace Cloudless
             };
 
             SetBackground();
+
+            // Initialize BookmarkManager
+            bookmarkManager = new BookmarkManager();
+
+            
+            ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
+            
 
             InitializeZenMode();
 
@@ -768,9 +778,125 @@ namespace Cloudless
             }
         }
 
-        //private void MenuItem_Click(object sender, RoutedEventArgs e)
-        //{
+        private MenuItem CreateFullWidthSeparator()
+        {
+            var sep = new MenuItem();
+            sep.IsEnabled = false;
+            sep.Padding = new Thickness(0);
+            sep.Style = (Style)FindResource("ContextMenuFullWidthSeparator");
+            sep.Tag = "FULL_WIDTH_SEPARATOR";
+            return sep;
+        }
 
-        //}
+        // Rebuild the ImageContextMenu programmatically to ensure a fresh visual tree that picks up theme changes.
+        public void RebuildImageContextMenu()
+        {
+            var cm = new ContextMenu();
+
+            // Title (disabled)
+            var title = new MenuItem { Header = "Cloudless", IsEnabled = false, FontWeight = FontWeights.Bold };
+            title.SetResourceReference(MenuItem.ForegroundProperty, "SecondaryForeground");
+            cm.Items.Add(title);
+
+            // Keep only the primary separator after the title to match original layout
+            cm.Items.Add(CreateFullWidthSeparator());
+
+            var closeItem = new MenuItem { Header = "Close" };
+            closeItem.Click += Exit_Click;
+            cm.Items.Add(closeItem);
+
+            var minimizeItem = new MenuItem { Header = "Minimize" };
+            minimizeItem.Click += Minimize_Click;
+            cm.Items.Add(minimizeItem);
+
+            var openImageItem = new MenuItem { Header = "Open Image" };
+            openImageItem.Click += OpenImage_Click;
+            cm.Items.Add(openImageItem);
+
+            // Zoom menu (populated by PrepareZoomMenu)
+            var zoomMenu = new MenuItem { Header = "Zoom" };
+            this.ZoomMenu = zoomMenu; // reassign field so Populate methods work
+            // Ensure submenu uses full-width items panel so separators stretch
+            zoomMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
+            cm.Items.Add(zoomMenu);
+
+            // Recent files menu (populated dynamically)
+            var recentMenu = new MenuItem { Header = "Recent Images" };
+            recentMenu.SubmenuOpened += RecentFilesMenu_SubmenuOpened;
+            this.RecentFilesMenu = recentMenu; // reassign field
+            // Apply full-width items panel to recent submenu as well
+            recentMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
+            cm.Items.Add(recentMenu);
+
+
+
+            /*
+             * <MenuItem x:Name="BookmarksMenu" Header="Bookmarks" SubmenuOpened="BookmarksMenu_SubmenuOpened">
+                        <!-- Items will be populated dynamically -->
+                    </MenuItem>
+             */
+            var bookmarkMenu = new MenuItem { Header = "Bookmarks" };
+            bookmarkMenu.SubmenuOpened += BookmarksMenu_SubmenuOpened;
+            this.BookmarksMenu = bookmarkMenu; // reassign field
+            // Apply full-width items panel to recent submenu as well
+            bookmarkMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
+            cm.Items.Add(bookmarkMenu);
+
+
+            var toggleFilmStripItem = new MenuItem { Header = "Toggle Film Strip" };
+            toggleFilmStripItem.Click += ToggleFilmStrip_Click;
+            cm.Items.Add(toggleFilmStripItem);
+
+            var imageInfoItem = new MenuItem { Header = "Image Info" };
+            imageInfoItem.Click += ImageInfo_Click;
+            cm.Items.Add(imageInfoItem);
+
+            var setDimensionsItem = new MenuItem { Header = "Set Dimensions" };
+            setDimensionsItem.Click += SetDimensions_Click;
+            cm.Items.Add(setDimensionsItem);
+
+            var preferencesItem = new MenuItem { Header = "Preferences" };
+            preferencesItem.Click += OpenPreferences_Click;
+            cm.Items.Add(preferencesItem);
+
+            var aboutItem = new MenuItem { Header = "About" };
+            aboutItem.Click += About_Click;
+            cm.Items.Add(aboutItem);
+
+            var hotkeyRefItem = new MenuItem { Header = "Hotkey Reference" };
+            hotkeyRefItem.Click += HotkeyRef_Click;
+            cm.Items.Add(hotkeyRefItem);
+
+            var cmdPaletteRefItem = new MenuItem { Header = "Command Palette Reference" };
+            cmdPaletteRefItem.Click += CommandPaletteRef_Click;
+            cm.Items.Add(cmdPaletteRefItem);
+
+            var sysMsgHistoryItem = new MenuItem { Header = "System Message History" };
+            sysMsgHistoryItem.Click += OpenMessageHistory_Click;
+            cm.Items.Add(sysMsgHistoryItem);
+
+            var duplicateWindowItem = new MenuItem { Header = "Duplicate Window" };
+            duplicateWindowItem.Click += DuplicateWindow_Click;
+            cm.Items.Add(duplicateWindowItem);
+
+            var zenItem = new MenuItem { Header = "Zen" };
+            zenItem.Click += Zen_Click;
+            cm.Items.Add(zenItem);
+
+            // Ensure dynamic foreground/background via resource references where appropriate
+            cm.SetResourceReference(Control.BackgroundProperty, "SecondaryBackground");
+            cm.SetResourceReference(Control.BorderBrushProperty, "PrimaryButtonBorderBrush");
+
+            // Assign to both the grid ContextMenu and the named field
+            this.MyGrid.ContextMenu = cm;
+            this.ImageContextMenu = cm;
+
+            // Populate the zoom menu items immediately so it's ready
+            PrepareZoomMenu();
+
+            // Populate recent files menu now so HasItems is set and arrow will appear
+            _ = UpdateRecentFilesMenu(isStartUp: true);
+            _ = UpdateBookmarksMenu();
+        }
     }
 }

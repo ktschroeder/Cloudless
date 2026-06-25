@@ -11,19 +11,19 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
-    <Border Background="#FAFAFA"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
 
         <DockPanel>
             <!-- Header -->
-            <Border Background="#F0F0F0"
+            <Border Background="{DynamicResource SecondaryBackground}"
                     Padding="8"
                     DockPanel.Dock="Top"
                     CornerRadius="6,6,0,0">
                 <TextBlock Text="Hotkey Reference"
                            FontWeight="SemiBold"
-                           Foreground="#333"/>
+                           Foreground="{DynamicResource PrimaryForeground}"/>
             </Border>
 
             <!-- Content with ScrollViewer -->
@@ -80,8 +80,6 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl Z" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Start Zen on all open windows, or stop Zen on all open windows if already on everywhere"/>
-
-                                            
 
                                             <TextBlock Grid.Column="0" Grid.Row="10" Text="Ctrl C" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="10" Text="Copy image file to clipboard"/>
@@ -149,9 +147,6 @@
                                             <TextBlock Grid.Column="0" Grid.Row="5" Text="B" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="5" Text="Resize window to remove best-fit bars"/>
 
-                                            <!--<TextBlock Grid.Column="0" Grid.Row="6" Text="G" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="6" Text="Switch background (black, white, transparent)"/>-->
-
                                             <TextBlock Grid.Column="0" Grid.Row="7" Text="Ctrl + / -" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="7" Text="Zoom in / out"/>
 
@@ -160,9 +155,6 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="9" Text="Ctrl 9" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="9" Text="Set zoom to image's true resolution"/>
-
-                                            <!--<TextBlock Grid.Column="0" Grid.Row="10" Text="G" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Switch background (black, white, transparent)"/>-->
 
                                             <TextBlock Grid.Column="0" Grid.Row="11" Text="Ctrl, scroll mouse" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="11" Text="Zoom in or out. Additionally, hold ALT for fine zooming"/>
@@ -177,7 +169,6 @@
                                             <TextBlock Grid.Column="1" Grid.Row="14" Text="Toggle 'Comic Mode': when loading next image in directory, retain zoom, and send pan to upper corner"/>
 
                                         </Grid>
-
                                     </StackPanel>
                                 </ScrollViewer>
                             </TabItem>
@@ -215,7 +206,7 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="1" Text="Left/Right or A/D" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Load adjacent images in directory of current image, based on current sort order"/>
-                                            
+
                                             <TextBlock Grid.Column="0" Grid.Row="2" Text="Mousewheel up/down" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="2" Text="Similar to above"/>
 
@@ -260,14 +251,12 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="1" Text="Ctrl Space" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Restart GIF/video"/>
-                                            
+
                                             <TextBlock Grid.Column="0" Grid.Row="2" Text="Ctrl Left/Right" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="2" Text="Seek backward/forward 5 seconds"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="3" Text="Ctrl Alt Left/Right" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="3" Text="Seek backward/forward 60 seconds"/>
-                                            
-                                            
 
                                         </Grid>
 

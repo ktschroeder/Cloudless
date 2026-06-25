@@ -39,6 +39,10 @@ namespace Cloudless
 
             base.OnStartup(e);
 
+            
+            var theme = Cloudless.Properties.Settings.Default["Theme"] as string;
+            ThemeManager.ApplyTheme(theme);
+
             bool startInBackground = e.Args.Contains("--background");
 
             if (!startInBackground)

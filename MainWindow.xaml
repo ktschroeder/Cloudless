@@ -6,7 +6,7 @@
         Height="400" Width="400"
         WindowStyle="None" 
         AllowsTransparency="True" 
-        Background="Black" 
+        Background="{DynamicResource WindowBackground}"
         ResizeMode="CanResize"
         MouseDown="Window_MouseDown" 
         MouseMove="Window_MouseMove"
@@ -25,7 +25,7 @@
         PreviewMouseRightButtonUp="Window_PreviewMouseRightButtonUp"
         ContextMenuOpening="Window_ContextMenuOpening">
 
-    <Border x:Name="MainBorder" BorderBrush="Black" BorderThickness="2">
+    <Border x:Name="MainBorder" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="2">
         <Grid Name="MyGrid">
             <!-- Image Display -->
             <Image x:Name="ImageDisplay" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
@@ -35,7 +35,7 @@
 
             <!-- Loading Overlay -->
             <Border x:Name="LoadingOverlay"
-            Background="Black"
+            Background="{DynamicResource OverlayBackground}"
             Opacity="0.85"
             Visibility="Collapsed"
             IsHitTestVisible="False">
@@ -48,7 +48,7 @@ VerticalAlignment="Center">
                     <TextBlock x:Name="LoadingText1"
                         Text="Loading..."
                                TextWrapping="Wrap"
-                       Foreground="White"
+                       Foreground="{DynamicResource PrimaryForeground}"
                        FontSize="20"
                        FontWeight="SemiBold"
                        HorizontalAlignment="Center"
@@ -57,7 +57,7 @@ VerticalAlignment="Center">
                     <TextBlock x:Name="LoadingText2"
                         Text=""
                                TextWrapping="Wrap"
-                       Foreground="White"
+                       Foreground="{DynamicResource PrimaryForeground}"
                        FontSize="14"
                        FontWeight="Normal"
                        HorizontalAlignment="Center"
@@ -69,10 +69,10 @@ VerticalAlignment="Center">
             <!-- Debug Info Overlay -->
             <Border x:Name="DebugTextBlockBorder" HorizontalAlignment="Left" VerticalAlignment="Bottom" 
                     Margin="10"
-                    Background="#AA000000"
+                    Background="{DynamicResource OverlayBackground}"
                     CornerRadius="5" Padding="5" Visibility="Collapsed">
                 <TextBlock x:Name="DebugTextBlock" 
-                           Foreground="White" 
+                           Foreground="{DynamicResource PrimaryForeground}"
                            FontSize="12" 
                            TextWrapping="Wrap">
                 </TextBlock>
@@ -94,7 +94,7 @@ VerticalAlignment="Center">
             <Grid.ContextMenu>
                 <ContextMenu x:Name="ImageContextMenu">
                     <!-- Unclickable Title -->
-                    <MenuItem Header="Cloudless" IsEnabled="False" FontWeight="Bold" Foreground="Gray" />
+                    <MenuItem Header="Cloudless" IsEnabled="False" FontWeight="Bold" Foreground="{DynamicResource SecondaryForeground}" />
                     <!-- Separator -->
                     <Separator />
                     <MenuItem Header="Close" Click="Exit_Click" />
@@ -104,6 +104,9 @@ VerticalAlignment="Center">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
                     <MenuItem x:Name="RecentFilesMenu" Header="Recent Images" SubmenuOpened="RecentFilesMenu_SubmenuOpened">
+                        <!-- Items will be populated dynamically -->
+                    </MenuItem>
+                    <MenuItem x:Name="BookmarksMenu" Header="Bookmarks" SubmenuOpened="BookmarksMenu_SubmenuOpened">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
                     <MenuItem Header="Toggle Film Strip" Click="ToggleFilmStrip_Click" />

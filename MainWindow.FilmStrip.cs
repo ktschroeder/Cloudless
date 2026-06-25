@@ -11,6 +11,7 @@ namespace Cloudless
 
         private FilmStripWindow? _filmStripWindow;
         private CommandPaletteWindow? _commandPaletteWindow;
+        private string[] _filmStripImages;
 
         private void ToggleFilmStrip_Executed(object sender, ExecutedRoutedEventArgs e)
         {
@@ -27,7 +28,7 @@ namespace Cloudless
             }
         }
 
-        public void ToggleFilmStrip()
+        public void ToggleFilmStrip(bool skipPopulation = false)
         {
             if (_filmStripWindow == null)
             {
@@ -37,6 +38,7 @@ namespace Cloudless
 
             if (_filmStripWindow.IsVisible)
             {
+                NonstandardFilmstrip = false;
                 _filmStripWindow.Hide();
                 _filmStripWindow.DetachOwnerHandlers(this);
             }
@@ -48,14 +50,29 @@ namespace Cloudless
                 _filmStripWindow.AttachOwnerHandlers(this);
                 _filmStripWindow.Show();
 
-                var files = imageFiles ?? Array.Empty<string>();
-                _ = _filmStripWindow.PopulateAsync(files, currentImageIndex, _preloadManager);
-                    
+                if (!skipPopulation)
+                {
+                    _filmStripImages = imageFiles ?? Array.Empty<string>();
+                    _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager);
+                }
             }
-            
         }
 
-        private void OnFilmStripThumbnailClicked(string path, bool openInNewWindow)
+        public void OpenFilmStrip()
+        {
+            if (_filmStripWindow == null || !_filmStripWindow.IsVisible)
+                ToggleFilmStrip(skipPopulation: true);
+        }
+
+        // use when populating film strip in a way other than image's directory's files.
+        public void NonstandardPopulateFilmStrip(string[] files)
+        {
+            NonstandardFilmstrip = true;
+            _filmStripImages = files;
+            _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager);
+        }
+
+        private async void OnFilmStripThumbnailClicked(string path, bool openInNewWindow)
         {
             if (openInNewWindow)
             {
@@ -64,10 +81,17 @@ namespace Cloudless
             }
             else
             {
-                int idx = Array.IndexOf(imageFiles ?? Array.Empty<string>(), path);
-                if (idx >= 0)
+                if (NonstandardFilmstrip)
                 {
-                    _ = DisplayImage(idx, openedThroughApp: true);
+                    await LoadImage(path, openedThroughApp: true);
+                }
+                else
+                {
+                    int idx = Array.IndexOf(_filmStripImages ?? Array.Empty<string>(), path);
+                    if (idx >= 0)
+                    {
+                        _ = DisplayImage(idx, openedThroughApp: true);
+                    }
                 }
             }
 
