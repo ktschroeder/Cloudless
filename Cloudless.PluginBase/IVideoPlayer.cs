@@ -1,4 +1,3 @@
-
 using System.Windows.Media;
 
 namespace Cloudless.PluginBase
@@ -33,6 +32,14 @@ namespace Cloudless.PluginBase
         /// Set a loop range for playback. If start or end is null, the media start/end will be used.
         /// </summary>
         void SetLoopRange(TimeSpan? start, TimeSpan? end);
+        /// <summary>
+        /// Seek forward by a finer granularity, such as by a single frame.
+        /// </summary>
+        void SeekFineForward();
+        /// <summary>
+        /// Seek backward by a finer granularity, such as by a single frame.
+        /// </summary>
+        void SeekFineBackward();
     }
 
 }

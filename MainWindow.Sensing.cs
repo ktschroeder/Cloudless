@@ -251,11 +251,20 @@ namespace Cloudless
             }
 
             // Video seeking: Ctrl+Left/Right to seek 5s, Ctrl+Alt+Left/Right to seek 60s
+            // Fine seeking: Ctrl+Shift+Left/Right for frame-by-frame or fine seek
             if ((key == Key.Left || key == Key.Right) && control)
             {
                 var vp = VideoHost.Content as IVideoPlayer;
                 if (vp != null)
                 {
+                    if (shift)
+                    {
+                        if (key == Key.Right)
+                            vp.SeekFineForward();
+                        else
+                            vp.SeekFineBackward();
+                        return;
+                    }
                     int seconds = alt ? 60 : 5;
                     TimeSpan delta = TimeSpan.FromSeconds(seconds * (key == Key.Right ? 1 : -1));
 

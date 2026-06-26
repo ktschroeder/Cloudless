@@ -489,5 +489,39 @@ namespace Cloudless.VlcPlugin
                 return TimeSpan.Zero;
             }
         }
+
+        public void SeekFineForward()
+        {
+            if (_mediaPlayer == null)
+                return;
+            try
+            {
+                // VLC supports frame stepping forward
+                _mediaPlayer.NextFrame();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SeekFineForward error: {ex.Message}");
+            }
+        }
+
+        public void SeekFineBackward()
+        {
+            if (_mediaPlayer == null)
+                return;
+            try
+            {
+                // VLC does not support frame stepping backward, so seek back a small amount
+                var current = GetPosition();
+                var target = current - TimeSpan.FromMilliseconds(2);  // 1 has no effect. 2 is best available, apparently. It's fine.
+                if (target < TimeSpan.Zero)
+                    target = TimeSpan.Zero;
+                SeekTo(target);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SeekFineBackward error: {ex.Message}");
+            }
+        }
     }
 }
