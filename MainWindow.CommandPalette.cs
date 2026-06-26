@@ -1,4 +1,6 @@
 ﻿using Cloudless.PluginBase;
+using System.Linq;
+using System.Text.Json;
 using System.Collections.Specialized;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -774,6 +776,98 @@ namespace Cloudless
                 return false;
             }
 
+            // filmstrip command: fs / filmstrip
+            if (cmd.StartsWith("fs") || cmd.StartsWith("filmstrip"))
+            {
+                // parse tokens
+                var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string source = "directory"; // default
+                string param = "";
+                if (tokens.Length >= 2)
+                {
+                    source = tokens[1];
+                    if (tokens.Length >= 3)
+                        param = string.Join(' ', tokens.Skip(2));
+                }
+
+                string[] filesToShow = Array.Empty<string>();
+
+                if (source == "fs" || source == "filmstrip")
+                {
+                    source = "directory";
+                }
+
+                try
+                {
+                    if (source == "d" || source == "directory")
+                    {
+                        filesToShow = imageFiles ?? Array.Empty<string>();
+                    }
+                    else if (source == "r" || source == "recent")
+                    {
+                        filesToShow = (recentFiles ?? new List<string>()).ToArray();
+                    }
+                    else if (source == "b" || source == "bookmarks")
+                    {
+                        filesToShow = bookmarkManager?.GetBookmarks().ToArray() ?? Array.Empty<string>();
+                    }
+                    else if (source == "ws" || source == "preview" || source == "workspace")
+                    {
+                        if (string.IsNullOrWhiteSpace(param))
+                        {
+                            // Open gallery preview if no workspace name specified
+                            _ = PreviewWorkspace();
+                            return true;
+                        }
+
+                        string wsName = param.Trim();
+                        string workspaceFilePath = Path.Combine(workspaceFilesPath, wsName + ".cloudless");
+                        if (!File.Exists(workspaceFilePath))
+                        {
+                            Message("Workspace file not found: " + wsName);
+                            return false;
+                        }
+
+                        string json = File.ReadAllText(workspaceFilePath);
+                        var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+                        if (workspace == null)
+                        {
+                            Message("Invalid workspace file: " + wsName);
+                            return false;
+                        }
+
+                        filesToShow = workspace.CloudlessWindows.Select(cw => cw.ImagePath).ToArray();
+                    }
+                    else
+                    {
+                        Message("Unknown filmstrip source: " + source);
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Message("Error preparing filmstrip: " + ex.Message);
+                    return false;
+                }
+
+                if (_filmStripWindow == null || !_filmStripWindow.IsVisible)
+                {
+                    ToggleFilmStrip(skipPopulation: true);
+                }
+
+                if (_filmStripWindow != null)
+                {
+                    NonstandardPopulateFilmStrip(filesToShow);
+                }
+                else
+                {
+                    Message("Failed to open filmstrip window.");
+                    return false;
+                }
+
+                return true;
+            }
+
             if (cmd.StartsWith("dim "))
             {
                 if (cmd.Length < 5)
@@ -1296,9 +1390,12 @@ namespace Cloudless
 
         private void SaveUserCommands()
         {
-            StringCollection stringCollection = [.. UserCommands.ToArray()];
+            StringCollection stringCollection = new StringCollection();
+            stringCollection.AddRange(UserCommands.ToArray());
             Cloudless.Properties.Settings.Default.UserCommands = stringCollection;
             Cloudless.Properties.Settings.Default.Save();
         }
+
+        
     }
 }
