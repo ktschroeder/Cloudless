@@ -254,17 +254,103 @@ namespace Cloudless
             // Fine seeking: Ctrl+Shift+Left/Right for frame-by-frame or fine seek
             if ((key == Key.Left || key == Key.Right) && control)
             {
+                // First, attempt to handle animated images (GIF/WEBP/etc.) via AnimatedImage controller
+                object? animationController = null;
+                try
+                {
+                    // Prefer animated webp plugin controller if available
+                    var animatedWebpPlugin = PluginManager.GetPluginByName("Animated WEBP Plugin");
+                    if (animatedWebpPlugin != null && animatedWebpPlugin.SupportsFileTypes.Contains("webp") && !string.IsNullOrEmpty(currentlyDisplayedImagePath) && currentlyDisplayedImagePath.ToLower().EndsWith(".webp"))
+                    {
+                        try
+                        {
+                            animationController = animatedWebpPlugin.GetAnimationController(ImageDisplay);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed retrieving animation controller from plugin: {ex.Message}");
+                        }
+                    }
+
+                    if (animationController == null)
+                    {
+                        animationController = ImageBehavior.GetAnimationController(ImageDisplay);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error getting animation controller: {ex.Message}");
+                }
+
+                if (animationController != null)
+                {
+                    try
+                    {
+                        var type = animationController.GetType();
+
+                        // Find GotoFrame method
+                        var gotoMethod = type.GetMethod("GotoFrame") ?? type.GetMethod("GoToFrame");
+
+                        // Find frame count property
+                        int? frameCount = null;
+                        var propFrameCount = type.GetProperty("FrameCount") ?? type.GetProperty("Frames") ?? type.GetProperty("FrameLength");
+                        if (propFrameCount != null)
+                        {
+                            try
+                            {
+                                var val = propFrameCount.GetValue(animationController);
+                                if (val is int fc) frameCount = fc;
+                            }
+                            catch { }
+                        }
+
+                        // Find current frame index
+                        int? currentIndex = null;
+                        var propCurrent = type.GetProperty("CurrentFrameIndex") ?? type.GetProperty("CurrentFrame") ?? type.GetProperty("FrameIndex");
+                        if (propCurrent != null)
+                        {
+                            try
+                            {
+                                var val = propCurrent.GetValue(animationController);
+                                if (val is int ci) currentIndex = ci;
+                            }
+                            catch { }
+                        }
+
+                        if (gotoMethod != null && frameCount.HasValue && currentIndex.HasValue)
+                        {
+                            int deltaFrames;
+                            if (shift)
+                                deltaFrames = 1; // fine
+                            else if (alt)
+                                deltaFrames = 60; // broad
+                            else
+                                deltaFrames = 5; // normal
+
+                            int dir = key == Key.Right ? 1 : -1;
+                            int target = currentIndex.Value + (deltaFrames * dir);
+                            if (target < 0) target = 0;
+                            if (target >= frameCount.Value) target = frameCount.Value - 1;
+
+                            // Invoke GotoFrame
+                            gotoMethod.Invoke(animationController, new object[] { target });
+                            return;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Animation controller does not expose required frame properties/methods for seeking.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Animated seek error: {ex.Message}");
+                    }
+                }
+
+                // If not an animated image or couldn't seek, fall back to video seeking
                 var vp = VideoHost.Content as IVideoPlayer;
                 if (vp != null)
                 {
-                    if (shift)
-                    {
-                        if (key == Key.Right)
-                            vp.SeekFineForward();
-                        else
-                            vp.SeekFineBackward();
-                        return;
-                    }
                     int seconds = alt ? 60 : 5;
                     TimeSpan delta = TimeSpan.FromSeconds(seconds * (key == Key.Right ? 1 : -1));
 

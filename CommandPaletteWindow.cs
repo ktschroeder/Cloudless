@@ -27,7 +27,15 @@ namespace Cloudless
         {
             if (owner == null) return;
 
-            this.Owner = owner;
+            try
+            {
+                this.Owner = owner;
+            }
+            catch
+            {
+                return;
+            }
+            
             const double margin = 1.0; // inner margin around film strip; palette will use desired offsets
 
             double heightToUse = contentHeight ?? this.ActualHeight;
