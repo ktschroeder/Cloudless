@@ -134,11 +134,11 @@
                                             <TextBlock Grid.Column="0" Grid.Row="1" Text="rev" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Reveal current image in File Explorer"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="c all" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Close all open instances of Cloudless"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="c" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Close window"/>
 
-                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="c others" FontWeight="Bold"/>
-                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Close all windows except this one"/>
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="c all / others" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Close all windows, or all other windows"/>
 
                                             <TextBlock Grid.Column="0" Grid.Row="4" Text="help" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="4" Text="Open command palette reference window"/>
@@ -173,6 +173,8 @@
                                             <TextBlock Grid.Column="0" Grid.Row="14" Text="[command 1]; [command 2]; ..." FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="14" Text="Chain multiple commands together using semicolons. Each command will be executed in sequence."/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="15" Text="deflash" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="15" Text="Minimize and unminimize all windows (useful if Windows piles up flashing taskbar icons)"/>
 
                                         </Grid>
 
@@ -188,7 +190,7 @@
 
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="180"/>
+                                                <ColumnDefinition Width="220"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
@@ -213,6 +215,18 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="1" Text="dim [Int] [Int]" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="1" Text="Set window dimensions to [Int]x[Int]"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="2" Text="filmstrip | fs directory | d" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="2" Text="Open filmstrip and populate it with images in the current image's directory"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="filmstrip | fs recent | r" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Open filmstrip and populate it with your recent images"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="filmstrip | fs bookmark | b" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Open filmstrip and populate it with your bookmarked images"/>
+                                            
+                                            <TextBlock Grid.Column="0" Grid.Row="5" Text="filmstrip | fs preview | p [workspace]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="5" Text="Open filmstrip and populate it with images from [workspace]"/>
 
                                         </Grid>
 
@@ -320,7 +334,9 @@
                                             <TextBlock Grid.Column="0" Grid.Row="2" Text="clear start/end" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="2" Text="Clear any custom start/end points for looping"/>
 
-                                            
+                                            <TextBlock Grid.Column="0" Grid.Row="3" Text="time" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="3" Text="Reveal current seeking time of video"/>
+
 
                                         </Grid>
 

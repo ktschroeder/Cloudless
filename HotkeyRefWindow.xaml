@@ -93,6 +93,9 @@
                                             <TextBlock Grid.Column="0" Grid.Row="13" Text="Ctrl Alt W" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="13" Text="Apply the window's view to desktop wallpaper (includes pan/zoom/crop)"/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="14" Text="B" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="14" Text="Bookmark the current image. Or, with Shift held, unbookmark the current image."/>
+
                                         </Grid>
                                     </StackPanel>
                                 </ScrollViewer>
