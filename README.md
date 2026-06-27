@@ -1,6 +1,8 @@
 # Cloudless
-Cloudless is a lightweight, minimal-UI image viewer and arranger for Windows, built on Windows Presentation Foundation. It's feature-rich, but visually quiet and minimal.
-Its advanced features are suited to advanced users and image/UI enthusiasts. It has been called "the vim of image viewers" (by me). Features include:
+Cloudless is a powerful, minimal-UI image viewer and arranger for Windows, built on Windows Presentation Foundation. It's feature-rich, but visually quiet and minimal.
+Its advanced features are suited to advanced users and image/UI enthusiasts. It has been called "the vim of image viewers/arrangers" (by me). Features include:
+
+TODO update this list.
 
 - This list was outdated, so I need to update it. There are a bunch of neat features. TODO! Maybe I should make a demo video.
 - Any basic image viewer function you'd expect, like file traversal, image pan/zoom, etc.

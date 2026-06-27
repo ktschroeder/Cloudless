@@ -30,7 +30,7 @@
             <!-- Content -->
             <StackPanel Margin="12">
 
-                <TextBlock Text="You are using Cloudless, a lightweight, minimal-UI image viewing and arranging app. It was created by ktschroeder."
+                <TextBlock Text="You are using Cloudless, a minimal-UI image viewing and arranging app. It was created by ktschroeder."
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
@@ -41,7 +41,7 @@
                            Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
 
-                <TextBlock Text="This app was designed to provide a visually simple, efficient image viewing experience, along with quiet but plentiful features. Some configurations are available in the preferences window."
+                <TextBlock Text="This app was designed to provide a visually simple, efficient image viewing and arranging experience, along with quiet but plentiful features. Some configurations are available in the preferences window."
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,10"/>
