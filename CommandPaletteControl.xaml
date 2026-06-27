@@ -6,17 +6,37 @@
              mc:Ignorable="d"
              d:DesignHeight="48" d:DesignWidth="400">
     <Border x:Name="Root" Visibility="Visible" Background="{DynamicResource OverlayBackground}" CornerRadius="4" Padding="6" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6">
-        <TextBox x:Name="CommandTextBox"
-                 TextChanged="CommandTextBox_TextChanged"
-                 SelectionChanged="CommandTextBox_SelectionChanged"
-                 Background="Transparent"
-                 BorderThickness="0"
-                 Foreground="{DynamicResource OverlayForeground}"
-                 FontFamily="Consolas"
-                 FontSize="14"
-                 CaretBrush="{DynamicResource PrimaryForeground}"
-                 MinWidth="160"
-                 KeyDown="CommandTextBox_KeyDown"
-                 PreviewKeyDown="CommandTextBox_PreviewKeyDown"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Visual-only colon prefix (not part of the TextBox) -->
+            <TextBlock Grid.Column="0" 
+                       Text=":" 
+                       Foreground="{DynamicResource OverlayForeground}"
+                       FontFamily="Consolas"
+                       FontSize="14"
+                       VerticalAlignment="Center"
+                       Margin="0,0,0,0"
+                       IsHitTestVisible="False"/>
+            
+            <!-- TextBox without the colon character -->
+            <TextBox Grid.Column="1"
+                     x:Name="CommandTextBox"
+                     TextChanged="CommandTextBox_TextChanged"
+                     SelectionChanged="CommandTextBox_SelectionChanged"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="{DynamicResource OverlayForeground}"
+                     FontFamily="Consolas"
+                     FontSize="14"
+                     CaretBrush="{DynamicResource PrimaryForeground}"
+                     MinWidth="160"
+                     KeyDown="CommandTextBox_KeyDown"
+                     PreviewKeyDown="CommandTextBox_PreviewKeyDown"
+                     Margin="-2,0,0,0"/>
+        </Grid>
     </Border>
 </UserControl>

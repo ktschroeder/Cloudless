@@ -1,6 +1,7 @@
 using Cloudless.Properties;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +13,8 @@ namespace Cloudless
     public partial class FilmStripControl : UserControl
     {
         public event Action<string, bool>? ThumbnailClicked;
+        
+        private CancellationTokenSource? _populateCts;
 
         public FilmStripControl()
         {
@@ -135,11 +138,26 @@ namespace Cloudless
 
         internal async Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload)
         {
+            // Cancel any previous population operation
+            if (_populateCts != null)
+            {
+                _populateCts.Cancel();
+                _populateCts.Dispose();
+            }
+
+            _populateCts = new CancellationTokenSource();
+            var cancellationToken = _populateCts.Token;
+
             PART_Panel.Children.Clear();
             if (files == null || files.Length == 0) return;
 
             // Wait a bit for layout to stabilize so we can measure available height
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            
+            // Check if cancelled before continuing
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
             double availableHeight = PART_ScrollViewer.ActualHeight;
             if (availableHeight < 40) availableHeight = 90; // default
             double thumbHeight = Math.Max(48, availableHeight - 12);
@@ -147,6 +165,10 @@ namespace Cloudless
 
             for (int i = 0; i < files.Length; i++)
             {
+                // Check for cancellation at each iteration
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
                 string path = files[i];
 
                 var border = new Border
@@ -244,6 +266,10 @@ namespace Cloudless
                     }
                 }
 
+                // Check again before updating UI with loaded image
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
                 if (src != null)
                 {
                     // center-crop the source to match thumbnail aspect ratio
@@ -272,17 +298,26 @@ namespace Cloudless
                         }
 
                         var cb = new CroppedBitmap(src, new Int32Rect(cropX, cropY, Math.Max(1, cropW), Math.Max(1, cropH)));
-                        await Dispatcher.InvokeAsync(() => img.Source = cb, System.Windows.Threading.DispatcherPriority.Background);
+                        await Dispatcher.InvokeAsync(() => {
+                            if (!cancellationToken.IsCancellationRequested)
+                                img.Source = cb;
+                        }, System.Windows.Threading.DispatcherPriority.Background);
                     }
                     else
                     {
-                        await Dispatcher.InvokeAsync(() => img.Source = src, System.Windows.Threading.DispatcherPriority.Background);
+                        await Dispatcher.InvokeAsync(() => {
+                            if (!cancellationToken.IsCancellationRequested)
+                                img.Source = src;
+                        }, System.Windows.Threading.DispatcherPriority.Background);
                     }
                 }
             }
 
-            await Dispatcher.InvokeAsync(() => PART_ScrollViewer.ScrollToLeftEnd());
-            UpdateOverflowIndicators();
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await Dispatcher.InvokeAsync(() => PART_ScrollViewer.ScrollToLeftEnd());
+                UpdateOverflowIndicators();
+            }
         }
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)

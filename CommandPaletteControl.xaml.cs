@@ -20,12 +20,12 @@ namespace Cloudless
         // Forward events to MainWindow by default so existing logic can remain in MainWindow.CommandPalette.cs
         private void CommandTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            _mw.CommandPalette_TextChanged(sender, e);
+            //_mw.CommandPalette_TextChanged(sender, e);
         }
 
         private void CommandTextBox_SelectionChanged(object sender, RoutedEventArgs e)
         {
-            _mw.CommandPalette_SelectionChanged(sender, e);
+            //_mw.CommandPalette_SelectionChanged(sender, e);
         }
 
         private void CommandTextBox_KeyDown(object sender, KeyEventArgs e)
