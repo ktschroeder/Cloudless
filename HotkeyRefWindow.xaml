@@ -261,6 +261,9 @@
                                             <TextBlock Grid.Column="0" Grid.Row="3" Text="Ctrl Alt Left/Right" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="3" Text="Seek backward/forward 60 seconds"/>
 
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Text="Ctrl Shift Left/Right" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="4" Text="Seek backward/forward finely"/>
+
                                         </Grid>
 
                                     </StackPanel>
