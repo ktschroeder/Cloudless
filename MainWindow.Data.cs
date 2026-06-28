@@ -209,7 +209,9 @@ namespace Cloudless
                 var uri = new Uri(imageFiles[index]);
 
                 currentlyDisplayedImagePath = uri.LocalPath;
-                AddToRecentFiles(uri.LocalPath);
+
+                if (!WorkspaceLoadInProgress)
+                    AddToRecentFiles(uri.LocalPath);
 
                 animationController = ImageBehavior.GetAnimationController(ImageDisplay);
                 if (animationController != null)
@@ -441,7 +443,7 @@ namespace Cloudless
                 }
 
                 ApplyDisplayMode();
-                await UpdateContextMenuState();
+                _ = UpdateContextMenuState();
 
                 if (!WorkspaceLoadInProgress)  // skip this for faster workspace opening. User is unlikely to benefit from preloading anyway, for immediate images in a workspace load.
                     _preloadManager?.PreloadWindow(currentImageIndex, imageFiles);
@@ -663,7 +665,7 @@ namespace Cloudless
             Clipboard.SetDataObject(dataObject, true);
         }
 
-        private void AddToRecentFiles(string filePath)
+        private void AddToRecentFiles(string filePath, bool save = true)
         {
             // Avoid duplicates
             recentFiles.Remove(filePath);
@@ -673,7 +675,8 @@ namespace Cloudless
             if (recentFiles.Count > Math.Max(MaxRecentFilesInGallery, MaxRecentFilesInContextWindow))
                 recentFiles.RemoveAt(recentFiles.Count - 1);
 
-            SaveRecentFiles();
+            if (save)
+                SaveRecentFiles();
         }
         private void PrepareZoomMenu()
         {

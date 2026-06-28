@@ -356,8 +356,6 @@ namespace Cloudless
             ApplyDisplayMode();  // mostly not needed here but always-top and border and stuff is relevant
 
             this.KeyDown += Window_KeyDown;
-
-            LoadRecentFiles();
             
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
@@ -421,11 +419,8 @@ namespace Cloudless
                 Message("Error preparing plugins: " + ex.Message);
             }
 
-            await UpdateContextMenuState();
-            PrepareZoomMenu();
-
-            await UpdateRecentFilesMenu(isStartUp: true);
-
+            _ = UpdateContextMenuState(isStartUp: true);
+            
             if ((Path.GetExtension(initialImageToLoad) ?? "").ToLower().Equals(".cloudless"))
             {
                 await ExecuteCloudlessFile(initialImageToLoad);

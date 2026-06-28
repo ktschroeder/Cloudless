@@ -236,7 +236,7 @@ namespace Cloudless
             };
             imageInfoWindow.ShowDialog();
         }
-        private async Task UpdateContextMenuState()
+        private async Task UpdateContextMenuState(bool isStartUp = false)
         {
             // Enable/disable "Image Info" based on loaded image
             var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => ((m.Header as string) ?? m.Header?.ToString() ?? "").Equals("Image Info"));
@@ -260,8 +260,9 @@ namespace Cloudless
                 }
             }
 
-            await UpdateRecentFilesMenu();
+            await UpdateRecentFilesMenu(isStartUp);
             await UpdateBookmarksMenuState();
+            PrepareZoomMenu();
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {

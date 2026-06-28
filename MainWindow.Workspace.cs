@@ -436,6 +436,16 @@ namespace Cloudless
                 SwapViewToPage(workspace.CurrentPageIndex);
 
             ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
+
+            List<string> paths = zOrderedWindows.Select(w => w.ImagePath).Where(p => !string.IsNullOrEmpty(p)).ToList();
+            foreach (var path in paths)
+            {
+                if (File.Exists(path))
+                {
+                    AddToRecentFiles(path, save: false);
+                }
+            }
+            SaveRecentFiles();
         }
 
         public async Task ApplyWindowState(CloudlessWindowState state)
