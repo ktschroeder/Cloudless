@@ -431,16 +431,33 @@ namespace Cloudless
         {
             var zOrderedWindows = workspace.CloudlessWindows.OrderByDescending(w => w.ZOrder).ToList();
             List<(MainWindow, CloudlessWindowState)> createdWindowsWithStates = new List<(MainWindow, CloudlessWindowState)>();
+            
             foreach (var state in zOrderedWindows)
             {
-                var window = await CreateWindowForWorkspace(state, workspace.WorkspaceName, workspace.CurrentPageIndex);  // Huge performance gains if this can be done on multiple threads.
+                var window = await CreateWindowForWorkspace(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
                 createdWindowsWithStates.Add((window, state));
             }
 
+            // Show all windows on UI thread
             foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
             {
-                await window.PostProcessLoadedWindow(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
+                window.Show();
             }
+            
+            // Activate in reverse z-order (highest z-order last, so it ends up on top)
+            foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
+            {
+                window.Activate();
+            }
+            
+            // Defer expensive operations to background without blocking
+            _ = Task.Run(async () =>
+            {
+                foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
+                {
+                    await window.PostProcessLoadedWindowDeferred(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
+                }
+            });
 
             if (workspace.CurrentPageIndex != GetCurrentPageIndex())
                 SwapViewToPage(workspace.CurrentPageIndex);
@@ -537,6 +554,58 @@ namespace Cloudless
             ShowInTaskbar = true;
 
             WorkspaceLoadInProgress = false;
+        }
+
+        /// <summary>
+        /// Post-processing that is deferred to run asynchronously after windows are shown.
+        /// All UI operations must be dispatched back to the UI thread.
+        /// </summary>
+        public async Task PostProcessLoadedWindowDeferred(CloudlessWindowState state, string? workspaceName = null, int startingPageIndex = 1, bool isDuplicating = false)
+        {
+            // All WPF operations must be marshaled back to the UI thread via Dispatcher
+            await Dispatcher.InvokeAsync(async () =>
+            {
+                if (state.PageIndex == startingPageIndex)
+                {
+                    if (state.IsMinimized)
+                        MinimizeWindow(state);
+                }
+                else
+                {
+                    if (state.WindowWasMaximizedPriorToHidingForPage)
+                        WindowState = WindowState.Maximized;
+                    if (state.WindowWasMinimizedPriorToHidingForPage)
+                        MinimizeWindow(state);
+                }
+
+                if (!isDuplicating)
+                    SendWindowToPage(state.PageIndex);
+
+                await ToggleCropMode(setTo: false, silent: true);
+
+                imageOriginalWorkspaceName = workspaceName;
+                // Apply any saved video loop range for this window
+                try
+                {
+                    if ((state.LoopStartMs.HasValue || state.LoopEndMs.HasValue) && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer vp)
+                    {
+                        TimeSpan? s = state.LoopStartMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopStartMs.Value) : null;
+                        TimeSpan? e = state.LoopEndMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopEndMs.Value) : null;
+                        vp.SetLoopRange(s, e);
+                        try { this._videoLoopStart = s; } catch { }
+                        try { this._videoLoopEnd = e; } catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
+                }
+
+                ShowInTaskbar = false;
+                ShowInTaskbar = true;
+
+                WorkspaceLoadInProgress = false;
+            });
         }
 
         static Dictionary<IntPtr, int> GetZOrderForCurrentProcessWindows()
