@@ -467,6 +467,8 @@ namespace Cloudless
             //Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             //_commandPaletteWindow.Hide();
             //_commandPaletteWindow.Opacity = 1;
+
+            GlobalStartup = false;
         }
 
         public void PrepareCommandPalette()
@@ -493,7 +495,6 @@ namespace Cloudless
             if (GlobalStartup)
             {
                 overlayManager.ClearMessageHistory();
-                SetCurrentPageIndex(1);
             }
         }
 
@@ -599,6 +600,7 @@ namespace Cloudless
             $"ImageDisplay stretch enum: {ImageDisplay.Stretch.ToString():F2}\n" +
             $"Display mode setting: {displayMode:F2}\n" +
             $"Window page index: {windowPageIndex:F2}\n" +
+            $"Global page index: {Settings.Default.CurrentPage:F2}\n" +
             $"Allocated memory (global): {MemoryMB:F2} MB";
 
             foreach (var key in preloadKeys)

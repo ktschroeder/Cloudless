@@ -70,7 +70,7 @@ VerticalAlignment="Center">
             <Border x:Name="DebugTextBlockBorder" HorizontalAlignment="Left" VerticalAlignment="Bottom" 
                     Margin="10"
                     Background="{DynamicResource OverlayBackground}"
-                    CornerRadius="5" Padding="5" Visibility="Collapsed">
+                    CornerRadius="5" Padding="5" Visibility="Collapsed" Panel.ZIndex="99999999">
                 <TextBlock x:Name="DebugTextBlock" 
                            Foreground="{DynamicResource PrimaryForeground}"
                            FontSize="12" 
@@ -85,7 +85,7 @@ VerticalAlignment="Center">
                         HorizontalAlignment="Left"
                         Margin="10"
                         IsHitTestVisible="False"
-                        Panel.ZIndex="99999999">
+                        Panel.ZIndex="99999998">
             </StackPanel>
 
 

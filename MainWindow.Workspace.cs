@@ -431,6 +431,9 @@ namespace Cloudless
                 window.Activate();
                 window.ShowInTaskbar = true;
             }
+
+            if (workspace.CurrentPageIndex != GetCurrentPageIndex())
+                SwapViewToPage(workspace.CurrentPageIndex);
         }
 
         public async Task ApplyWindowState(CloudlessWindowState state)
@@ -465,10 +468,8 @@ namespace Cloudless
             }
         }
 
-        public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null, int startingPageIndex = 1)
+        public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null, int startingPageIndex = 1, bool isDuplicating = false)
         {
-            SetCurrentPageIndex(startingPageIndex);
-
             if (state.PageIndex == startingPageIndex)
             {
                 if (state.IsMinimized)
@@ -480,9 +481,10 @@ namespace Cloudless
                     WindowState = WindowState.Maximized;
                 if (state.WindowWasMinimizedPriorToHidingForPage)
                     MinimizeWindow(state);
-
-                SendWindowToPage(state.PageIndex);
             }
+
+            if (!isDuplicating)
+                SendWindowToPage(state.PageIndex);
 
             await ToggleCropMode(setTo: false, silent: true);
 
@@ -616,6 +618,11 @@ namespace Cloudless
 
         public int GetCurrentPageIndex()
         {
+            if (GlobalStartup)
+            {
+                SetCurrentPageIndex(1);
+            }
+
             int index = Settings.Default.CurrentPage;
             return index;
         }
@@ -656,6 +663,12 @@ namespace Cloudless
                 : windowWasMaximizedPriorToHidingForPage ? WindowState.Maximized
                 : WindowState.Normal;
 
+            if (this.WindowState != WindowState.Minimized)
+            {
+                this.Activate();
+                this.Focus();
+            }
+
             windowWasMinimizedPriorToHidingForPage = false;
             windowWasMaximizedPriorToHidingForPage = false;
         }
@@ -672,6 +685,12 @@ namespace Cloudless
             if (currentPageIndex == pageIndex)
             {
                 Message($"Window is already on page {pageIndex}.");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+            {
+                Message($"Window is empty (no image loaded). There's nothing to send.");
                 return;
             }
 
@@ -766,6 +785,7 @@ namespace Cloudless
                 var freshWindow = new MainWindow("");
                 freshWindow.Show();
                 freshWindow.Activate();
+                freshWindow.Focus();
                 freshWindow.Message($"Created new Cloudless window since page was empty");
             }
         }
