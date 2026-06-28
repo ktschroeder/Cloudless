@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Linq;
+using System.Windows.Threading;
 using Path = System.IO.Path;
 
 namespace Cloudless
@@ -106,13 +106,23 @@ namespace Cloudless
         }
 
         private bool OpenFileDialogIsOpen = false;  // Without managing anything, WPF weirdly receives a click event on an image thumb when double clicking a file in the OpenFileDialog. This guards against that.
+        private DispatcherTimer _workspacePreviewClicked;
         private async void Workspace_Preview_Click(object sender, RoutedEventArgs e)
         {
             if (Owner is MainWindow mw)
             {
                 OpenFileDialogIsOpen = true;
                 string? workspaceName = await mw.SelectWorkspaceFileToPreview();
+
                 OpenFileDialogIsOpen = false;
+                // This timer is a workaround for the WPF bug where WPF can receive a click event on an image thumbnail when double-clicking a file in the Windows OpenFileDialog. The timer ensures that the click event is ignored for a short period after the OpenFileDialog is closed.
+                _workspacePreviewClicked = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(10) };
+                _workspacePreviewClicked.Tick += (s, args) =>
+                {
+                    _workspacePreviewClicked?.Stop();
+                };
+                _workspacePreviewClicked.Start();
+
                 if (string.IsNullOrEmpty(workspaceName))
                     return;
 
@@ -271,7 +281,8 @@ namespace Cloudless
 
         private async void Thumbnail_Click(object sender, MouseButtonEventArgs e)
         {
-            if (OpenFileDialogIsOpen)
+            bool timerStillLive = _workspacePreviewClicked?.IsEnabled ?? false;
+            if (OpenFileDialogIsOpen || timerStillLive)
                 return;
 
             if (sender is FrameworkElement fe &&
