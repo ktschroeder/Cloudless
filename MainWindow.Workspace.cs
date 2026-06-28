@@ -405,6 +405,17 @@ namespace Cloudless
                     return false;
                 }
 
+                bool hasVideoFiles = workspace.CloudlessWindows.Any(w =>
+                {
+                    string ext = Path.GetExtension(w.ImagePath).ToLower();
+                    return ext == ".webm" || ext == ".mkv" || ext == ".mp4";
+                });
+
+                if (hasVideoFiles)
+                {
+                    loadingWindow?.SetDetailMessage();
+                }
+
                 if (!merge)
                 {
                     //Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;

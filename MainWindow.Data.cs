@@ -300,6 +300,7 @@ namespace Cloudless
                         ShowLoadingOverlay($"Waiting for VLC plugin to initialize...");
                         //await Dispatcher.Yield(DispatcherPriority.Background);
                         view = await plugin.CreateView();  // We wait here a while if a WEBM is opened quickly in a fresh Cloudless instance/process. Plugin takes several seconds to init.
+                        PluginInitializationState.IsVlcInitialized = true;
                         HideLoadingOverlay();
 
                         VideoHost.Content = view;
