@@ -20,7 +20,7 @@ namespace Cloudless
     {
         public const string CURRENT_VERSION = "0.10.0";
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = false;
+        public const bool LOCAL_DEV = true;
 
 
 
@@ -109,10 +109,10 @@ namespace Cloudless
         #endregion
 
         #region Setup
-        public MainWindow(string filePath, double windowW, double windowH)
+        public MainWindow(string filePath, double windowW, double windowH, bool workspaceLoad = false)
         {
             initialImageToLoad = filePath;
-            Setup();
+            Setup(workspaceLoad);
 
             if ((Path.GetExtension(filePath) ?? "").ToLower().Equals(".cloudless"))
             {
@@ -333,7 +333,7 @@ namespace Cloudless
             System.GC.Collect();
             System.GC.WaitForPendingFinalizers();
         }
-        private void Setup()
+        private void Setup(bool workspaceLoad = false)
         {
             InitializeComponent();
 
@@ -382,8 +382,8 @@ namespace Cloudless
             // Initialize BookmarkManager
             bookmarkManager = new BookmarkManager();
 
-            
-            ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
+            if (!workspaceLoad)
+                ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
             
 
             InitializeZenMode();

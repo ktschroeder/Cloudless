@@ -421,7 +421,7 @@ namespace Cloudless
             var zOrderedWindows = workspace.CloudlessWindows.OrderByDescending(w => w.ZOrder).ToList();
             foreach (var state in zOrderedWindows)
             {
-                var window = new MainWindow(state.ImagePath, state.Width, state.Height);
+                var window = new MainWindow(state.ImagePath, state.Width, state.Height, workspaceLoad: true);
                 window.WorkspaceLoadInProgress = true;
                 await window.LoadImage(state.ImagePath, false);
                 await window.ApplyWindowState(state);
@@ -434,6 +434,8 @@ namespace Cloudless
 
             if (workspace.CurrentPageIndex != GetCurrentPageIndex())
                 SwapViewToPage(workspace.CurrentPageIndex);
+
+            ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
         }
 
         public async Task ApplyWindowState(CloudlessWindowState state)
