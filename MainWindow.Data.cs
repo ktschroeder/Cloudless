@@ -188,7 +188,7 @@ namespace Cloudless
             }
             catch (Exception ex)
             {
-                Message($"Failed to load the image at path \"{imagePath}\": {ex.Message}");
+                Message($"Failed to load the image at path \"{imagePath ?? "[null]"}\": {ex.Message}");
             }
         }
         private async Task DisplayImage(int index, bool openedThroughApp)

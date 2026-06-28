@@ -684,7 +684,8 @@ namespace Cloudless
             int currentPageIndex = GetCurrentPageIndex();
             if (currentPageIndex == pageIndex)
             {
-                Message($"Window is already on page {pageIndex}.");
+                if (!WorkspaceLoadInProgress)
+                    Message($"Window is already on page {pageIndex}.");
                 return;
             }
 
@@ -746,7 +747,7 @@ namespace Cloudless
             }
 
             int currentPageIndex = GetCurrentPageIndex();
-            if (currentPageIndex == pageIndex && !skipHide)
+            if (currentPageIndex == pageIndex && !skipHide && !WorkspaceLoadInProgress )
             {
                 Message($"Already on page {pageIndex}.");
                 return;
