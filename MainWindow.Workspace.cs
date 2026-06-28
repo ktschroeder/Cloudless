@@ -361,6 +361,22 @@ namespace Cloudless
         // returns whether successful
         public async Task<bool> LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
+            WorkspaceLoadingWindow? loadingWindow = null;
+            
+            try
+            {
+                // Show loading window
+                loadingWindow = new WorkspaceLoadingWindow();
+                loadingWindow.Show();
+                
+                // Allow the window to render
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            }
+            catch
+            {
+                // If loading window fails to show, continue anyway
+            }
+
             // if loading undoload, we want to save to undoload_slot, load undoload, then delete undoload and replace it with renamed undoload_slot.
             try
             {
@@ -385,6 +401,7 @@ namespace Cloudless
                 if (workspace == null)
                 {
                     Message("Invalid workspace file.");
+                    loadingWindow?.Close();
                     return false;
                 }
 
@@ -407,12 +424,19 @@ namespace Cloudless
             catch (FileNotFoundException ex)
             {
                 Message("Workspace file not found.");
+                loadingWindow?.Close();
                 return false;
             }
             catch (Exception ex)
             {
                 Message("Unexpected error loading workspace.");
+                loadingWindow?.Close();
                 return false;
+            }
+            finally
+            {
+                // Close loading window when done (if it's still open)
+                loadingWindow?.Close();
             }
         }
 
