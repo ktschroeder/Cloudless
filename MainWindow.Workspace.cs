@@ -416,20 +416,30 @@ namespace Cloudless
             }
         }
 
+        private async Task<MainWindow> CreateWindowForWorkspace(CloudlessWindowState state, string workspaceName, int currentPageIndex)
+        {
+            var window = new MainWindow(state.ImagePath, state.Width, state.Height, workspaceLoad: true);
+            window.WorkspaceLoadInProgress = true;
+            window.WorkspaceLoadZOrder = state.ZOrder;
+            await window.LoadImage(state.ImagePath, false);
+            await window.ApplyWindowState(state);
+
+            return window;
+        }
+
         public async Task CreateWindowsForWorkspace(CloudlessWorkspace workspace)
         {
             var zOrderedWindows = workspace.CloudlessWindows.OrderByDescending(w => w.ZOrder).ToList();
+            List<(MainWindow, CloudlessWindowState)> createdWindowsWithStates = new List<(MainWindow, CloudlessWindowState)>();
             foreach (var state in zOrderedWindows)
             {
-                var window = new MainWindow(state.ImagePath, state.Width, state.Height, workspaceLoad: true);
-                window.WorkspaceLoadInProgress = true;
-                await window.LoadImage(state.ImagePath, false);
-                await window.ApplyWindowState(state);
-                window.Show();
+                var window = await CreateWindowForWorkspace(state, workspace.WorkspaceName, workspace.CurrentPageIndex);  // Huge performance gains if this can be done on multiple threads.
+                createdWindowsWithStates.Add((window, state));
+            }
+
+            foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
+            {
                 await window.PostProcessLoadedWindow(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
-                window.ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workstation from File Explrorer
-                window.Activate();
-                window.ShowInTaskbar = true;
             }
 
             if (workspace.CurrentPageIndex != GetCurrentPageIndex())
@@ -482,6 +492,8 @@ namespace Cloudless
 
         public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null, int startingPageIndex = 1, bool isDuplicating = false)
         {
+            Show();
+
             if (state.PageIndex == startingPageIndex)
             {
                 if (state.IsMinimized)
@@ -519,6 +531,10 @@ namespace Cloudless
                 // Non-fatal: plugin may not support loop ranges or may not be ready yet
                 Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
             }
+
+            ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workstation from File Explrorer
+            Activate();
+            ShowInTaskbar = true;
 
             WorkspaceLoadInProgress = false;
         }
