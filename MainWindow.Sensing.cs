@@ -867,7 +867,18 @@ namespace Cloudless
         private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (!SkipNextContextMenu)
+            {
+                // Get mouse position in screen coordinates
+                Point mousePos = e.GetPosition(this);
+                
+                // Set explicit placement to avoid WPF's auto-flip behavior on different DPI settings
+                ImageContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Relative;
+                ImageContextMenu.PlacementTarget = this;
+                ImageContextMenu.HorizontalOffset = mousePos.X;
+                ImageContextMenu.VerticalOffset = mousePos.Y;
+                
                 ImageContextMenu.IsOpen = true;
+            }
             //else
             //    ImageContextMenu.IsOpen = false;
 

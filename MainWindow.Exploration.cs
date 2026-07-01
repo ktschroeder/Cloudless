@@ -873,6 +873,9 @@ namespace Cloudless
         public struct RECT { public int Left, Top, Right, Bottom; }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct POINT { public int X, Y; }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct MONITORINFO
         {
             public int cbSize;
@@ -886,5 +889,8 @@ namespace Cloudless
 
         [DllImport("user32.dll")]
         static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
     }
 }

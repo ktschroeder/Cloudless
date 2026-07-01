@@ -884,6 +884,12 @@ namespace Cloudless
             // Ensure dynamic foreground/background via resource references where appropriate
             cm.SetResourceReference(Control.BackgroundProperty, "SecondaryBackground");
             cm.SetResourceReference(Control.BorderBrushProperty, "PrimaryButtonBorderBrush");
+            
+            // Set explicit placement and max width to prevent DPI-related positioning issues
+            cm.Placement = System.Windows.Controls.Primitives.PlacementMode.Relative;
+            cm.PlacementTarget = this;
+            // Set a reasonable max width to prevent menus from being too wide and triggering left-side placement
+            cm.MaxWidth = 400;
 
             // Assign to both the grid ContextMenu and the named field
             this.MyGrid.ContextMenu = cm;

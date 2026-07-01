@@ -26,6 +26,33 @@ namespace Cloudless
             var renderWidth = Double.IsNaN(ImageDisplay.Width) ? ImageDisplay.ActualWidth : ImageDisplay.Width;
             var renderHeight = Double.IsNaN(ImageDisplay.Height) ? ImageDisplay.ActualHeight : ImageDisplay.Height;
 
+            double? monitorLeft = null, monitorTop = null, monitorWidth = null, monitorHeight = null;
+
+            Rect windowBounds = this.WindowState == System.Windows.WindowState.Maximized 
+                ? this.RestoreBounds 
+                : new Rect(this.Left, this.Top, this.Width, this.Height);
+
+            // Get DPI scaling factor to convert WPF DIPs to device pixels
+            var source = PresentationSource.FromVisual(this);
+            double dpiScaling = source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
+
+            // Use the center of the window bounds to find which monitor it's on
+            // Convert to device pixels for Win32 API call
+            double centerX = (windowBounds.Left + windowBounds.Width / 2) * dpiScaling;
+            double centerY = (windowBounds.Top + windowBounds.Height / 2) * dpiScaling;
+            POINT pt = new POINT { X = (int)centerX, Y = (int)centerY };
+            IntPtr hMonitor = MonitorFromPoint(pt, 2);
+                
+            MONITORINFO mi = new MONITORINFO();
+            mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+            if (GetMonitorInfo(hMonitor, ref mi))
+            {
+                monitorLeft = mi.rcMonitor.Left;
+                monitorTop = mi.rcMonitor.Top;
+                monitorWidth = mi.rcMonitor.Right - mi.rcMonitor.Left;
+                monitorHeight = mi.rcMonitor.Bottom - mi.rcMonitor.Top;
+            }
+
             var state = new CloudlessWindowState()
             {
                 ImagePath = currentlyDisplayedImagePath ?? "",
@@ -34,8 +61,8 @@ namespace Cloudless
                 Width = Width,
                 Height = Height,
                 CloudlessAppVersion = GetVersion(),
-                IsMaximized = this.WindowState == WindowState.Maximized,
-                IsMinimized = this.WindowState == WindowState.Minimized,
+                IsMaximized = this.WindowState == System.Windows.WindowState.Maximized,
+                IsMinimized = this.WindowState == System.Windows.WindowState.Minimized,
                 DisplayMode = Cloudless.Properties.Settings.Default.DisplayMode,
                 Zoom = imageScaleTransform.ScaleX,  // Y would be the same as X regardless
                 PanX = imageTranslateTransform.X,
@@ -45,7 +72,11 @@ namespace Cloudless
                 RenderHeight = renderHeight,
                 PageIndex = windowPageIndex,
                 WindowWasMaximizedPriorToHidingForPage = windowWasMaximizedPriorToHidingForPage,
-                WindowWasMinimizedPriorToHidingForPage = windowWasMinimizedPriorToHidingForPage
+                WindowWasMinimizedPriorToHidingForPage = windowWasMinimizedPriorToHidingForPage,
+                MonitorLeft = monitorLeft,
+                MonitorTop = monitorTop,
+                MonitorWidth = monitorWidth,
+                MonitorHeight = monitorHeight
             };
 
             // Persist video loop start/end if set for this window
@@ -456,9 +487,23 @@ namespace Cloudless
             var window = new MainWindow(state.ImagePath, state.Width, state.Height, workspaceLoad: true);
             window.WorkspaceLoadInProgress = true;
             window.WorkspaceLoadZOrder = state.ZOrder;
+            
+            // Pre-position the window before showing it to the target monitor
+            // This prevents WPF from defaulting to the primary monitor
+            if (state.MonitorLeft.HasValue && state.MonitorTop.HasValue)
+            {
+                window.Left = state.MonitorLeft.Value + 20;
+                window.Top = state.MonitorTop.Value + 20;
+            }
+            else
+            {
+                window.Left = state.Left;
+                window.Top = state.Top;
+            }
+            
             await window.LoadImage(state.ImagePath, false);
-            await window.ApplyWindowState(state);
-
+            if (!state.IsMaximized)  // maximized windows deferred till later to help finding proper display
+                await window.ApplyWindowState(state);
             return window;
         }
 
@@ -477,6 +522,12 @@ namespace Cloudless
             foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
             {
                 window.Show();
+            }
+            
+            foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
+            {
+                if (state.IsMaximized)
+                    await window.ApplyWindowState(state);
             }
             
             // Activate in reverse z-order (highest z-order last, so it ends up on top)
@@ -521,8 +572,23 @@ namespace Cloudless
 
             ResizeWindow(state.Width, state.Height);
             RepositionWindow(state.Left, state.Top);
+
             if (state.IsMaximized)
+            {
+                // If we saved monitor info, place the window within that monitor prior to maximizing so it maximizes on same display
+                if (state.MonitorLeft.HasValue && state.MonitorTop.HasValue)
+                {
+                    double targetLeft = state.MonitorLeft.Value + 20;
+                    double targetTop = state.MonitorTop.Value + 20;
+                    RepositionWindow(targetLeft, targetTop);
+
+                    // Force layout to complete and window to render at new position
+                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input);
+                }
+
                 await ToggleFullscreen();
+            }
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
             {
@@ -1018,7 +1084,7 @@ namespace Cloudless
 
     public class CloudlessWorkspace
     {
-        public int SchemaVersion { get; set; } = 4;  // schema version 4 adds per-window loop start/end (backward-compatible)
+        public int SchemaVersion { get; set; } = 5;
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
         public string? WorkspaceName { get; set; }
         public int CurrentPageIndex { get; set; } = 1;
@@ -1050,6 +1116,12 @@ namespace Cloudless
         public bool IsMaximized { get; set; }
         public bool IsMinimized { get; set; }
         public int ZOrder { get; set; }  // relative order among Cloudless windows
+
+        // Monitor information for restoring to correct screen when maximized
+        public double? MonitorLeft { get; set; }
+        public double? MonitorTop { get; set; }
+        public double? MonitorWidth { get; set; }
+        public double? MonitorHeight { get; set; }
 
         public string CloudlessAppVersion { get; set; } = "";
 
