@@ -37,7 +37,7 @@
                         <TabControl Background="Transparent" BorderThickness="0">
 
                             <!-- Non-Command -->
-                            <TabItem Header="Non-Command">
+                            <TabItem Header="Non-Command" Margin="1,0,-1,0">
                                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <TextBlock Margin="0,0,0,10">The command palette provides advanced features using a text-based interface.</TextBlock>
@@ -126,6 +126,8 @@
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <TextBlock Grid.Column="0" Grid.Row="0" Text="cip" FontWeight="Bold"/>
@@ -175,6 +177,12 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="15" Text="deflash" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="15" Text="Minimize and unminimize all windows (useful if Windows piles up flashing taskbar icons)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="16" Text="all [command]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="16" Text="Execute [command] on each other window, and finally this window. (Use with caution.)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="17" Text="others [command]" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="17" Text="Execute [command] on each other window. (Use with caution.)"/>
 
                                         </Grid>
 
@@ -488,6 +496,12 @@
 
                                             <TextBlock Grid.Column="0" Grid.Row="8" Text="flatten" FontWeight="Bold"/>
                                             <TextBlock Grid.Column="1" Grid.Row="8" Text="Send all windows from all pages to page 1, and change view to page 1"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="9" Text="pp / pn" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="9" Text="Change the view to the previous/next page (wraps around at end)"/>
+
+                                            <TextBlock Grid.Column="0" Grid.Row="10" Text="ppa / pna" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Grid.Row="10" Text="Change the view to the previous/next active page (wraps around at end)"/>
 
                                         </Grid>
                                     </StackPanel>

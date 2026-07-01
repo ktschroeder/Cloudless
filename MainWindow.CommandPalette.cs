@@ -266,16 +266,44 @@ namespace Cloudless
             }
         }
 
+        private async Task SendCommandToOthers(string cmd)
+        {
+            var others = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(w => w != this)
+                .ToList();
+
+            foreach (var w in others)
+            {
+                try
+                {
+                    await w.ExecuteCommand(cmd);
+                }
+                catch { }  // attempt command on all windows, don't stop short for an exception
+            }
+        }
+
         // returns whether successful (i.e. valid) command
         private async Task<bool> ExecuteCommandInner(string cmd)
         {
             cmd = cmd.Trim().ToLower();
 
-            if (cmd.StartsWith(":"))
-                cmd = cmd[1..];
+            if (cmd.StartsWith("all ") && cmd.Length > 4)
+            {
+                string innerCommand = cmd.Substring(4);
 
-            if (string.IsNullOrEmpty(cmd))
-                return false;
+                await SendCommandToOthers(innerCommand);
+                await ExecuteCommand(innerCommand);
+                return true;
+            }
+
+            if (cmd.StartsWith("others ") && cmd.Length > 7)
+            {
+                string innerCommand = cmd.Substring(7);
+
+                await SendCommandToOthers(innerCommand);
+                return true;
+            }
 
             if (cmd.Equals("set start"))
             {
@@ -1001,6 +1029,44 @@ namespace Cloudless
             if (matchInt.HasValue)
             {
                 SwapViewToPage((int)matchInt);
+                return true;
+            }
+
+            if (cmd.Equals("pn") || cmd.Equals("pp") || cmd.Equals("pna") || cmd.Equals("ppa"))
+            {
+                int currentPageIndex = GetCurrentPageIndex();
+
+                if (cmd.Equals("pn"))
+                    SwapViewToPage(currentPageIndex + 1 == 9 ? 1 : currentPageIndex + 1);
+                else if (cmd.Equals("pp"))
+                    SwapViewToPage(currentPageIndex - 1 == 0 ? 8 : currentPageIndex - 1);
+                else if (cmd.Equals("pna"))
+                {
+                    var activePages = GetNonemptyPages();
+                    int nextActivePage = 0;
+                    nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;  // lowest int above current
+                    if (nextActivePage == 0)
+                        nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;  // lowest int below current
+
+                    if (nextActivePage != 0)
+                        SwapViewToPage(nextActivePage);
+                    else
+                        Message("There are no other active pages.");
+                }
+                else if (cmd.Equals("ppa"))
+                {
+                    var activePages = GetNonemptyPages();
+                    int prevActivePage = 0;
+                    prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;  // highest int below current
+                    if (prevActivePage == 0)
+                        prevActivePage = activePages?.Order().LastOrDefault() ?? 0;  // highest int above current
+
+                    if (prevActivePage != 0)
+                        SwapViewToPage(prevActivePage);
+                    else
+                        Message("There are no other active pages.");
+                }
+
                 return true;
             }
 
