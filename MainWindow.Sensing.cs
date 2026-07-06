@@ -39,6 +39,14 @@ namespace Cloudless
 
             CloseQuickCommandWindow();
 
+            // Route to selection mode if active
+            if (isDrawingSelection)
+            {
+                Point windowPoint = e.GetPosition(this);
+                SelectionMode_MouseDown(windowPoint);
+                return;
+            }
+
             if (e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1)
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control || MouseControlMode)
@@ -77,6 +85,14 @@ namespace Cloudless
         // MouseMove: Handle Dragging with Axis Constraining
         private async void Window_MouseMove(object sender, MouseEventArgs e)
         {
+            // Route to selection mode if active
+            if (isDrawingSelection)
+            {
+                Point windowPoint = e.GetPosition(this);
+                SelectionMode_MouseMove(windowPoint);
+                return;
+            }
+
             if (isPanningImage)
             {
                 if (!isExplorationMode) EnterExplorationMode();
@@ -136,6 +152,14 @@ namespace Cloudless
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            // Route to selection mode if active
+            if (isDrawingSelection && e.LeftButton == MouseButtonState.Released)
+            {
+                Point windowPoint = e.GetPosition(this);
+                await SelectionMode_MouseUp(windowPoint);
+                return;
+            }
+
             if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Released)
             {
                 await MiddleClickUp();
@@ -210,9 +234,14 @@ namespace Cloudless
                 return;
             }
 
+
             if (key == Key.Escape)
             {
-                if (WindowState == WindowState.Maximized)
+                if (isDrawingSelection)
+                {
+                    ExitSelectionMode();
+                }
+                else if (WindowState == WindowState.Maximized)
                 {
                     WindowStyle = WindowStyle.None;
                     WindowState = WindowState.Normal;
@@ -472,8 +501,16 @@ namespace Cloudless
 
             if (key == Key.Q)
             {
-                if (WindowState != WindowState.Maximized)
+                if (control)
+                {
+                    // Ctrl+Q: Enter selection mode for crop-to-selection
+                    await EnterSelectionMode();
+                }
+                else if (WindowState != WindowState.Maximized)
+                {
+                    // Q: Toggle crop mode
                     await ToggleCropMode();
+                }
                 return;
             }
 
