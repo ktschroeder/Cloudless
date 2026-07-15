@@ -668,7 +668,7 @@ namespace Cloudless
             {
                 if (state.PageIndex == startingPageIndex)
                 {
-                    if (state.IsMinimized)
+                    if (state.IsMinimized && state.WindowWasMinimizedPriorToHidingForPage)
                         MinimizeWindow(state);
                 }
                 else
