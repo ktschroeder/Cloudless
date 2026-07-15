@@ -1,6 +1,8 @@
 using Cloudless.Properties;
 using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -214,7 +216,15 @@ namespace Cloudless
                 else
                 {
                     string ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
-                    bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+
+                    var typesInNamespace = Assembly.GetExecutingAssembly().GetTypes()
+                        .Where(t => t.IsClass && t.Namespace == "Cloudless.FileTypes").ToList();
+
+                    // TODO
+
+                    //FileType? fileType = FileTypeManager.GetFileTypes().FirstOrDefault(ft => ft.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase));
+
+                    bool isVideo = false;// fileType?.IsVideo ?? (ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov");
 
                     if (isVideo)
                     {

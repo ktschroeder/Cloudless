@@ -92,10 +92,8 @@ namespace Cloudless
                         if (token.IsCancellationRequested) return;
 
                         string ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
-                        if (ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov")
-                            return;
-
-                        if (!(ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif" || ext == ".webp" || ext == ".jfif"))
+                        FileType? type = FileTypeManager.GetFileTypeByExtension(ext);
+                        if (type == null || type.IsVideo) 
                             return;
 
                         // Read bytes on threadpool

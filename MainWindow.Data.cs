@@ -31,8 +31,8 @@ namespace Cloudless
 
             try
             {
-                string filter = "Image files (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.webp, *.jfif, *.webm, *.mkv, *.mp4)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.jfif;*.webm;*.mkv;*.mp4";
-                
+                string filter = "Image files (" + string.Join(", ", supportedFileTypes.Select(ft => "*" + ft)) + ")|" + string.Join(";", supportedFileTypes.Select(ft => "*" + ft));
+
                 OpenFileDialog openFileDialog = new OpenFileDialog
                 {
                     Filter = filter
@@ -122,13 +122,13 @@ namespace Cloudless
         }
         private void LoadImagesInDirectory(string directoryPath, bool permitLargeCount = false)
         {
-            string[] imageExtensions = { ".JPG", ".JPEG", ".PNG", ".BMP", ".GIF", ".WEBP", ".JFIF" };  // TODO move this and similar lists to a consistent source
+            string[] imageExtensions = supportedFileTypes.ToArray();
             try
             {
                 DirectoryInfo di = new DirectoryInfo(directoryPath);
                 // Get all files, filter them in-memory, and select their full names
                 var files = di.GetFiles()
-                              .Where(f => imageExtensions.Contains(f.Extension.ToUpperInvariant()))
+                              .Where(f => imageExtensions.Contains(f.Extension.ToLowerInvariant()))
                               .Select(f => f.FullName)
                               .ToList();
 
@@ -160,16 +160,7 @@ namespace Cloudless
 
                 currentDirectory = Path.GetDirectoryName(selectedImagePath) ?? "";
                 var retrievedImageFiles = Directory.GetFiles(currentDirectory, "*.*")
-                                      .Where(s => s.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".webm", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) ||
-                                                 s.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
+                                      .Where(s => supportedFileTypes.Contains(Path.GetExtension(s)));
                 imageFiles = retrievedImageFiles.ToArray();
 
                 SortImageFilesArray();
@@ -584,7 +575,7 @@ namespace Cloudless
         {
             return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
         }
-        public List<string> supportedFileTypes = new() { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".jfif", ".webm", ".mkv", ".mp4" };
+        public List<string> supportedFileTypes = FileTypeManager.GetFileTypes().Select(ft => "." + ft.Extension.ToLower()).ToList();
         private bool IsSupportedImageFile(string filePath)
         {
             string? extension = Path.GetExtension(filePath)?.ToLower();
