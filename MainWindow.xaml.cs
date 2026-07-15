@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.10.1.1";
+        public const string CURRENT_VERSION = "0.10.1.2";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = true;
 
@@ -128,7 +128,7 @@ namespace Cloudless
             ResizeWindow(windowW, windowH);
             CenterWindowForStartup();  // maybe redundant call. at some point look for other redundant calls to improve cleanliness/performance
         }
-        public MainWindow(string? filePath, bool startUp = false)
+        public MainWindow(string? filePath, bool startUp = false, bool workspaceLoad = false)
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
             initialImageToLoad = filePath;

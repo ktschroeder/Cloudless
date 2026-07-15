@@ -139,9 +139,11 @@ namespace Cloudless
                 }
                 foreach (string file in files)
                 {
-                    var newWindow = new MainWindow(file);
+                    var newWindow = new MainWindow(file, workspaceLoad: true);
                     newWindow.Show();
                 }
+
+                ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
             }
             catch (Exception ex)
             {

@@ -47,7 +47,7 @@ namespace Cloudless.VlcPlugin
                         string hostLibVlcPath = Path.Combine(hostBase, "libvlc", ridFolder);
                         string pluginArg = $"--plugin-path={hostLibVlcPath}";
 
-                        var lib = new LibVLC(new[] { pluginArg, "--no-video-title-show", "--no-osd" });
+                        var lib = new LibVLC(new[] { pluginArg, "--no-video-title-show", "--no-osd", "--aout=directsound" });  // without --aout=directsound, mute/unmute/volume are always global across all windows
                         //var lib = new LibVLC(new[] { pluginArg, "--no-video-title-show", "--no-osd", "--no-audio" });
 
                         lock (_sync)

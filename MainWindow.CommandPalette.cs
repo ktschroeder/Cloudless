@@ -938,6 +938,7 @@ namespace Cloudless
                     double volume = videoPlayer.GetVolume();
                     Message($"Current volume: {(int)Math.Round(volume)}/100");
                 }
+                return true;
             }
 
             if (cmd.StartsWith("volume "))
