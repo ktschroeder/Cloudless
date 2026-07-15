@@ -523,5 +523,80 @@ namespace Cloudless.VlcPlugin
                 Console.WriteLine($"SeekFineBackward error: {ex.Message}");
             }
         }
+
+        public void Mute()
+        {
+            if (_mediaPlayer == null)
+                return;
+            try
+            {
+                _mediaPlayer.Mute = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Mute error: {ex.Message}");
+            }
+        }
+
+        public void Unmute ()
+        {
+            if (_mediaPlayer == null)
+                return;
+            try
+            {
+                _mediaPlayer.Mute = false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unmute error: {ex.Message}");
+            }
+        }
+
+        public bool IsMuted()
+        {
+            if (_mediaPlayer == null)
+                return false;
+            try
+            {
+                return _mediaPlayer.Mute;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"IsMuted error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public void SetVolume(double volume)
+        {
+            if (_mediaPlayer == null)
+                return;
+            try
+            {
+                // VLC volume is 0-100, so clamp and convert
+                int vol = (int)Math.Round(Math.Max(0, Math.Min(100, volume)));
+                _mediaPlayer.Volume = vol;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SetVolume error: {ex.Message}");
+            }
+        }
+
+        public double GetVolume()
+        {
+            if (_mediaPlayer == null)
+                return 0.0;
+            try
+            {
+                return _mediaPlayer.Volume;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetVolume error: {ex.Message}");
+                return 0.0;
+            }
+        }
+
     }
 }

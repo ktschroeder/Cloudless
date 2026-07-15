@@ -1,4 +1,5 @@
 ﻿using AnimatedImage.Wpf;
+using Cloudless.PluginBase;
 using Microsoft.Win32;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -1222,6 +1223,64 @@ namespace Cloudless
                 return null;
             }
             return null;
+        }
+
+        public async void ToggleMute(bool? setTo = null)
+        {
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+            {
+                Message("No file currently displayed");
+                return;
+            }
+
+            try
+            {
+                var plugins = PluginManager.GetPlugins();
+                var plugin = plugins.FirstOrDefault(p => p.SupportsFileTypes.Any(ft => currentlyDisplayedImagePath.EndsWith(ft, StringComparison.OrdinalIgnoreCase)));
+
+                if (plugin != null)
+                {
+                    var videoPlayer = VideoHost.Content as IVideoPlayer;
+                    if (videoPlayer != null)
+                    {
+                        bool isMuted = videoPlayer.IsMuted();
+
+                        if (isMuted && setTo.HasValue && setTo.Value)
+                        {
+                            Message("Audio is already muted");
+                            return;
+                        }
+                        else if (!isMuted && setTo.HasValue && !setTo.Value)
+                        {
+                            Message("Audio is already unmuted");
+                            return;
+                        }
+
+                        if (isMuted)
+                        {
+                            videoPlayer.Unmute();
+                            Message("Audio unmuted");
+                        }
+                        else
+                        {
+                            videoPlayer.Mute();
+                            Message("Audio muted");
+                        }
+                    }
+                    else
+                    {
+                        Message("Current file does not support audio control");
+                    }
+                }
+                else
+                {
+                    Message("No plugin found for current file type");
+                }   
+            }
+            catch (Exception ex)
+            {
+                Message($"Error toggling mute: {ex.Message}");
+            }
         }
     }
 

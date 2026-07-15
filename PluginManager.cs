@@ -25,7 +25,7 @@ namespace Cloudless
             }
         }
 
-        private static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
+        public static IEnumerable<IPlugin> GetPlugins()  // TODO make useful
         {
             if (MainWindow.LOCAL_DEV)
             {

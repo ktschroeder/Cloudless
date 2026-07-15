@@ -912,6 +912,59 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("mute"))
+            {
+                ToggleMute(setTo: true);
+                return true;
+            }
+
+            if (cmd.Equals("unmute"))
+            {
+                ToggleMute(setTo: false);
+                return true;
+            }
+
+            if (cmd.Equals("unmute"))
+            {
+                ToggleMute(setTo: false);
+                return true;
+            }
+
+            if (cmd.Equals("volume"))
+            {
+                var videoPlayer = VideoHost.Content as IVideoPlayer;
+                if (videoPlayer != null)
+                {
+                    double volume = videoPlayer.GetVolume();
+                    Message($"Current volume: {(int)Math.Round(volume)}/100");
+                }
+            }
+
+            if (cmd.StartsWith("volume "))
+            {
+                string volumeStr = cmd.Substring(7).Trim();
+                if (!double.TryParse(volumeStr, out _))
+                {
+                    Message("Invalid volume value. Provide a number between 0 and 100.");
+                    return true;
+                }
+
+                int volume = (int)Math.Round(double.Parse(volumeStr));
+                if (volume < 0 || volume > 100)
+                {
+                    Message("Volume must be from 0 to 100.");
+                    return true;
+                }
+
+                var videoPlayer = VideoHost.Content as IVideoPlayer;
+                if (videoPlayer != null)
+                {
+                    videoPlayer.SetVolume(volume);
+                    Message($"Set volume to: {volume}/100");
+                    return true;
+                }
+            }
+
             if (cmd.Equals("ris"))  // reverse image search
             {
                 await ReverseImageSearch(currentlyDisplayedImagePath, "g");

@@ -40,6 +40,15 @@ namespace Cloudless.PluginBase
         /// Seek backward by a finer granularity, such as by a single frame.
         /// </summary>
         void SeekFineBackward();
+
+        void Mute();
+
+        void Unmute();
+
+        bool IsMuted();
+
+        void SetVolume(double volume);
+        double GetVolume();
     }
 
 }

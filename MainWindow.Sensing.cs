@@ -516,13 +516,17 @@ namespace Cloudless
 
             if (key == Key.M)
             {
-                if (control)
+                if (control && shift)
                 {
                     OpenMessageHistory();
                 }
-                else
+                else if (control)
                 {
                     MinimizeWindow();
+                }
+                else
+                {
+                    ToggleMute();
                 }
 
                 return;
