@@ -57,25 +57,23 @@ public class OverlayMessageManager
         Cloudless.Properties.Settings.Default.Save();
     }
 
-    public void ShowOverlayMessage(string message, TimeSpan duration)
+    public void ShowOverlayMessage(string message, TimeSpan duration, bool mute)
     {
         string timestampedMessage = $"{DateTime.Now:HH:mm:ss} - {message}";
         messageHistory.Add(timestampedMessage);
         MessageAdded?.Invoke(timestampedMessage);
 
-        bool mute = Cloudless.Properties.Settings.Default.MuteMessages;
-
+        WriteToMessageHistory(message);
 
         if (mute)
         {
             return;
         }
 
-        // Add the message to the queue
+        // Add the message to the queue to be displayed
         OverlayMessage overlayMessage = new() { Text = message, Duration = duration };
         _messageQueue.Enqueue(overlayMessage);
-        WriteToMessageHistory(message);
-
+        
         // Process the queue if not already active
         if (_activeMessages.Count == 0)
             DisplayNextMessage();

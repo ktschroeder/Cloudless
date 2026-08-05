@@ -665,11 +665,11 @@ namespace Cloudless
                     }
                 }
                 catch { }
-
-
             }
 
-            overlayManager?.ShowOverlayMessage(message, (TimeSpan)duration);
+            bool mute = Cloudless.Properties.Settings.Default.MuteMessages || windowPageIndex != GetCurrentPageIndex();
+
+            overlayManager?.ShowOverlayMessage(message, (TimeSpan)duration, mute);
         }
 
         private void ShowLoadingOverlay(string text1 = "Loading...", string text2 = "")
