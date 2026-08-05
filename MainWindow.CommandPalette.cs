@@ -189,8 +189,7 @@ namespace Cloudless
                          query = _tb_for_query.Text.Length == commandBase.Length ? "" : _tb_for_query.Text.Substring(commandBase.Length);
                     var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
                     wsNames ??= new List<string>();
-                    wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
-                    wsNames = wsNames.Where(ws => ws.ToLower().StartsWith(query.ToLower())).ToList();
+                    wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws) && ws.ToLower().Contains(query.ToLower())).Order().ToList();
                     AutocompleteCandidates.Clear();
                     foreach (var wsName in wsNames)
                     {
