@@ -319,7 +319,11 @@ namespace Cloudless
 
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {
-                            
+                            if (Cloudless.Properties.Settings.Default.StartVideosMuted)
+                            {
+                                player.Mute();
+                            }
+
                             Task postPlayTask = new Task(async () =>  // sync, to do an elegant concurrency dance with the below play method
                             {
                                 try

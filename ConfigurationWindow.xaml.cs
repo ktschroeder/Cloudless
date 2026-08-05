@@ -31,6 +31,7 @@ namespace Cloudless
         public bool ComicModeMouseControlScroll { get; private set; }
         public bool FilmStripCloseAfterward { get; private set; }
         public bool FilmStripOpenImageInNewWindow { get; private set; }
+        public bool StartVideosMuted { get; private set; }
 
         private MainWindow _mw;
 
@@ -107,6 +108,10 @@ namespace Cloudless
             var currentFilmStripOpenImageInNewWindow = Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow;
             FilmStripOpenImageInNewWindowCheckbox.IsChecked = currentFilmStripOpenImageInNewWindow;
             FilmStripOpenImageInNewWindow = currentFilmStripOpenImageInNewWindow;
+
+            var currentStartVideosMuted = Cloudless.Properties.Settings.Default.StartVideosMuted;
+            StartVideosMutedCheckbox.IsChecked = currentStartVideosMuted;
+            StartVideosMuted = currentStartVideosMuted;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -217,6 +222,7 @@ namespace Cloudless
             ComicModeMouseControlScroll = ComicModeMouseControlScrollCheckbox.IsChecked ?? false;
             FilmStripCloseAfterward = FilmStripCloseAfterwardCheckbox.IsChecked ?? false;
             FilmStripOpenImageInNewWindow = FilmStripOpenImageInNewWindowCheckbox.IsChecked ?? false;
+            StartVideosMuted = StartVideosMutedCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

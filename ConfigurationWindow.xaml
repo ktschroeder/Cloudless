@@ -46,6 +46,8 @@ Margin="0,2"/>
 
                                 <CheckBox x:Name="LoopGifsCheckbox" Content="Loop GIFs" Margin="0,2"/>
 
+                                <CheckBox x:Name="StartVideosMutedCheckbox" Content="Start videos muted by default" Margin="0,2"/>
+
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,4,0,6">
                                     <TextBlock Text="Max size (MBs) when compressed copying image (CTRL ALT C):" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryForeground}"/>
                                     <TextBox x:Name="MaxCompressedCopySizeMBTextBox" Width="50" Margin="10,0,0,0" VerticalAlignment="Center"/>

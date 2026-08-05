@@ -63,6 +63,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll = configWindow.ComicModeMouseControlScroll;
                 Cloudless.Properties.Settings.Default.FilmStripCloseAfterward = configWindow.FilmStripCloseAfterward;             //
                 Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow = configWindow.FilmStripOpenImageInNewWindow; //
+                Cloudless.Properties.Settings.Default.StartVideosMuted = configWindow.StartVideosMuted;
                 Cloudless.Properties.Settings.Default["Theme"] = configWindow.SelectedTheme ?? "Light";
 
                 Cloudless.Properties.Settings.Default.Save();
