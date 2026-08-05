@@ -70,6 +70,10 @@ namespace Cloudless
         public int WorkspaceLoadZOrder;
         public string? imageOriginalWorkspaceName;
 
+        // Video playback state (retained across video loads in this window)
+        private bool _windowVideoIsMuted = false;
+        private double _windowVideoVolume = 100;
+
         private OverlayMessageManager? overlayManager;
         private OverlayMessageWindow? overlayWindow;
         private HwndSource? _hwndSource;

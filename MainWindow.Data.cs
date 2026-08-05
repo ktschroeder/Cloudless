@@ -319,10 +319,26 @@ namespace Cloudless
 
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {
-                            if (Cloudless.Properties.Settings.Default.StartVideosMuted)
+                            // Apply mute/volume state:
+                            // 1. If this is first video load (e.g., from workspace or StartVideosMuted setting), apply that
+                            // 2. Otherwise, retained window state applies (for navigating between videos in same window)
+                            bool shouldMute = Cloudless.Properties.Settings.Default.StartVideosMuted || this._windowVideoIsMuted;
+
+                            if (shouldMute)
                             {
                                 player.Mute();
                             }
+                            else
+                            {
+                                player.Unmute();
+                            }
+
+                            // Apply retained volume level
+                            try
+                            {
+                                player.SetVolume(this._windowVideoVolume);
+                            }
+                            catch { }
 
                             Task postPlayTask = new Task(async () =>  // sync, to do an elegant concurrency dance with the below play method
                             {
@@ -1257,11 +1273,13 @@ namespace Cloudless
                         {
                             videoPlayer.Unmute();
                             Message("Audio unmuted");
+                            this._windowVideoIsMuted = false;
                         }
                         else
                         {
                             videoPlayer.Mute();
                             Message("Audio muted");
+                            this._windowVideoIsMuted = true;
                         }
                     }
                     else

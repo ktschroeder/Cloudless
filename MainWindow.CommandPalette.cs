@@ -961,6 +961,7 @@ namespace Cloudless
                 if (videoPlayer != null)
                 {
                     videoPlayer.SetVolume(volume);
+                    this._windowVideoVolume = volume;
                     Message($"Set volume to: {volume}/100");
                     return true;
                 }

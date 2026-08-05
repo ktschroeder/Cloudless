@@ -79,15 +79,13 @@ namespace Cloudless
                 MonitorHeight = monitorHeight
             };
 
-            // Persist video loop start/end if set for this window
-            try
-            {
-                if (this._videoLoopStart.HasValue)
-                    state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
-                if (this._videoLoopEnd.HasValue)
-                    state.LoopEndMs = this._videoLoopEnd.Value.TotalMilliseconds;
-            }
-            catch { }
+            if (this._videoLoopStart.HasValue)
+                state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
+            if (this._videoLoopEnd.HasValue)
+                state.LoopEndMs = this._videoLoopEnd.Value.TotalMilliseconds;
+            
+            state.IsMuted = this._windowVideoIsMuted;
+            state.Volume = this._windowVideoVolume;
 
             return state;
         }
@@ -656,6 +654,38 @@ namespace Cloudless
                 Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
             }
 
+            // Apply any saved video playback state (mute and volume)
+            try
+            {
+                if (state.IsMuted.HasValue || state.Volume.HasValue)
+                {
+                    // Restore mute and volume state from workspace
+                    if (state.IsMuted.HasValue)
+                        this._windowVideoIsMuted = state.IsMuted.Value;
+                    if (state.Volume.HasValue)
+                        this._windowVideoVolume = state.Volume.Value;
+
+                    // If video player is already loaded, apply state immediately
+                    if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer vp2)
+                    {
+                        if (state.IsMuted.HasValue)
+                        {
+                            if (state.IsMuted.Value)
+                                vp2.Mute();
+                            else
+                                vp2.Unmute();
+                        }
+                        if (state.Volume.HasValue)
+                            vp2.SetVolume(state.Volume.Value);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Non-fatal: video may not be loaded yet or plugin may not support these operations
+                Console.WriteLine($"Failed to apply saved video state: {ex.Message}");
+            }
+
             ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workstation from File Explrorer
             Activate();
             ShowInTaskbar = true;
@@ -706,6 +736,38 @@ namespace Cloudless
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
+                }
+
+                // Apply any saved video playback state (mute and volume)
+                try
+                {
+                    if (state.IsMuted.HasValue || state.Volume.HasValue)
+                    {
+                        // Restore mute and volume state from workspace
+                        if (state.IsMuted.HasValue)
+                            this._windowVideoIsMuted = state.IsMuted.Value;
+                        if (state.Volume.HasValue)
+                            this._windowVideoVolume = state.Volume.Value;
+
+                        // If video player is already loaded, apply state immediately
+                        if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer vp2)
+                        {
+                            if (state.IsMuted.HasValue)
+                            {
+                                if (state.IsMuted.Value)
+                                    vp2.Mute();
+                                else
+                                    vp2.Unmute();
+                            }
+                            if (state.Volume.HasValue)
+                                vp2.SetVolume(state.Volume.Value);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Non-fatal: video may not be loaded yet or plugin may not support these operations
+                    Console.WriteLine($"Failed to apply saved video state: {ex.Message}");
                 }
 
                 ShowInTaskbar = false;
@@ -1090,7 +1152,7 @@ namespace Cloudless
 
     public class CloudlessWorkspace
     {
-        public int SchemaVersion { get; set; } = 5;
+        public int SchemaVersion { get; set; } = 6;
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
         public string? WorkspaceName { get; set; }
         public int CurrentPageIndex { get; set; } = 1;
@@ -1117,6 +1179,9 @@ namespace Cloudless
         // Optional video loop bounds in milliseconds. Null indicates no custom bound saved in workspace.
         public double? LoopStartMs { get; set; }
         public double? LoopEndMs { get; set; }
+
+        public bool? IsMuted { get; set; }
+        public double? Volume { get; set; }
 
         // Optional but useful
         public bool IsMaximized { get; set; }
