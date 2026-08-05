@@ -28,8 +28,8 @@ namespace Cloudless
 
             double? monitorLeft = null, monitorTop = null, monitorWidth = null, monitorHeight = null;
 
-            Rect windowBounds = this.WindowState == System.Windows.WindowState.Maximized 
-                ? this.RestoreBounds 
+            Rect windowBounds = this.WindowState == System.Windows.WindowState.Maximized
+                ? this.RestoreBounds
                 : new Rect(this.Left, this.Top, this.Width, this.Height);
 
             // Get DPI scaling factor to convert WPF DIPs to device pixels
@@ -42,7 +42,7 @@ namespace Cloudless
             double centerY = (windowBounds.Top + windowBounds.Height / 2) * dpiScaling;
             POINT pt = new POINT { X = (int)centerX, Y = (int)centerY };
             IntPtr hMonitor = MonitorFromPoint(pt, 2);
-                
+
             MONITORINFO mi = new MONITORINFO();
             mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
             if (GetMonitorInfo(hMonitor, ref mi))
@@ -83,7 +83,7 @@ namespace Cloudless
                 state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
             if (this._videoLoopEnd.HasValue)
                 state.LoopEndMs = this._videoLoopEnd.Value.TotalMilliseconds;
-            
+
             state.IsMuted = this._windowVideoIsMuted;
             state.Volume = this._windowVideoVolume;
 
@@ -391,13 +391,13 @@ namespace Cloudless
         public async Task<bool> LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
             WorkspaceLoadingWindow? loadingWindow = null;
-            
+
             try
             {
                 // Show loading window
                 loadingWindow = new WorkspaceLoadingWindow();
                 loadingWindow.Show();
-                
+
                 // Allow the window to render
                 await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             }
@@ -485,7 +485,7 @@ namespace Cloudless
             var window = new MainWindow(state.ImagePath, state.Width, state.Height, workspaceLoad: true);
             window.WorkspaceLoadInProgress = true;
             window.WorkspaceLoadZOrder = state.ZOrder;
-            
+
             // Pre-position the window before showing it to the target monitor
             // This prevents WPF from defaulting to the primary monitor
             if (state.MonitorLeft.HasValue && state.MonitorTop.HasValue)
@@ -498,7 +498,7 @@ namespace Cloudless
                 window.Left = state.Left;
                 window.Top = state.Top;
             }
-            
+
             await window.LoadImage(state.ImagePath, false);
             if (!state.IsMaximized)  // maximized windows deferred till later to help finding proper display
                 await window.ApplyWindowState(state);
@@ -509,7 +509,7 @@ namespace Cloudless
         {
             var zOrderedWindows = workspace.CloudlessWindows.OrderByDescending(w => w.ZOrder).ToList();
             List<(MainWindow, CloudlessWindowState)> createdWindowsWithStates = new List<(MainWindow, CloudlessWindowState)>();
-            
+
             foreach (var state in zOrderedWindows)
             {
                 var window = await CreateWindowForWorkspace(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
@@ -521,19 +521,19 @@ namespace Cloudless
             {
                 window.Show();
             }
-            
+
             foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
             {
                 if (state.IsMaximized)
                     await window.ApplyWindowState(state);
             }
-            
+
             // Activate in reverse z-order (highest z-order last, so it ends up on top)
             foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
             {
                 window.Activate();
             }
-            
+
             // Defer expensive operations to background without blocking
             _ = Task.Run(async () =>
             {
@@ -932,7 +932,7 @@ namespace Cloudless
             this.Show();
             this.ShowInTaskbar = true;
 
-            this.WindowState = windowWasMinimizedPriorToHidingForPage ? WindowState.Minimized 
+            this.WindowState = windowWasMinimizedPriorToHidingForPage ? WindowState.Minimized
                 : windowWasMaximizedPriorToHidingForPage ? WindowState.Maximized
                 : WindowState.Normal;
 
@@ -961,7 +961,9 @@ namespace Cloudless
                 Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
                 return;
             }
-            
+
+            SlideshowManager.Stop();
+
             int currentPageIndex = GetCurrentPageIndex();
             if (currentPageIndex == pageIndex)
             {
@@ -1001,6 +1003,8 @@ namespace Cloudless
                 return;
             }
 
+            SlideshowManager.Stop();
+
             int currentPageIndex = GetCurrentPageIndex();
             if (currentPageIndex == pageIndex)
             {
@@ -1019,7 +1023,7 @@ namespace Cloudless
             }
         }
 
-        public void SwapViewToPage(int pageIndex, bool skipHide = false)
+        public void SwapViewToPage(int pageIndex, bool skipHide = false, bool fromSlideshow = false)
         {
             if (pageIndex < 1 || pageIndex > 8)
             {
@@ -1027,10 +1031,17 @@ namespace Cloudless
                 return;
             }
 
-            int currentPageIndex = GetCurrentPageIndex();
-            if (currentPageIndex == pageIndex && !skipHide && !WorkspaceLoadInProgress )
+            // Stop slideshow if not initiated by slideshow itself
+            if (!fromSlideshow)
             {
-                Message($"Already on page {pageIndex}.");
+                SlideshowManager.Stop();
+            }
+
+            int currentPageIndex = GetCurrentPageIndex();
+            if (currentPageIndex == pageIndex && !skipHide && !WorkspaceLoadInProgress)
+            {
+                if (!fromSlideshow)
+                    Message($"Already on page {pageIndex}.");
                 return;
             }
 
@@ -1047,7 +1058,7 @@ namespace Cloudless
                     w.HideWindowForPages();
                 }
             }
-            
+
             // unminimize all windows on the new page, and show them in taskbar and alt-tab
             var windowsToReveal = Application.Current.Windows
                 .OfType<MainWindow>()
@@ -1084,6 +1095,8 @@ namespace Cloudless
                 Message($"Cannot swap page {p1} with itself.");
                 return;
             }
+
+            SlideshowManager.Stop();
 
             var p1Windows = Application.Current.Windows
                 .OfType<MainWindow>()
@@ -1129,6 +1142,9 @@ namespace Cloudless
                 Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
                 return;
             }
+
+            SlideshowManager.Stop();
+
             var windowsToClose = Application.Current.Windows
                 .OfType<MainWindow>()
                 .Where(w => w.windowPageIndex == pageIndex)
@@ -1154,6 +1170,8 @@ namespace Cloudless
 
         public void FlattenPages(int targetPage = 1)
         {
+            SlideshowManager.Stop();
+
             var windows = Application.Current.Windows
                 .OfType<MainWindow>()
                 .Where(w => !string.IsNullOrEmpty(w.currentlyDisplayedImagePath) && w.windowPageIndex != targetPage)

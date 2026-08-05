@@ -119,6 +119,9 @@ namespace Cloudless
         #region Setup
         public MainWindow(string filePath, double windowW, double windowH, bool workspaceLoad = false)
         {
+            // Stop any running slideshow when a new window is created
+            SlideshowManager.Stop();
+
             initialImageToLoad = filePath;
             Setup(workspaceLoad);
 
@@ -138,6 +141,9 @@ namespace Cloudless
         public MainWindow(string? filePath, bool startUp = false, bool workspaceLoad = false)
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
+            // Stop any running slideshow when a new window is created
+            SlideshowManager.Stop();
+
             initialImageToLoad = filePath;
             GlobalStartup = startUp;
             Setup();
@@ -162,6 +168,13 @@ namespace Cloudless
         }
         private void OnClose()
         {
+            // Unsubscribe from slideshow events
+            SlideshowManager.SlideshowStarted -= OnSlideshowStarted;
+            SlideshowManager.SlideshowStopped -= OnSlideshowStopped;
+
+            // Stop any running slideshow when a window is closed
+            SlideshowManager.Stop();
+
             _filmStripWindow?.Close();
             _commandPaletteWindow?.Close();
             overlayWindow?.Close();
@@ -341,6 +354,24 @@ namespace Cloudless
             System.GC.Collect();
             System.GC.WaitForPendingFinalizers();
         }
+
+        /// <summary>
+        /// Called when slideshow is started globally (from any window).
+        /// </summary>
+        private void OnSlideshowStarted()
+        {
+            // Message will be shown by the window that initiated it via StartSlideshow
+        }
+
+        /// <summary>
+        /// Called when slideshow is stopped globally (from any window).
+        /// Displays a message on all windows informing them the slideshow has stopped.
+        /// </summary>
+        private void OnSlideshowStopped()
+        {
+            Message("Slideshow stopped");
+        }
+
         private void Setup(bool workspaceLoad = false)
         {
             InitializeComponent();
@@ -351,8 +382,10 @@ namespace Cloudless
 
             Closing += (sender, e) => OnClose();
 
+            // Subscribe to global slideshow events to message this window when slideshow state changes
+            SlideshowManager.SlideshowStarted += OnSlideshowStarted;
+            SlideshowManager.SlideshowStopped += OnSlideshowStopped;
 
-            
             windowPageIndex = GetCurrentPageIndex();
 
             isExplorationMode = false;

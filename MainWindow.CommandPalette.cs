@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Path = System.IO.Path;
 
 
@@ -1190,6 +1191,28 @@ namespace Cloudless
                 return true;
             }
 
+            // Slideshow commands: "ss [time]", "ss stop", "slideshow [time]", "slideshow stop"
+            if (cmd.Equals("ss stop") || cmd.Equals("slideshow stop"))
+            {
+                SlideshowManager.Stop();
+                return true;
+            }
+
+            if (cmd.StartsWith("ss ") || cmd.StartsWith("slideshow "))
+            {
+                string timeStr = cmd.StartsWith("ss ") ? cmd.Substring(3).Trim() : cmd.Substring(10).Trim();
+                if (double.TryParse(timeStr, out double seconds) && seconds > 0)
+                {
+                    StartSlideshow(seconds);
+                    return true;
+                }
+                else
+                {
+                    Message("Invalid time format. Use a positive number (e.g., 'ss 5' for 5 seconds).");
+                    return false;
+                }
+            }
+
             int targetIndex;
             if (cmd.StartsWith("+") || cmd.StartsWith("-"))
             {
@@ -1682,6 +1705,59 @@ namespace Cloudless
             }
         }
 
+        private void StartSlideshow(double intervalSeconds)
+        {
+            SlideshowManager.Stop();
 
+            var activePages = GetNonemptyPages();
+            if (activePages.Count == 0)
+            {
+                Message("Cannot start slideshow: no active pages");
+                return;
+            }
+
+            // Find starting page: current page if active, otherwise the next active page
+            int currentPageIndex = GetCurrentPageIndex();
+            int startPageIndex = activePages.Contains(currentPageIndex) ? currentPageIndex : activePages[0];
+            int startingPageIndex = activePages.IndexOf(startPageIndex);
+
+            // Initialize global slideshow and pass the tick handler
+            SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick);
+
+            Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)");
+        }
+
+        /// <summary>
+        /// Called by SlideshowManager on each timer tick to advance to the next page.
+        /// </summary>
+        private void SlideshowTick()
+        {
+            var pages = SlideshowManager.CurrentPages;
+            if (pages == null || pages.Count == 0)
+                return;
+
+            // Get the next page to display
+            // We need to calculate which page is next - SlideshowManager manages the index internally
+            // For now, we'll iterate through the active pages
+            var allPages = GetNonemptyPages();
+            if (allPages.Count == 0)
+            {
+                SlideshowManager.Stop();
+                return;
+            }
+
+            // Find current page
+            int currentPageIndex = GetCurrentPageIndex();
+            int currentPos = pages.IndexOf(currentPageIndex);
+            if (currentPos < 0)
+                currentPos = 0;
+
+            // Advance to next
+            int nextPos = (currentPos + 1) % pages.Count;
+            int nextPage = pages[nextPos];
+
+            // Swap to next page (fromSlideshow=true prevents stopping the slideshow)
+            SwapViewToPage(nextPage, skipHide: false, fromSlideshow: true);
+        }
     }
 }
