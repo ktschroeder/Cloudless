@@ -68,6 +68,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("set end", "Set a custom end point for looping, based on the current position. Resets upon loading anything else."),
                     new ReferenceItem("clear start/end", "Clear any custom start/end points for looping"),
                     new ReferenceItem("time", "Reveal current seeking time of video"),
+                    new ReferenceItem("time [time]", "Seek to the specified time in the video. Formats: '90' (seconds), '1:30' (minutes:seconds), '1:30:45' (hours:minutes:seconds), or '1h30m45s'"),
                 }),
                 new ReferenceTab("Workspace", new List<ReferenceItem>
                 {

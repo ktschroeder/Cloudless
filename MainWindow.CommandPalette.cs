@@ -1010,11 +1010,53 @@ namespace Cloudless
                 }   
 
                 var vp = VideoHost.Content as IVideoPlayer;
-                if (vp != null)
+                if (vp == null)
+                {
+                    Message("No video player available");
+                    return true;
+                }
+
+                // If just "time" with no parameter, show current position and duration
+                if (cmd.Equals("time"))
                 {
                     TimeSpan position = vp.GetPosition();
                     TimeSpan duration = vp.GetDuration();
                     Message($"Current position: {position}, Duration: {duration}");
+                    return true;
+                }
+
+                // If "time [time]", parse and seek to that time
+                if (cmd.StartsWith("time ") && cmd.Length > 5)
+                {
+                    string timeStr = cmd.Substring(5).Trim();
+
+                    // Try to parse the time string
+                    TimeSpan? targetTime = TryParseTimeString(timeStr);
+                    if (!targetTime.HasValue)
+                    {
+                        Message($"Could not parse time '{timeStr}'. Use formats like: '90' (seconds), '1:30' (m:s), '1:30:45' (h:m:s), or '1h30m45s'");
+                        return true;
+                    }
+
+                    // Check if time is negative
+                    if (targetTime.Value < TimeSpan.Zero)
+                    {
+                        Message("Time cannot be negative");
+                        return true;
+                    }
+
+                    // Check if time exceeds video duration
+                    TimeSpan duration = vp.GetDuration();
+                    if (duration > TimeSpan.Zero && targetTime.Value > duration)
+                    {
+                        Message($"Seek time {FormatTimeSpan(targetTime.Value)} exceeds video duration of {FormatTimeSpan(duration)}");
+                        return true;
+                    }
+
+                    // Perform the seek
+                    vp.SeekTo(targetTime.Value);
+                    Message($"Seeking to {FormatTimeSpan(targetTime.Value)}");
+                    return true;
                 }
 
                 return true;
@@ -1507,6 +1549,132 @@ namespace Cloudless
             Cloudless.Properties.Settings.Default.Save();
         }
 
-        
+        /// <summary>
+        /// Parses a time string in various formats and returns a TimeSpan.
+        /// Supported formats:
+        /// - "90" or "90s" (seconds)
+        /// - "1:30" (minutes:seconds)
+        /// - "1:30:45" (hours:minutes:seconds)
+        /// - "1h30m45s" (hours, minutes, seconds with labels)
+        /// - "1h30m" (partial format)
+        /// - "30m45s" (without hours)
+        /// Returns null if parsing fails.
+        /// </summary>
+        private TimeSpan? TryParseTimeString(string timeStr)
+        {
+            if (string.IsNullOrWhiteSpace(timeStr))
+                return null;
+
+            timeStr = timeStr.Trim().ToLowerInvariant();
+
+            // Try format with labels: "1h30m45s" or "1h30m" or "30m45s" etc.
+            if (timeStr.Contains("h") || timeStr.Contains("m") || timeStr.Contains("s"))
+            {
+                return TryParseLabeled(timeStr);
+            }
+
+            // Try colon-separated format: "1:30:45" or "1:30"
+            if (timeStr.Contains(":"))
+            {
+                return TryParseColonSeparated(timeStr);
+            }
+
+            // Try plain number (interpret as seconds)
+            if (double.TryParse(timeStr, out double seconds))
+            {
+                return TimeSpan.FromSeconds(seconds);
+            }
+
+            return null;
+        }
+
+        private TimeSpan? TryParseLabeled(string timeStr)
+        {
+            double hours = 0, minutes = 0, seconds = 0;
+            string remaining = timeStr;
+
+            var hMatch = Regex.Match(remaining, @"(\d+(?:\.\d+)?)\s*h");
+            if (hMatch.Success)
+            {
+                hours = double.Parse(hMatch.Groups[1].Value);
+                remaining = remaining.Substring(hMatch.Index + hMatch.Length);
+            }
+
+            var mMatch = Regex.Match(remaining, @"(\d+(?:\.\d+)?)\s*m");
+            if (mMatch.Success)
+            {
+                minutes = double.Parse(mMatch.Groups[1].Value);
+                remaining = remaining.Substring(mMatch.Index + mMatch.Length);
+            }
+
+            var sMatch = Regex.Match(remaining, @"(\d+(?:\.\d+)?)\s*s");
+            if (sMatch.Success)
+            {
+                seconds = double.Parse(sMatch.Groups[1].Value);
+                remaining = remaining.Substring(sMatch.Index + sMatch.Length);
+            }
+
+            // If something was parsed, return the result
+            if (hours > 0 || minutes > 0 || seconds > 0)
+            {
+                return TimeSpan.FromSeconds(hours * 3600 + minutes * 60 + seconds);
+            }
+
+            return null;
+        }
+
+        private TimeSpan? TryParseColonSeparated(string timeStr)
+        {
+            var parts = timeStr.Split(':');
+
+            if (parts.Length == 2)
+            {
+                // MM:SS format
+                if (int.TryParse(parts[0], out int minutes) && int.TryParse(parts[1], out int seconds))
+                {
+                    if (seconds >= 0 && seconds < 60)
+                    {
+                        return TimeSpan.FromSeconds(minutes * 60 + seconds);
+                    }
+                }
+            }
+            else if (parts.Length == 3)
+            {
+                // HH:MM:SS format
+                if (int.TryParse(parts[0], out int hours) && 
+                    int.TryParse(parts[1], out int minutes) && 
+                    int.TryParse(parts[2], out int seconds))
+                {
+                    if (minutes >= 0 && minutes < 60 && seconds >= 0 && seconds < 60)
+                    {
+                        return TimeSpan.FromSeconds(hours * 3600 + minutes * 60 + seconds);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Formats a TimeSpan into a readable string like "1:30:45" or "1:23"
+        /// </summary>
+        private string FormatTimeSpan(TimeSpan ts)
+        {
+            int totalSeconds = (int)ts.TotalSeconds;
+            int hours = totalSeconds / 3600;
+            int minutes = (totalSeconds % 3600) / 60;
+            int seconds = totalSeconds % 60;
+
+            if (hours > 0)
+            {
+                return $"{hours}:{minutes:D2}:{seconds:D2}";
+            }
+            else
+            {
+                return $"{minutes}:{seconds:D2}";
+            }
+        }
+
+
     }
 }
