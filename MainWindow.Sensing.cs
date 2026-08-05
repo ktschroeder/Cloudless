@@ -697,7 +697,7 @@ namespace Cloudless
                     {
                         //if (player.GetDimensions() != null)  // crude check for whether media is loaded and can be played
                         //{
-                            player.Pause();
+                            player.TogglePause();
                         //}
                     }
                 }

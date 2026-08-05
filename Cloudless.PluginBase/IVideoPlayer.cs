@@ -9,7 +9,7 @@ namespace Cloudless.PluginBase
     public interface IVideoPlayer
     {
         Task Play(Uri uri, Task? postPlayTask = null);
-        void Pause();
+        void TogglePause();
         void Stop();
         /// <summary>
         /// Replace the current media source without starting playback.
@@ -46,6 +46,7 @@ namespace Cloudless.PluginBase
         void Unmute();
 
         bool IsMuted();
+        bool IsPaused();
 
         void SetVolume(double volume);
         double GetVolume();

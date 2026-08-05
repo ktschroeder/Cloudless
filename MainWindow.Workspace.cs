@@ -912,6 +912,13 @@ namespace Cloudless
 
         public void HideWindowForPages()
         {
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
+            {
+                _videoPausedBeforeUserChangedPage = player.IsPaused();
+                if (!_videoPausedBeforeUserChangedPage)  // if playing, then pause.
+                    player.TogglePause();
+            }
+
             windowWasMinimizedPriorToHidingForPage = this.WindowState == WindowState.Minimized || windowWasMinimizedPriorToHidingForPage;
             windowWasMaximizedPriorToHidingForPage = this.WindowState == WindowState.Maximized || windowWasMaximizedPriorToHidingForPage;
 
@@ -937,6 +944,14 @@ namespace Cloudless
 
             windowWasMinimizedPriorToHidingForPage = false;
             windowWasMaximizedPriorToHidingForPage = false;
+
+            if (!_videoPausedBeforeUserChangedPage && !string.IsNullOrEmpty(currentlyDisplayedImagePath) && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
+            {
+                if (player.IsPaused())
+                {
+                    player.TogglePause();
+                }
+            }
         }
 
         public void SendWindowToPage(int pageIndex, bool skipHide = false)

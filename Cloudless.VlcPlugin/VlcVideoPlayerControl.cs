@@ -292,7 +292,7 @@ namespace Cloudless.VlcPlugin
             return null;
         }
 
-        public void Pause()
+        public void TogglePause()
         {
             _mediaPlayer?.SetPause(_mediaPlayer.IsPlaying);
         }
@@ -563,6 +563,21 @@ namespace Cloudless.VlcPlugin
             catch (Exception ex)
             {
                 Console.WriteLine($"IsMuted error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool IsPaused()
+        {
+            if (_mediaPlayer == null)
+                return false;
+            try
+            {
+                return !_mediaPlayer.IsPlaying;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"IsPaused error: {ex.Message}");
                 return false;
             }
         }

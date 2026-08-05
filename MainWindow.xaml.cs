@@ -74,6 +74,9 @@ namespace Cloudless
         private bool _windowVideoIsMuted = false;
         private double _windowVideoVolume = 100;
 
+        // Whether the current window's video (if any) was paused at the time that the view is changed to a different page.
+        private bool _videoPausedBeforeUserChangedPage = false;
+
         private OverlayMessageManager? overlayManager;
         private OverlayMessageWindow? overlayWindow;
         private HwndSource? _hwndSource;
