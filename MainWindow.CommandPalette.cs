@@ -1213,6 +1213,13 @@ namespace Cloudless
                 }
             }
 
+            if (cmd.StartsWith("echo ") && cmd.Length > 5)
+            {
+                string echo = cmd.Substring(5).Trim();
+                Message("echo: " + echo);
+                return true;
+            }
+
             int targetIndex;
             if (cmd.StartsWith("+") || cmd.StartsWith("-"))
             {
