@@ -387,7 +387,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("p"))  // load most recently opened image
+            if (cmd.Equals("r"))  // load most recently opened image
             {
                 string? path = recentFiles?.FirstOrDefault();
                 if (path != null)
@@ -763,16 +763,16 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.StartsWith("rec "))
+            if (cmd.StartsWith("r ") && cmd.Length > 2)
             {
-                if (int.TryParse(cmd.Substring(4), out int count) && count > 0)
+                string countStr = cmd.Substring(2).Trim();
+                if (int.TryParse(countStr, out int count) && count > 0)
                 {
                     var paths = recentFiles?.Take(count) ?? new List<string>();
                     foreach (var path in paths)
                     {
                         var newWindow = new MainWindow(path);
                         newWindow.Show();
-                        //OpenRecentFile(path);
                     }
                     return true;
                 }
@@ -1062,116 +1062,123 @@ namespace Cloudless
                 return true;
             }
 
-            string pattern = @"^p(\d+) send$";  // e.g. "p2 send window"
-            Match match = Regex.Match(cmd, pattern);
-            int? matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            if (matchInt.HasValue)
+            if (cmd.StartsWith("p ") || cmd.StartsWith("page "))
             {
-                SendWindowToPage((int)matchInt);
-                return true;
-            }
+                // convert e.g. "page 2 send" to "p 2 send" for easier parsing
+                if (cmd.StartsWith("page "))
+                    cmd = "p " + cmd.Substring(5).Trim();
 
-            pattern = @"^p(\d+) bring$";  // e.g. "p2 bring window"
-            match = Regex.Match(cmd, pattern);
-            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            if (matchInt.HasValue)
-            {
-                SendWindowToPage((int)matchInt);
-                SwapViewToPage((int)matchInt);
-                return true;
-            }
-
-            pattern = @"^p(\d+) send page$";
-            match = Regex.Match(cmd, pattern);
-            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            if (matchInt.HasValue)
-            {
-                SendPageToPage((int)matchInt);
-                return true;
-            }
-
-            pattern = @"^p(\d+) bring page$";
-            match = Regex.Match(cmd, pattern);
-            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            if (matchInt.HasValue)
-            {
-                SendPageToPage((int)matchInt);
-                SwapViewToPage((int)matchInt);
-                return true;
-            }
-
-            pattern = @"^p(\d+) clear$";
-            match = Regex.Match(cmd, pattern);
-            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            if (matchInt.HasValue)
-            {
-                ClearPage((int)matchInt);
-                return true;
-            }
-
-            pattern = @"^p(\d+) swap p(\d+)$";
-            match = Regex.Match(cmd, pattern);
-            int? matchInt1 = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            int? matchInt2 = match.Success ? int.Parse(match.Groups[2].Value) : null;
-            if (matchInt1.HasValue && matchInt2.HasValue)
-            {
-                SwapPageWithPage((int)matchInt1, (int)matchInt2);
-                return true;
-            }
-
-            pattern = @"^p(\d+)$";  // e.g. "p2"
-            match = Regex.Match(cmd, pattern);
-            matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-            if (matchInt.HasValue)
-            {
-                SwapViewToPage((int)matchInt);
-                return true;
-            }
-
-            if (cmd.Equals("pn") || cmd.Equals("pp") || cmd.Equals("pna") || cmd.Equals("ppa"))
-            {
-                int currentPageIndex = GetCurrentPageIndex();
-
-                if (cmd.Equals("pn"))
-                    SwapViewToPage(currentPageIndex + 1 == 9 ? 1 : currentPageIndex + 1);
-                else if (cmd.Equals("pp"))
-                    SwapViewToPage(currentPageIndex - 1 == 0 ? 8 : currentPageIndex - 1);
-                else if (cmd.Equals("pna"))
+                string pattern = @"^p (\d+) send$";  // e.g. "p 2 send window"
+                Match match = Regex.Match(cmd, pattern);
+                int? matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                if (matchInt.HasValue)
                 {
-                    var activePages = GetNonemptyPages();
-                    int nextActivePage = 0;
-                    nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;  // lowest int above current
-                    if (nextActivePage == 0)
-                        nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;  // lowest int below current
-
-                    if (nextActivePage != 0)
-                        SwapViewToPage(nextActivePage);
-                    else
-                        Message("There are no other active pages.");
-                }
-                else if (cmd.Equals("ppa"))
-                {
-                    var activePages = GetNonemptyPages();
-                    int prevActivePage = 0;
-                    prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;  // highest int below current
-                    if (prevActivePage == 0)
-                        prevActivePage = activePages?.Order().LastOrDefault() ?? 0;  // highest int above current
-
-                    if (prevActivePage != 0)
-                        SwapViewToPage(prevActivePage);
-                    else
-                        Message("There are no other active pages.");
+                    SendWindowToPage((int)matchInt);
+                    return true;
                 }
 
-                return true;
-            }
+                pattern = @"^p (\d+) bring$";  // e.g. "p 2 bring window"
+                match = Regex.Match(cmd, pattern);
+                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                if (matchInt.HasValue)
+                {
+                    SendWindowToPage((int)matchInt);
+                    SwapViewToPage((int)matchInt);
+                    return true;
+                }
 
-            if (cmd.Equals("p?"))
-            {
-                var pages = GetNonemptyPages();
-                Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
+                pattern = @"^p (\d+) send page$";
+                match = Regex.Match(cmd, pattern);
+                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                if (matchInt.HasValue)
+                {
+                    SendPageToPage((int)matchInt);
+                    return true;
+                }
 
-                return true;
+                pattern = @"^p (\d+) bring page$";
+                match = Regex.Match(cmd, pattern);
+                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                if (matchInt.HasValue)
+                {
+                    SendPageToPage((int)matchInt);
+                    SwapViewToPage((int)matchInt);
+                    return true;
+                }
+
+                pattern = @"^p (\d+) clear$";
+                match = Regex.Match(cmd, pattern);
+                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                if (matchInt.HasValue)
+                {
+                    ClearPage((int)matchInt);
+                    return true;
+                }
+
+                pattern = @"^p (\d+) swap (\d+)$";
+                match = Regex.Match(cmd, pattern);
+                int? matchInt1 = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                int? matchInt2 = match.Success ? int.Parse(match.Groups[2].Value) : null;
+                if (matchInt1.HasValue && matchInt2.HasValue)
+                {
+                    SwapPageWithPage((int)matchInt1, (int)matchInt2);
+                    return true;
+                }
+
+                pattern = @"^p (\d+)$";  // e.g. "p2"
+                match = Regex.Match(cmd, pattern);
+                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
+                if (matchInt.HasValue)
+                {
+                    SwapViewToPage((int)matchInt);
+                    return true;
+                }
+
+                if (cmd.Equals("p n") || cmd.Equals("p p") || cmd.Equals("p na") || cmd.Equals("p pa"))
+                {
+                    int currentPageIndex = GetCurrentPageIndex();
+
+                    if (cmd.Equals("p n"))
+                        SwapViewToPage(currentPageIndex + 1 == 9 ? 1 : currentPageIndex + 1);
+                    else if (cmd.Equals("p p"))
+                        SwapViewToPage(currentPageIndex - 1 == 0 ? 8 : currentPageIndex - 1);
+                    else if (cmd.Equals("p na"))
+                    {
+                        var activePages = GetNonemptyPages();
+                        int nextActivePage = 0;
+                        nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;  // lowest int above current
+                        if (nextActivePage == 0)
+                            nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;  // lowest int below current
+
+                        if (nextActivePage != 0)
+                            SwapViewToPage(nextActivePage);
+                        else
+                            Message("There are no other active pages.");
+                    }
+                    else if (cmd.Equals("p pa"))
+                    {
+                        var activePages = GetNonemptyPages();
+                        int prevActivePage = 0;
+                        prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;  // highest int below current
+                        if (prevActivePage == 0)
+                            prevActivePage = activePages?.Order().LastOrDefault() ?? 0;  // highest int above current
+
+                        if (prevActivePage != 0)
+                            SwapViewToPage(prevActivePage);
+                        else
+                            Message("There are no other active pages.");
+                    }
+
+                    return true;
+                }
+
+                if (cmd.Equals("p ?"))
+                {
+                    var pages = GetNonemptyPages();
+                    Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
+
+                    return true;
+                }
             }
 
             if (cmd.Equals("flatten"))
