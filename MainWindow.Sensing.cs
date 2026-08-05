@@ -603,7 +603,10 @@ namespace Cloudless
 
             if (key == Key.E)
             {
-                ToggleComicMode();
+                if (control)
+                    ToggleComicMode();
+                else
+                    RevealImageInExplorer(currentlyDisplayedImagePath);
                 return;
             }
 

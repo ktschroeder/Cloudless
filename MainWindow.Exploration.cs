@@ -834,6 +834,12 @@ namespace Cloudless
         {
             try
             {
+                if (string.IsNullOrEmpty(imagePath))
+                {
+                    Message("Cannot reveal image in Explorer: image path is empty.");
+                    return;
+                }
+
                 if (!File.Exists(imagePath))
                 {
                     Message("File does not exist: " + imagePath);
