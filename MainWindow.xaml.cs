@@ -381,11 +381,12 @@ namespace Cloudless
             // Initialize BookmarkManager
             bookmarkManager = new BookmarkManager();
 
-            if (!workspaceLoad)
-                ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
-            
-
             InitializeZenMode();
+
+            if (!workspaceLoad)
+            {
+                ThemeManager.ApplyThemeToWindow(this);
+            }
 
             _ = CheckForUpdatesAsync();  // fire and forget check for newer app version
 

@@ -13,10 +13,31 @@ namespace Cloudless
 {
     public static class ThemeManager
     {
-        // themeName: "Light" or "Dark"
+        private static string? _currentThemeName = null;
+
         public static void ApplyTheme(string themeName)
         {
+            ApplyThemeGlobalResources(themeName);
+
+            // Apply to all existing windows
+            foreach (Window w in Application.Current.Windows)
+            {
+                if (w is MainWindow mw)
+                {
+                    ApplyThemeToWindow(mw);
+                }
+            }
+        }
+
+        public static void ApplyThemeGlobalResources(string themeName)
+        {
             if (string.IsNullOrEmpty(themeName)) themeName = "Light";
+
+            // Skip if already applied (quick check to avoid redundant work)
+            if (_currentThemeName == themeName)
+                return;
+
+            _currentThemeName = themeName;
 
             Color windowBg;
             Color secondaryBg;
@@ -140,24 +161,20 @@ namespace Cloudless
             {
                 throw;
             }
+        }
 
-            // Force refresh of all ContextMenus in the application by invalidating their visual state
-            InvalidateContextMenus();
+        public static void ApplyThemeToWindow(MainWindow window)
+        {
+            if (window == null) return;
 
             // Rebind ContextMenu/MenuItem properties to DynamicResource so popups update
-            RebindContextMenus();
+            RebindContextMenusInLogicalTree(window);
 
             // Recreate ContextMenu instances to force fresh visual trees while preserving handlers
-            RecreateContextMenus();
+            RecreateContextMenusInLogicalTree(window);
 
-            // If a window is a MainWindow, ask it to rebuild its image context menu to ensure named MenuItems/fields are updated
-            foreach (Window w in Application.Current.Windows)
-            {
-                if (w is MainWindow mw)
-                {
-                    mw.RebuildImageContextMenu();
-                }
-            }
+            // Rebuild the image context menu to ensure named MenuItems/fields are updated
+            window.RebuildImageContextMenu();
         }
 
         private static readonly string _diagLogPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Cloudless", "contextmenu-log.txt");
@@ -244,14 +261,6 @@ namespace Cloudless
                     var old = (SolidColorBrush)obj;
                     Application.Current.Resources[key] = new SolidColorBrush(old.Color);
                 }
-            }
-        }
-
-        private static void RebindContextMenus()
-        {
-            foreach (Window window in Application.Current.Windows)
-            {
-                RebindContextMenusInLogicalTree(window);
             }
         }
 
@@ -567,14 +576,6 @@ namespace Cloudless
             }
             catch { }
             return null;
-        }
-
-        private static void RecreateContextMenus()
-        {
-            foreach (Window window in Application.Current.Windows)
-            {
-                RecreateContextMenusInLogicalTree(window);
-            }
         }
 
         private static void RecreateContextMenusInLogicalTree(DependencyObject node)

@@ -39,9 +39,9 @@ namespace Cloudless
 
             base.OnStartup(e);
 
-            
+            // Apply theme globally once on startup. Windows will apply their per-window theme later.
             var theme = Cloudless.Properties.Settings.Default["Theme"] as string;
-            ThemeManager.ApplyTheme(theme);
+            ThemeManager.ApplyThemeGlobalResources(theme);
 
             bool startInBackground = e.Args.Contains("--background");
 

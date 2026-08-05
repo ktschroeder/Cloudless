@@ -548,7 +548,13 @@ namespace Cloudless
             if (workspace.CurrentPageIndex != GetCurrentPageIndex())
                 SwapViewToPage(workspace.CurrentPageIndex);
 
-            ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
+            // Apply theme to all newly created workspace windows
+            // (they were created with workspaceLoad: true, so they skipped ApplyThemeToWindow in their constructor)
+            var theme = Cloudless.Properties.Settings.Default["Theme"] as string;
+            foreach (var (window, _) in createdWindowsWithStates)
+            {
+                ThemeManager.ApplyThemeToWindow(window);
+            }
 
             List<string> paths = zOrderedWindows.Select(w => w.ImagePath).Where(p => !string.IsNullOrEmpty(p)).ToList();
             foreach (var path in paths)

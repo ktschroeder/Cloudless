@@ -522,11 +522,11 @@ namespace Cloudless
                 }
                 else if (control)
                 {
-                    MinimizeWindow();
+                    ToggleMute();
                 }
                 else
                 {
-                    ToggleMute();
+                    MinimizeWindow();
                 }
 
                 return;
