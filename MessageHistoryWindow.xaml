@@ -29,30 +29,38 @@
             </Border>
 
             <!-- Content -->
-            <StackPanel Margin="12">
+            <StackPanel Margin="12" DockPanel.Dock="Top">
 
                 <TextBlock Text="Messages:"
                            FontSize="12"
                            Foreground="{DynamicResource SecondaryForeground}"
                            Margin="0,0,0,8"/>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Height="300">
-                    <ListBox x:Name="MessageListBox" KeyDown="MessageListBox_KeyDown"
-                             Background="{DynamicResource TextBoxBackground}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1"
-                             Padding="4" />
-                </ScrollViewer>
+                <RichTextBox x:Name="MessageRichTextBox" 
+                             IsReadOnly="True"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             Height="288"
+                             Background="{DynamicResource TextBoxBackground}" 
+                             BorderBrush="{DynamicResource ControlBorderBrush}" 
+                             BorderThickness="1"
+                             Padding="4"
+                             Foreground="{DynamicResource PrimaryForeground}"
+                             FontFamily="Courier New"
+                             FontSize="11"/>
 
-                <!-- Close Button -->
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            Margin="0,10,0,0">
-                    <Button Content="Close"
-                            Style="{StaticResource CloudlessPrimaryButton}"
-                            Click="Close_Click"
-                            FontWeight="SemiBold"
-                            Width="60"/>
-                </StackPanel>
+            </StackPanel>
 
+            <!-- Close Button -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,10,12,12"
+                        DockPanel.Dock="Bottom">
+                <Button Content="Close"
+                        Style="{StaticResource CloudlessPrimaryButton}"
+                        Click="Close_Click"
+                        FontWeight="SemiBold"
+                        Width="60"/>
             </StackPanel>
 
         </DockPanel>

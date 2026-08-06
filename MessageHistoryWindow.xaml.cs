@@ -2,8 +2,8 @@
 using System.Windows.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace Cloudless
 {
@@ -17,19 +17,31 @@ namespace Cloudless
             InitializeComponent();
 
             // Get the current session's message history
-            //messageHistory = manager.GetMessageHistory();  TODO remove redundant
             messageHistory = manager.GetMessageHistoryFromSetting();
 
             // flip sort order so newer messages are at top
             messageHistory.Reverse();
 
-            // Bind the ListBox to the message history
-            MessageListBox.ItemsSource = messageHistory;
+            // Populate the rich text box with all messages
+            UpdateMessageDisplay();
 
             // Subscribe to new message notifications
             manager.MessageAdded += OnMessageAdded;
             this.Closed += (s, e) => manager.MessageAdded -= OnMessageAdded;
         }
+
+        private void UpdateMessageDisplay()
+        {
+            // Clear and populate the rich text box
+            MessageRichTextBox.Document.Blocks.Clear();
+
+            foreach (var message in messageHistory)
+            {
+                var paragraph = new Paragraph(new Run(message));
+                MessageRichTextBox.Document.Blocks.Add(paragraph);
+            }
+        }
+
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
         private void Close_Click(object sender, RoutedEventArgs e) { WindowHelper.Close_Click(this, e); }
@@ -37,18 +49,11 @@ namespace Cloudless
         private void OnMessageAdded(string message)
         {
             // Ensure UI updates on the UI thread
-            Dispatcher.Invoke(() => MessageListBox.ScrollIntoView(message));
-        }
-
-        private void MessageListBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            Dispatcher.Invoke(() =>
             {
-                if (MessageListBox.SelectedItem is string selectedText)
-                {
-                    Clipboard.SetText(selectedText);
-                }
-            }
+                messageHistory.Insert(0, message);
+                UpdateMessageDisplay();
+            });
         }
     }
 }
