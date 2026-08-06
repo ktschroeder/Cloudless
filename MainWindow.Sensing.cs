@@ -234,6 +234,12 @@ namespace Cloudless
                 return;
             }
 
+            // Toggle video seeking bar visibility
+            if (key == Key.U && !control && !alt && !shift)
+            {
+                ToggleSeekingBarVisibility();
+                return;
+            }
 
             if (key == Key.Escape)
             {

@@ -15,6 +15,9 @@ namespace Cloudless.VlcPlugin
 {
     public class VlcVideoPlayerControl : UserControl, IDisposable, IVideoPlayer
     {
+        // Implement the TimeChanged event from IVideoPlayer
+        public event EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? TimeChanged;
+
         private LibVLC _libVLC;
         private MediaPlayer _mediaPlayer;
         private VideoView _videoView;
@@ -173,6 +176,9 @@ namespace Cloudless.VlcPlugin
         {
             try
             {
+                // Fire the IVideoPlayer.TimeChanged event
+                TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = e.Time });
+
                 if (_mediaPlayer == null) return;
                 if (!_loopEnd.HasValue) return;
 

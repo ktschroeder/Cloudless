@@ -402,6 +402,7 @@ namespace Cloudless
 
             InitializeZooming();
             InitializePanning();
+            InitializeSeekingBar();
 
             NoImageMessage = new TextBlock
             {

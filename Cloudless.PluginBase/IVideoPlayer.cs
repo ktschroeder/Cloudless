@@ -8,6 +8,12 @@ namespace Cloudless.PluginBase
     /// </summary>
     public interface IVideoPlayer
     {
+        /// <summary>
+        /// Event fired when video playback time changes. Provides the current time in milliseconds.
+        /// Useful for updating progress indicators smoothly.
+        /// </summary>
+        event EventHandler<VideoTimeChangedEventArgs>? TimeChanged;
+
         Task Play(Uri uri, Task? postPlayTask = null);
         void TogglePause();
         void Stop();
@@ -50,6 +56,14 @@ namespace Cloudless.PluginBase
 
         void SetVolume(double volume);
         double GetVolume();
+    }
+
+    /// <summary>
+    /// Event args for video time changed events
+    /// </summary>
+    public class VideoTimeChangedEventArgs : EventArgs
+    {
+        public long TimeMilliseconds { get; set; }
     }
 
 }
