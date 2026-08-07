@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -42,22 +43,14 @@ namespace Cloudless
             if (_subscribedPlayer == player) return;
             UnsubscribeFromPlayer();
             _subscribedPlayer = player;
-            try
-            {
-                _subscribedPlayer.TimeChanged += Player_TimeChanged_Local;
-            }
-            catch { }
+            _subscribedPlayer.TimeChanged += Player_TimeChanged_Local;
         }
 
         private void UnsubscribeFromPlayer()
         {
             if (_subscribedPlayer != null)
             {
-                try
-                {
-                    _subscribedPlayer.TimeChanged -= Player_TimeChanged_Local;
-                }
-                catch { }
+                _subscribedPlayer.TimeChanged -= Player_TimeChanged_Local;
                 _subscribedPlayer = null;
             }
         }
@@ -387,19 +380,22 @@ namespace Cloudless
 
         private RECT? GetMonitorWorkArea(IntPtr hwnd)
         {
-            try
-            {
-                IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-                if (monitor == IntPtr.Zero) return null;
+            //try
+            //{
+            IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (monitor == IntPtr.Zero) return null;
 
-                MONITORINFO mi = new MONITORINFO();
-                mi.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(mi);
-                if (GetMonitorInfo(monitor, ref mi))
-                {
-                    return mi.rcWork;
-                }
+            MONITORINFO mi = new MONITORINFO();
+            mi.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(mi);
+            if (GetMonitorInfo(monitor, ref mi))
+            {
+                return mi.rcWork;
             }
-            catch { }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine($"GetMonitorWorkArea failed: {ex}");
+            //}
             return null;
         }
     }

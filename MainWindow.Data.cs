@@ -307,14 +307,7 @@ namespace Cloudless
                         // Reset any previously set loop range when loading a new video
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer playerReset)
                         {
-                            try
-                            {
-                                playerReset.SetLoopRange(null, null);
-                            }
-                            catch
-                            {
-                                // if plugin does not support loops, ignore
-                            }
+                            playerReset.SetLoopRange(null, null);
                         }
 
                         VideoHost.Height = double.NaN;
@@ -339,11 +332,7 @@ namespace Cloudless
                             }
 
                             // Apply retained volume level
-                            try
-                            {
-                                player.SetVolume(this._windowVideoVolume);
-                            }
-                            catch { }
+                            player.SetVolume(this._windowVideoVolume);
 
                             Task postPlayTask = new Task(async () =>  // sync, to do an elegant concurrency dance with the below play method
                             {

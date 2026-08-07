@@ -331,12 +331,8 @@ namespace Cloudless
                         var propFrameCount = type.GetProperty("FrameCount") ?? type.GetProperty("Frames") ?? type.GetProperty("FrameLength");
                         if (propFrameCount != null)
                         {
-                            try
-                            {
-                                var val = propFrameCount.GetValue(animationController);
-                                if (val is int fc) frameCount = fc;
-                            }
-                            catch { }
+                            var val = propFrameCount.GetValue(animationController);
+                            if (val is int fc) frameCount = fc;
                         }
 
                         // Find current frame index
@@ -344,12 +340,8 @@ namespace Cloudless
                         var propCurrent = type.GetProperty("CurrentFrameIndex") ?? type.GetProperty("CurrentFrame") ?? type.GetProperty("FrameIndex");
                         if (propCurrent != null)
                         {
-                            try
-                            {
-                                var val = propCurrent.GetValue(animationController);
-                                if (val is int ci) currentIndex = ci;
-                            }
-                            catch { }
+                            var val = propCurrent.GetValue(animationController);
+                            if (val is int ci) currentIndex = ci;
                         }
 
                         if (gotoMethod != null && frameCount.HasValue && currentIndex.HasValue)
@@ -999,11 +991,7 @@ namespace Cloudless
             RoutedEventHandler? loadedHandler = null;
             loadedHandler = (s, e) =>
             {
-                try
-                {
-                    quickCommandWindow.Loaded -= loadedHandler;
-                }
-                catch { }
+                quickCommandWindow.Loaded -= loadedHandler;
 
                 try
                 {

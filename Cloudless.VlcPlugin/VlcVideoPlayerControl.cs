@@ -93,7 +93,7 @@ namespace Cloudless.VlcPlugin
 
         public async Task Initialize()
         {
-            try { Cloudless.Diagnostics.LeakTracker.Register(this, "VlcVideoPlayerControl"); } catch { }
+            Cloudless.Diagnostics.LeakTracker.Register(this, "VlcVideoPlayerControl");
 
             _loadSignal = new TaskCompletionSource<bool>();
 
@@ -117,7 +117,7 @@ namespace Cloudless.VlcPlugin
         private void VlcVideoPlayerControl_Unloaded(object sender, RoutedEventArgs e)
         {
             // Defensive: ensure we try to stop playback if the control is unloaded from visual tree.
-            try { Stop(); } catch { }
+            Stop();
         }
 
         private async void VideoView_Loaded(object sender, RoutedEventArgs e)
@@ -252,7 +252,7 @@ namespace Cloudless.VlcPlugin
                 var media = new Media(_libVLC, uri);
                 _currentMedia = media;
 
-                try { Cloudless.Diagnostics.LeakTracker.Register(media, "LibVLC.Media"); } catch { }
+                Cloudless.Diagnostics.LeakTracker.Register(media, "LibVLC.Media");
 
                 // If a different URI is being played, reset any loop ranges
                 if (_currentUri == null || !_currentUri.Equals(uri))
@@ -305,21 +305,12 @@ namespace Cloudless.VlcPlugin
 
         public void Stop()
         {
-            try
+            if (_mediaPlayer != null)
             {
-                if (_mediaPlayer != null)
-                {
-                    try { _mediaPlayer.Stop(); } catch { }
-                    // Dispose the media used for playback
-                    try
-                    {
-                        _currentMedia?.Dispose();
-                    }
-                    catch { }
-                    _currentMedia = null;
-                }
+                _mediaPlayer.Stop();
+                _currentMedia?.Dispose();
+                _currentMedia = null;
             }
-            catch { }
         }
 
         public void SetMedia(Uri uri)
@@ -390,13 +381,9 @@ namespace Cloudless.VlcPlugin
                         position = TimeSpan.Zero;
 
                     // If length available, clamp to it
-                    try
-                    {
-                        long lengthMs = _mediaPlayer.Length;
-                        if (lengthMs > 0 && position.TotalMilliseconds > lengthMs)
-                            position = TimeSpan.FromMilliseconds(lengthMs);
-                    }
-                    catch { }
+                    long lengthMs = _mediaPlayer.Length;
+                    if (lengthMs > 0 && position.TotalMilliseconds > lengthMs)
+                        position = TimeSpan.FromMilliseconds(lengthMs);
 
                     _mediaPlayer?.SeekTo(position);
                 }
@@ -408,74 +395,49 @@ namespace Cloudless.VlcPlugin
 
         public void Dispose()
         {
-            try
+            if (_videoView != null)
             {
-                if (_videoView != null)
-                {
-                    _videoView.Loaded -= VideoView_Loaded;
-                    this.Unloaded -= VlcVideoPlayerControl_Unloaded;
-
-                    if (_mediaPlayer != null)
-                    {
-                        try
-                        {
-                            _mediaPlayer.TimeChanged -= MediaPlayer_TimeChanged;
-                        }
-                        catch { }
-                    }
-
-                    // Detach MediaPlayer from VideoView (MediaPlayer may be same as _mediaPlayer)
-                    try
-                    {
-                        if (_videoView.MediaPlayer != null)
-                        {
-                            try { _videoView.MediaPlayer.Stop(); } catch { }
-                            try { _videoView.MediaPlayer.Dispose(); } catch { }
-                            _videoView.MediaPlayer = null;
-                        }
-                    }
-                    catch { }
-
-                    try { _videoView.Dispose(); } catch { }
-                }
-            }
-            catch { }
-
-            try
-            {
-                // Stop and dispose managed media objects
-                //try { _mediaPlayer?.Stop(); } catch { }
-                try
-                {
-                    if (_currentMedia != null)
-                    {
-                        try { _currentMedia.Dispose(); } catch { }
-                        _currentMedia = null;
-                    }
-                }
-                catch { }
+                _videoView.Loaded -= VideoView_Loaded;
+                this.Unloaded -= VlcVideoPlayerControl_Unloaded;
 
                 if (_mediaPlayer != null)
                 {
-                    try { _mediaPlayer.Dispose(); } catch { }
-                    _mediaPlayer = null;
+                    _mediaPlayer.TimeChanged -= MediaPlayer_TimeChanged;
                 }
+
+                // Detach MediaPlayer from VideoView (MediaPlayer may be same as _mediaPlayer)
+                if (_videoView.MediaPlayer != null)
+                {
+                    _videoView.MediaPlayer.Stop();
+                    _videoView.MediaPlayer.Dispose();
+                    _videoView.MediaPlayer = null;
+                }
+
+                _videoView.Dispose();
             }
-            catch { }
+
+            // Stop and dispose managed media objects
+            if (_currentMedia != null)
+            {
+                _currentMedia.Dispose();
+                _currentMedia = null;
+            }
+
+            if (_mediaPlayer != null)
+            {
+                _mediaPlayer.Dispose();
+                _mediaPlayer = null;
+            }
 
             // Do NOT dispose the shared LibVLC instance provided by LibVlcProvider; it is shared across players.
             _libVLC = null;
 
-            try
-            {
-                if (_preloadedLibVlcHandle.HasValue)
-                    NativeLibrary.Free(_preloadedLibVlcHandle.Value);
-                if (_preloadedLibVlcCoreHandle.HasValue)
-                    NativeLibrary.Free(_preloadedLibVlcCoreHandle.Value);
-            }
-            catch { }
+            if (_preloadedLibVlcHandle.HasValue)
+                NativeLibrary.Free(_preloadedLibVlcHandle.Value);
+            if (_preloadedLibVlcCoreHandle.HasValue)
+                NativeLibrary.Free(_preloadedLibVlcCoreHandle.Value);
 
-            try { Cloudless.Diagnostics.LeakTracker.MarkClosed(this); } catch { }
+            Cloudless.Diagnostics.LeakTracker.MarkClosed(this);
         }
 
         public TimeSpan GetDuration()

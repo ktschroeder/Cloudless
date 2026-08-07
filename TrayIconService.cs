@@ -129,72 +129,39 @@ namespace Cloudless
 
         private void ShowOrCreateMainWindow()
         {
-            try
-            {
-                var app = Application.Current;
-                if (app == null) return;
+            var app = Application.Current;
+            if (app == null) return;
 
-                var main = app.MainWindow;
-                //if (false)
-                //{
-                //    if (main.WindowState == WindowState.Minimized)
-                //        main.WindowState = WindowState.Normal;
-
-                //    main.Show();
-                //    main.Activate();
-                //}
-                //else
-                //{
-                    var win = new MainWindow(null);
-                    //app.MainWindow = win;
-                    win.Show();
-                    win.Activate();
-                //}
-            }
-            catch
-            {
-                // swallow
-            }
+            var main = app.MainWindow;
+            var win = new MainWindow(null);
+            win.Show();
+            win.Activate();
         }
 
         private void CloseAllCloudlessWindows()
         {
-            try
-            {
-                var app = Application.Current;
-                if (app == null) return;
+            var app = Application.Current;
+            if (app == null) return;
 
-                var windows = app.Windows.Cast<Window>().ToList();
-                foreach (var w in windows)
-                {
-                    if (w is MainWindow || w.GetType().Namespace == typeof(MainWindow).Namespace)
-                    {
-                        w.Close();
-                    }
-                }
-            }
-            catch
+            var windows = app.Windows.Cast<Window>().ToList();
+            foreach (var w in windows)
             {
-                // swallow
+                if (w is MainWindow || w.GetType().Namespace == typeof(MainWindow).Namespace)
+                {
+                    w.Close();
+                }
             }
         }
 
         private void ShutdownCloudless()
         {
-            try
-            {
-                var app = Application.Current;
-                if (app == null) return;
+            var app = Application.Current;
+            if (app == null) return;
 
-                CloseAllCloudlessWindows();
+            CloseAllCloudlessWindows();
 
-                // Trigger normal shutdown (OnExit will run and cleanup)
-                app.Shutdown();
-            }
-            catch
-            {
-                // swallow
-            }
+            // Trigger normal shutdown (OnExit will run and cleanup)
+            app.Shutdown();
         }
 
         private void ShowNativeContextMenu()
@@ -215,19 +182,12 @@ namespace Cloudless
 
                 // Choose owner: prefer main window if available so menu attaches to it properly
                 IntPtr ownerHwnd = _hwndSource.Handle;
-                try
+                var app = Application.Current;
+                if (app?.MainWindow != null)
                 {
-                    var app = Application.Current;
-                    if (app?.MainWindow != null)
-                    {
-                        var mainHandle = new WindowInteropHelper(app.MainWindow).Handle;
-                        if (mainHandle != IntPtr.Zero)
-                            ownerHwnd = mainHandle;
-                    }
-                }
-                catch
-                {
-                    // fallback to message-only hwndSource
+                    var mainHandle = new WindowInteropHelper(app.MainWindow).Handle;
+                    if (mainHandle != IntPtr.Zero)
+                        ownerHwnd = mainHandle;
                 }
 
                 // Ensure proper activation/focus behavior for the popup menu
@@ -298,21 +258,17 @@ namespace Cloudless
 
         private static IntPtr? GetAppIconHandle()
         {
-            try
-            {
-                string exe = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
-                if (string.IsNullOrEmpty(exe)) return null;
+            string exe = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
+            if (string.IsNullOrEmpty(exe)) return null;
 
-                IntPtr large = IntPtr.Zero;
-                IntPtr small = IntPtr.Zero;
-                uint got = ExtractIconEx(exe, 0, out large, out small, 1);
-                if (got > 0)
-                {
-                    if (small != IntPtr.Zero) return small;
-                    if (large != IntPtr.Zero) return large;
-                }
+            IntPtr large = IntPtr.Zero;
+            IntPtr small = IntPtr.Zero;
+            uint got = ExtractIconEx(exe, 0, out large, out small, 1);
+            if (got > 0)
+            {
+                if (small != IntPtr.Zero) return small;
+                if (large != IntPtr.Zero) return large;
             }
-            catch { }
 
             return null;
         }

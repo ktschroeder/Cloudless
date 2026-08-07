@@ -158,31 +158,23 @@ public class OverlayMessageManager
 
     public void Dispose()
     {
-        try
-        {
-            _cts.Cancel();
-        }
-        catch { }
+        _cts.Cancel();
 
-        try
+        Application.Current.Dispatcher.Invoke(() =>
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            // Remove any active message visuals
+            foreach (var tb in _activeMessages.ToList())
             {
-                // Remove any active message visuals
-                foreach (var tb in _activeMessages.ToList())
-                {
-                    if (_messageStack.Children.Contains(tb))
-                        _messageStack.Children.Remove(tb);
-                }
-                _activeMessages.Clear();
-            });
-        }
-        catch { }
+                if (_messageStack.Children.Contains(tb))
+                    _messageStack.Children.Remove(tb);
+            }
+            _activeMessages.Clear();
+        });
 
         _messageQueue.Clear();
         MessageAdded = null;
 
-        try { _cts.Dispose(); } catch { }
+        _cts.Dispose();
     }
 
     private class OverlayMessage

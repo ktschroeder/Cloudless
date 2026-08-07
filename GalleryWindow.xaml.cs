@@ -184,7 +184,7 @@ namespace Cloudless
             {
                 if (t.Exception != null)
                 {
-                    try { (Owner as MainWindow)?.Message("One or more thumbnails failed to load in gallery."); } catch { }
+                    (Owner as MainWindow)?.Message("One or more thumbnails failed to load in gallery.");
                 }
             });
         }
@@ -208,8 +208,6 @@ namespace Cloudless
                     // Load image on a background thread and freeze it so it can be assigned from UI thread
                     thumb = await Task.Run(() =>
                     {
-                        try
-                        {
                             using var fs = File.OpenRead(path);
                             var decoder = BitmapDecoder.Create(fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
                             var frame = decoder.Frames.FirstOrDefault();
@@ -218,15 +216,13 @@ namespace Cloudless
                                 frame.Freeze();
                                 return (ImageSource)frame;
                             }
-                        }
-                        catch { }
-                        return (ImageSource?)null;
+                            return (ImageSource?)null;
                     });
                 }
             }
             catch (Exception ex)
             {
-                try { (Owner as MainWindow)?.Message($"Error loading thumbnail for {item.FilePath}: {ex.Message}"); } catch { }
+                (Owner as MainWindow)?.Message($"Error loading thumbnail for {item.FilePath}: {ex.Message}");
             }
 
             if (thumb == null)
@@ -234,23 +230,15 @@ namespace Cloudless
                 string failPath = Path.Combine(AppContext.BaseDirectory, "no-thumbnail.png");
                 if (File.Exists(failPath))
                 {
-                    try
-                    {
-                        var bi = new BitmapImage(new Uri(failPath));
-                        bi.Freeze();
-                        thumb = bi;
-                    }
-                    catch { }
+                    var bi = new BitmapImage(new Uri(failPath));
+                    bi.Freeze();
+                    thumb = bi;
                 }
             }
 
             if (thumb != null)
             {
-                try
-                {
-                    await Dispatcher.InvokeAsync(() => item.Thumbnail = thumb);
-                }
-                catch { }
+                await Dispatcher.InvokeAsync(() => item.Thumbnail = thumb);
             }
         }
 

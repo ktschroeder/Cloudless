@@ -644,8 +644,8 @@ namespace Cloudless
                     TimeSpan? e = state.LoopEndMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopEndMs.Value) : null;
                     vp.SetLoopRange(s, e);
                     // update host-side tracking fields so UI/commands reflect the loaded state
-                    try { this._videoLoopStart = s; } catch { }
-                    try { this._videoLoopEnd = e; } catch { }
+                    this._videoLoopStart = s;
+                    this._videoLoopEnd = e;
                 }
             }
             catch (Exception ex)
@@ -729,8 +729,8 @@ namespace Cloudless
                         TimeSpan? s = state.LoopStartMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopStartMs.Value) : null;
                         TimeSpan? e = state.LoopEndMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopEndMs.Value) : null;
                         vp.SetLoopRange(s, e);
-                        try { this._videoLoopStart = s; } catch { }
-                        try { this._videoLoopEnd = e; } catch { }
+                        this._videoLoopStart = s;
+                        this._videoLoopEnd = e;
                     }
                 }
                 catch (Exception ex)

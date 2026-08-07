@@ -347,17 +347,13 @@ namespace Cloudless
         {
             if (sender is MenuItem mi)
             {
-                try
+                var popup = mi.Template.FindName("PART_Popup", mi) as Popup;
+                if (popup?.Child is Border b)
                 {
-                    var popup = mi.Template.FindName("PART_Popup", mi) as Popup;
-                    if (popup?.Child is Border b)
-                    {
-                        var overlay = FindCanvasInVisualTree(b);
-                        if (overlay != null)
-                            overlay.Children.Clear();
-                    }
+                    var overlay = FindCanvasInVisualTree(b);
+                    if (overlay != null)
+                        overlay.Children.Clear();
                 }
-                catch { }
             }
         }
 
@@ -534,13 +530,9 @@ namespace Cloudless
         private static Canvas? FindOverlayCanvas(ContextMenu cm)
         {
             // The overlay Canvas should be named "SeparatorOverlay" inside the ContextMenu's template (Border -> Grid -> Canvas)
-            try
-            {
-                // Try template-based lookup first
-                var overlay = cm.Template.FindName("SeparatorOverlay", cm) as Canvas;
-                if (overlay != null) return overlay;
-            }
-            catch { }
+            // Try template-based lookup first
+            var overlay = cm.Template.FindName("SeparatorOverlay", cm) as Canvas;
+            if (overlay != null) return overlay;
 
             // Fallback: search visual tree
             int count = VisualTreeHelper.GetChildrenCount(cm);
@@ -569,12 +561,8 @@ namespace Cloudless
 
         private static Brush? TryFindResourceBrush(FrameworkElement element, string key)
         {
-            try
-            {
-                var resource = element.TryFindResource(key);
-                if (resource is Brush b) return b;
-            }
-            catch { }
+            var resource = element.TryFindResource(key);
+            if (resource is Brush b) return b;
             return null;
         }
 

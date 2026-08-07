@@ -15,7 +15,7 @@ namespace Cloudless
 
         static ThumbnailService()
         {
-            try { Directory.CreateDirectory(cacheDir); } catch { }
+            Directory.CreateDirectory(cacheDir);
         }
 
         public static async Task<BitmapSource?> GetThumbnailAsync(string filePath, int maxWidth, int maxHeight)
@@ -53,7 +53,7 @@ namespace Cloudless
                     }
                     catch
                     {
-                        try { File.Delete(outPath); } catch { }
+                        File.Delete(outPath);
                     }
                 }
 

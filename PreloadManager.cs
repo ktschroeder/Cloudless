@@ -112,57 +112,45 @@ namespace Cloudless
                         // Create BitmapImage on UI thread and Freeze it
                         await _uiDispatcher.InvokeAsync(() =>
                         {
-                            try
-                            {
-                                using var ms = new MemoryStream(bytes);
-                                var bitmap = new BitmapImage();
-                                bitmap.BeginInit();
-                                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                                bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-                                bitmap.StreamSource = ms;
-                                bitmap.EndInit();
-                                bitmap.Freeze(); // make it cross-thread accessible
-                                // Store into cache (if not already stored due to race)
-                                _cache.TryAdd(path, bitmap);
-                            }
-                            catch
-                            {
-                                // swallow
-                            }
+                            using var ms = new MemoryStream(bytes);
+                            var bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                            bitmap.StreamSource = ms;
+                            bitmap.EndInit();
+                            bitmap.Freeze(); // make it cross-thread accessible
+                            // Store into cache (if not already stored due to race)
+                            _cache.TryAdd(path, bitmap);
                         }, DispatcherPriority.Background);
                     }
                     catch (OperationCanceledException) { }
-                    catch { }
                 }, token);
             }
 
             // Prune cache entries that are far away from current window asynchronously
             _ = Task.Run(() =>
             {
-                try
+                var keepPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                int len = fileList.Length;
+                for (int i = currentIndex - 10; i <= currentIndex + 10; i++)
                 {
-                    var keepPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    int len = fileList.Length;
-                    for (int i = currentIndex - 10; i <= currentIndex + 10; i++)
-                    {
-                        if (i >= 0 && i < len) keepPaths.Add(fileList[i]);
-                    }
+                    if (i >= 0 && i < len) keepPaths.Add(fileList[i]);
+                }
 
-                    // remove keys not in keepPaths
-                    foreach (var key in _cache.Keys)
+                // remove keys not in keepPaths
+                foreach (var key in _cache.Keys)
+                {
+                    if (!keepPaths.Contains(key))
                     {
-                        if (!keepPaths.Contains(key))
+                        if (_cache.TryRemove(key, out var removed))
                         {
-                            if (_cache.TryRemove(key, out var removed))
-                            {
-                                // nothing special to dispose for frozen BitmapImage
-                                // but clear reference to allow GC
-                                removed = null;
-                            }
+                            // nothing special to dispose for frozen BitmapImage
+                            // but clear reference to allow GC
+                            removed = null;
                         }
                     }
                 }
-                catch { }
             });
         }
 

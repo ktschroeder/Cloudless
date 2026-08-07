@@ -275,11 +275,7 @@ namespace Cloudless
 
             foreach (var w in others)
             {
-                try
-                {
-                    await w.ExecuteCommand(cmd);
-                }
-                catch { }  // attempt command on all windows, don't stop short for an exception
+                await w.ExecuteCommand(cmd);
             }
         }
 

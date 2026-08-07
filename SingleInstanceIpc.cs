@@ -48,8 +48,7 @@ namespace Cloudless
                             {
                                 Task.Run(() =>
                                 {
-                                    try { h(message); }
-                                    catch { }
+                                    h(message);
                                 });
                             }
                         }
@@ -58,10 +57,6 @@ namespace Cloudless
                     {
                         // normal shutdown
                         break;
-                    }
-                    catch
-                    {
-                        // swallow and continue listening
                     }
                 }
             });
@@ -75,26 +70,17 @@ namespace Cloudless
 
         public static async Task StopServerAsync()
         {
-            try
-            {
-                _cts?.Cancel();
+            _cts?.Cancel();
 
-                if (_serverTask != null)
-                {
-                    // Wait briefly for the server task to finish
-                    await Task.WhenAny(_serverTask, Task.Delay(2000)).ConfigureAwait(false);
-                }
-            }
-            catch
+            if (_serverTask != null)
             {
-                // ignore
+                // Wait briefly for the server task to finish
+                await Task.WhenAny(_serverTask, Task.Delay(2000)).ConfigureAwait(false);
             }
-            finally
-            {
-                try { _cts?.Dispose(); } catch { }
-                _cts = null;
-                _serverTask = null;
-            }
+
+            _cts?.Dispose();
+            _cts = null;
+            _serverTask = null;
         }
 
         // Client (secondary instance)

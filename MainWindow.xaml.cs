@@ -184,89 +184,67 @@ namespace Cloudless
 
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
             {
-                try { videoPlayer.Stop(); } catch { }
-                try { videoPlayer.Dispose(); } catch { }                
+                videoPlayer.Stop();
+                videoPlayer.Dispose();
             }
 
             VideoHost.Content = null;
 
 
-            try
-            {
-                _preloadManager?.Clear();
-                _preloadManager?.Dispose();
-            }
-            catch { }
+            _preloadManager?.Clear();
+            _preloadManager?.Dispose();
             _preloadManager = null;
 
 
             // Animated GIF cleanup
-            try
+            var controller = ImageBehavior.GetAnimationController(ImageDisplay);
+            var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
+
+            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+
+            // If we have a controller, try to stop it cleanly using any available API, then dispose it.
+            if (controller != null)
             {
-                var controller = ImageBehavior.GetAnimationController(ImageDisplay);
-                var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
+                Cloudless.Diagnostics.LeakTracker.Register(controller, "ImageAnimationController");
 
-                try
+                // Prefer Stop if present, then Pause
+                var t = controller.GetType();
+                var stop = t.GetMethod("Stop", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (stop != null)
                 {
-                    ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-                }
-                catch { }
-
-                // If we have a controller, try to stop it cleanly using any available API, then dispose it.
-                if (controller != null)
-                {
-                    try { Cloudless.Diagnostics.LeakTracker.Register(controller, "ImageAnimationController"); } catch { }
-
-                    try
-                    {
-                        // Prefer Stop if present, then Pause
-                        var t = controller.GetType();
-                        var stop = t.GetMethod("Stop", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                        if (stop != null)
-                        {
-                            try { stop.Invoke(controller, null); } catch { }
-                        }
-
-                        var pause = t.GetMethod("Pause", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                        if (pause != null)
-                        {
-                            try { pause.Invoke(controller, null); } catch { }
-                        }
-                    }
-                    catch { }
-
-                    try
-                    {
-                        if (controller is IDisposable d)
-                        {
-                            d.Dispose();
-                        }
-                        else
-                        {
-                            // fallback: try calling Dispose via reflection if it exists but interface isn't visible
-                            var disp = controller.GetType().GetMethod("Dispose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                            if (disp != null)
-                                try { disp.Invoke(controller, null); } catch { }
-                        }
-                    }
-                    catch { }
-
-                    try { Cloudless.Diagnostics.LeakTracker.MarkClosed(controller); } catch { }
-
-                    animationController = null;
+                    stop.Invoke(controller, null);
                 }
 
-                // If BitmapImage backed the Source, dispose its stream if present
-                if (ImageDisplay.Source is BitmapImage bim)
+                var pause = t.GetMethod("Pause", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (pause != null)
                 {
-                    try { bim.StreamSource?.Dispose(); } catch { }
+                    pause.Invoke(controller, null);
                 }
 
-                try { ImageDisplay.Source = null; } catch { }
+                if (controller is IDisposable d)
+                {
+                    d.Dispose();
+                }
+                else
+                {
+                    // fallback: try calling Dispose via reflection if it exists but interface isn't visible
+                    var disp = controller.GetType().GetMethod("Dispose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (disp != null)
+                        disp.Invoke(controller, null);
+                }
+
+                Cloudless.Diagnostics.LeakTracker.MarkClosed(controller);
+
+                animationController = null;
             }
-            catch
+
+            // If BitmapImage backed the Source, dispose its stream if present
+            if (ImageDisplay.Source is BitmapImage bim)
             {
+                bim.StreamSource?.Dispose();
             }
+
+            ImageDisplay.Source = null;
 
             // bandaid fix for issue where controller gets null upon opening app directly for a GIF
             //if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
@@ -295,33 +273,21 @@ namespace Cloudless
             ImageDisplay.Source = null;
 
             // Unsubscribe from static/long-lived events so this window can be GC'd
-            try
-            {
-                CompositionTarget.Rendering -= UpdateDebugInfo;
-            }
-            catch { }
+            CompositionTarget.Rendering -= UpdateDebugInfo;
 
-            try
-            {
-                this.PreviewMouseWheel -= OnMouseWheelZoom;
-            }
-            catch { }
+            this.PreviewMouseWheel -= OnMouseWheelZoom;
 
             // Stop any timers that may be active
-            try { _rightClickHoldTimer?.Stop(); } catch { }
-            try { _middleClickHoldTimer?.Stop(); } catch { }
-            try { _resizeStarTimer?.Stop(); } catch { }
+            _rightClickHoldTimer?.Stop();
+            _middleClickHoldTimer?.Stop();
+            _resizeStarTimer?.Stop();
 
             // Remove WndProc hook if present
-            try
-            {
-                _hwndSource?.RemoveHook(WndProc);
-                _hwndSource = null;
-            }
-            catch { }
+            _hwndSource?.RemoveHook(WndProc);
+            _hwndSource = null;
 
             // Dispose overlay manager to cancel any pending UI continuations and allow collection
-            try { overlayManager?.Dispose(); } catch { }
+            overlayManager?.Dispose();
             overlayManager = null;
 
             // Mark this window as closed for diagnostics
@@ -337,14 +303,10 @@ namespace Cloudless
                     string report = System.IO.File.ReadAllText(tempPath);
                     Debug.WriteLine(report);
                     // Try to show a short overlay message with the path if window is still interactive.
-                    try
+                    Dispatcher.Invoke(() =>
                     {
-                        Dispatcher.Invoke(() =>
-                        {
-                            Message($"Leak diagnostic written: {tempPath}");
-                        });
-                    }
-                    catch { }
+                        Message($"Leak diagnostic written: {tempPath}");
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -656,18 +618,13 @@ namespace Cloudless
             // Ensure overlay window is visible and aligned so it appears above HwndHost-based video players
             if (overlayWindow != null)
             {
-                // Some extraneous flows cause exceptions here due to e.g. setting this for a closed window, crashing app. Harmless to swallow this; can clean up eventually TODO
-                try 
+                overlayWindow.Owner = this;
+                overlayWindow.AlignToOwner(this);
+                if (!overlayWindow.IsVisible)
                 {
-                    overlayWindow.Owner = this;
-                    overlayWindow.AlignToOwner(this);
-                    if (!overlayWindow.IsVisible)
-                    {
-                        // Show without activating owner
-                        overlayWindow.Show();
-                    }
+                    // Show without activating owner
+                    overlayWindow.Show();
                 }
-                catch { }
             }
 
             bool mute = Cloudless.Properties.Settings.Default.MuteMessages || windowPageIndex != GetCurrentPageIndex();

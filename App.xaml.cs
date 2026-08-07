@@ -59,21 +59,17 @@ namespace Cloudless
             _trayIconService?.Dispose();
             _trayIconService = null;
             // Stop IPC server and unsubscribe event handlers
-            try { SingleInstanceIpc.MessageReceived -= OnIpcMessageReceived; } catch { }
-            try { SingleInstanceIpc.StopServer(); } catch { }
-            try { _mutex?.ReleaseMutex(); } catch { }
-            try { _mutex?.Dispose(); } catch { }
+            SingleInstanceIpc.MessageReceived -= OnIpcMessageReceived;
+            SingleInstanceIpc.StopServer();
+            _mutex?.ReleaseMutex();
+            _mutex?.Dispose();
             _mutex = null;
 
             base.OnExit(e);
 
             // Force process exit to ensure the debugger detaches/ends the session.
             // This is a safety measure: if a background thread/task remains it will be terminated here.
-            try
-            {
-                Environment.Exit(0);
-            }
-            catch {}
+            Environment.Exit(0);
         }
 
         private void OnIpcMessageReceived(string message)
@@ -87,14 +83,10 @@ namespace Cloudless
 
                     // If there is no designated application MainWindow, prefer to set it so activation
                     // and focus behavior match the tray-created fast-path.
-                    try
+                    if (Application.Current?.MainWindow == null)
                     {
-                        if (Application.Current?.MainWindow == null)
-                        {
-                            Application.Current.MainWindow = win;
-                        }
+                        Application.Current.MainWindow = win;
                     }
-                    catch { }
 
                     win.Show();
                     win.Activate();
