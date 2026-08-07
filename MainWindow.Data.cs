@@ -299,6 +299,11 @@ namespace Cloudless
 
                         VideoHost.Content = view;
 
+                        if (_videoControlsVisible)
+                        {
+                            UpdateVideoControls();
+                        }
+
                         // Reset any previously set loop range when loading a new video
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer playerReset)
                         {

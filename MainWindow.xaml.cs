@@ -178,6 +178,7 @@ namespace Cloudless
             _filmStripWindow?.Close();
             _commandPaletteWindow?.Close();
             overlayWindow?.Close();
+            CleanupVideoControls();
 
             // Dispose of media elements to protect against memory leaks
 
@@ -402,7 +403,6 @@ namespace Cloudless
 
             InitializeZooming();
             InitializePanning();
-            InitializeSeekingBar();
 
             NoImageMessage = new TextBlock
             {
@@ -499,6 +499,8 @@ namespace Cloudless
             //}
             //catch { }
             PrepareCommandPalette();
+
+            InitializeVideoControls();
 
             //_commandPaletteWindow.Opacity = 0;
             //_commandPaletteWindow.Show();

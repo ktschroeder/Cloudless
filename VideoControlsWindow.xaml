@@ -1,0 +1,61 @@
+<Window x:Class="Cloudless.VideoControlsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="False"
+        ShowActivated="False">
+
+    <Border Background="{DynamicResource SecondaryBackground}" 
+            Padding="8" 
+            CornerRadius="4,4,0,0"
+            BorderBrush="{DynamicResource ControlBorderBrush}"
+            BorderThickness="1,1,1,0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Progress Bar -->
+            <Slider x:Name="SeekingSlider" 
+                    Grid.Row="0" 
+                    Grid.Column="0" 
+                    Grid.ColumnSpan="3"
+                    Minimum="0" 
+                    Maximum="100" 
+                    Value="0"
+                    VerticalAlignment="Center"
+                    Margin="0,0,0,4"
+                    PreviewMouseDown="SeekingSlider_PreviewMouseDown"
+                    PreviewMouseUp="SeekingSlider_PreviewMouseUp"/>
+
+            <!-- Current Time -->
+            <TextBlock x:Name="CurrentTimeText" 
+                       Grid.Row="1" 
+                       Grid.Column="0"
+                       Text="0:00"
+                       Foreground="{DynamicResource PrimaryForeground}"
+                       FontSize="11"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"/>
+
+            <!-- Duration -->
+            <TextBlock x:Name="DurationText" 
+                       Grid.Row="1" 
+                       Grid.Column="2"
+                       Text="0:00"
+                       Foreground="{DynamicResource PrimaryForeground}"
+                       FontSize="11"
+                       VerticalAlignment="Center"
+                       Margin="8,0,0,0"/>
+        </Grid>
+    </Border>
+</Window>

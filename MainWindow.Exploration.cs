@@ -1,13 +1,14 @@
-﻿using System.Windows.Media.Animation;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Media;
+﻿using AnimatedImage.Wpf;
+using Cloudless.PluginBase;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Interop;
 using System.Runtime.InteropServices;
-using AnimatedImage.Wpf;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 
 namespace Cloudless
 {
@@ -871,6 +872,100 @@ namespace Cloudless
             {
                 isComicMode = false;
                 Message("Exited Comic Mode");
+            }
+        }
+
+        private VideoControlsWindow? _videoControlsWindow;
+        private bool _videoControlsVisible = false;
+
+        public void InitializeVideoControls()
+        {
+            _videoControlsWindow = new VideoControlsWindow();
+            _videoControlsWindow.AttachToOwner(this);
+            _videoControlsWindow.Hide(); // Hidden by default
+        }
+
+        public void ToggleVideoControlsVisibility()
+        {
+            _videoControlsVisible = !_videoControlsVisible;
+
+            if (_videoControlsVisible)
+            {
+                _videoControlsWindow?.Show();
+                _videoControlsWindow?.AlignToOwner();
+
+                UpdateVideoControls();
+                _videoControlsWindow?.StartPositionUpdates();
+
+                // Hook into the video player's time changed event if available
+                AttachToVideoPlayerEvents();
+            }
+            else
+            {
+                _videoControlsWindow?.StopPositionUpdates();
+                _videoControlsWindow?.Hide();
+                DetachFromVideoPlayerEvents();
+
+                // Resume video if it was paused for seeking
+                var videoPlayer = VideoHost.Content as IVideoPlayer;
+                if (videoPlayer != null && videoPlayer.IsPaused())
+                {
+                    videoPlayer.TogglePause();
+                }
+            }
+        }
+
+        private void AttachToVideoPlayerEvents()
+        {
+            if (VideoHost.Content is IVideoPlayer videoPlayer)
+            {
+                videoPlayer.TimeChanged += VideoPlayer_TimeChanged;
+            }
+        }
+
+        private void DetachFromVideoPlayerEvents()
+        {
+            if (VideoHost.Content is IVideoPlayer videoPlayer)
+            {
+                videoPlayer.TimeChanged -= VideoPlayer_TimeChanged;
+            }
+        }
+
+        private void VideoPlayer_TimeChanged(object? sender, VideoTimeChangedEventArgs e)
+        {
+
+
+            if (_videoControlsWindow == null)
+                return;
+
+            var videoPlayer = VideoHost.Content as IVideoPlayer;
+            if (videoPlayer == null)
+                return;
+
+
+
+            _videoControlsWindow.OnVideoTimeChanged(e, videoPlayer);
+        }
+
+        private void UpdateVideoControls()
+        {
+            if (_videoControlsWindow == null) return;
+
+            var videoPlayer = VideoHost.Content as IVideoPlayer;
+            if (videoPlayer != null)
+            {
+                _videoControlsWindow.UpdateSeekingBar(videoPlayer);
+            }
+        }
+
+        public void CleanupVideoControls()
+        {
+            if (_videoControlsWindow != null)
+            {
+                _videoControlsWindow.StopPositionUpdates();
+                _videoControlsWindow.DetachFromOwner();
+                _videoControlsWindow.Close();
+                _videoControlsWindow = null;
             }
         }
 

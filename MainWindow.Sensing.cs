@@ -234,10 +234,10 @@ namespace Cloudless
                 return;
             }
 
-            // Toggle video seeking bar visibility
+            // Toggle video controls visibility
             if (key == Key.U && !control && !alt && !shift)
             {
-                ToggleSeekingBarVisibility();
+                ToggleVideoControlsVisibility();
                 return;
             }
 
