@@ -297,7 +297,19 @@ namespace Cloudless
                         PluginInitializationState.IsVlcInitialized = true;
                         HideLoadingOverlay();
 
+                        // Detach any previous keyboard handler from old content
+                        if (VideoHost.Content is UIElement _oldUi)
+                        {
+                            _oldUi.PreviewKeyDown -= VideoControl_PreviewKeyDown;
+                        }
+
                         VideoHost.Content = view;
+
+                        // Attach keyboard handler so space toggles playback when focus is on the video control
+                        if (view is UIElement _newUi)
+                        {
+                            _newUi.PreviewKeyDown += VideoControl_PreviewKeyDown;
+                        }
 
                         if (_videoControlsVisible)
                         {

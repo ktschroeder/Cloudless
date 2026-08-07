@@ -182,6 +182,12 @@ namespace Cloudless
 
             // Dispose of media elements to protect against memory leaks
 
+            // Detach any keyboard handler from the video control
+            if (VideoHost.Content is UIElement _oldVideoUi)
+            {
+                _oldVideoUi.PreviewKeyDown -= VideoControl_PreviewKeyDown;
+            }
+
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
             {
                 videoPlayer.Stop();
@@ -741,6 +747,19 @@ namespace Cloudless
                 e.Handled = true;
 
             SkipNextContextMenu = false;
+        }
+
+        // Toggle play/pause when space is pressed while focus is on the video control
+        private void VideoControl_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Space)
+            {
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
+                {
+                    player.TogglePause();
+                    e.Handled = true;
+                }
+            }
         }
 
         public bool MouseControlMode = false;

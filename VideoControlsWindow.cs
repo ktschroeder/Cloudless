@@ -178,6 +178,8 @@ namespace Cloudless
             owner.StateChanged += Owner_StateChanged;
 
             AlignToOwner();
+            // Handle keyboard input so space toggles playback when focus is within this control
+            this.PreviewKeyDown += VideoControlsWindow_PreviewKeyDown;
         }
 
         public void DetachFromOwner()
@@ -189,7 +191,21 @@ namespace Cloudless
                 _ownerWindow.StateChanged -= Owner_StateChanged;
             }
             UnsubscribeFromPlayer();
+            this.PreviewKeyDown -= VideoControlsWindow_PreviewKeyDown;
             _ownerWindow = null;
+        }
+
+        private void VideoControlsWindow_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Space)
+            {
+                var player = _ownerWindow?.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (player != null)
+                {
+                    player.TogglePause();
+                    e.Handled = true;
+                }
+            }
         }
 
         public void AlignToOwner()
