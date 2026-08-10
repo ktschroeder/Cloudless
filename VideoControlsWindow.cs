@@ -1,12 +1,11 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Diagnostics;
-using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using System.Threading;
 using Cloudless.PluginBase;
 
 namespace Cloudless
@@ -15,10 +14,14 @@ namespace Cloudless
     {
         private MainWindow? _ownerWindow;
         private bool _isUserSeeking = false;
+        private bool _wasPlayingBeforeSeek = false;
         private long _cachedDurationMs = -1;
         private DispatcherTimer? _positionTimer;
         private long _latestVlcPositionMs = 0;
         private long _latestVlcEventTickMs = 0;
+        private double _seekDragThumbHalfWidth = 0.0;
+        //private long _previousVlcPositionMs = 0;
+        //private long _previousVlcEventTickMs = 0;
         private long _lastAppliedPositionMs = 0;
         private Cloudless.PluginBase.IVideoPlayer? _subscribedPlayer;
 
@@ -33,6 +36,7 @@ namespace Cloudless
             // Set up event handlers
             SeekingSlider.PreviewMouseDown += SeekingSlider_PreviewMouseDown;
             SeekingSlider.PreviewMouseUp += SeekingSlider_PreviewMouseUp;
+            SeekingSlider.PreviewMouseMove += SeekingSlider_PreviewMouseMove;
 
             InitializePositionTimer();
         }
@@ -329,19 +333,85 @@ namespace Cloudless
             _isUserSeeking = true;
 
             var videoPlayer = _ownerWindow?.VideoHost.Content as IVideoPlayer;
-            if (videoPlayer != null && !videoPlayer.IsPaused())
+            if (videoPlayer != null)
             {
-                // Pause the video when user starts seeking
-                videoPlayer.TogglePause();
+                // Try to infer whether the player was playing just before the seek by looking at recent time samples
+                bool inferredPlaying = false;
+
+                //long latest = Interlocked.Read(ref _latestVlcPositionMs);
+                //long prev = Interlocked.Read(ref _previousVlcPositionMs);
+                long latestTick = Interlocked.Read(ref _latestVlcEventTickMs);
+                //long prevTick = Interlocked.Read(ref _previousVlcEventTickMs);
+                long now = Environment.TickCount64;
+
+                // Consider it playing if position advanced between recent samples and the samples are recent
+                if (latestTick > 0 && now - latestTick < 1000)  // && latest > prev
+                {
+                    inferredPlaying = true;
+                }
+
+                // Fallback to direct check if inference failed
+                if (!inferredPlaying)
+                {
+                    _wasPlayingBeforeSeek = !videoPlayer.IsPaused();
+                }
+                else
+                {
+                    _wasPlayingBeforeSeek = true;
+                }
+
+                if (_wasPlayingBeforeSeek)
+                {
+                    // Pause the video when user starts seeking
+                    videoPlayer.TogglePause();
+                }
             }
 
             // Handle click anywhere on the slider track (not just thumb drag)
             Point clickPosition = e.GetPosition(SeekingSlider);
-            double ratio = clickPosition.X / SeekingSlider.ActualWidth;
-            ratio = Math.Max(0, Math.Min(1, ratio)); // Clamp to 0-1
+            // Determine thumb half width and track usable width for centering
+            try
+            {
+                var thumb = FindVisualChild<Thumb>(SeekingSlider);
+                var track = FindVisualChild<Track>(SeekingSlider);
+                if (thumb != null && thumb.ActualWidth > 0)
+                    _seekDragThumbHalfWidth = thumb.ActualWidth / 2.0;
+                else
+                    _seekDragThumbHalfWidth = 0.0;
 
-            double newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
-            SeekingSlider.Value = newValue;
+                double usableWidth;
+                double posOnTrackX;
+                if (track != null && track.ActualWidth > 0)
+                {
+                    usableWidth = Math.Max(1.0, track.ActualWidth - (thumb?.ActualWidth ?? 0.0));
+                    var posOnTrack = e.GetPosition(track);
+                    posOnTrackX = posOnTrack.X;
+                }
+                else
+                {
+                    // Fallback to slider dimensions
+                    usableWidth = Math.Max(1.0, SeekingSlider.ActualWidth - (_seekDragThumbHalfWidth * 2.0));
+                    posOnTrackX = clickPosition.X;
+                }
+
+                double effectiveX = posOnTrackX - _seekDragThumbHalfWidth;
+                double ratio = effectiveX / usableWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio)); // Clamp to 0-1
+
+                double newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
+                SeekingSlider.Value = newValue;
+            }
+            catch
+            {
+                // Fallback simple behavior
+                double ratio = clickPosition.X / SeekingSlider.ActualWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                double newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
+                SeekingSlider.Value = newValue;
+            }
+
+            // Capture mouse so subsequent moves while button is down will continue seeking
+            SeekingSlider.CaptureMouse();
         }
 
         private void SeekingSlider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
@@ -355,16 +425,71 @@ namespace Cloudless
                 TimeSpan targetPosition = TimeSpan.FromMilliseconds(SeekingSlider.Value);
                 videoPlayer.SeekTo(targetPosition);
 
-                // Resume playback after seeking
-                if (videoPlayer.IsPaused())
+                // Resume playback after seeking only if it was playing before the seek began
+                if (_wasPlayingBeforeSeek)
                 {
-                    videoPlayer.TogglePause();
+                    if (videoPlayer.IsPaused())
+                    {
+                        videoPlayer.TogglePause();
+                    }
                 }
             }
 
             if (videoPlayer != null)
             {
                 UpdateSeekingBar(videoPlayer);
+            }
+            SeekingSlider.ReleaseMouseCapture();
+        }
+
+        private void SeekingSlider_PreviewMouseMove(object? sender, System.Windows.Input.MouseEventArgs e)
+        {
+            // If user is in the middle of a seek initiated by mouse down, update the thumb position to follow the cursor
+            if (!_isUserSeeking) return;
+
+            if (e.LeftButton != System.Windows.Input.MouseButtonState.Pressed) return;
+
+            double newValue = SeekingSlider.Value;
+            try
+            {
+                var thumb = FindVisualChild<Thumb>(SeekingSlider);
+                var track = FindVisualChild<Track>(SeekingSlider);
+                double usableWidth;
+                double posOnTrackX;
+                if (track != null && track.ActualWidth > 0)
+                {
+                    usableWidth = Math.Max(1.0, track.ActualWidth - (thumb?.ActualWidth ?? 0.0));
+                    var posOnTrack = e.GetPosition(track);
+                    posOnTrackX = posOnTrack.X;
+                }
+                else
+                {
+                    usableWidth = Math.Max(1.0, SeekingSlider.ActualWidth - (_seekDragThumbHalfWidth * 2.0));
+                    var pos = e.GetPosition(SeekingSlider);
+                    posOnTrackX = pos.X;
+                }
+
+                double effectiveX = posOnTrackX - _seekDragThumbHalfWidth;
+                double ratio = effectiveX / usableWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
+                SeekingSlider.Value = newValue;
+            }
+            catch
+            {
+                Point pos = e.GetPosition(SeekingSlider);
+                double ratio = pos.X / SeekingSlider.ActualWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
+                SeekingSlider.Value = newValue;
+            }
+
+            // Update current time text for immediate feedback
+            var durationMs = SeekingSlider.Maximum;
+            if (durationMs > 0)
+            {
+                var time = TimeSpan.FromMilliseconds(Math.Min(newValue, durationMs));
+                CurrentTimeText.Text = FormatTime(time);
             }
         }
 
@@ -412,6 +537,20 @@ namespace Cloudless
             //{
             //    Debug.WriteLine($"GetMonitorWorkArea failed: {ex}");
             //}
+            return null;
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
             return null;
         }
     }
