@@ -60,10 +60,31 @@ namespace Cloudless
                     };
                     _vlcCheck.Start();
                 }
+
+                // Re-center window after content/layout changes so it remains centered on screen
+                this.Dispatcher.BeginInvoke((Action)(() =>
+                {
+                    try
+                    {
+                        this.UpdateLayout();
+                        var wa = SystemParameters.WorkArea;
+                        double left = (wa.Width - this.ActualWidth) / 2 + wa.Left;
+                        double top = (wa.Height - this.ActualHeight) / 2 + wa.Top;
+                        if (!double.IsNaN(left) && !double.IsNaN(top))
+                        {
+                            this.Left = left;
+                            this.Top = top;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to center LoadingWindow: {ex}");
+                    }
+                }), DispatcherPriority.Render);
             }
-            catch
+            catch (Exception ex)
             {
-                // best-effort UI update; swallow to avoid breaking caller flows
+                System.Diagnostics.Debug.WriteLine($"LoadingWindow.SetMessage failed: {ex}");
             }
         }
     }

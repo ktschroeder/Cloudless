@@ -407,8 +407,9 @@ namespace Cloudless
 
             try
             {
-                // Show loading window
+                // Show loading window. Set initial title to avoid a later resize that moves the window.
                 loadingWindow = new LoadingWindow();
+                loadingWindow.SetMessage("Loading workspace...", "");
                 loadingWindow.Show();
 
                 // Allow the window to render
