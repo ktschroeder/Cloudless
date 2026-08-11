@@ -1,7 +1,7 @@
-<Window x:Class="Cloudless.WorkspaceLoadingWindow"
+<Window x:Class="Cloudless.LoadingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Loading Workspace"
+        Title="Loading"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -11,21 +11,22 @@
         Height="300"
         WindowStartupLocation="CenterScreen"
         SizeToContent="WidthAndHeight"
-		Closing="On_Close">
+        Closing="On_Close">
     <Grid Background="#1E1E1E" Opacity="0.95">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="60">
-            <TextBlock Text="Workspace Loading..."
+            <TextBlock x:Name="TitleTextBlock"
+                       Text="Loading..."
                        Foreground="White"
                        FontSize="36"
                        FontWeight="Bold"
                        TextAlignment="Center"
                        Margin="0,0,0,40" />
-            
+
             <ProgressBar Height="8"
                          Foreground="#007ACC"
                          IsIndeterminate="True"
                          Margin="0,0,0,30" />
-            
+
             <TextBlock x:Name="DetailMessage"
                        Foreground="#B0B0B0"
                        FontSize="14"

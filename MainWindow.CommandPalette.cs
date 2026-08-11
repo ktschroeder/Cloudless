@@ -733,7 +733,7 @@ namespace Cloudless
 
                 if (Directory.Exists(resolvedPath))
                 {
-                    LoadImagesInDirectory(resolvedPath);
+                    await LoadImagesInDirectory(resolvedPath);
                 }
                 else if (File.Exists(resolvedPath)) 
                 {
@@ -751,7 +751,7 @@ namespace Cloudless
 
                 if (Directory.Exists(resolvedPath))
                 {
-                    LoadImagesInDirectory(resolvedPath, true);
+                    await LoadImagesInDirectory(resolvedPath, true);
                 }
                 else if (File.Exists(resolvedPath))
                 {

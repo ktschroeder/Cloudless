@@ -120,7 +120,7 @@ namespace Cloudless
                 }
             }
         }
-        private void LoadImagesInDirectory(string directoryPath, bool permitLargeCount = false)
+        private async Task LoadImagesInDirectory(string directoryPath, bool permitLargeCount = false)
         {
             string[] imageExtensions = supportedFileTypes.ToArray();
             try
@@ -132,18 +132,147 @@ namespace Cloudless
                               .Select(f => f.FullName)
                               .ToList();
 
+                // Reorder so files that do not require the VLC plugin come first (images, webp, gif, etc.)
+                // This improves perceived responsiveness when the VLC plugin is still warming up.
+                bool IsVideoFile(string path)
+                {
+                    var ext = Path.GetExtension(path).ToLowerInvariant();
+                    return ext == ".webm" || ext == ".mkv" || ext == ".mp4";
+                }
+
+                // If any video files are present and VLC isn't initialized yet, show a short loading window to inform user
+                LoadingWindow? openLoadingWindow = null;
+                bool hasVideoFiles = files.Any(p => IsVideoFile(p));
+                if (hasVideoFiles && !PluginInitializationState.IsVlcInitialized)
+                {
+                    try
+                    {
+                        openLoadingWindow = await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            var w = new LoadingWindow();
+                            w.SetMessage("Opening files...", "", provideVlcDetail: true);
+                            w.Show();
+                            return w;
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to show open-loading window: {ex}");
+                    }
+                }
+
+                // Put non-video files first so images load while plugin warms up
+                files = files.OrderBy(p => IsVideoFile(p) ? 1 : 0).ToList();
+
                 if (files.Count > 10 && !permitLargeCount)
                 {
                     Message($"Your command would open more than 10 images ({files.Count}) and was stopped. To override this, use: 'o! [directory]'");
                     return;
                 }
+
                 foreach (string file in files)
                 {
-                    var newWindow = new MainWindow(file, workspaceLoad: true);
-                    newWindow.Show();
+                    // Create and initialize the window on the UI thread to avoid STA/threading issues
+                    var newWindow = await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var w = new MainWindow(file, workspaceLoad: true);
+                        w.WorkspaceLoadInProgress = true;
+                        return w;
+                    });
+
+                    try
+                    {
+                        // Load the image/video content on the UI thread as the plugin and WPF controls expect STA
+                        var loadOp = await Application.Current.Dispatcher.InvokeAsync(() => newWindow.LoadImage(file, true));
+                        await loadOp; // wait for the async LoadImage to complete
+                    }
+                    catch (Exception ex)
+                    {
+                        Message($"Failed to load file in new window: {ex.Message}");
+                    }
+
+                    // Show the window (on UI thread)
+                    await Application.Current.Dispatcher.InvokeAsync(() => newWindow.Show());
+
+                    // After showing, attempt to size the window to the media dimensions (like hotkey F / ResizeWindowToImage)
+                    try
+                    {
+                        // Give layout a moment to settle
+                        await newWindow.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                        // If this window hosts a video, wait briefly for the plugin to report dimensions before resizing.
+                        bool resized = false;
+                        object content = await newWindow.Dispatcher.InvokeAsync(() => newWindow.VideoHost.Content);
+                        var vplayer = content as Cloudless.PluginBase.IVideoPlayer;
+                        if (vplayer != null)
+                        {
+                            // Poll for dimensions up to 2s total. Call GetDimensions on UI thread to avoid cross-thread access
+                            var sw = System.Diagnostics.Stopwatch.StartNew();
+                            while (sw.ElapsedMilliseconds < 2000)
+                            {
+                                try
+                                {
+                                    // Ask the UI thread for a Task<(int,int)?> from the player
+                                    var dimsTask = await newWindow.Dispatcher.InvokeAsync(() =>
+                                    {
+                                        var vp = newWindow.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                                        return vp?.GetDimensions();
+                                    });
+
+                                    if (dimsTask != null)
+                                    {
+                                        var dims = await dimsTask.WaitAsync(TimeSpan.FromMilliseconds(250)).ConfigureAwait(false);
+                                        if (dims != null)
+                                        {
+                                            // Resize on UI thread
+                                            var resizeOp = await newWindow.Dispatcher.InvokeAsync(() => newWindow.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
+                                            await resizeOp;
+                                            await newWindow.Dispatcher.InvokeAsync(() => newWindow.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
+                                            resized = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Log and continue polling
+                                    System.Diagnostics.Debug.WriteLine($"GetDimensions polling error: {ex}");
+                                }
+
+                                await Task.Delay(100).ConfigureAwait(false);
+                            }
+                        }
+
+                        if (!resized)
+                        {
+                            // Fallback: attempt a single resize (works for images and videos if dimensions are ready)
+                            var resizeOp = await newWindow.Dispatcher.InvokeAsync(() => newWindow.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
+                            await resizeOp;
+                            await newWindow.Dispatcher.InvokeAsync(() => newWindow.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Resize after open failed: {ex}");
+                    }
                 }
 
-                ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
+                // Close the open-loading window if we created one
+                if (openLoadingWindow != null)
+                {
+                    try
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() => openLoadingWindow.Close());
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to close open-loading window: {ex}");
+                    }
+                }
+
+                // Ensure theme application runs on UI thread because it touches Application.Current.Windows
+                var theme = Cloudless.Properties.Settings.Default["Theme"] as string;
+                await Application.Current.Dispatcher.InvokeAsync(() => ThemeManager.ApplyTheme(theme));
             }
             catch (Exception ex)
             {

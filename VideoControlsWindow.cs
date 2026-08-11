@@ -401,9 +401,10 @@ namespace Cloudless
                 double newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
                 SeekingSlider.Value = newValue;
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback simple behavior
+                // Log and fallback to simple behavior
+                System.Diagnostics.Debug.WriteLine($"SeekingSlider_PreviewMouseDown mapping failed: {ex}");
                 double ratio = clickPosition.X / SeekingSlider.ActualWidth;
                 ratio = Math.Max(0, Math.Min(1, ratio));
                 double newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
@@ -475,8 +476,9 @@ namespace Cloudless
                 newValue = ratio * (SeekingSlider.Maximum - SeekingSlider.Minimum) + SeekingSlider.Minimum;
                 SeekingSlider.Value = newValue;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"SeekingSlider_PreviewMouseMove mapping failed: {ex}");
                 Point pos = e.GetPosition(SeekingSlider);
                 double ratio = pos.X / SeekingSlider.ActualWidth;
                 ratio = Math.Max(0, Math.Min(1, ratio));

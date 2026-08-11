@@ -241,6 +241,10 @@ namespace Cloudless.VlcPlugin
         public async Task Play(Uri uri, Task? postPlayTask = null)
         {
             await _loadSignal.Task;  // ensure video view is loaded, or else VLC will open the media in an external player
+            // Additionally ensure the VideoView has been attached to a PresentationSource (HWND) so LibVLC
+            // will use the WPF host instead of creating an external native window. In some timing scenarios
+            // Loaded can fire before the native handle is ready, especially when creating many windows quickly.
+            await EnsureVideoViewReadyAsync();
 
             try
             {
@@ -273,6 +277,59 @@ namespace Cloudless.VlcPlugin
             {
                 Console.WriteLine($"VlcVideoPlayerControl.Play failed: {ex.Message}");
                 throw;
+            }
+        }
+
+        private async Task EnsureVideoViewReadyAsync(int timeoutMs = 500)
+        {
+            if (_videoView == null) return;
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (true)
+            {
+                bool ready = false;
+                try
+                {
+                    // Query visual state on the UI thread to get reliable results
+                    await _videoView.Dispatcher.InvokeAsync(() =>
+                    {
+                        try
+                        {
+                            // Prefer HwndSource which exposes the native handle; PresentationSource may be non-null earlier
+                            var ps2 = System.Windows.PresentationSource.FromVisual(_videoView);
+                            if (ps2 is System.Windows.Interop.HwndSource hwndSrc && hwndSrc.Handle != IntPtr.Zero)
+                            {
+                                ready = true;
+                                return;
+                            }
+
+                            // Also ensure the control and its containing window are visible
+                            if (_videoView.IsLoaded && _videoView.IsVisible)
+                            {
+                                var win = Window.GetWindow(_videoView);
+                                if (win != null && win.IsVisible)
+                                {
+                                    // If PresentationSource exists we consider it ready
+                                    var ps = System.Windows.PresentationSource.FromVisual(_videoView);
+                                    if (ps != null)
+                                    {
+                                        ready = true;
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                    }, System.Windows.Threading.DispatcherPriority.Render).Task.ConfigureAwait(false);
+                }
+                catch { }
+
+                if (ready) return;
+
+                if (sw.ElapsedMilliseconds > timeoutMs)
+                    return; // give up after timeout; we'll try to play anyway
+
+                await Task.Delay(10).ConfigureAwait(false);
             }
         }
 

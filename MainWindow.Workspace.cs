@@ -151,6 +151,19 @@ namespace Cloudless
 
         private void Shutdown()
         {
+            try
+            {
+                var loading = new LoadingWindow();
+                loading.SetMessage("Shutting down Cloudless...", "Please wait while Cloudless exits.", provideVlcDetail: false);
+                loading.Show();
+                // Allow it to render
+                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to show shutdown loading window: {ex}");
+            }
+
             CloseAllOtherInstances();
 
             var app = Application.Current;
@@ -390,12 +403,12 @@ namespace Cloudless
         // returns whether successful
         public async Task<bool> LoadWorkspace(string workspaceName = "MainWorkspace", bool merge = false)
         {
-            WorkspaceLoadingWindow? loadingWindow = null;
+            LoadingWindow? loadingWindow = null;
 
             try
             {
                 // Show loading window
-                loadingWindow = new WorkspaceLoadingWindow();
+                loadingWindow = new LoadingWindow();
                 loadingWindow.Show();
 
                 // Allow the window to render
@@ -442,7 +455,7 @@ namespace Cloudless
 
                 if (hasVideoFiles)
                 {
-                    loadingWindow?.SetDetailMessage();
+                    loadingWindow?.SetMessage("Loading workspace...", "", provideVlcDetail: true);
                 }
 
                 if (!merge)
