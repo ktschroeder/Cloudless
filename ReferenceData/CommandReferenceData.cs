@@ -14,7 +14,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("(palette) Up and Down", "Traverse through history of commands (globally)"),
                     new ReferenceItem("Ctrl ';'", "Execute the most recent valid command"),
                     new ReferenceItem("Ctrl [1 through 8]", "Run custom commands stored at the respective index"),
-                    new ReferenceItem("(palette) Tab", "For workspace commands (e.g. 'ws l [name]'), autocomplete workspace name, or cycle through matches."),
+                    new ReferenceItem("(palette) Tab", "For workspace commands (e.g. 'ws l [name]'), autocomplete workspace name via substring search, or cycle through matches."),
                     new ReferenceItem("(palette) Shift Tab", "Similar to above, but cycle in the reverse direction."),
                     new ReferenceItem("(palette) Ctrl Tab", "For workspace commands (e.g. 'ws l [name]'), traverse workspace names sorted by recency of save/load."),
                     new ReferenceItem("(palette) Ctrl Shift Tab", "Similar to above, but cycle in the reverse direction."),
@@ -34,11 +34,8 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("ris", "Perform an online reverse-image-search for the current image, including uploading it to a temporary host."),
                     new ReferenceItem("ris [service]", "See above. [service] can be google, bing, yandex, tineye, or saucenao. Their first letters can also be used."),
                     new ReferenceItem("shutdown | sd", "Close all open instances of Cloudless, and shutdown the Cloudless background process"),
-                    new ReferenceItem("hotkey [modifiers] [key]", "Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."),
-                    new ReferenceItem("[command 1]; [command 2]; ...", "Chain multiple commands together using semicolons. Each command will be executed in sequence."),
                     new ReferenceItem("deflash", "Minimize and unminimize all windows (useful if Windows piles up flashing taskbar icons)"),
-                    new ReferenceItem("all [command]", "Execute [command] on each other window, and finally this window. (Use with caution.)"),
-                    new ReferenceItem("others [command]", "Execute [command] on each other window. (Use with caution.)"),
+                    
                 }),
                 new ReferenceTab("View", new List<ReferenceItem>
                 {
@@ -53,17 +50,21 @@ namespace Cloudless.ReferenceData
                 {
                     new ReferenceItem("[Int]", "Jump to the image with index [Int] in the current directory"),
                     new ReferenceItem("+[Int]", "Jump [Int] images forward in directory"),
-                    new ReferenceItem("-[Int]", "Jump [int] images backward in directory"),
-                    new ReferenceItem("p", "Open most recently loaded image"),
+                    new ReferenceItem("-[Int]", "Jump [Int] images backward in directory"),
+                    new ReferenceItem("r", "Open most recently loaded image"),
+                    new ReferenceItem("r [Int]", "Open the [Int] most recent images, in new windows"),
                     new ReferenceItem("first | last", "Open first or last image in current directory"),
                     new ReferenceItem("/[query]", "Open the next image in current directory whose filename contains [query], case insensitive. Wraps around at end."),
                     new ReferenceItem("sort [type] [order]", "Set directory sort order. Type can be 'name' or 'date'. Order can be 'asc' or 'desc'."),
                     new ReferenceItem("o [path]", "Open the image at [path], which may be relative or absolute. Or open all images in directory (max 10)"),
                     new ReferenceItem("o! [path]", "Open the image at [path], which may be relative or absolute. Or open all images in directory (ignore max)"),
-                    new ReferenceItem("rec [Int]", "Open the [Int] most recent images, in new windows"),
                 }),
                 new ReferenceTab("Video", new List<ReferenceItem>
                 {
+                    new ReferenceItem("mute", "Mute the window's audio"),
+                    new ReferenceItem("unmute", "Unmute the window's audio"),
+                    new ReferenceItem("volume", "Show a message with the window's current volume level (0-100)"),
+                    new ReferenceItem("volume [number]", "Set the window's voilume to [number] (0-100)"),
                     new ReferenceItem("set start", "Set a custom start point for looping, based on the current position. Resets upon loading anything else."),
                     new ReferenceItem("set end", "Set a custom end point for looping, based on the current position. Resets upon loading anything else."),
                     new ReferenceItem("clear start/end", "Clear any custom start/end points for looping"),
@@ -89,23 +90,30 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("ws origin load", "Load the workspace associated with the current image."),
                     new ReferenceItem("c | m | um origin", "Close, minimize, or unminimize all windows that share a workspace origin with the current window"),
                     new ReferenceItem("ws undoload", "Load the open workspace version that was present prior to the most recent 'ws load' or 'ws undoload' command."),
-                }, "A \"workspace\" is the collective arrangement of all open Cloudless windows. When you save a workspace, you can later load it to quickly open all its media, with their identical position, zoom, pan, crop, and Z-order. Also, any custom video start/end points are saved/applied.", "With \"ws l\", \"ws s\", etc., press tab to autocomplete name (press repeatedly to traverse matches. Hold Shift to reverse direction)"),
+                }, "A \"workspace\" is the collective arrangement of all open Cloudless windows. When you save a workspace, you can later load it to quickly open all its media, with their identical position, zoom, pan, crop, and Z-order. Also, any custom video start/end points are saved/applied.", "With \"ws l\", \"ws s\", etc., press tab to search name (press repeatedly to traverse matches. Hold Shift to reverse direction)"),
                 new ReferenceTab("Pages", new List<ReferenceItem>
                 {
-                    new ReferenceItem("p[int]", "Change view to page [int]"),
-                    new ReferenceItem("p?", "Display a message showing the currently open page index, and all indices of non-empty pages"),
-                    new ReferenceItem("p[int] send", "Send the current window to page [int]"),
-                    new ReferenceItem("p[int] bring", "Send the current window to page [int], and change view to that page"),
-                    new ReferenceItem("p[int] send page", "Send all windows in the current page to page [int]"),
-                    new ReferenceItem("p[int] bring page", "Send all windows in the current page to page [int], and change view to that page"),
-                    new ReferenceItem("p[int] clear", "Close all windows on page [int]"),
-                    new ReferenceItem("p[int] swap p[int]", "Swap all windows between page [int] and page [int] (the order of the 2 ints does not matter)"),
+                    new ReferenceItem("p [int]", "Change view to page [int]"),
+                    new ReferenceItem("p ?", "Display a message showing the currently open page index, and all indices of non-empty pages"),
+                    new ReferenceItem("p [int] send", "Send the current window to page [int]"),
+                    new ReferenceItem("p [int] bring", "Send the current window to page [int], and change view to that page"),
+                    new ReferenceItem("p [int] send page", "Send all windows in the current page to page [int]"),
+                    new ReferenceItem("p [int] bring page", "Send all windows in the current page to page [int], and change view to that page"),
+                    new ReferenceItem("p [int] clear", "Close all windows on page [int]"),
+                    new ReferenceItem("p [int] swap p [int]", "Swap all windows between page [int] and page [int] (the order of the 2 ints does not matter)"),
                     new ReferenceItem("flatten", "Send all windows from all pages to page 1, and change view to page 1"),
-                    new ReferenceItem("pp / pn", "Change the view to the previous/next page (wraps around at end)"),
-                    new ReferenceItem("ppa / pna", "Change the view to the previous/next active page (wraps around at end)"),
+                    new ReferenceItem("p p / p n", "Change the view to the previous/next page (wraps around at end)"),
+                    new ReferenceItem("p pa / p na", "Change the view to the previous/next active page (wraps around at end)"),
                     new ReferenceItem("ss [seconds] | slideshow [seconds]", "Start automatic slideshow: cycle through active pages every [seconds] seconds"),
                     new ReferenceItem("ss stop | slideshow stop", "Stop the current slideshow"),
                 }, "A \"page\" is similar to a simple workspace, but all pages' windows are kept in memory simultaneously. A workspace can contain up to 8 pages. The benefit of this is that you can swap full arrangements (pages) almost immediately, whereas loading a different workspace could take longer. It also enables more complex and organized workspaces with manageable layers."),
+                new ReferenceTab("Advanced", new List<ReferenceItem>
+                {
+                    new ReferenceItem("hotkey [modifiers] [key]", "Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."),
+                    new ReferenceItem("[command 1]; [command 2]; ...", "Chain multiple commands together using semicolons. Each command will be executed in sequence."),
+                    new ReferenceItem("all [command]", "Execute [command] on each other window, and finally this window. (Use with caution.)"),
+                    new ReferenceItem("others [command]", "Execute [command] on each other window. (Use with caution.)"),
+                }),
             };
         }
     }

@@ -54,6 +54,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("F", "Set window size to image's true dimensions, or as big as possible without going off-screen"),
                     new ReferenceItem("V", "Maximize vertical dimension"),
                     new ReferenceItem("Q", "Toggle crop mode"),
+                    new ReferenceItem("Ctrl Q", "Enter crop selection mode: Click and drag to select an area to crop to (Esc to cancel)"),
                     new ReferenceItem("G", "Switch background (black, white, transparent)"),
                     new ReferenceItem("R", "Rotate image 90° clockwise"),
                     new ReferenceItem("B", "Resize window to remove best-fit bars"),
@@ -63,7 +64,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Ctrl, scroll mouse", "Zoom in or out. Additionally, hold ALT for fine zooming"),
                     new ReferenceItem("Ctrl, click and drag", "Pan image"),
                     new ReferenceItem("L", "Zoom image to fill view"),
-                    new ReferenceItem("E", "Toggle 'Comic Mode': when loading next image in directory, retain zoom, and send pan to upper corner"),
+                    new ReferenceItem("Ctrl E", "Toggle 'Comic Mode': when loading next image in directory, retain zoom, and send pan to upper corner"),
                 }),
                 new ReferenceTab("Image", new List<ReferenceItem>
                 {
@@ -74,6 +75,8 @@ namespace Cloudless.ReferenceData
                 }),
                 new ReferenceTab("Video", new List<ReferenceItem>
                 {
+                    new ReferenceItem("U", "Toggle video controls UI"),
+                    new ReferenceItem("Ctrl M", "Toggle mute/unmute for that window"),
                     new ReferenceItem("Space", "Pause/resume GIF/video"),
                     new ReferenceItem("Ctrl Space", "Restart GIF/video"),
                     new ReferenceItem("Ctrl Left/Right", "Seek backward/forward 5 seconds"),
@@ -88,9 +91,10 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Ctrl H", "Open Command Palette Reference window"),
                     new ReferenceItem("I", "Open Image Info window (if one is loaded)"),
                     new ReferenceItem("Ctrl R", "Open Recent Images Gallery"),
-                    new ReferenceItem("Ctrl M", "Open System Messages window"),
+                    new ReferenceItem("Ctrl Shift M", "Open System Messages window"),
                     new ReferenceItem("Ctrl D", "Duplicate window"),
                     new ReferenceItem("Ctrl N", "New window"),
+                    new ReferenceItem("E", "Reveal current image/video in Windows File Explorer"),
                 }),
                 new ReferenceTab("Advanced", new List<ReferenceItem>
                 {
