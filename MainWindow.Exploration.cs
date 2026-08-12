@@ -109,7 +109,10 @@ namespace Cloudless
                 ImageBehavior.SetRepeatBehavior(ImageDisplay, new RepeatBehavior(1));
             }
 
-            Topmost = Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault;
+            if (Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault && !Bottommost)
+            {
+                Topmost = true;
+            }
 
             if (wasExplorationMode && !silent && !isComicMode)
                 Message("Entered Display Mode");
@@ -969,6 +972,23 @@ namespace Cloudless
             }
         }
 
+        public bool SendWindowToBackInProgress = false;
+        public void SendWindowToBack()
+        {
+            SendWindowToBackInProgress = true;
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            // SWP_NOACTIVATE is removed here because we WANT it to handle the focus change 
+            // but drop its physical visual layer to the bottom.
+            SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            SendWindowToBackInProgress = false;
+        }
+
+        private void MainWindow_Activated(object sender, EventArgs e)
+        {
+            if (Bottommost)
+                SendWindowToBack();
+        }
+
         // Native structures for Monitor info
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT { public int Left, Top, Right, Bottom; }
@@ -993,5 +1013,11 @@ namespace Cloudless
 
         [DllImport("user32.dll")]
         static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     }
 }

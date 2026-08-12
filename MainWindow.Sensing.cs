@@ -3,6 +3,7 @@ using AnimatedImage.Wpf;
 using Cloudless.PluginBase;
 using Cloudless.Properties;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -15,6 +16,7 @@ namespace Cloudless
         private bool isDraggingWindow = false;
         private Point initialMouseScreenPosition;
         private Point initialWindowPosition;
+        public bool Bottommost = false;
 
         //Window snapping preference:
         // TODO make this a configurable setting (an advanced setting)
@@ -487,7 +489,26 @@ namespace Cloudless
             // Toggle Topmost (always-on-top) for this window
             if (key == Key.T)
             {
-                Topmost = !Topmost;
+                if (control)
+                {
+                    if (Bottommost)
+                    {
+                        Bottommost = false;
+                        Topmost = true;
+                        Topmost = false;
+                    }
+                    else
+                    {
+                        Topmost = false;
+                        SendWindowToBack();
+                        Bottommost = true;
+                    }
+                }
+                else
+                {
+                    Bottommost = false;
+                    Topmost = !Topmost;
+                }
                 return;
             }
 
@@ -1076,7 +1097,39 @@ namespace Cloudless
                 return (IntPtr)HTCLIENT;
             }
 
+            if (msg == WM_WINDOWPOSCHANGING && Bottommost && !SendWindowToBackInProgress)
+            {
+                // Marshal the native pointer to our structure to see what Windows is doing
+                WINDOWPOS wp = (WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(WINDOWPOS));
+
+                // If something (like a click or text focus) is trying to change the Z-order,
+                // inject the SWP_NOZORDER flag to block it from moving to the front.
+                wp.flags |= SWP_NOZORDER;
+
+                // Write the modified flags back to the OS memory block
+                Marshal.StructureToPtr(wp, lParam, true);
+            }
+
             return IntPtr.Zero;
+        }
+
+        // Win32 Constants
+        private const int WM_WINDOWPOSCHANGING = 0x0046;
+        private const uint SWP_NOZORDER = 0x0004;
+        private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+
+
+        // Struct required to parse the WM_WINDOWPOSCHANGING message payload
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WINDOWPOS
+        {
+            public IntPtr hwnd;
+            public IntPtr hwndInsertAfter;
+            public int x;
+            public int y;
+            public int cx;
+            public int cy;
+            public uint flags;
         }
     }
 }

@@ -366,7 +366,11 @@ namespace Cloudless
             ApplyDisplayMode();  // mostly not needed here but always-top and border and stuff is relevant
 
             this.KeyDown += Window_KeyDown;
-            
+
+            this.Activated += MainWindow_Activated;
+            this.GotFocus += MainWindow_Activated;
+            this.GotKeyboardFocus += MainWindow_Activated;
+
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
             InitializeZooming();
