@@ -16,6 +16,12 @@ namespace Cloudless
             return CURRENT_VERSION;
         }
 
+        public int GetWindowZIndexFromOrderMap(Dictionary<IntPtr, int> zOrderMap)
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            return zOrderMap.TryGetValue(hwnd, out int z) ? z : int.MaxValue;
+        }
+
         public CloudlessWindowState GetWindowState(Dictionary<IntPtr, int> zOrderMap)
         {
             if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
@@ -113,8 +119,7 @@ namespace Cloudless
                     return (-2, 0, null);
                 }
 
-                var zOrderMap = GetZOrderForCurrentProcessWindows();  // TODO unused? probably replace a few lines below.
-
+                var zs = GetZOrderForCurrentProcessWindows();
                 foreach (var window in Application.Current.Windows.OfType<MainWindow>())
                 {
                     CloudlessWindowState cws;
@@ -124,7 +129,7 @@ namespace Cloudless
                         cws.IsMinimized = true;
                     }
                     else
-                        cws = window.GetWindowState(GetZOrderForCurrentProcessWindows());
+                        cws = window.GetWindowState(zs);
 
                     workspace.CloudlessWindows.Add(cws);
                 }
@@ -1037,6 +1042,7 @@ namespace Cloudless
             }
         }
 
+        public int ZIndexBeforePageSwap = 0;
         public void SwapViewToPage(int pageIndex, bool skipHide = false, bool fromSlideshow = false)
         {
             if (pageIndex < 1 || pageIndex > 8)
@@ -1059,6 +1065,18 @@ namespace Cloudless
                 return;
             }
 
+            var zs = GetZOrderForCurrentProcessWindows();
+            foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (window.windowPageIndex != currentPageIndex)
+                    continue;
+
+                if (window.WindowState == WindowState.Minimized)
+                    window.ZIndexBeforePageSwap = window.stateUponMinimizing?.ZOrder ?? 0;
+                else
+                    window.ZIndexBeforePageSwap = window.GetWindowZIndexFromOrderMap(zs);
+            }
+
             if (!skipHide)
             {
                 // minimize all windows on the current page, and also hide them from taskbar and alt-tab
@@ -1077,6 +1095,7 @@ namespace Cloudless
             var windowsToReveal = Application.Current.Windows
                 .OfType<MainWindow>()
                 .Where(w => w.windowPageIndex == pageIndex)
+                .OrderByDescending(w => w.ZIndexBeforePageSwap)
                 .ToList();
 
             foreach (var w in windowsToReveal)
