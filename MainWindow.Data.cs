@@ -475,31 +475,37 @@ namespace Cloudless
                             // Apply retained volume level
                             player.SetVolume(this._windowVideoVolume);
 
-                            // Create a started post-play task so Resize/Center runs after playback begins.
-                            Task postPlayTask = Task.Run(async () =>  // sync, to do an elegant concurrency dance with the below play method
+                            // Only perform the post-play resize/center flow when not loading a workspace.
+                            // Workspace loading manages window sizing itself and using the new post-play
+                            // flow during workspace load can cause races and incorrect placement.
+                            Task? postPlayTask = null;
+                            if (!WorkspaceLoadInProgress)
                             {
-                                try
+                                postPlayTask = Task.Run(async () =>
                                 {
-                                    // Marshal ResizeWindowToImage to UI thread
-                                    await Dispatcher.InvokeAsync(async () =>
+                                    try
                                     {
-                                        try
+                                        // Marshal ResizeWindowToImage to UI thread
+                                        await Dispatcher.InvokeAsync(async () =>
                                         {
-                                            await ResizeWindowToImage();
-                                            CenterWindowOnCurrentScreen();
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Message($"Failed to get video dimensions from plugin: {ex.Message}");
-                                        }
-                                    }, System.Windows.Threading.DispatcherPriority.Background);
-                                }
-                                catch (Exception ex)
-                                {
-                                    // Ensure any errors are surfaced on UI thread
-                                    Dispatcher.Invoke(() => Message($"Failed to run post-play task: {ex.Message}"));
-                                }
-                            });
+                                            try
+                                            {
+                                                await ResizeWindowToImage();
+                                                CenterWindowOnCurrentScreen();
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Message($"Failed to get video dimensions from plugin: {ex.Message}");
+                                            }
+                                        }, System.Windows.Threading.DispatcherPriority.Background);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        // Ensure any errors are surfaced on UI thread
+                                        Dispatcher.Invoke(() => Message($"Failed to run post-play task: {ex.Message}"));
+                                    }
+                                });
+                            }
 
                             // Start playback without blocking; Play will await the provided postPlayTask which is already started.
                             _ = player.Play(uri, postPlayTask);  // sync, to avoid thread issues that occurred when using async play method
