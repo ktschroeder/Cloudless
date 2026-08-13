@@ -700,7 +700,7 @@ namespace Cloudless
                 Console.WriteLine($"Failed to apply saved video state: {ex.Message}");
             }
 
-            ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workstation from File Explrorer
+            ShowInTaskbar = false;  // this toggle prevents a bunch of annoying flashes for each new window in taskbar when opening a workspace from File Explrorer
             Activate();
             ShowInTaskbar = true;
 
@@ -941,7 +941,7 @@ namespace Cloudless
             this.ShowInTaskbar = false;
         }
 
-        public void RevealWindowForPages()
+        public void RevealWindowForPages(bool fromSlideshow = false)
         {
             this.Show();
             this.ShowInTaskbar = true;
@@ -950,7 +950,7 @@ namespace Cloudless
                 : windowWasMaximizedPriorToHidingForPage ? WindowState.Maximized
                 : WindowState.Normal;
 
-            if (this.WindowState != WindowState.Minimized)
+            if (this.WindowState != WindowState.Minimized && !fromSlideshow)
             {
                 this.Activate();
                 this.Focus();
@@ -1081,7 +1081,7 @@ namespace Cloudless
 
             foreach (var w in windowsToReveal)
             {
-                w.RevealWindowForPages();
+                w.RevealWindowForPages(fromSlideshow);
             }
 
             // update current page index in settings
