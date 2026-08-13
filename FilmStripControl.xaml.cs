@@ -224,7 +224,7 @@ namespace Cloudless
 
                     //FileType? fileType = FileTypeManager.GetFileTypes().FirstOrDefault(ft => ft.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase));
 
-                    bool isVideo = false;// fileType?.IsVideo ?? (ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov");
+                    bool isVideo = (ext == ".webm" || ext == ".mkv" || ext == ".mp4");
 
                     if (isVideo)
                     {

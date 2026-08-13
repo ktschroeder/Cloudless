@@ -105,6 +105,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("p p / p n", "Change the view to the previous/next page (wraps around at end)"),
                     new ReferenceItem("p pa / p na", "Change the view to the previous/next active page (wraps around at end)"),
                     new ReferenceItem("ss [seconds] | slideshow [seconds]", "Start automatic slideshow: cycle through active pages every [seconds] seconds"),
+                    new ReferenceItem("ss [seconds] shuffle | slideshow [seconds] shuffle", "Similar to above, but traverse pages in smart-random order"),
                     new ReferenceItem("ss stop | slideshow stop", "Stop the current slideshow"),
                 }, "A \"page\" is similar to a simple workspace, but all pages' windows are kept in memory simultaneously. A workspace can contain up to 8 pages. The benefit of this is that you can swap full arrangements (pages) almost immediately, whereas loading a different workspace could take longer. It also enables more complex and organized workspaces with manageable layers."),
                 new ReferenceTab("Advanced", new List<ReferenceItem>

@@ -975,6 +975,51 @@ namespace Cloudless
                 return true;
             }
 
+            //// Slideshow commands: "ss [seconds] [shuffle]" or "slideshow [seconds] [shuffle]"
+            //if (cmd.Equals("ss stop") || cmd.Equals("slideshow stop"))
+            //{
+            //    SlideshowManager.Stop();
+            //    Message("Slideshow stopped");
+            //    return true;
+            //}
+
+            //if ((cmd.StartsWith("ss ") || cmd.StartsWith("slideshow ")) && cmd.Length > 3)
+            //{
+            //    var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            //    if (tokens.Length >= 2)
+            //    {
+            //        // Parse interval
+            //        var ts = TryParseTimeString(tokens[1]);
+            //        if (!ts.HasValue)
+            //        {
+            //            Message("Invalid slideshow interval. Provide seconds like '5' or '1:30'.");
+            //            return false;
+            //        }
+
+            //        double seconds = ts.Value.TotalSeconds;
+
+            //        // Parse optional shuffle parameter (accept forms: "shuffle", "true", "false", "shuffle=true")
+            //        bool shuffle = false;
+            //        if (tokens.Length >= 3)
+            //        {
+            //            string s = tokens[2].Trim().ToLower();
+            //            if (s == "shuffle" || s == "true")
+            //                shuffle = true;
+            //            else if (s.StartsWith("shuffle="))
+            //            {
+            //                var parts = s.Split('=', 2);
+            //                if (parts.Length == 2 && bool.TryParse(parts[1], out bool parsed))
+            //                    shuffle = parsed;
+            //            }
+            //            else if (s == "false")
+            //                shuffle = false;
+            //        }
+
+            //        StartSlideshow(seconds, shuffle);
+            //        return true;
+            //    }
+            //}
+
             if (cmd.Equals("rev"))  // reveal current image in file explorer
             {
                 string? path = currentlyDisplayedImagePath;
@@ -1197,9 +1242,12 @@ namespace Cloudless
             if (cmd.StartsWith("ss ") || cmd.StartsWith("slideshow "))
             {
                 string timeStr = cmd.StartsWith("ss ") ? cmd.Substring(3).Trim() : cmd.Substring(10).Trim();
+                bool shuffle = timeStr.Split(" ").Length == 2 && timeStr.Split(" ")[1].ToLower().Equals("shuffle");
+                if (shuffle)
+                    timeStr = timeStr.Split(" ")[0];
                 if (double.TryParse(timeStr, out double seconds) && seconds > 0)
                 {
-                    StartSlideshow(seconds);
+                    StartSlideshow(seconds, shuffle);
                     return true;
                 }
                 else
@@ -1708,7 +1756,7 @@ namespace Cloudless
             }
         }
 
-        private void StartSlideshow(double intervalSeconds)
+        private void StartSlideshow(double intervalSeconds, bool shuffle = false)
         {
             SlideshowManager.Stop();
 
@@ -1725,7 +1773,7 @@ namespace Cloudless
             int startingPageIndex = activePages.IndexOf(startPageIndex);
 
             // Initialize global slideshow and pass the tick handler
-            SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick);
+            SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick, shuffle);
 
             Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)");
         }
@@ -1739,25 +1787,31 @@ namespace Cloudless
             if (pages == null || pages.Count == 0)
                 return;
 
-            // Get the next page to display
-            // We need to calculate which page is next - SlideshowManager manages the index internally
-            // For now, we'll iterate through the active pages
-            var allPages = GetNonemptyPages();
-            if (allPages.Count == 0)
+            // Prefer the manager-selected page if available (manager-driven choice)
+            int nextPage;
+            var sel = SlideshowManager.SelectedPage;
+            if (sel.HasValue)
             {
-                SlideshowManager.Stop();
-                return;
+                nextPage = sel.Value;
             }
+            else
+            {
+                // Fallback: compute next page as before
+                var allPages = GetNonemptyPages();
+                if (allPages.Count == 0)
+                {
+                    SlideshowManager.Stop();
+                    return;
+                }
 
-            // Find current page
-            int currentPageIndex = GetCurrentPageIndex();
-            int currentPos = pages.IndexOf(currentPageIndex);
-            if (currentPos < 0)
-                currentPos = 0;
+                int currentPageIndex = GetCurrentPageIndex();
+                int currentPos = pages.IndexOf(currentPageIndex);
+                if (currentPos < 0)
+                    currentPos = 0;
 
-            // Advance to next
-            int nextPos = (currentPos + 1) % pages.Count;
-            int nextPage = pages[nextPos];
+                int nextPos = (currentPos + 1) % pages.Count;
+                nextPage = pages[nextPos];
+            }
 
             // Swap to next page (fromSlideshow=true prevents stopping the slideshow)
             SwapViewToPage(nextPage, skipHide: false, fromSlideshow: true);

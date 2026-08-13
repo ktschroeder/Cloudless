@@ -475,20 +475,34 @@ namespace Cloudless
                             // Apply retained volume level
                             player.SetVolume(this._windowVideoVolume);
 
-                            Task postPlayTask = new Task(async () =>  // sync, to do an elegant concurrency dance with the below play method
+                            // Create a started post-play task so Resize/Center runs after playback begins.
+                            Task postPlayTask = Task.Run(async () =>  // sync, to do an elegant concurrency dance with the below play method
                             {
                                 try
                                 {
-                                    await ResizeWindowToImage();
-                                    CenterWindowOnCurrentScreen();
+                                    // Marshal ResizeWindowToImage to UI thread
+                                    await Dispatcher.InvokeAsync(async () =>
+                                    {
+                                        try
+                                        {
+                                            await ResizeWindowToImage();
+                                            CenterWindowOnCurrentScreen();
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Message($"Failed to get video dimensions from plugin: {ex.Message}");
+                                        }
+                                    }, System.Windows.Threading.DispatcherPriority.Background);
                                 }
                                 catch (Exception ex)
                                 {
-                                    Dispatcher.Invoke(() => Message($"Failed to get video dimensions from plugin: {ex.Message}"));
+                                    // Ensure any errors are surfaced on UI thread
+                                    Dispatcher.Invoke(() => Message($"Failed to run post-play task: {ex.Message}"));
                                 }
                             });
 
-                            Task.Run(() => player.Play(uri, postPlayTask));  // sync, to avoid thread issues that occurred when using async play method
+                            // Start playback without blocking; Play will await the provided postPlayTask which is already started.
+                            _ = player.Play(uri, postPlayTask);  // sync, to avoid thread issues that occurred when using async play method
 
                         }  // TODO else?
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
@@ -551,9 +565,28 @@ namespace Cloudless
                             bitmap = tmp;
                         }
 
-                        ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly, else the Source is at first considered null, specifically when a GIF is opened directly.
+                        // Detect whether this PNG is actually an APNG (animated PNG).
+                        bool pngAnimated = false;
+                        try
+                        {
+                            pngAnimated = IsPngAnimated(uri.LocalPath);
+                        }
+                        catch { }
 
-                        ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);  // slow method and cannot be made async
+                        if (pngAnimated)
+                        {
+                            // For animated PNGs, set the static Source first then register animated source
+                            ImageDisplay.Source = bitmap;
+                            ImageBehavior.SetAnimatedSource(ImageDisplay, bitmap);
+                        }
+                        else
+                        {
+                            // For static PNGs, clear any previous animated source first, then set the Source.
+                            // This avoids a state where AnimatedImage continues to own the visual and
+                            // prevents the newly assigned Source from displaying (black screen).
+                            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+                            ImageDisplay.Source = bitmap;  // setting this to the bitmap instead of null enables the window resizing to work properly
+                        }
 
                         animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null if the app is opened directly for a GIF // tag GIFNULL
                     }
@@ -731,6 +764,38 @@ namespace Cloudless
         private ImageCodecInfo? GetEncoder(ImageFormat format)
         {
             return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
+        }
+
+        private bool IsPngAnimated(string path)
+        {
+            // Quick check for APNG: look for the "acTL" chunk in the PNG file's chunk stream.
+            // PNG layout: 8-byte signature, then repeated chunks of [4-byte length][4-byte type][data][4-byte CRC].
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                // skip PNG signature (8 bytes)
+                if (fs.Length < 12) return false;
+                fs.Seek(8, SeekOrigin.Begin);
+
+                Span<byte> header = stackalloc byte[8];
+                while (fs.Read(header) == header.Length)
+                {
+                    // read length (big-endian)
+                    uint length = ((uint)header[0] << 24) | ((uint)header[1] << 16) | ((uint)header[2] << 8) | header[3];
+                    // read chunk type
+                    string chunkType = System.Text.Encoding.ASCII.GetString(header.Slice(4, 4));
+                    if (chunkType == "acTL")
+                        return true; // APNG animation control chunk found
+
+                    // Skip chunk data + CRC (length + 4)
+                    long toSkip = (long)length + 4;
+                    if (toSkip < 0) break;
+                    fs.Seek(toSkip, SeekOrigin.Current);
+                }
+            }
+            catch { }
+
+            return false;
         }
         public List<string> supportedFileTypes = FileTypeManager.GetFileTypes().Select(ft => "." + ft.Extension.ToLower()).ToList();
         private bool IsSupportedImageFile(string filePath)

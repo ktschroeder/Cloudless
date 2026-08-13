@@ -346,12 +346,31 @@ namespace Cloudless
                 (int, int)? dims = null;
                 try
                 {
-                    dims = await videoPlayer.GetDimensions().WaitAsync(TimeSpan.FromSeconds(0.25));
+                    // Try multiple short attempts to get dimensions from the plugin. Some plugins
+                    // populate dimensions only after playback starts and may take a moment.
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    TimeSpan maxWait = TimeSpan.FromSeconds(2); // total wait time
+                    TimeSpan perTry = TimeSpan.FromMilliseconds(200);
+                    while (sw.Elapsed < maxWait)
+                    {
+                        try
+                        {
+                            // attempt to get dimensions with a small per-call timeout
+                            dims = await videoPlayer.GetDimensions().WaitAsync(perTry);
+                        }
+                        catch (TimeoutException) { dims = null; }
+
+                        if (dims != null && dims.Value.Item1 > 0 && dims.Value.Item2 > 0)
+                            break;
+
+                        await Task.Delay(100);
+                    }
                 }
                 catch (NullReferenceException nre)
                 {
                     Message("Error getting video dimensions: " + nre.Message);
                 }
+
                 if (dims != null)
                 {
                     double videoWidth = dims.Value.Item1;
@@ -908,13 +927,6 @@ namespace Cloudless
                 _videoControlsWindow?.StopPositionUpdates();
                 _videoControlsWindow?.Hide();
                 DetachFromVideoPlayerEvents();
-
-                // Resume video if it was paused for seeking
-                var videoPlayer = VideoHost.Content as IVideoPlayer;
-                if (videoPlayer != null && videoPlayer.IsPaused())
-                {
-                    videoPlayer.TogglePause();
-                }
             }
         }
 

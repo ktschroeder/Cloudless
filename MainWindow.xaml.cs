@@ -18,7 +18,7 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        public const string CURRENT_VERSION = "0.11.0.3";
+        public const string CURRENT_VERSION = "0.11.0.10";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -763,6 +763,11 @@ namespace Cloudless
                     player.TogglePause();
                     e.Handled = true;
                 }
+            }
+            else if (e.Key == System.Windows.Input.Key.U)
+            {
+                ToggleVideoControlsVisibility();
+                e.Handled = true;
             }
         }
 

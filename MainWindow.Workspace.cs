@@ -553,17 +553,16 @@ namespace Cloudless
                 window.Activate();
             }
 
-            // Defer expensive operations to background without blocking
-            _ = Task.Run(async () =>
+            // Start post-processing for all loaded windows and capture Tasks so we can
+            // wait for them to complete before performing page swap. Each call returns
+            // a Task which completes when the per-window deferred post-processing finishes.
+            var postProcessTasks = new List<Task>();
+            foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
             {
-                foreach (var (window, state) in createdWindowsWithStates.OrderByDescending(w => w.Item1.WorkspaceLoadZOrder))
-                {
-                    await window.PostProcessLoadedWindowDeferred(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
-                }
-            });
-
-            if (workspace.CurrentPageIndex != GetCurrentPageIndex())
-                SwapViewToPage(workspace.CurrentPageIndex);
+                var t = window.PostProcessLoadedWindowDeferred(state, workspace.WorkspaceName, workspace.CurrentPageIndex);
+                if (t != null)
+                    postProcessTasks.Add(t);
+            }
 
             // Apply theme to all newly created workspace windows
             // (they were created with workspaceLoad: true, so they skipped ApplyThemeToWindow in their constructor)
@@ -582,6 +581,13 @@ namespace Cloudless
                 }
             }
             SaveRecentFiles();
+
+            // Wait for all per-window post-processing to finish before swapping pages.
+            if (postProcessTasks.Count > 0)
+                await Task.WhenAll(postProcessTasks);
+
+            if (workspace.CurrentPageIndex != GetCurrentPageIndex())
+                SwapViewToPage(workspace.CurrentPageIndex);
         }
 
         public async Task ApplyWindowState(CloudlessWindowState state)
@@ -1011,6 +1017,15 @@ namespace Cloudless
             {
                 var windowToRemove = blankWindowsOnTargetPage.First();
                 windowToRemove.Close();
+            }
+
+            if (!GetNonemptyPages().Contains(currentPageIndex))  // if this page is now empty after the send, create a new window for convenience
+            {
+                var freshWindow = new MainWindow("");
+                freshWindow.Show();
+                freshWindow.Activate();
+                freshWindow.Focus();
+                freshWindow.Message($"Created new Cloudless window since page was empty");
             }
         }
 

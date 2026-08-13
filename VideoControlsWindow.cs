@@ -210,6 +210,11 @@ namespace Cloudless
                     e.Handled = true;
                 }
             }
+            else if (e.Key == System.Windows.Input.Key.U)
+            {
+                _ownerWindow?.ToggleVideoControlsVisibility();
+                e.Handled = true;
+            }
         }
 
         public void AlignToOwner()

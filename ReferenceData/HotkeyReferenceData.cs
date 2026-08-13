@@ -99,6 +99,7 @@ namespace Cloudless.ReferenceData
                 new ReferenceTab("Advanced", new List<ReferenceItem>
                 {
                     new ReferenceItem("T", "Toggle always-on-top"),
+                    new ReferenceItem("Ctrl T", "Toggle always-on-bottom"),
                     new ReferenceItem("Ctrl Alt D", "Toggle debug info panel"),
                     new ReferenceItem("Shift (see note)", "Hold when moving window to constrain movement to straight lines (must hold at start)"),
                     new ReferenceItem("; or :", "Open Command Palette (for more info, see Command Palette Reference)"),
