@@ -922,9 +922,9 @@ namespace Cloudless
         // returns whether successful
         public bool SetCurrentPageIndex(int index)
         {
-            if (index < 1 || index > 8)
+            if (index < 1 || index > 20)
             {
-                Message($"Invalid page index: {index}. Must be from 1 to 8.");
+                Message($"Invalid page index: {index}. Must be from 1 to 20.");
                 return false;
             }
 
@@ -982,9 +982,9 @@ namespace Cloudless
 
         public void SendWindowToPage(int pageIndex, bool skipHide = false)
         {
-            if (pageIndex < 1 || pageIndex > 8)
+            if (pageIndex < 1 || pageIndex > 20)
             {
-                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 20.");
                 return;
             }
 
@@ -1032,9 +1032,9 @@ namespace Cloudless
 
         public void SendPageToPage(int pageIndex)
         {
-            if (pageIndex < 1 || pageIndex > 8)
+            if (pageIndex < 1 || pageIndex > 20)
             {
-                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 20.");
                 return;
             }
 
@@ -1061,9 +1061,9 @@ namespace Cloudless
         public int ZIndexBeforePageSwap = 0;
         public void SwapViewToPage(int pageIndex, bool skipHide = false, bool fromSlideshow = false)
         {
-            if (pageIndex < 1 || pageIndex > 8)
+            if (pageIndex < 1 || pageIndex > 20)
             {
-                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 20.");
                 return;
             }
 
@@ -1134,9 +1134,9 @@ namespace Cloudless
 
         public void SwapPageWithPage(int p1, int p2)
         {
-            if (p1 < 1 || p1 > 8 || p2 < 1 || p2 > 8)
+            if (p1 < 1 || p1 > 20 || p2 < 1 || p2 > 20)
             {
-                Message($"Invalid page index: {p1} or {p2}. Must be from 1 to 8.");
+                Message($"Invalid page index: {p1} or {p2}. Must be from 1 to 20.");
                 return;
             }
             if (p1 == p2)
@@ -1186,9 +1186,9 @@ namespace Cloudless
 
         public void ClearPage(int pageIndex)
         {
-            if (pageIndex < 1 || pageIndex > 8)
+            if (pageIndex < 1 || pageIndex > 20)
             {
-                Message($"Invalid page index: {pageIndex}. Must be from 1 to 8.");
+                Message($"Invalid page index: {pageIndex}. Must be from 1 to 20.");
                 return;
             }
 

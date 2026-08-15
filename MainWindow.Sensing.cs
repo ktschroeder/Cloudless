@@ -218,7 +218,15 @@ namespace Cloudless
 
             bool markEndOfDuplication = control && !alt && !_duplicating && e.Key == Key.D;
 
-            await ProcessKeyEvent(e.Key, shift, control, alt);
+            var key = e.Key;
+
+            // capture ALT + num key events that otherwise get swallowed by Windows as system inputs
+            if (alt && e.SystemKey >= Key.D0 && e.SystemKey <= Key.D9)
+            {
+                key = e.SystemKey;
+            }
+
+            await ProcessKeyEvent(key, shift, control, alt);
 
             if (markEndOfDuplication)
                 _duplicating = false;
@@ -808,19 +816,36 @@ namespace Cloudless
             }
             else if (!control)
             {
-                if (key >= Key.D1 && key <= Key.D8) // Hotkeys for paging
+                if (key >= Key.D0 && key <= Key.D9) // Hotkeys for paging
                 {
-                    switch (key)
-                    {
-                        case Key.D1: SwapViewToPage(1); break;
-                        case Key.D2: SwapViewToPage(2); break;
-                        case Key.D3: SwapViewToPage(3); break;
-                        case Key.D4: SwapViewToPage(4); break;
-                        case Key.D5: SwapViewToPage(5); break;
-                        case Key.D6: SwapViewToPage(6); break;
-                        case Key.D7: SwapViewToPage(7); break;
-                        case Key.D8: SwapViewToPage(8); break;
-                    }
+                    if (!alt)
+                        switch (key)
+                        {
+                            case Key.D1: SwapViewToPage(1); break;
+                            case Key.D2: SwapViewToPage(2); break;
+                            case Key.D3: SwapViewToPage(3); break;
+                            case Key.D4: SwapViewToPage(4); break;
+                            case Key.D5: SwapViewToPage(5); break;
+                            case Key.D6: SwapViewToPage(6); break;
+                            case Key.D7: SwapViewToPage(7); break;
+                            case Key.D8: SwapViewToPage(8); break;
+                            case Key.D9: SwapViewToPage(9); break;
+                            case Key.D0: SwapViewToPage(10); break;
+                        }
+                    else
+                        switch (key)
+                        {
+                            case Key.D1: SwapViewToPage(11); break;
+                            case Key.D2: SwapViewToPage(12); break;
+                            case Key.D3: SwapViewToPage(13); break;
+                            case Key.D4: SwapViewToPage(14); break;
+                            case Key.D5: SwapViewToPage(15); break;
+                            case Key.D6: SwapViewToPage(16); break;
+                            case Key.D7: SwapViewToPage(17); break;
+                            case Key.D8: SwapViewToPage(18); break;
+                            case Key.D9: SwapViewToPage(19); break;
+                            case Key.D0: SwapViewToPage(20); break;
+                        }
                 }
             }
 
