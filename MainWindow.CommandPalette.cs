@@ -133,23 +133,60 @@ namespace Cloudless
             }
         }
 
-        public async Task ExecuteCommand(string command)
+        public async Task ExecuteCommand(string cmd)
         {
-            // The user may chain together commands in one line
-            List<string> individualCommands = command.Split(";").ToList();
+            cmd = cmd.Trim().ToLower();
 
-            foreach (string c in individualCommands)
+            // We process "macro record" here instead of the inner method, to guard against unexpected command behavior with recursion
+            if (cmd.StartsWith("macro record "))
             {
-                string trimmedCommand = c.Trim();
-                if (!string.IsNullOrEmpty(trimmedCommand))
+                // split into up to 3 parts: "macro", action, rest
+                var parts = cmd.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 2)
                 {
-                    bool validCommand = await ExecuteCommandInner(trimmedCommand);  // bool is currently unused
+                    Message("Invalid macro command");
+                    CommitCommand(cmd);
+                    return;
+                }
+                    
+                if (parts.Length < 3)
+                {
+                    Message("Usage: macro record [name] [command]");
+                    CommitCommand(cmd);
+                    return;
+                }
+
+                var rest = parts[2];
+                int idx = rest.IndexOf(' ');
+                if (idx <= 0)
+                {
+                    Message("Usage: macro record [name] [command]");
+                    CommitCommand(cmd);
+                    return;
+                }
+
+                var name = rest.Substring(0, idx);
+                var macroCommand = rest.Substring(idx + 1);
+                SetUserMacro(name, macroCommand);
+            }
+            else
+            {
+                // The user may chain together commands in one line
+                List<string> individualCommands = cmd.Split(";").ToList();
+
+                foreach (string c in individualCommands)
+                {
+                    string trimmedCommand = c.Trim();
+                    if (!string.IsNullOrEmpty(trimmedCommand))
+                    {
+                        bool validCommand = await ExecuteCommandInner(trimmedCommand);  // bool is currently unused
+                    }
                 }
             }
 
             // Originally it seemed better to only commit valid commands, but I find it more convenient to commit all commands, at least for now.
             // ...especially when the user makes a slight typo and would rather not fully re-type a longer command.
-            CommitCommand(command);
+            CommitCommand(cmd);
         }
 
         private bool TabScroll;  // whether next tab should try to find another autocomplete candidate
@@ -291,6 +328,77 @@ namespace Cloudless
                 await SendCommandToOthers(innerCommand);
                 await ExecuteCommand(innerCommand);
                 return true;
+            }
+
+            // macro commands: record/run/delete/list
+            if (cmd.StartsWith("macro "))
+            {
+                // split into up to 3 parts: "macro", action, rest
+                var parts = cmd.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 2)
+                {
+                    Message("Invalid macro command");
+                    return false;
+                }
+
+                var action = parts[1];
+                if (action == "record")
+                {
+                    Message("'macro record' commands are not valid inside macros or nested commands. To record a macro, use the command palette directly.");
+                    return true;
+                }
+                else if (action == "run")
+                {
+                    if (parts.Length < 3)
+                    {
+                        Message("Usage: macro run [name]");
+                        return false;
+                    }
+
+                    var name = parts[2].Trim();
+                    await RunUserMacro(name);
+                    return true;
+                }
+                else if (action == "delete")
+                {
+                    if (parts.Length < 3)
+                    {
+                        Message("Usage: macro delete [name]");
+                        return false;
+                    }
+
+                    var name = parts[2].Trim();
+                    var macros = LoadUserMacros();
+                    if (macros.Remove(name))
+                    {
+                        SaveUserMacros(macros);
+                        Message($"Deleted macro '{name}'");
+                    }
+                    else
+                    {
+                        Message($"Macro not found: {name}");
+                    }
+                    return true;
+                }
+                else if (action == "list")
+                {
+                    var macros = LoadUserMacros();
+                    if (macros.Count == 0)
+                        Message("No macros defined");
+                    else
+                    {
+                        foreach (var kv in macros)
+                        {
+                            Message($"{kv.Key}: {kv.Value}");
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    Message("Unknown macro action: " + action);
+                    return false;
+                }
             }
 
             if (cmd.StartsWith("others ") && cmd.Length > 7)
@@ -1580,6 +1688,83 @@ namespace Cloudless
                 var list = stringCollection.Cast<string>().ToList();
                 UserCommands = list;
             }
+        }
+
+        // --- User macros (saved to a file in workspaceFilesPath/user_macros.txt) ---
+        private static readonly string userMacrosFileName = "user_macros.txt";
+
+        private Dictionary<string, string> LoadUserMacros()
+        {
+            try
+            {
+                if (!Directory.Exists(workspaceFilesPath))
+                    Directory.CreateDirectory(workspaceFilesPath);
+
+                string path = Path.Combine(workspaceFilesPath, userMacrosFileName);
+                if (!File.Exists(path))
+                    return new Dictionary<string, string>();
+
+                string json = File.ReadAllText(path);
+                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                return dict ?? new Dictionary<string, string>();
+            }
+            catch (Exception ex)
+            {
+                Message("Failed to load user macros: " + ex.Message);
+                return new Dictionary<string, string>();
+            }
+        }
+
+        private void SaveUserMacros(Dictionary<string, string> macros)
+        {
+            try
+            {
+                if (!Directory.Exists(workspaceFilesPath))
+                    Directory.CreateDirectory(workspaceFilesPath);
+
+                string path = Path.Combine(workspaceFilesPath, userMacrosFileName);
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(macros, options);
+                File.WriteAllText(path, json);
+            }
+            catch (Exception ex)
+            {
+                Message("Failed to save user macros: " + ex.Message);
+            }
+        }
+
+        private void SetUserMacro(string name, string command)
+        {
+            var macros = LoadUserMacros();
+            macros[name] = command;
+            SaveUserMacros(macros);
+            Message($"Saved macro '{name}'");
+        }
+
+        private List<string> MacrosInProgress = new List<string>();
+        private async Task<bool> RunUserMacro(string name)
+        {
+            var macros = LoadUserMacros();
+            if (!macros.ContainsKey(name))
+            {
+                Message($"Macro not found: {name}");
+                return false;
+            }
+
+            if (MacrosInProgress.Contains(name))
+            {
+                Message($"Macro recursion detected and prevented for: {name}");
+                return false;
+            }
+
+            MacrosInProgress.Add(name);
+            string command = macros[name];
+            if (!string.IsNullOrEmpty(command))
+            {
+                await ExecuteCommand(command);
+            }
+            MacrosInProgress.Remove(name);
+            return true;
         }
 
         private void SaveUserCommands()
