@@ -628,7 +628,15 @@ namespace Cloudless
             // Ensure overlay window is visible and aligned so it appears above HwndHost-based video players
             if (overlayWindow != null)
             {
-                overlayWindow.Owner = this;
+                try
+                {
+                    overlayWindow.Owner = this;
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // tried to set owner to a closed window
+                    return;
+                }
                 overlayWindow.AlignToOwner(this);
                 if (!overlayWindow.IsVisible)
                 {

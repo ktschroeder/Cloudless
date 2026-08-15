@@ -902,9 +902,18 @@ namespace Cloudless
 
         public void InitializeVideoControls()
         {
-            _videoControlsWindow = new VideoControlsWindow();
-            _videoControlsWindow.AttachToOwner(this);
-            _videoControlsWindow.Hide(); // Hidden by default
+            try
+            {
+                _videoControlsWindow = new VideoControlsWindow();
+                _videoControlsWindow.AttachToOwner(this);
+                _videoControlsWindow.Hide(); // Hidden by default
+            }
+            catch (Exception ex)
+            {
+                // This occurs when the user opens a workspace file directly from Windows File Explorer,
+                // probably happening on a window used only for startup.
+                Message($"Failed to initialize video controls: {ex.Message}");
+            }
         }
 
         public void ToggleVideoControlsVisibility()
