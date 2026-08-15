@@ -616,7 +616,10 @@ namespace Cloudless
 
             if (key == Key.L)
             {
-                await ResizeImageToFillWindow();
+                if (control)
+                    await Quickload();
+                else
+                    await ResizeImageToFillWindow();
                 return;
             }
 
@@ -626,6 +629,13 @@ namespace Cloudless
                     ToggleComicMode();
                 else
                     RevealImageInExplorer(currentlyDisplayedImagePath);
+                return;
+            }
+
+            if (key == Key.S)
+            {
+                if (control)
+                    Quicksave();
                 return;
             }
 

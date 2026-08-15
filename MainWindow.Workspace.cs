@@ -845,6 +845,7 @@ namespace Cloudless
         private async Task Quickload()
         {
             await LoadWorkspace(QUICKSAVE_NAME);
+            Message("Quickload done. You can undo this with 'ws undoload'.");
         }
         private async Task Quickmerge()
         {
