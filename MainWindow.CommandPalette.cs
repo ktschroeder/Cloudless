@@ -975,51 +975,6 @@ namespace Cloudless
                 return true;
             }
 
-            //// Slideshow commands: "ss [seconds] [shuffle]" or "slideshow [seconds] [shuffle]"
-            //if (cmd.Equals("ss stop") || cmd.Equals("slideshow stop"))
-            //{
-            //    SlideshowManager.Stop();
-            //    Message("Slideshow stopped");
-            //    return true;
-            //}
-
-            //if ((cmd.StartsWith("ss ") || cmd.StartsWith("slideshow ")) && cmd.Length > 3)
-            //{
-            //    var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            //    if (tokens.Length >= 2)
-            //    {
-            //        // Parse interval
-            //        var ts = TryParseTimeString(tokens[1]);
-            //        if (!ts.HasValue)
-            //        {
-            //            Message("Invalid slideshow interval. Provide seconds like '5' or '1:30'.");
-            //            return false;
-            //        }
-
-            //        double seconds = ts.Value.TotalSeconds;
-
-            //        // Parse optional shuffle parameter (accept forms: "shuffle", "true", "false", "shuffle=true")
-            //        bool shuffle = false;
-            //        if (tokens.Length >= 3)
-            //        {
-            //            string s = tokens[2].Trim().ToLower();
-            //            if (s == "shuffle" || s == "true")
-            //                shuffle = true;
-            //            else if (s.StartsWith("shuffle="))
-            //            {
-            //                var parts = s.Split('=', 2);
-            //                if (parts.Length == 2 && bool.TryParse(parts[1], out bool parsed))
-            //                    shuffle = parsed;
-            //            }
-            //            else if (s == "false")
-            //                shuffle = false;
-            //        }
-
-            //        StartSlideshow(seconds, shuffle);
-            //        return true;
-            //    }
-            //}
-
             if (cmd.Equals("rev"))  // reveal current image in file explorer
             {
                 string? path = currentlyDisplayedImagePath;
@@ -1232,10 +1187,15 @@ namespace Cloudless
                 return true;
             }
 
-            // Slideshow commands: "ss [time]", "ss stop", "slideshow [time]", "slideshow stop"
             if (cmd.Equals("ss stop") || cmd.Equals("slideshow stop"))
             {
                 SlideshowManager.Stop();
+                return true;
+            }
+
+            if (cmd.Equals("ss next") || cmd.Equals("slideshow next"))
+            {
+                SlideshowManager.NextSlideshowPage();
                 return true;
             }
 

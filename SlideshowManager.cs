@@ -90,6 +90,18 @@ namespace Cloudless
             SelectedPage = null;
         }
 
+        public static void NextSlideshowPage()
+        {
+            if (_slideshowTimer == null || !_slideshowTimer.IsEnabled)
+                return;
+
+            // reset timer
+            _slideshowTimer.Stop();
+            _slideshowTimer.Start();
+
+            OnTimerTick();
+        }
+
         /// <summary>
         /// Internal method called on each timer tick.
         /// Advances to the next page in the slideshow.
