@@ -955,7 +955,16 @@ namespace Cloudless
 
         public void RevealWindowForPages(bool fromSlideshow = false)
         {
-            this.Show();
+            try
+            {
+                this.Show();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // tried to show a closed window
+                return;
+            }
+            
             this.ShowInTaskbar = true;
 
             this.WindowState = windowWasMinimizedPriorToHidingForPage ? WindowState.Minimized
