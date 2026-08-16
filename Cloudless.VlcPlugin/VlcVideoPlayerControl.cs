@@ -176,38 +176,61 @@ namespace Cloudless.VlcPlugin
         {
             try
             {
-                // Fire the IVideoPlayer.TimeChanged event
-                TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = e.Time });
+                // Marshal event invocation to UI thread so subscribers may access WPF safely.
+                var timeMs = e.Time;
+                try
+                {
+                    Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = timeMs });
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"TimeChanged handler threw: {ex.Message}");
+                        }
+                    }));
+                }
+                catch
+                {
+                    // If Application or Dispatcher not available, fallback to direct invoke (best-effort)
+                    try { TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = timeMs }); } catch { }
+                }
 
                 if (_mediaPlayer == null) return;
                 if (!_loopEnd.HasValue) return;
 
-                long currentMs = e.Time; // milliseconds
+                long currentMs = timeMs; // milliseconds
                 if (currentMs < 0) return;
 
                 long endMs = (long)_loopEnd.Value.TotalMilliseconds;
 
                 if (currentMs >= endMs)
                 {
-                    // debounce rapid repeated seeks
-                    var now = DateTime.UtcNow;
-                    if ((now - _lastLoopSeek).TotalMilliseconds < 100)
-                        return;
-                    _lastLoopSeek = now;
-
                     var start = _loopStart ?? TimeSpan.Zero;
                     // Seek on UI thread to avoid threading issues
-                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    try
                     {
-                        try
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            _mediaPlayer.SeekTo(start);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error seeking to loop start: {ex.Message}");
-                        }
-                    }));
+                            try
+                            {
+                                if (_mediaPlayer != null && _mediaPlayer.IsSeekable)
+                                {
+                                    _mediaPlayer.SeekTo(start);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error seeking to loop start: {ex.Message}");
+                            }
+                        }));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"MediaPlayer_TimeChanged dispatch error: {ex.Message}");
+                    }
                 }
             }
             catch (Exception ex)
@@ -434,6 +457,10 @@ namespace Cloudless.VlcPlugin
             {
                 if (_mediaPlayer.IsSeekable)
                 {
+                    // Do not allow seeking before the configured loop start
+                    if (_loopStart.HasValue && position < _loopStart.Value)
+                        position = _loopStart.Value;
+
                     if (position < TimeSpan.Zero)
                         position = TimeSpan.Zero;
 
