@@ -422,6 +422,8 @@ namespace Cloudless
                 _videoLoopStart = pos;
                 // update plugin
                 vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                // refresh video controls UI markers
+                UpdateVideoControls();
                 Message($"Set loop start to {pos}");
                 return true;
             }
@@ -438,6 +440,7 @@ namespace Cloudless
                 _videoLoopStart = null;
                 // update plugin
                 vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                UpdateVideoControls();
                 Message($"Reset loop start");
                 return true;
             }
@@ -454,6 +457,7 @@ namespace Cloudless
                 var pos = vp.GetPosition();
                 _videoLoopEnd = pos;
                 vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                UpdateVideoControls();
                 Message($"Set loop end to {pos}");
                 return true;
             }
@@ -470,6 +474,7 @@ namespace Cloudless
                 _videoLoopEnd = null;
                 // update plugin
                 vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                UpdateVideoControls();
                 Message($"Reset loop end");
                 return true;
             }

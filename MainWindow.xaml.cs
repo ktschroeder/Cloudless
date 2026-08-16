@@ -92,6 +92,10 @@ namespace Cloudless
         public int CommandHistoryIndex = -1;
         public List<string> UserCommands = new List<string>(8);
 
+        // Expose loop start/end for video controls
+        public TimeSpan? VideoLoopStart => _videoLoopStart;
+        public TimeSpan? VideoLoopEnd => _videoLoopEnd;
+
         private Point lastMousePosition;
 
         private bool isDraggingWindowFromFullscreen = false;

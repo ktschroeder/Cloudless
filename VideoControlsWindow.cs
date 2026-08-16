@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -167,8 +168,59 @@ namespace Cloudless
                     _lastAppliedPositionMs = positionMs;
                     SeekingSlider.Value = (int)Math.Min(positionMs, durationMs);
                     CurrentTimeText.Text = FormatTime(TimeSpan.FromMilliseconds(positionMs));
+                    UpdateLoopMarkers();
                 }
             }
+        }
+
+        private void UpdateLoopMarkers()
+        {
+            if (_ownerWindow == null || MarkerCanvas == null)
+                return;
+
+            var videoPlayer = _ownerWindow.VideoHost.Content as IVideoPlayer;
+            if (videoPlayer == null)
+                return;
+
+            double durationMs = Math.Max(1, videoPlayer.GetDuration().TotalMilliseconds);
+
+            var start = _ownerWindow.VideoLoopStart;
+            var end = _ownerWindow.VideoLoopEnd;
+
+            var thumb = FindVisualChild<Thumb>(SeekingSlider);
+            var track = FindVisualChild<Track>(SeekingSlider);
+            double thumbWidth = thumb?.ActualWidth ?? 0.0;
+            double usableWidth;
+            if (track != null && track.ActualWidth > 0)
+                usableWidth = Math.Max(1.0, track.ActualWidth - thumbWidth);
+            else
+                usableWidth = Math.Max(1.0, SeekingSlider.ActualWidth - thumbWidth);
+
+            double thumbHalf = thumbWidth / 2.0;
+            double rectHeight = StartMarker?.Height ?? 14;
+            double top = Math.Max(0, (SeekingSlider.ActualHeight - rectHeight) / 2.0);
+
+            void PositionMarker(FrameworkElement marker, TimeSpan? time)
+            {
+                if (marker == null) return;
+                if (time.HasValue && durationMs > 0)
+                {
+                    double ratio = time.Value.TotalMilliseconds / durationMs;
+                    ratio = Math.Max(0, Math.Min(1, ratio));
+                    double effectiveX = ratio * usableWidth;
+                    double left = effectiveX + thumbHalf;
+                    Canvas.SetLeft(marker, left - (marker.Width / 2.0));
+                    Canvas.SetTop(marker, top);
+                    marker.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    marker.Visibility = Visibility.Collapsed;
+                }
+            }
+
+            PositionMarker(StartMarker, start);
+            PositionMarker(EndMarker, end);
         }
 
         public void AttachToOwner(MainWindow owner)
