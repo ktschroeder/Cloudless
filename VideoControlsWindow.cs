@@ -254,64 +254,25 @@ namespace Cloudless
         private void VideoControlsWindow_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
         {
             // Forward all key input to the owner window so global hotkeys work even when this control is focused.
-            try
+            
+            if (_ownerWindow != null)
             {
-                if (_ownerWindow != null)
+                var ps = PresentationSource.FromVisual(_ownerWindow);
+                var previewArgs = new System.Windows.Input.KeyEventArgs(Keyboard.PrimaryDevice, ps, Environment.TickCount, e.Key)
                 {
-                    var ps = PresentationSource.FromVisual(_ownerWindow);
-                    var previewArgs = new System.Windows.Input.KeyEventArgs(Keyboard.PrimaryDevice, ps, Environment.TickCount, e.Key)
-                    {
-                        RoutedEvent = Keyboard.PreviewKeyDownEvent
-                    };
-                    _ownerWindow.RaiseEvent(previewArgs);
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent
+                };
+                _ownerWindow.RaiseEvent(previewArgs);
 
-                    var keyArgs = new System.Windows.Input.KeyEventArgs(Keyboard.PrimaryDevice, ps, Environment.TickCount, e.Key)
-                    {
-                        RoutedEvent = Keyboard.KeyDownEvent
-                    };
-                    _ownerWindow.RaiseEvent(keyArgs);
-
-                    // If owner handled the key, mark event handled here as well
-                    e.Handled = previewArgs.Handled || keyArgs.Handled;
-
-                    // If owner did not handle the key, preserve a couple of useful defaults
-                    if (!e.Handled)
-                    {
-                        if (e.Key == System.Windows.Input.Key.Space)
-                        {
-                            var player = _ownerWindow?.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                            if (player != null)
-                            {
-                                player.TogglePause();
-                                e.Handled = true;
-                            }
-                        }
-                        else if (e.Key == System.Windows.Input.Key.U)
-                        {
-                            _ownerWindow?.ToggleVideoControlsVisibility();
-                            e.Handled = true;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Fallback: keep previous behavior for a couple keys if forwarding failed
-                System.Diagnostics.Debug.WriteLine($"Forwarding key to owner failed: {ex.Message}");
-                if (e.Key == System.Windows.Input.Key.Space)
+                var keyArgs = new System.Windows.Input.KeyEventArgs(Keyboard.PrimaryDevice, ps, Environment.TickCount, e.Key)
                 {
-                    var player = _ownerWindow?.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                    if (player != null)
-                    {
-                        player.TogglePause();
-                        e.Handled = true;
-                    }
-                }
-                else if (e.Key == System.Windows.Input.Key.U)
-                {
-                    _ownerWindow?.ToggleVideoControlsVisibility();
-                    e.Handled = true;
-                }
+                    RoutedEvent = Keyboard.KeyDownEvent
+                };
+                _ownerWindow.RaiseEvent(keyArgs);
+
+                // If owner handled the key, mark event handled here as well
+                e.Handled = previewArgs.Handled || keyArgs.Handled;
+                
             }
         }
 
