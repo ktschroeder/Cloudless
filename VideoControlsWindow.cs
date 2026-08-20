@@ -25,6 +25,8 @@ namespace Cloudless
         //private long _previousVlcEventTickMs = 0;
         private long _lastAppliedPositionMs = 0;
         private Cloudless.PluginBase.IVideoPlayer? _subscribedPlayer;
+        private bool _isUserAdjustingVolume = false;
+        private double _volumeDragThumbHalfWidth = 0.0;
 
         public VideoControlsWindow()
         {
@@ -32,7 +34,8 @@ namespace Cloudless
 
             // Set initial dimensions
             Width = 800;
-            Height = 55;
+            // Increase height to ensure controls (button and slider thumb) are not clipped at the bottom
+            Height = 64;
 
             // Set up event handlers
             SeekingSlider.PreviewMouseDown += SeekingSlider_PreviewMouseDown;
@@ -118,6 +121,37 @@ namespace Cloudless
                 return;
 
             ApplyLatestPosition(videoPlayer);
+            RefreshVolumeFromPlayer(videoPlayer);
+        }
+
+        private void RefreshVolumeFromPlayer(IVideoPlayer videoPlayer)
+        {
+            try
+            {
+                // If user is actively dragging the volume control, do not override their input
+                if (_isUserAdjustingVolume) return;
+
+                double vol = videoPlayer.GetVolume();
+                bool muted = videoPlayer.IsMuted();
+
+                // Update UI on dispatcher (should already be on UI thread for timer but ensure safety)
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        VolumeSlider.Value = Math.Max(0, Math.Min(100, vol));
+                        VolumePercentText.Text = $"{(int)Math.Round(VolumeSlider.Value)}%";
+                        // Show action label: when currently muted, button should offer to "Unmute" and vice versa
+                        // Update button label text to reflect the action it will perform
+                        if (MuteButton != null)
+                        {
+                            MuteButton.Content = muted ? "Unmute" : "Mute";
+                        }
+                    }
+                    catch { }
+                }));
+            }
+            catch { }
         }
 
         private void ApplyLatestPosition(IVideoPlayer videoPlayer)
@@ -355,6 +389,8 @@ namespace Cloudless
 
             CurrentTimeText.Text = FormatTime(position);
             DurationText.Text = FormatTime(duration);
+            // Also refresh volume UI when we first update the seeking bar
+            RefreshVolumeFromPlayer(videoPlayer);
         }
 
         public void OnVideoTimeChanged(VideoTimeChangedEventArgs e, IVideoPlayer? videoPlayer)
@@ -557,6 +593,138 @@ namespace Cloudless
                 var time = TimeSpan.FromMilliseconds(Math.Min(newValue, durationMs));
                 CurrentTimeText.Text = FormatTime(time);
             }
+        }
+
+        // Volume control handlers
+        private void MuteButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var videoPlayer = _ownerWindow?.VideoHost.Content as IVideoPlayer;
+                if (videoPlayer == null) return;
+
+                bool isMuted = videoPlayer.IsMuted();
+                if (isMuted)
+                {
+                    videoPlayer.Unmute();
+                }
+                else
+                {
+                    videoPlayer.Mute();
+                }
+
+                // Immediately refresh UI
+                RefreshVolumeFromPlayer(videoPlayer);
+            }
+            catch { }
+        }
+
+        private void VolumeSlider_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            _isUserAdjustingVolume = true;
+
+            // Compute initial thumb width for mapping
+            try
+            {
+                var thumb = FindVisualChild<Thumb>(VolumeSlider);
+                var track = FindVisualChild<Track>(VolumeSlider);
+                if (thumb != null && thumb.ActualWidth > 0)
+                    _volumeDragThumbHalfWidth = thumb.ActualWidth / 2.0;
+                else
+                    _volumeDragThumbHalfWidth = 0.0;
+
+                double usableWidth;
+                double posOnTrackX;
+                if (track != null && track.ActualWidth > 0)
+                {
+                    usableWidth = Math.Max(1.0, track.ActualWidth - (thumb?.ActualWidth ?? 0.0));
+                    var posOnTrack = e.GetPosition(track);
+                    posOnTrackX = posOnTrack.X;
+                }
+                else
+                {
+                    usableWidth = Math.Max(1.0, VolumeSlider.ActualWidth - (_volumeDragThumbHalfWidth * 2.0));
+                    var pos = e.GetPosition(VolumeSlider);
+                    posOnTrackX = pos.X;
+                }
+
+                double effectiveX = posOnTrackX - _volumeDragThumbHalfWidth;
+                double ratio = effectiveX / usableWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+
+                double newValue = ratio * (VolumeSlider.Maximum - VolumeSlider.Minimum) + VolumeSlider.Minimum;
+                VolumeSlider.Value = newValue;
+            }
+            catch
+            {
+                Point clickPosition = e.GetPosition(VolumeSlider);
+                double ratio = clickPosition.X / VolumeSlider.ActualWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                double newValue = ratio * (VolumeSlider.Maximum - VolumeSlider.Minimum) + VolumeSlider.Minimum;
+                VolumeSlider.Value = newValue;
+            }
+
+            VolumeSlider.CaptureMouse();
+        }
+
+        private void VolumeSlider_PreviewMouseMove(object? sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_isUserAdjustingVolume) return;
+            if (e.LeftButton != MouseButtonState.Pressed) return;
+
+            double newValue = VolumeSlider.Value;
+            try
+            {
+                var thumb = FindVisualChild<Thumb>(VolumeSlider);
+                var track = FindVisualChild<Track>(VolumeSlider);
+                double usableWidth;
+                double posOnTrackX;
+                if (track != null && track.ActualWidth > 0)
+                {
+                    usableWidth = Math.Max(1.0, track.ActualWidth - (thumb?.ActualWidth ?? 0.0));
+                    var posOnTrack = e.GetPosition(track);
+                    posOnTrackX = posOnTrack.X;
+                }
+                else
+                {
+                    usableWidth = Math.Max(1.0, VolumeSlider.ActualWidth - (_volumeDragThumbHalfWidth * 2.0));
+                    var pos = e.GetPosition(VolumeSlider);
+                    posOnTrackX = pos.X;
+                }
+
+                double effectiveX = posOnTrackX - _volumeDragThumbHalfWidth;
+                double ratio = effectiveX / usableWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                newValue = ratio * (VolumeSlider.Maximum - VolumeSlider.Minimum) + VolumeSlider.Minimum;
+                VolumeSlider.Value = newValue;
+            }
+            catch
+            {
+                Point pos = e.GetPosition(VolumeSlider);
+                double ratio = pos.X / VolumeSlider.ActualWidth;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                newValue = ratio * (VolumeSlider.Maximum - VolumeSlider.Minimum) + VolumeSlider.Minimum;
+                VolumeSlider.Value = newValue;
+            }
+
+            // Update percent label live
+            VolumePercentText.Text = $"{(int)Math.Round(VolumeSlider.Value)}%";
+        }
+
+        private void VolumeSlider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!_isUserAdjustingVolume) return;
+            _isUserAdjustingVolume = false;
+
+            var videoPlayer = _ownerWindow?.VideoHost.Content as IVideoPlayer;
+            if (videoPlayer != null)
+            {
+                int vol = (int)Math.Round(VolumeSlider.Value);
+                videoPlayer.SetVolume(vol);
+                VolumePercentText.Text = $"{vol}%";
+            }
+
+            VolumeSlider.ReleaseMouseCapture();
         }
 
         [StructLayout(LayoutKind.Sequential)]

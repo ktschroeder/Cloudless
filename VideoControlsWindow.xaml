@@ -61,6 +61,30 @@
                        FontSize="11"
                        VerticalAlignment="Center"
                        Margin="8,0,0,0"/>
+
+            <!-- Volume controls (center area) -->
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0,8,0">
+                <!-- Mute/Unmute button -->
+                <Button x:Name="MuteButton" Width="65" Height="22" Padding="0" Margin="0,0,6,0" Click="MuteButton_Click" ToolTip="Mute/Unmute">
+                    <TextBlock x:Name="MuteIcon" Text="??" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </Button>
+
+                <!-- Volume slider gauge -->
+                <Slider x:Name="VolumeSlider"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="100"
+                        Width="160"
+                        Height="22"
+                        VerticalAlignment="Center"
+                        Margin="0,2,6,2"
+                        PreviewMouseDown="VolumeSlider_PreviewMouseDown"
+                        PreviewMouseMove="VolumeSlider_PreviewMouseMove"
+                        PreviewMouseUp="VolumeSlider_PreviewMouseUp"/>
+
+                <!-- Percentage text (read-only) with fixed width to avoid layout shifts -->
+                <TextBlock x:Name="VolumePercentText" Text="100%" Foreground="{DynamicResource PrimaryForeground}" FontSize="11" VerticalAlignment="Center" Width="40" TextAlignment="Center"/>
+            </StackPanel>
         </Grid>
     </Border>
 </Window>
