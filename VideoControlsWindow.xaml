@@ -37,8 +37,8 @@
 
                 <!-- Overlay canvas for static loop start/end markers -->
                 <Canvas x:Name="MarkerCanvas" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                    <Rectangle x:Name="StartMarker" Width="3" Height="14" Visibility="Collapsed" Fill="OrangeRed" RadiusX="1" RadiusY="1" />
-                    <Rectangle x:Name="EndMarker" Width="3" Height="14" Visibility="Collapsed" Fill="LimeGreen" RadiusX="1" RadiusY="1" />
+                    <Rectangle x:Name="StartMarker" Width="3" Height="14" Visibility="Collapsed" Fill="LimeGreen" RadiusX="1" RadiusY="1" />
+                    <Rectangle x:Name="EndMarker" Width="3" Height="14" Visibility="Collapsed" Fill="OrangeRed" RadiusX="1" RadiusY="1" />
                 </Canvas>
             </Grid>
 
