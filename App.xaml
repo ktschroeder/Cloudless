@@ -84,6 +84,52 @@
             </Setter>
         </Style>
 
+        <!-- Make CloudlessButton the implicit Button style so all buttons follow theme -->
+        <Style TargetType="Button" BasedOn="{StaticResource CloudlessButton}" />
+
+        <!-- Thumb styling (used by Slider and ScrollBar) -->
+        <Style TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Background="{DynamicResource PrimaryForeground}" CornerRadius="6" Width="12" Height="12" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Slider template for a sleek thin track with filled portion -->
+        <Style TargetType="Slider">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="18" MinWidth="120">
+                            <!-- Track background -->
+                            <Border x:Name="TrackBackground" Height="6" VerticalAlignment="Center" CornerRadius="3" Background="{DynamicResource ControlBackground}" />
+
+                            <Track x:Name="PART_Track" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Background="{DynamicResource PrimaryButtonBackgroundBrush}" BorderThickness="0" IsTabStop="False" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Background="Transparent" BorderThickness="0" IsTabStop="False" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Vertical">
+                                <Setter TargetName="TrackBackground" Property="Width" Value="6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ContextMenu and MenuItem styling -->
         <Style TargetType="ContextMenu">
             <!-- Use DynamicResource directly inside template to ensure updates when theme changes at runtime -->
