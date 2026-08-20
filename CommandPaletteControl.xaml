@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="48" d:DesignWidth="400">
-    <Border x:Name="Root" Visibility="Visible" Background="{DynamicResource OverlayBackground}" CornerRadius="4" Padding="6" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6">
+    <Border x:Name="Root" Visibility="Visible" Background="{DynamicResource CommandPaletteBackground}" CornerRadius="4" Padding="6" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>

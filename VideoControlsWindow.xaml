@@ -8,7 +8,7 @@
         Topmost="False"
         ShowActivated="False">
 
-    <Border Background="{DynamicResource SecondaryBackground}" 
+    <Border Background="{DynamicResource OverlayBackground}" 
             Padding="8" 
             CornerRadius="4,4,0,0"
             BorderBrush="{DynamicResource ControlBorderBrush}"

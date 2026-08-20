@@ -125,19 +125,24 @@ namespace Cloudless
             Application.Current.Resources["PrimaryButtonHoverBackgroundBrush"] = primaryBtnHoverBrush;
             Application.Current.Resources["PrimaryButtonPressedBackgroundBrush"] = primaryBtnPressedBrush;
 
-            // Overlay and accent brushes
-            Color overlayBg = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#CC1E1E1E") : (Color)ColorConverter.ConvertFromString("#CCFFFFFF");
+            // Overlay and accent brushes - use a more transparent alpha so overlay windows (filmstrip, video controls) are less visually heavy
+            Color overlayBg = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#881E1E1E") : (Color)ColorConverter.ConvertFromString("#88FFFFFF");
             Color overlayFg = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#FFEAEAEA") : (Color)ColorConverter.ConvertFromString("#FF222222");
             Color accentBorder = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#66FFFFFF") : (Color)ColorConverter.ConvertFromString("#33000000");
             Color fadeBase = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#FF000000") : (Color)ColorConverter.ConvertFromString("#FFFFFFFF");
 
             Application.Current.Resources["OverlayBackground"] = new SolidColorBrush(overlayBg);
+            // Command palette should be less transparent than general overlays so it remains readable
+            Color commandPaletteBg = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#CC1E1E1E") : (Color)ColorConverter.ConvertFromString("#CCFFFFFF");
+            Application.Current.Resources["CommandPaletteBackground"] = new SolidColorBrush(commandPaletteBg);
             Application.Current.Resources["OverlayForeground"] = new SolidColorBrush(overlayFg);
             Application.Current.Resources["AccentBorderBrush"] = new SolidColorBrush(accentBorder);
             Application.Current.Resources["FadeBaseColor"] = fadeBase;
 
             // Additional common keys to affect implicit controls
-            Application.Current.Resources["ControlBackground"] = new SolidColorBrush(secondaryBg);
+            // Make control backgrounds semi-transparent so panels like the video controls and filmstrip feel lighter
+            var semiTransparentControlBg = Color.FromArgb(0x58, secondaryBg.R, secondaryBg.G, secondaryBg.B);
+            Application.Current.Resources["ControlBackground"] = new SolidColorBrush(semiTransparentControlBg);
             Application.Current.Resources["ControlForeground"] = new SolidColorBrush(primaryFg);
             var textBoxBg = (themeName == "Dark") ? (Color)ColorConverter.ConvertFromString("#FF222222") : Colors.White;
             Application.Current.Resources["TextBoxBackground"] = new SolidColorBrush(textBoxBg);
