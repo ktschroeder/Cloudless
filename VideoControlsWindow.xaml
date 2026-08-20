@@ -64,6 +64,8 @@
 
             <!-- Volume controls (center area) -->
             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0,8,0">
+                <!-- Play/Pause button -->
+                <Button x:Name="PlayPauseButton" Width="65" Height="22" Padding="0" Margin="0,0,6,0" Click="PlayPauseButton_Click" ToolTip="Play/Pause" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">Pause</Button>
                 <!-- Mute/Unmute button -->
                 <Button x:Name="MuteButton" Width="65" Height="22" Padding="0" Margin="0,0,6,0" Click="MuteButton_Click" ToolTip="Mute/Unmute">
                     <TextBlock x:Name="MuteIcon" Text="??" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center"/>

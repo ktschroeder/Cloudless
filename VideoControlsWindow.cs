@@ -122,6 +122,28 @@ namespace Cloudless
 
             ApplyLatestPosition(videoPlayer);
             RefreshVolumeFromPlayer(videoPlayer);
+            RefreshPlaybackState(videoPlayer);
+        }
+
+        private void RefreshPlaybackState(IVideoPlayer videoPlayer, bool? setTo = null)
+        {
+            try
+            {
+                bool paused = setTo != null ? setTo.Value : videoPlayer.IsPaused();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        if (PlayPauseButton != null)
+                        {
+                            // When paused, the action should be "Play"; when playing, action is "Pause"
+                            PlayPauseButton.Content = paused ? "Play" : "Pause";
+                        }
+                    }
+                    catch { }
+                }));
+            }
+            catch { }
         }
 
         private void RefreshVolumeFromPlayer(IVideoPlayer videoPlayer)
@@ -615,6 +637,7 @@ namespace Cloudless
 
                 // Immediately refresh UI
                 RefreshVolumeFromPlayer(videoPlayer);
+                RefreshPlaybackState(videoPlayer);
             }
             catch { }
         }
@@ -725,6 +748,22 @@ namespace Cloudless
             }
 
             VolumeSlider.ReleaseMouseCapture();
+        }
+
+        private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var videoPlayer = _ownerWindow?.VideoHost.Content as IVideoPlayer;
+                if (videoPlayer == null) return;
+
+                // Toggle pause/play
+                videoPlayer.TogglePause();
+
+                // Update UI immediately
+                RefreshPlaybackState(videoPlayer);  // TODO use setTo within, for snappier UX perhaps
+            }
+            catch { }
         }
 
         [StructLayout(LayoutKind.Sequential)]
