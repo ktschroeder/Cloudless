@@ -501,9 +501,28 @@ namespace Cloudless
                                     }
                                 });
                             }
+                            else
+                            {
+                                postPlayTask = Task.Run(async () =>
+                                {
+                                    try
+                                    {
+                                        // Marshal to UI thread
+                                        await Dispatcher.InvokeAsync(() =>
+                                        {
+                                            player.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                                        }, System.Windows.Threading.DispatcherPriority.Background);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        // Ensure any errors are surfaced on UI thread
+                                        Dispatcher.Invoke(() => Message($"Failed to run post-play task: {ex.Message}"));
+                                    }
+                                });
+                            }
 
-                            // Start playback without blocking; Play will await the provided postPlayTask which is already started.
-                            _ = player.Play(uri, postPlayTask);  // sync, to avoid thread issues that occurred when using async play method
+                                // Start playback without blocking; Play will await the provided postPlayTask which is already started.
+                                _ = player.Play(uri, postPlayTask);  // sync, to avoid thread issues that occurred when using async play method
 
                         }  // TODO else?
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);

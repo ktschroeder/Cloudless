@@ -780,7 +780,6 @@ namespace Cloudless
                     {
                         TimeSpan? s = state.LoopStartMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopStartMs.Value) : null;
                         TimeSpan? e = state.LoopEndMs.HasValue ? TimeSpan.FromMilliseconds(state.LoopEndMs.Value) : null;
-                        vp.SetLoopRange(s, e);
                         this._videoLoopStart = s;
                         this._videoLoopEnd = e;
                     }
