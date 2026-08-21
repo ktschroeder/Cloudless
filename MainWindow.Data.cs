@@ -333,6 +333,8 @@ namespace Cloudless
 
                 currentlyDisplayedImagePath = uri.LocalPath;
 
+                ResetCustomVideoLoop();
+
                 if (!WorkspaceLoadInProgress)
                     AddToRecentFiles(uri.LocalPath);
 
@@ -445,16 +447,9 @@ namespace Cloudless
                             UpdateVideoControls();
                         }
 
-                        // Reset any previously set loop range when loading a new video
-                        if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer playerReset)
-                        {
-                            playerReset.SetLoopRange(null, null);
-                        }
-
+                        
                         VideoHost.Height = double.NaN;
                         VideoHost.Width = double.NaN;
-                        //VideoHost.Height = 300;
-                        //VideoHost.Width = 300;
 
                         if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                         {

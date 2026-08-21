@@ -3,13 +3,11 @@ using LibVLCSharp.Shared;
 using LibVLCSharp.WPF;
 using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using MediaPlayer = LibVLCSharp.Shared.MediaPlayer;
-//using Cloudless.Diagnostics;
 
 namespace Cloudless.VlcPlugin
 {
@@ -21,6 +19,8 @@ namespace Cloudless.VlcPlugin
         private LibVLC _libVLC;
         private MediaPlayer _mediaPlayer;
         private VideoView _videoView;
+        private Grid _videoHostContainer;
+        private IntPtr _videoChildHwnd = IntPtr.Zero;
         private IntPtr? _preloadedLibVlcHandle = null;
         private IntPtr? _preloadedLibVlcCoreHandle = null;
 
@@ -31,6 +31,15 @@ namespace Cloudless.VlcPlugin
         private DateTime _lastLoopSeek = DateTime.MinValue;
 
         TaskCompletionSource<bool> _loadSignal;
+
+        // Video pan/zoom state maintained locally. We'll attempt to apply these to LibVLC if supported; otherwise apply to the VideoView transform as a fallback.
+        private double _videoScale = 1.0;
+        private double _videoPanX = 0.0;
+        private double _videoPanY = 0.0;
+        // Whether to attempt calling into native LibVLC scale APIs. Disabled by default because some
+        // native calls can reposition/center video unexpectedly. Enable only after confirming behavior.
+        private bool _preferNativeScale = false;
+       //private bool _preferNativeScale = true; // Temporarily enable native scaling flag by default to test native behavior.
 
         private const uint LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
 
@@ -43,6 +52,94 @@ namespace Cloudless.VlcPlugin
         public VlcVideoPlayerControl()
         {
         }
+
+        // Native interop helpers to find and move the native video child window
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOP = IntPtr.Zero;
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_SHOWWINDOW = 0x0040;
+
+        //private void TryApplyNativeWindowTransform()
+        //{
+        //        if (_videoHostContainer == null) return;
+
+        //        // Ensure we have parent HWND
+        //        var ps = System.Windows.PresentationSource.FromVisual(_videoHostContainer) as System.Windows.Interop.HwndSource;
+        //        if (ps == null) return;
+        //        IntPtr parentHwnd = ps.Handle;
+        //        if (parentHwnd == IntPtr.Zero) return;
+
+        //        // Find child hwnd if not cached
+        //        if (_videoChildHwnd == IntPtr.Zero || !IsWindow(_videoChildHwnd))
+        //        {
+        //            IntPtr found = IntPtr.Zero;
+        //            EnumChildWindows(parentHwnd, (h, l) =>
+        //            {
+        //                // pick first visible child
+        //                found = h;
+        //                return false; // stop enumeration
+        //            }, IntPtr.Zero);
+
+        //            if (found != IntPtr.Zero)
+        //                _videoChildHwnd = found;
+        //        }
+
+        //        if (_videoChildHwnd == IntPtr.Zero || !IsWindow(_videoChildHwnd)) return;
+
+        //        // Compute desired child rectangle in screen coords based on host container
+        //        if (!GetWindowRect(parentHwnd, out RECT parentRect)) return;
+
+        //        double hostW = _videoHostContainer.ActualWidth;
+        //        double hostH = _videoHostContainer.ActualHeight;
+        //        if (hostW <= 0 || hostH <= 0) return;
+
+        //        int width = (int)Math.Round(hostW * _videoScale);
+        //        int height = (int)Math.Round(hostH * _videoScale);
+
+        //        int left = parentRect.Left + (int)Math.Round((hostW - width) / 2.0 + _videoPanX);
+        //        int top = parentRect.Top + (int)Math.Round((hostH - height) / 2.0 + _videoPanY);
+
+        //        // Apply position/size
+        //        SetWindowPos(_videoChildHwnd, HWND_TOP, left, top, Math.Max(1, width), Math.Max(1, height), SWP_NOZORDER | SWP_SHOWWINDOW);
+        //}
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool UpdateWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool RedrawWindow(IntPtr hWnd, IntPtr lprcUpdate, IntPtr hrgnUpdate, uint flags);
+
+        //private const uint RDW_INVALIDATE = 0x0001;
+        //private const uint RDW_UPDATENOW = 0x0100;
+        //private const uint RDW_ERASE = 0x0004;
 
         public void SetLoopRange(TimeSpan? start, TimeSpan? end)
         {
@@ -87,6 +184,9 @@ namespace Cloudless.VlcPlugin
                     Console.WriteLine($"SetLoopRange error: {ex.Message}");
                 }
             }
+
+            // Also attempt to position/resize the native child HWND so the native video surface updates immediately.
+            //TryApplyNativeWindowTransform();
         }
 
 
@@ -111,7 +211,32 @@ namespace Cloudless.VlcPlugin
             _videoView.Loaded += VideoView_Loaded;
             this.Unloaded += VlcVideoPlayerControl_Unloaded;
 
-            Content = _videoView;
+            // Wrap the VideoView in a container so we can apply transforms to the container
+            _videoHostContainer = new Grid();
+            _videoHostContainer.Children.Add(_videoView);
+            // Monitor layout/size/transform changes to help diagnose unexpected recentering behavior
+            _videoHostContainer.LayoutUpdated += (s, e) =>
+            {
+                try
+                {
+                    var rt = _videoHostContainer.RenderTransform;
+                    if (rt is TransformGroup tg)
+                    {
+                        var st = tg.Children.OfType<ScaleTransform>().FirstOrDefault();
+                        var tt = tg.Children.OfType<TranslateTransform>().FirstOrDefault();
+                        Console.WriteLine($"[VLC] LayoutUpdated: scale={st?.ScaleX:F3}/{st?.ScaleY:F3} pan={tt?.X:F1},{tt?.Y:F1} hostSize={_videoHostContainer.ActualWidth:F0}x{_videoHostContainer.ActualHeight:F0}");
+                    }
+                    else if (rt is ScaleTransform srt)
+                    {
+                        Console.WriteLine($"[VLC] LayoutUpdated: scale={srt.ScaleX:F3}/{srt.ScaleY:F3} hostSize={_videoHostContainer.ActualWidth:F0}x{_videoHostContainer.ActualHeight:F0}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[VLC] LayoutUpdated error: {ex.Message}");
+                }
+            };
+            Content = _videoHostContainer;
         }
 
         private void VlcVideoPlayerControl_Unloaded(object sender, RoutedEventArgs e)
@@ -381,6 +506,169 @@ namespace Cloudless.VlcPlugin
         public void TogglePause()
         {
             _mediaPlayer?.SetPause(_mediaPlayer.IsPlaying);
+        }
+
+        public void SetVideoZoom(double scale, double centerX, double centerY)
+        {
+            // compute new scale but preserve old scale value for delta computations
+            double oldScale = _videoScale;
+            double newScale = Math.Max(0.01, scale);
+            Console.WriteLine($"[VLC] SetVideoZoom called: scaleRequested={scale:F3} newScale={newScale:F3} oldScale={oldScale:F3} center=({centerX:F1},{centerY:F1}) preferNative={_preferNativeScale}");
+            // assign new scale
+            _videoScale = newScale;
+
+            // As a fallback, try applying a WPF transform to the VideoView (may not affect native surface due to airspace).
+            if (_videoHostContainer == null)
+                return;
+
+            Console.WriteLine($"[VLC] Applying transform: newScale={newScale:F3} _videoPan=({_videoPanX:F1},{_videoPanY:F1}) hostSize={_videoHostContainer.ActualWidth:F0}x{_videoHostContainer.ActualHeight:F0}");
+            // Ensure transforms exist on the host container and use center origin so scaling behaves like images
+            var tg = _videoHostContainer.RenderTransform as TransformGroup;
+            if (tg == null)
+            {
+                tg = new TransformGroup();
+                tg.Children.Add(new ScaleTransform(1, 1));
+                tg.Children.Add(new TranslateTransform(0, 0));
+                _videoHostContainer.RenderTransform = tg;
+                _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
+            }
+
+            var st = tg.Children.OfType<ScaleTransform>().FirstOrDefault();
+            var tt = tg.Children.OfType<TranslateTransform>().FirstOrDefault();
+            if (st == null)
+            {
+                st = new ScaleTransform(1, 1);
+                tg.Children.Insert(0, st);
+            }
+            if (tt == null)
+            {
+                tt = new TranslateTransform(0, 0);
+                tg.Children.Add(tt);
+            }
+
+            // Compute derivedDelta (newScale / oldScale) using captured variables
+            double derivedDelta = (oldScale > 0) ? (newScale / oldScale) : 1.0;
+
+            // Determine zoom origin in local (pre-transform) coordinates relative to the host container
+            Point mouseLocal = System.Windows.Input.Mouse.GetPosition(_videoHostContainer);
+            double localX = mouseLocal.X;
+            double localY = mouseLocal.Y;
+
+            localX = centerX;  // TODO remove above if not using.
+            localY = centerY;
+
+            var rt2 = _videoHostContainer.RenderTransform;
+            if (rt2 != null && !rt2.Value.IsIdentity)
+            {
+                var m2 = rt2.Value;
+                if (m2.HasInverse)
+                {
+                    m2.Invert();
+                    var pre = m2.Transform(mouseLocal);
+                    localX = pre.X;
+                    localY = pre.Y;
+                }
+            }
+
+            // Use host container actual size as the container for pan math
+            double containerWidth = _videoHostContainer.ActualWidth;
+            double containerHeight = _videoHostContainer.ActualHeight;
+
+            // Calculate offset relative to the center of the host container
+            double offsetX = localX - _videoPanX - (containerWidth / 2.0);
+            double offsetY = localY - _videoPanY - (containerHeight / 2.0);
+
+            // Adjust pan so zoom is centered on the provided point
+            _videoPanX -= offsetX * (derivedDelta - 1.0);
+            _videoPanY -= offsetY * (derivedDelta - 1.0);
+
+            // Apply scale and pan values using the same coordinate system as image zooming
+            st.ScaleX = newScale;
+            st.ScaleY = newScale;
+
+            // apply pan adjustments
+            tt.X = _videoPanX;
+            tt.Y = _videoPanY;
+
+            // persist pan
+            _videoPanX = tt.X;
+            _videoPanY = tt.Y;
+            Console.WriteLine($"[VLC] Applied transform: scale={st.ScaleX:F3} pan=({tt.X:F1},{tt.Y:F1})");
+
+            // Force render pass
+            //_videoHostContainer.Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        public void PanVideoBy(double deltaX, double deltaY)
+        {
+            _videoPanX += deltaX;
+            _videoPanY += deltaY;
+
+            Console.WriteLine($"[VLC] PanVideoBy called: delta=({deltaX:F1},{deltaY:F1}) -> pan=({_videoPanX:F1},{_videoPanY:F1})");
+
+            if (_videoHostContainer == null)
+                return;
+
+            // Try to apply as a RenderTransform
+            _videoHostContainer.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var tg = _videoHostContainer.RenderTransform as TransformGroup;
+                if (tg == null)
+                {
+                    tg = new TransformGroup();
+                    tg.Children.Add(new ScaleTransform(_videoScale, _videoScale));
+                    tg.Children.Add(new TranslateTransform(_videoPanX, _videoPanY));
+                    _videoHostContainer.RenderTransform = tg;
+                }
+                else
+                {
+                    var tt = tg.Children.OfType<TranslateTransform>().FirstOrDefault();
+                    if (tt == null)
+                    {
+                        tt = new TranslateTransform(_videoPanX, _videoPanY);
+                        tg.Children.Add(tt);
+                    }
+                    else
+                    {
+                        tt.X = _videoPanX;
+                        tt.Y = _videoPanY;
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        public double GetVideoZoom()
+        {
+            return _videoScale;
+        }
+
+        public (double, double) GetVideoPan()
+        {
+            return (_videoPanX, _videoPanY);
+        }
+
+        public void ResetVideoPanZoom()
+        {
+            _videoScale = 1.0;
+            _videoPanX = 0.0;
+            _videoPanY = 0.0;
+
+            if (_mediaPlayer != null)
+            {
+                var mi = _mediaPlayer.GetType().GetMethod("SetScale", new Type[] { typeof(float) });
+                if (mi != null)
+                {
+                    mi.Invoke(_mediaPlayer, new object[] { (float)_videoScale });
+                }
+            }
+
+            if (_videoHostContainer != null)
+            {
+                _videoHostContainer.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _videoHostContainer.RenderTransform = Transform.Identity;
+                }), System.Windows.Threading.DispatcherPriority.Render);
+            }
         }
 
         public void Stop()

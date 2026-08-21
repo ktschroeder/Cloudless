@@ -229,8 +229,17 @@ namespace Cloudless
             }
         }
 
-        private void UpdateLoopMarkers()
+        public void UpdateLoopMarkers(bool clear = false)
         {
+            if (clear)
+            {
+                if (StartMarker != null)
+                    StartMarker.Visibility = Visibility.Collapsed;
+                if (EndMarker != null)
+                    EndMarker.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             if (_ownerWindow == null || MarkerCanvas == null)
                 return;
 

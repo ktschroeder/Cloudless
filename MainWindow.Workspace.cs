@@ -1,11 +1,12 @@
-﻿using System.Windows;
-using System.IO;
-using System.Diagnostics;
-using System.Text.Json;
-using System.Windows.Interop;
-using System.Runtime.InteropServices;
+﻿using Cloudless.Properties;
 using System.Collections.Specialized;
-using Cloudless.Properties;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Interop;
 
 namespace Cloudless
 {
@@ -84,6 +85,19 @@ namespace Cloudless
                 MonitorWidth = monitorWidth,
                 MonitorHeight = monitorHeight
             };
+
+            bool isVideo = !string.IsNullOrEmpty(currentlyDisplayedImagePath) && FileTypeManager.IsVideoFile(Path.GetExtension(currentlyDisplayedImagePath));
+            if (isVideo)
+            {
+                var videoPlayer = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (videoPlayer != null)
+                {
+                    state.Zoom = videoPlayer.GetVideoZoom();
+                    (double panX, double panY) = videoPlayer.GetVideoPan();
+                    state.PanX = panX;
+                    state.PanY = panY;
+                } 
+            }
 
             if (this._videoLoopStart.HasValue)
                 state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
@@ -621,19 +635,32 @@ namespace Cloudless
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
             {
-                if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
+                bool isVideo = FileTypeManager.IsVideoFile(Path.GetExtension(currentlyDisplayedImagePath));
+                if (isVideo)
+                {
+                    var videoPlayer = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                    if (videoPlayer != null)
+                    {
+                        videoPlayer.SetVideoZoom(state.Zoom, 0, 0);
+                        videoPlayer.PanVideoBy(state.PanX, state.PanY);
+                    }
+                }
+                else
+                {
+                    if (imageScaleTransform == null || imageTranslateTransform == null) throw new NullReferenceException();
 
-                // This essentially applies cropping
-                await ToggleCropMode(true, true);
-                ImageDisplay.Width = state.RenderWidth;
-                ImageDisplay.Height = state.RenderHeight;
+                    // This essentially applies cropping
+                    await ToggleCropMode(true, true);
+                    ImageDisplay.Width = state.RenderWidth;
+                    ImageDisplay.Height = state.RenderHeight;
 
-                imageScaleTransform.ScaleX = state.Zoom;
-                imageScaleTransform.ScaleY = state.Zoom;
-                imageTranslateTransform.X = state.PanX;
-                imageTranslateTransform.Y = state.PanY;
+                    imageScaleTransform.ScaleX = state.Zoom;
+                    imageScaleTransform.ScaleY = state.Zoom;
+                    imageTranslateTransform.X = state.PanX;
+                    imageTranslateTransform.Y = state.PanY;
 
-                //ToggleCropMode(false, true);  // toggling this here is too early and causes the image to be resized undesirably.
+                    //ToggleCropMode(false, true);  // toggling this here is too early and causes the image to be resized undesirably.
+                }
             }
         }
 

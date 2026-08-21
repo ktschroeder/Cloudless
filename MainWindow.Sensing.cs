@@ -27,6 +27,8 @@ namespace Cloudless
 
         // MouseDown: Start Dragging
         public Point TargetCenterForQuickCommandDisplay;
+        private bool isPanningVideo = false;
+        private Point videoPanLastMousePos;
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Pressed)
@@ -57,9 +59,21 @@ namespace Cloudless
 
                     if (!MouseControlMode && !MouseCommandMode)
                         this.Cursor = Cursors.SizeAll;
-                    isPanningImage = true;
-                    lastMousePosition = e.GetPosition(this);
-                    ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
+                    // If a video plugin is active, perform video panning instead
+                    if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                    {
+                        isPanningImage = false;
+                        isPanningVideo = true;
+                        videoPanLastMousePos = e.GetPosition(this);
+                        // Capture mouse so subsequent moves are received
+                        this.CaptureMouse();
+                    }
+                    else
+                    {
+                        isPanningImage = true;
+                        lastMousePosition = e.GetPosition(this);
+                        ImageDisplay.CaptureMouse(); // bookmark line. captured mouse position could be different than expected due to subsequent automatic panning such as to center/bound image?
+                    }
                 }
                 else if (WindowState == WindowState.Maximized)
                 {
@@ -103,6 +117,19 @@ namespace Cloudless
                 Vector delta = currentMousePosition - lastMousePosition;
                 ClampTransformToIntuitiveBounds(delta);
                 lastMousePosition = currentMousePosition;
+            }
+            else if (isPanningVideo)
+            {
+                // Video panning: send delta to video player
+                Point current = e.GetPosition(this);
+                Vector delta = current - videoPanLastMousePos;
+                videoPanLastMousePos = current;
+
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                {
+                    videoPlayer.PanVideoBy(delta.X, delta.Y);
+                    InvalidateVisual();
+                }
             }
             else if (isDraggingWindowFromFullscreen && WindowState == WindowState.Maximized)
             {
@@ -171,6 +198,13 @@ namespace Cloudless
             if (isPanningImage)
             {
                 StopPanning();
+            }
+
+            if (isPanningVideo)
+            {
+                isPanningVideo = false;
+                try { this.ReleaseMouseCapture(); } catch { }
+                InvalidateVisual();
             }
 
             if (isDraggingWindow)
@@ -926,22 +960,55 @@ namespace Cloudless
             }
             else if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || MouseControlMode)
             {
-                if (!isExplorationMode) EnterExplorationMode();
-
-                // Get current mouse position relative to the image
-                Point cursorPosition = e.GetPosition(PrimaryWindow);
-
-                // Zoom factor
-                double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
-
-                if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))
+                // If a video player is active, delegate zooming to it so it can handle airspace appropriately
+                var maybeVideo = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (maybeVideo != null)
                 {
-                    zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;  // finer zooming for greater precision
+                    // Determine cursor position relative to window
+                    Point cursorPosition = e.GetPosition(this);
+                    // TODO: is not used.
+
+                    double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
+                    if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))
+                    {
+                        zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;
+                    }
+
+                    double current = maybeVideo.GetVideoZoom();
+                    double target = Math.Max(0.01, current * zoomDelta);
+                    try
+                    {
+                        maybeVideo.SetVideoZoom(target, cursorPosition.X, cursorPosition.Y);
+                        // ensure video display is refreshed
+                        //Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Render);
+                        InvalidateVisual();
+                    }
+                    catch (Exception ex)
+                    {
+                        Message($"Failed to set video zoom: {ex.Message}");
+                    }
+
+                    e.Handled = true;
                 }
+                else
+                {
+                    if (!isExplorationMode) EnterExplorationMode();
 
-                await Zoom(cursorPosition, zoomDelta: zoomDelta);
+                    // Get current mouse position relative to the image
+                    Point cursorPosition = e.GetPosition(PrimaryWindow);
 
-                e.Handled = true;
+                    // Zoom factor
+                    double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
+
+                    if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))
+                    {
+                        zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;  // finer zooming for greater precision
+                    }
+
+                    await Zoom(cursorPosition, zoomDelta: zoomDelta);
+
+                    e.Handled = true;
+                }
             }
             else
             {

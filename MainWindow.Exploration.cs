@@ -982,6 +982,19 @@ namespace Cloudless
             }
         }
 
+        public void ResetCustomVideoLoop()
+        {
+            this._videoLoopStart = null;
+            this._videoLoopEnd = null;
+
+            _videoControlsWindow?.UpdateLoopMarkers(clear: true);
+
+            if (VideoHost.Content is not IVideoPlayer vp)
+                return;
+
+            vp.SetLoopRange(TimeSpan.Zero, null);            
+        }
+
         public void CleanupVideoControls()
         {
             if (_videoControlsWindow != null)

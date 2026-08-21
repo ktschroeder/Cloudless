@@ -41,6 +41,7 @@ namespace Cloudless
             return fileTypes;
         }
 
+
         
         public static FileType? GetFileTypeByExtension(string extension)
         {
