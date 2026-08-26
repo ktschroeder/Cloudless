@@ -635,7 +635,7 @@ namespace Cloudless
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
             {
-                bool isVideo = FileTypeManager.IsVideoFile(Path.GetExtension(currentlyDisplayedImagePath));
+                bool isVideo = FileTypeManager.IsVideoFile(Path.GetExtension(currentlyDisplayedImagePath ?? ""));
                 if (isVideo)
                 {
                     var videoPlayer = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;

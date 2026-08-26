@@ -45,6 +45,9 @@ namespace Cloudless
         
         public static FileType? GetFileTypeByExtension(string extension)
         {
+            if (string.IsNullOrWhiteSpace(extension))
+                return null;
+
             extension = extension.TrimStart('.');
             var fileTypes = GetFileTypes();
             return fileTypes.FirstOrDefault(ft =>
