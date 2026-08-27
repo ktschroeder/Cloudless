@@ -87,8 +87,9 @@
         <!-- Make CloudlessButton the implicit Button style so all buttons follow theme -->
         <Style TargetType="Button" BasedOn="{StaticResource CloudlessButton}" />
 
-        <!-- Thumb styling (used by Slider and ScrollBar) -->
-        <Style TargetType="Thumb">
+        <!-- Thumb styling for Slider only. ScrollBar thumbs use the template inside the ScrollBar style
+             so we don't override their sizing/behavior with a global Thumb style. -->
+        <Style x:Key="SliderThumbStyle" TargetType="Thumb">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
@@ -113,7 +114,7 @@
                                     <RepeatButton Background="{DynamicResource PrimaryButtonBackgroundBrush}" BorderThickness="0" IsTabStop="False" />
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb />
+                                    <Thumb Style="{StaticResource SliderThumbStyle}" />
                                 </Track.Thumb>
                                 <Track.IncreaseRepeatButton>
                                     <RepeatButton Background="Transparent" BorderThickness="0" IsTabStop="False" />
