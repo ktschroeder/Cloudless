@@ -1237,6 +1237,15 @@ namespace Cloudless
             {
                 w.Close();
             }
+
+            if (GetCurrentPageIndex() == pageIndex)
+            {
+                var freshWindow = new MainWindow("");
+                freshWindow.Show();
+                freshWindow.Activate();
+                freshWindow.Focus();
+                freshWindow.Message($"Created new Cloudless window since page was cleared");
+            }
         }
 
         public List<int> GetNonemptyPages()
