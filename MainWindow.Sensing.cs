@@ -255,7 +255,7 @@ namespace Cloudless
             var key = e.Key;
 
             // capture ALT + num key events that otherwise get swallowed by Windows as system inputs
-            if (alt && e.SystemKey >= Key.D0 && e.SystemKey <= Key.D9)
+            if (alt && ((e.SystemKey >= Key.D0 && e.SystemKey <= Key.D9) || e.SystemKey == Key.Left || e.SystemKey == Key.Right || e.SystemKey == Key.Up || e.SystemKey == Key.Down))
             {
                 key = e.SystemKey;
             }
@@ -272,6 +272,20 @@ namespace Cloudless
 
         private async Task ProcessKeyEvent(Key key, bool shift, bool control, bool alt)
         {
+            // Alt + arrow keys: page navigation (previous/next page)
+            if (alt && (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down))
+            {
+                int current = GetCurrentPageIndex();
+                int target = current;
+                if (key == Key.Left || key == Key.Up)
+                    target = current == 1 ? 20 : current - 1;
+                else
+                    target = current == 20 ? 1 : current + 1;
+
+                SwapViewToPage(target);
+                return;
+            }
+
             if (key == Key.F11)
             {
                 await ToggleFullscreen();
