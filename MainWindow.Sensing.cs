@@ -176,6 +176,17 @@ namespace Cloudless
             {
                 this.Cursor = Cursors.Hand;  // could be better custom cursor
             }
+
+            // Auto video controls: keep them visible while mouse is moving
+            if (_videoControlsIdleTimer != null)
+            {
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                {
+                    ShowVideoControlsAuto();
+                    _videoControlsIdleTimer.Stop();
+                    _videoControlsIdleTimer.Start();
+                }
+            }
         }
 
         // MouseUp: Stop Dragging

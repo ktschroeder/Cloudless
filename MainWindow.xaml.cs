@@ -51,6 +51,10 @@ namespace Cloudless
         public IntPtr WindowHandle =>
             new WindowInteropHelper(this).Handle;
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static extern bool GetCursorPos(out POINT lpPoint);
+
         private string? currentDirectory;
         private string[]? imageFiles;
         private int currentImageIndex;
@@ -118,6 +122,7 @@ namespace Cloudless
 
         public bool GlobalStartup = false;
         public double MemoryMB = 0;
+        private DateTime _videoControlsSuppressUntil = DateTime.MinValue;
         #endregion
 
         #region Setup
@@ -374,6 +379,36 @@ namespace Cloudless
             this.Activated += MainWindow_Activated;
             this.GotFocus += MainWindow_Activated;
             this.GotKeyboardFocus += MainWindow_Activated;
+            // Auto video controls: initialize timer and subscribe to enter/leave
+            InitializeAutoVideoControls();
+            this.MouseEnter += (s, e) => { if (DateTime.UtcNow >= _videoControlsSuppressUntil) { ShowVideoControlsAuto(); _videoControlsIdleTimer?.Stop(); _videoControlsIdleTimer?.Start(); } };
+            this.MouseLeave += (s, e) =>
+            {
+                _videoControlsIdleTimer?.Stop();
+                // If controls window exists and pointer is over it, keep visible via timer
+                if (_videoControlsWindow != null)
+                {
+                    if (GetCursorPos(out POINT cursor))
+                    {
+                        var left = (int)Math.Round(_videoControlsWindow.Left);
+                        var top = (int)Math.Round(_videoControlsWindow.Top);
+                        var w = (int)Math.Round(_videoControlsWindow.ActualWidth);
+                        var h = (int)Math.Round(_videoControlsWindow.ActualHeight);
+                        if (cursor.X >= left && cursor.X <= left + Math.Max(1, w) && cursor.Y >= top && cursor.Y <= top + Math.Max(1, h))
+                            _videoControlsIdleTimer?.Start();
+                        else
+                            HideVideoControlsAuto();
+                    }
+                    else
+                    {
+                        HideVideoControlsAuto();
+                    }
+                }
+                else
+                {
+                    HideVideoControlsAuto();
+                }
+            };
 
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
@@ -407,7 +442,7 @@ namespace Cloudless
 
             _ = CheckForUpdatesAsync();  // fire and forget check for newer app version
 
-            
+
             DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(1);
             timer.Tick += (s, e) =>
@@ -439,7 +474,7 @@ namespace Cloudless
             }
 
             _ = UpdateContextMenuState(isStartUp: true);
-            
+
             if ((Path.GetExtension(initialImageToLoad) ?? "").ToLower().Equals(".cloudless"))
             {
                 await ExecuteCloudlessFile(initialImageToLoad);
@@ -450,7 +485,7 @@ namespace Cloudless
                 Activate();
             }
 
-            
+
 
             //Topmost = true;
             //Topmost = false;
@@ -536,11 +571,11 @@ namespace Cloudless
         }
         #endregion
 
-        
+
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {
-            if (ImageDisplay == null || DebugTextBlock.Visibility != Visibility.Visible ) 
+            if (ImageDisplay == null || DebugTextBlock.Visibility != Visibility.Visible )
                 return;
 
             // Window dimensions
@@ -741,7 +776,7 @@ namespace Cloudless
             TimeSpan RIGHT_CLICK_LONG_HOLD = TimeSpan.FromMilliseconds(Settings.Default.MouseLongPressMS);
 
             _rightClickHoldTimer = new DispatcherTimer { Interval = RIGHT_CLICK_LONG_HOLD };
-            
+
             _rightClickHoldTimer.Tick += (s, args) =>
             {
                 _rightClickHoldTimer.Stop();

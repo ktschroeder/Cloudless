@@ -14,6 +14,9 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
+        private System.Windows.Threading.DispatcherTimer? _videoControlsIdleTimer;
+        private System.Windows.Threading.DispatcherTimer? _videoControlsMonitorTimer;
+
         private void EnterExplorationMode(bool silent = false, bool simulateZoomlessBestFit = false)
         {
             var wasExplorationMode = isExplorationMode;
@@ -938,6 +941,127 @@ namespace Cloudless
                 DetachFromVideoPlayerEvents();
             }
         }
+
+        public void InitializeAutoVideoControls()
+        {
+            _videoControlsIdleTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+            _videoControlsIdleTimer.Tick += (s, e) =>
+            {
+                HideVideoControlsAuto();
+                _videoControlsIdleTimer.Stop();
+            };
+
+            _videoControlsMonitorTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _videoControlsMonitorTimer.Tick += (s, e) =>
+            {
+                if (!_videoControlsVisible) return;
+                if (!GetCursorPos(out POINT cursor)) return;
+                IntPtr hwndUnder = WindowFromPoint(cursor);
+                if (hwndUnder == IntPtr.Zero)
+                {
+                    HideVideoControlsAuto();
+                    return;
+                }
+                IntPtr root = GetAncestor(hwndUnder, 2); // GA_ROOT
+                IntPtr ownerHwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                IntPtr controlsHwnd = (_videoControlsWindow != null) ? new System.Windows.Interop.WindowInteropHelper(_videoControlsWindow).Handle : IntPtr.Zero;
+                if (root != ownerHwnd && root != controlsHwnd)
+                {
+                    HideVideoControlsAuto();
+                }
+            };
+        }
+
+        public void ShowVideoControlsAuto()
+        {
+            if (DateTime.UtcNow < _videoControlsSuppressUntil)
+                return;
+
+            if (!(VideoHost.Content is Cloudless.PluginBase.IVideoPlayer))
+                return;
+
+            if (_videoControlsWindow == null)
+                InitializeVideoControls();
+
+            if (!_videoControlsVisible)
+            {
+                _videoControlsVisible = true;
+                _videoControlsWindow?.Show();
+                _videoControlsWindow?.AlignToOwner();
+                UpdateVideoControls();
+                _videoControlsWindow?.StartPositionUpdates();
+                AttachToVideoPlayerEvents();
+
+                if (_videoControlsWindow != null)
+                {
+                    _videoControlsWindow.MouseEnter += VideoControlsWindow_MouseEnter;
+                    _videoControlsWindow.MouseLeave += VideoControlsWindow_MouseLeave;
+                }
+                _videoControlsMonitorTimer?.Start();
+            }
+        }
+
+        public void HideVideoControlsAuto()
+        {
+            if (!_videoControlsVisible) return;
+            _videoControlsVisible = false;
+            // Suppress immediate auto-show to avoid flicker when hiding/revealing rapidly
+            _videoControlsSuppressUntil = DateTime.UtcNow.AddMilliseconds(300);
+            // Detach handlers
+            if (_videoControlsWindow != null)
+            {
+                _videoControlsWindow.MouseEnter -= VideoControlsWindow_MouseEnter;
+                _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
+            }
+            _videoControlsMonitorTimer?.Stop();
+
+            _videoControlsWindow?.StopPositionUpdates();
+            _videoControlsWindow?.Hide();
+            DetachFromVideoPlayerEvents();
+        }
+
+        private void VideoControlsWindow_MouseEnter(object? sender, System.Windows.Input.MouseEventArgs e)
+        {
+            _videoControlsIdleTimer?.Stop();
+            ShowVideoControlsAuto();
+        }
+
+        private void VideoControlsWindow_MouseLeave(object? sender, System.Windows.Input.MouseEventArgs e)
+        {
+            // If cursor is outside both the owner window and the controls window, hide immediately.
+            _videoControlsIdleTimer?.Stop();
+            if (!GetCursorPos(out POINT cursor))
+            {
+                HideVideoControlsAuto();
+                return;
+            }
+
+            IntPtr hwndUnder = WindowFromPoint(cursor);
+            if (hwndUnder == IntPtr.Zero)
+            {
+                HideVideoControlsAuto();
+                return;
+            }
+
+            IntPtr root = GetAncestor(hwndUnder, 2); // GA_ROOT
+            IntPtr ownerHwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            IntPtr controlsHwnd = (_videoControlsWindow != null) ? new System.Windows.Interop.WindowInteropHelper(_videoControlsWindow).Handle : IntPtr.Zero;
+
+            if (root == ownerHwnd || root == controlsHwnd)
+            {
+                _videoControlsIdleTimer?.Start();
+            }
+            else
+            {
+                HideVideoControlsAuto();
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(POINT pt);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
         private void AttachToVideoPlayerEvents()
         {
