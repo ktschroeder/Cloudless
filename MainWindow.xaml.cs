@@ -381,7 +381,7 @@ namespace Cloudless
             this.GotKeyboardFocus += MainWindow_Activated;
             // Auto video controls: initialize timer and subscribe to enter/leave
             InitializeAutoVideoControls();
-            this.MouseEnter += (s, e) => { if (DateTime.UtcNow >= _videoControlsSuppressUntil) { ShowVideoControlsAuto(); _videoControlsIdleTimer?.Stop(); _videoControlsIdleTimer?.Start(); } };
+            this.MouseEnter += (s, e) => { if (!Cloudless.Properties.Settings.Default.UseManualVideoControls) { if (_videoControlsWindow != null) _videoControlsVisible = _videoControlsWindow.IsVisible; ShowVideoControlsAuto(force: true); _videoControlsIdleTimer?.Stop(); _videoControlsIdleTimer?.Start(); } };
             this.MouseLeave += (s, e) =>
             {
                 _videoControlsIdleTimer?.Stop();

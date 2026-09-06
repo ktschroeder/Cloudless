@@ -972,9 +972,13 @@ namespace Cloudless
             };
         }
 
-        public void ShowVideoControlsAuto()
+        public void ShowVideoControlsAuto(bool force = false)
         {
-            if (DateTime.UtcNow < _videoControlsSuppressUntil)
+            if (!force && DateTime.UtcNow < _videoControlsSuppressUntil)
+                return;
+
+            // Respect user preference: if manual-only mode is enabled, do not auto-show.
+            if (Cloudless.Properties.Settings.Default.UseManualVideoControls)
                 return;
 
             if (!(VideoHost.Content is Cloudless.PluginBase.IVideoPlayer))
@@ -992,27 +996,32 @@ namespace Cloudless
                 _videoControlsWindow?.StartPositionUpdates();
                 AttachToVideoPlayerEvents();
 
-                if (_videoControlsWindow != null)
+                if (!Cloudless.Properties.Settings.Default.UseManualVideoControls)
                 {
-                    _videoControlsWindow.MouseEnter += VideoControlsWindow_MouseEnter;
-                    _videoControlsWindow.MouseLeave += VideoControlsWindow_MouseLeave;
+                    if (_videoControlsWindow != null)
+                    {
+                        _videoControlsWindow.MouseEnter += VideoControlsWindow_MouseEnter;
+                        _videoControlsWindow.MouseLeave += VideoControlsWindow_MouseLeave;
+                    }
+                    _videoControlsMonitorTimer?.Start();
                 }
-                _videoControlsMonitorTimer?.Start();
             }
         }
 
         public void HideVideoControlsAuto()
         {
             if (!_videoControlsVisible) return;
-            _videoControlsVisible = false;
+            // If user prefers manual-only controls, do not auto-hide
+            if (Cloudless.Properties.Settings.Default.UseManualVideoControls)
+                return;
             // Suppress immediate auto-show to avoid flicker when hiding/revealing rapidly
             _videoControlsSuppressUntil = DateTime.UtcNow.AddMilliseconds(300);
             // Detach handlers
-            if (_videoControlsWindow != null)
-            {
-                _videoControlsWindow.MouseEnter -= VideoControlsWindow_MouseEnter;
-                _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
-            }
+                if (_videoControlsWindow != null)
+                {
+                    _videoControlsWindow.MouseEnter -= VideoControlsWindow_MouseEnter;
+                    _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
+                }
             _videoControlsMonitorTimer?.Stop();
 
             _videoControlsWindow?.StopPositionUpdates();
@@ -1023,7 +1032,7 @@ namespace Cloudless
         private void VideoControlsWindow_MouseEnter(object? sender, System.Windows.Input.MouseEventArgs e)
         {
             _videoControlsIdleTimer?.Stop();
-            ShowVideoControlsAuto();
+            ShowVideoControlsAuto(force: true);
         }
 
         private void VideoControlsWindow_MouseLeave(object? sender, System.Windows.Input.MouseEventArgs e)

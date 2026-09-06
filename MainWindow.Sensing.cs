@@ -177,17 +177,29 @@ namespace Cloudless
                 this.Cursor = Cursors.Hand;  // could be better custom cursor
             }
 
-            // Auto video controls: keep them visible while mouse is moving
-            if (_videoControlsIdleTimer != null)
+            // Ensure our visibility flag matches the actual controls window state to avoid
+            // stale state where _videoControlsVisible is true but the window isn't shown.
+            if (_videoControlsWindow != null)
             {
-                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                _videoControlsVisible = _videoControlsWindow.IsVisible;
+            }
+
+            if (!Cloudless.Properties.Settings.Default.UseManualVideoControls && DateTime.UtcNow >= _videoControlsSuppressUntil)
+            {
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer && !_videoControlsVisible)
                 {
                     ShowVideoControlsAuto();
-                    _videoControlsIdleTimer.Stop();
-                    _videoControlsIdleTimer.Start();
+                    _videoControlsIdleTimer?.Stop();
+                    _videoControlsIdleTimer?.Start();
+                }
+                else if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                {
+                    // already visible: reset idle timer
+                    _videoControlsIdleTimer?.Stop();
+                    _videoControlsIdleTimer?.Start();
                 }
             }
-        }
+    }
 
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)

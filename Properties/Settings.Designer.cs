@@ -353,5 +353,17 @@ namespace Cloudless.Properties {
                 this["StartVideosMuted"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseManualVideoControls {
+            get {
+                return ((bool)(this["UseManualVideoControls"]));
+            }
+            set {
+                this["UseManualVideoControls"] = value;
+            }
+        }
     }
 }
