@@ -1274,6 +1274,67 @@ namespace Cloudless
                 w.SendWindowToPage(targetPage, skipHide: true);
             }
         }
+
+        public void ListWorkspacesContainingPath(string path)
+        {
+            if (!File.Exists(path))
+            {
+                Message($"File not found: {path}");
+                return;
+            }
+
+            var ext = Path.GetExtension(path)?.TrimStart('.') ?? "";
+            var ft = FileTypeManager.GetFileTypeByExtension(ext);
+            if (ft == null)
+            {
+                Message($"Unsupported file type: .{ext}");
+                return;
+            }
+
+            // Search workspaces
+            var matches = new List<string>();
+            try
+            {
+                if (Directory.Exists(workspaceFilesPath))
+                {
+                    foreach (var file in Directory.GetFiles(workspaceFilesPath, "*.cloudless"))
+                    {
+                        string json = File.ReadAllText(file);
+                        var ws = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+                        if (ws == null) continue;
+
+                        foreach (var w in ws.CloudlessWindows)
+                        {
+                            if (string.IsNullOrEmpty(w.ImagePath)) continue;
+                            string imgPath = w.ImagePath;
+                            if (!Path.IsPathRooted(imgPath))
+                                imgPath = Path.GetFullPath(imgPath, workspaceFilesPath);
+                            if (string.Equals(Path.GetFullPath(imgPath), Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase))
+                            {
+                                matches.Add(Path.GetFileNameWithoutExtension(file));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Message($"Failed searching workspaces: {ex.Message}");
+                return;
+            }
+
+            if (matches.Count == 0)
+            {
+                Message($"No workspaces contain file: {path}");
+            }
+            else
+            {
+                Message($"Listing workspaces containing {path}");
+                foreach (var name in matches)
+                    Message($"Workspace: {name}");
+            }
+        }
     }
 
     public class CloudlessWorkspace

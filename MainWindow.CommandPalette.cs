@@ -790,31 +790,35 @@ namespace Cloudless
                     string name = cmd.Substring(11);
                     bool success = await PreviewWorkspace(name.Trim());
                 }
-                else if (cmd.StartsWith("ws p ") && cmd.Length > 5)
+                else if (cmd.Equals("ws list"))
                 {
-                    string name = cmd.Substring(5);
-                    bool success = await PreviewWorkspace(name.Trim());
-                }
-                else if (cmd.Equals("ws p") || cmd.Equals("ws preview"))
-                {
-                    bool success = await PreviewWorkspace();
-                }
-                else if (cmd.Equals("ws rev"))
-                {
-                    RevealDirectoryInExplorer(workspaceFilesPath);
-                }
-                else if (cmd.Equals("ws undoload"))
-                {
-                    await UndoLoad();
-                }
-                else
-                {
-                    Message("Could not parse your ws command: " + cmd);
-                    return false;
-                }
+                    if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+                    {
+                        Message("No media is loaded.");
+                        return true;
+                    }
 
-                return true;
-            }
+                    ListWorkspacesContainingPath(currentlyDisplayedImagePath);
+                    return true;
+                }
+                else if (cmd.StartsWith("ws list ") && cmd.Length > 8)
+                {
+                    string param = cmd.Substring(8).Trim();
+                    string resolvedPath = param;
+                    if (!Path.IsPathRooted(resolvedPath) && currentDirectory != null)
+                        resolvedPath = Path.GetFullPath(param, currentDirectory);
+
+                    ListWorkspacesContainingPath(resolvedPath);
+                    return true;
+                 }
+                 else
+                 {
+                     Message("Could not parse your ws command: " + cmd);
+                     return false;
+                 }
+
+                 return true;
+             }
 
             if (cmd.StartsWith("c") && cmd.Length > 1 && int.TryParse(cmd.Substring(1,2), out int cIndex))
             {
