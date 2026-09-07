@@ -200,6 +200,11 @@ namespace Cloudless
         }
         private async Task ToggleFullscreen()
         {
+            if (MainWindow.LayoutLocked) 
+            {
+                ResizeMode = ResizeMode.CanResize;  // temporarily allow resizing to enable fullscreen toggle, else there are a few pixels left open on all sides upon maximizing.
+            }
+
             await ToggleCropMode(false);
             if (WindowState == WindowState.Normal)
             {
@@ -210,6 +215,11 @@ namespace Cloudless
             {
                 WindowStyle = WindowStyle.None;
                 WindowState = WindowState.Normal;
+            }
+
+            if (MainWindow.LayoutLocked)
+            {
+                ResizeMode = ResizeMode.NoResize;
             }
         }
         private void Exit_Click(object sender, RoutedEventArgs e)

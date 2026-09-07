@@ -86,6 +86,11 @@ namespace Cloudless
                 }
                 else if (WindowState == WindowState.Normal)
                 {
+                    // Prevent user-initiated moves when layout lock is enabled
+                    if (MainWindow.LayoutLocked)
+                    {
+                        return;
+                    }
                     isDraggingWindow = true;
                     initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
                     initialWindowPosition = new Point(this.Left, this.Top);
@@ -312,6 +317,10 @@ namespace Cloudless
             // Ctrl+Alt+Shift + Arrow -> nudge window by 1 device-independent pixel
             if (control && alt && shift && (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down))
             {
+                if (MainWindow.LayoutLocked)
+                {
+                    return;
+                }
                 int dx = 0, dy = 0;
                 switch (key)
                 {
@@ -341,6 +350,25 @@ namespace Cloudless
                 int k = (int)(key - Key.D1); // 0..7
                 int idx = 8 + k; // 8..15
                 await RunUserCommand(idx);
+                return;
+            }
+
+            // Ctrl+Alt+F toggles global layout lock (prevents moving/resizing)
+            if (control && alt && !shift && key == Key.F)
+            {
+                MainWindow.LayoutLocked = !MainWindow.LayoutLocked;
+                string status = MainWindow.LayoutLocked ? "enabled" : "disabled";
+                // Message all windows
+                foreach (Window w in Application.Current.Windows)
+                {
+                    if (w is MainWindow mw)
+                    {
+                        mw.Message($"Layout lock {status}");
+                        // Also set ResizeMode on each window to prevent border resize when locked
+                        mw.ResizeMode = MainWindow.LayoutLocked ? ResizeMode.NoResize : ResizeMode.CanResize;
+                    }
+                }
+
                 return;
             }
             if (control && alt && shift && key >= Key.D1 && key <= Key.D8)
@@ -1242,6 +1270,12 @@ namespace Cloudless
 
             if (msg == WM_NCHITTEST)
             {
+                // If layout lock is enabled, don't allow resizing by reporting client area for hit tests
+                if (MainWindow.LayoutLocked)
+                {
+                    handled = true;
+                    return (IntPtr)HTCLIENT;
+                }
                 // Convert mouse coordinates
                 int x = lParam.ToInt32() & 0xFFFF; // LOWORD
                 int y = lParam.ToInt32() >> 16;    // HIWORD
@@ -1301,6 +1335,14 @@ namespace Cloudless
                 // If something (like a click or text focus) is trying to change the Z-order,
                 // inject the SWP_NOZORDER flag to block it from moving to the front.
                 wp.flags |= SWP_NOZORDER;
+
+                // If layout lock is enabled, also prevent move/size changes from the OS
+                const uint SWP_NOSIZE = 0x0001;
+                const uint SWP_NOMOVE = 0x0002;
+                if (MainWindow.LayoutLocked)
+                {
+                    wp.flags |= SWP_NOSIZE | SWP_NOMOVE;
+                }
 
                 // Write the modified flags back to the OS memory block
                 Marshal.StructureToPtr(wp, lParam, true);
