@@ -820,6 +820,72 @@ namespace Cloudless
                  return true;
              }
 
+            // Seek to start or end of the video (respects custom loop start/end when present)
+            if (cmd.Equals("goto start"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return true;
+                }
+
+                TimeSpan target = _videoLoopStart ?? TimeSpan.Zero;
+                try
+                {
+                    vp.SeekTo(target);
+                    Message($"Seeked to start: {FormatTimeSpan(target)}");
+                }
+                catch (Exception ex)
+                {
+                    Message($"Failed to seek to start: {ex.Message}");
+                }
+
+                return true;
+            }
+
+            if (cmd.Equals("goto end"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return true;
+                }
+
+                TimeSpan? targetTs = _videoLoopEnd;
+                if (!targetTs.HasValue)
+                {
+                    try
+                    {
+                        var dur = vp.GetDuration();
+                        if (dur <= TimeSpan.Zero)
+                        {
+                            Message("Cannot determine video duration to seek to end");
+                            return true;
+                        }
+                        targetTs = dur;
+                    }
+                    catch (Exception ex)
+                    {
+                        Message($"Failed to determine video duration: {ex.Message}");
+                        return true;
+                    }
+                }
+
+                try
+                {
+                    vp.SeekTo(targetTs.Value);
+                    Message($"Seeked to end: {FormatTimeSpan(targetTs.Value)}");
+                }
+                catch (Exception ex)
+                {
+                    Message($"Failed to seek to end: {ex.Message}");
+                }
+
+                return true;
+            }
+
             if (cmd.StartsWith("c") && cmd.Length > 1 && int.TryParse(cmd.Substring(1,2), out int cIndex))
             {
                 string param = cmd.Substring(3);
