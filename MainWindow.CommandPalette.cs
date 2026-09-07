@@ -1504,33 +1504,97 @@ namespace Cloudless
         private static extern short VkKeyScan(char ch);
         private async Task SimulateHotkey(string argsString)
         {
-            string[] args = argsString.Split(" ");
-            bool ctrl = args.Contains("ctrl");
-            bool alt = args.Contains("alt");
-            bool shift = args.Contains("shift");
-            List<string> coreHotkey = args.Where(a => a != "ctrl" && a != "alt" && a != "shift").ToList();
+            // split tokens and ignore extra spaces
+            string[] args = argsString.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            bool ctrl = args.Any(a => a.Equals("ctrl", StringComparison.OrdinalIgnoreCase) || a.Equals("control", StringComparison.OrdinalIgnoreCase));
+            bool alt = args.Any(a => a.Equals("alt", StringComparison.OrdinalIgnoreCase));
+            bool shift = args.Any(a => a.Equals("shift", StringComparison.OrdinalIgnoreCase));
+
+            List<string> coreHotkey = args.Where(a => !string.IsNullOrWhiteSpace(a)
+                                                     && !a.Equals("ctrl", StringComparison.OrdinalIgnoreCase)
+                                                     && !a.Equals("control", StringComparison.OrdinalIgnoreCase)
+                                                     && !a.Equals("alt", StringComparison.OrdinalIgnoreCase)
+                                                     && !a.Equals("shift", StringComparison.OrdinalIgnoreCase)).ToList();
+
             if (coreHotkey.Count != 1)
             {
-                Message("Command failed: Expected format is exactly one character after any modifiers (ctrl alt shift)");
+                Message("Command failed: Expected exactly one key token after any modifiers (ctrl alt shift)");
                 return;
             }
-            if (coreHotkey.First().Length != 1)
-            {
-                Message("Command failed: Core hotkey (ignoring modifiers) must be exactly one character");
-                return;
-            }
-            char finalHotkeyChar = coreHotkey.First().ToCharArray().First();
+
+            string keyToken = coreHotkey.First();
             Key finalHotkey;
-            try
+
+            // If single character like 'h' or '1', use VkKeyScan to map to virtual key
+            if (keyToken.Length == 1)
             {
-                var vkey = VkKeyScan(finalHotkeyChar);
-                byte virtualKeyCode = (byte)(vkey & 0xFF);
-                finalHotkey = KeyInterop.KeyFromVirtualKey(virtualKeyCode);
+                try
+                {
+                    char finalHotkeyChar = keyToken[0];
+                    var vkey = VkKeyScan(finalHotkeyChar);
+                    byte virtualKeyCode = (byte)(vkey & 0xFF);
+                    finalHotkey = KeyInterop.KeyFromVirtualKey(virtualKeyCode);
+                }
+                catch (Exception ex)
+                {
+                    Message("Failed to parse hotkey character: " + ex.ToString());
+                    return;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Message("Failed to parse hotkey: " + ex.ToString());
-                return;
+                // Try parse common key names directly to Key enum (case-insensitive)
+                string normalized = keyToken.Trim().ToLower();
+
+                // map some common aliases
+                var aliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "space", "Space" },
+                    { "enter", "Enter" },
+                    { "return", "Enter" },
+                    { "esc", "Escape" },
+                    { "escape", "Escape" },
+                    { "pgup", "PageUp" },
+                    { "pageup", "PageUp" },
+                    { "pgdn", "PageDown" },
+                    { "pagedown", "PageDown" },
+                    { "left", "Left" },
+                    { "right", "Right" },
+                    { "up", "Up" },
+                    { "down", "Down" },
+                    { "tab", "Tab" },
+                    { "backspace", "Back" },
+                    { "bksp", "Back" },
+                    { "del", "Delete" },
+                    { "delete", "Delete" },
+                    { "home", "Home" },
+                    { "end", "End" }
+                };
+
+                string tryName = normalized;
+                if (aliasMap.ContainsKey(normalized))
+                    tryName = aliasMap[normalized];
+                else
+                {
+                    // handle f1..f12, numpad keys like 'num1'
+                    if (Regex.IsMatch(normalized, "^f\\d{1,2}$"))
+                        tryName = normalized.ToUpper(); // F1 etc.
+                    else if (Regex.IsMatch(normalized, "^num\\d$"))
+                        tryName = normalized.Substring(3).Insert(0, "NumPad");
+                }
+
+                bool parsed = Enum.TryParse<Key>(tryName, ignoreCase: true, out finalHotkey);
+                if (!parsed)
+                {
+                    // try uppercase token directly
+                    parsed = Enum.TryParse<Key>(keyToken, ignoreCase: true, out finalHotkey);
+                }
+
+                if (!parsed)
+                {
+                    Message($"Failed to parse hotkey name: '{keyToken}'. Try names like 'left', 'space', 'f1' or a single character.");
+                    return;
+                }
             }
 
             await SimulateKeyEvent(finalHotkey, shift, ctrl, alt);
