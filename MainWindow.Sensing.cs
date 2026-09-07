@@ -296,7 +296,7 @@ namespace Cloudless
         private async Task ProcessKeyEvent(Key key, bool shift, bool control, bool alt)
         {
             // Alt + arrow keys: page navigation (previous/next page)
-            if (alt && (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down))
+            if (alt && !control && (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down))
             {
                 int current = GetCurrentPageIndex();
                 int target = current;
