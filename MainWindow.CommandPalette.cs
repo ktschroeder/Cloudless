@@ -1269,13 +1269,13 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.StartsWith("time"))
+            if (cmd.StartsWith("seek"))
             {
                 string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? "";
                 bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
                 if (!isVideo)
                 {
-                    Message("The 'time' command only works when a video is loaded");
+                    Message("The 'seek' command only works when a video is loaded");
                     return true;
                 }   
 
@@ -1286,8 +1286,7 @@ namespace Cloudless
                     return true;
                 }
 
-                // If just "time" with no parameter, show current position and duration
-                if (cmd.Equals("time"))
+                if (cmd.Equals("seek ?"))
                 {
                     TimeSpan position = vp.GetPosition();
                     TimeSpan duration = vp.GetDuration();
@@ -1295,8 +1294,8 @@ namespace Cloudless
                     return true;
                 }
 
-                // If "time [time]", parse and seek to that time
-                if (cmd.StartsWith("time ") && cmd.Length > 5)
+                // If "seek [time]", parse and seek to that time
+                if (cmd.StartsWith("seek ") && cmd.Length > 5)
                 {
                     string timeStr = cmd.Substring(5).Trim();
 
@@ -1355,6 +1354,7 @@ namespace Cloudless
                     return true;
                 }
 
+                Message("Failed to parse seek command.");
                 return true;
             }
 
