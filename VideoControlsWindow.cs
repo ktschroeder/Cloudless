@@ -193,10 +193,12 @@ namespace Cloudless
                 long latestTick = Interlocked.Read(ref _latestVlcEventTickMs);
 
                 long positionMs;
-                // If player is paused, do not extrapolate — freeze at the last reported sample
+                // If player is paused, prefer the player's current position (SeekTo updates this immediately).
+                // Relying on the last sampled TimeChanged value when paused can be stale because TimeChanged
+                // events may stop while paused. Use GetPosition() to reflect manual seeks instantly.
                 if (videoPlayer.IsPaused())
                 {
-                    positionMs = (latestPos > 0) ? latestPos : (long)videoPlayer.GetPosition().TotalMilliseconds;
+                    positionMs = (long)videoPlayer.GetPosition().TotalMilliseconds;
                 }
                 else if (latestPos > 0 && latestTick > 0)
                 {
