@@ -886,23 +886,37 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.StartsWith("c") && cmd.Length > 1 && int.TryParse(cmd.Substring(1,2), out int cIndex))
+            if (cmd.StartsWith("c") && cmd.Length > 1)
             {
-                string param = cmd.Substring(3);
-                if (param.StartsWith("set ") && param.Length > 4)
+                // parse one- or two-digit command index after the 'c'
+                int pos = 1;
+                while (pos < cmd.Length && char.IsDigit(cmd[pos])) pos++;
+                if (pos == 1)
                 {
-                    SetUserCommand(cIndex-1, param.Substring(4));
-                    return true;
+                    // no digits following 'c'
                 }
-                else if (param.Equals("view"))
+                else
                 {
-                    ViewUserCommand(cIndex-1);
-                    return true;
-                }
-                else if (param.Equals("run"))
-                {
-                    await RunUserCommand(cIndex-1);
-                    return true;
+                    string numStr = cmd.Substring(1, pos - 1);
+                    if (int.TryParse(numStr, out int cIndex))
+                    {
+                        string param = pos < cmd.Length ? cmd.Substring(pos).Trim() : "";
+                        if (param.StartsWith("set ") && param.Length > 4)
+                        {
+                            SetUserCommand(cIndex - 1, param.Substring(4));
+                            return true;
+                        }
+                        else if (param.Equals("view"))
+                        {
+                            ViewUserCommand(cIndex - 1);
+                            return true;
+                        }
+                        else if (param.Equals("run"))
+                        {
+                            await RunUserCommand(cIndex - 1);
+                            return true;
+                        }
+                    }
                 }
             }
 
@@ -1782,11 +1796,21 @@ namespace Cloudless
             var stringCollection = Cloudless.Properties.Settings.Default.UserCommands;
             if (stringCollection == null)
             {
-                UserCommands = new List<string>() {"","","","","","","",""};
+                // initialize 24 empty command slots (3 pages x 8 commands)
+                UserCommands = Enumerable.Repeat("", 24).ToList();
             }
             else
             {
                 var list = stringCollection.Cast<string>().ToList();
+                // pad or trim to 24 entries
+                if (list.Count < 24)
+                {
+                    list.AddRange(Enumerable.Repeat("", 24 - list.Count));
+                }
+                else if (list.Count > 24)
+                {
+                    list = list.Take(24).ToList();
+                }
                 UserCommands = list;
             }
         }

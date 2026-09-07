@@ -309,6 +309,24 @@ namespace Cloudless
                 return;
             }
 
+            // Hotkeys for custom user commands when Control+Alt modifiers are used
+            // Ctrl+Alt+[1..8] => commands 9..16 (indexes 8..15)
+            // Ctrl+Alt+Shift+[1..8] => commands 17..24 (indexes 16..23)
+            if (control && alt && !shift && key >= Key.D1 && key <= Key.D8)
+            {
+                int k = (int)(key - Key.D1); // 0..7
+                int idx = 8 + k; // 8..15
+                await RunUserCommand(idx);
+                return;
+            }
+            if (control && alt && shift && key >= Key.D1 && key <= Key.D8)
+            {
+                int k = (int)(key - Key.D1); // 0..7
+                int idx = 16 + k; // 16..23
+                await RunUserCommand(idx);
+                return;
+            }
+
             if (key == Key.F11)
             {
                 await ToggleFullscreen();
@@ -1155,8 +1173,23 @@ namespace Cloudless
 
                 try
                 {
+                    // Compute position so that the cursor is centered on the radial grid area (rows 1..3),
+                    // excluding the tab panel at the top (row 0).
+                    double tabH = 0;
+                    try
+                    {
+                        // TabPanel was named in XAML
+                        var qp = quickCommandWindow.FindName("TabPanel") as System.Windows.FrameworkElement;
+                        if (qp != null)
+                            tabH = qp.ActualHeight;
+                    }
+                    catch { }
+
+                    double restH = quickCommandWindow.ActualHeight - tabH;
+                    double centerYFromTop = tabH + restH / 2.0;
+
                     quickCommandWindow.Left = screenPoint.X - (quickCommandWindow.ActualWidth / 2);
-                    quickCommandWindow.Top = screenPoint.Y - (quickCommandWindow.ActualHeight / 2);
+                    quickCommandWindow.Top = screenPoint.Y - centerYFromTop;
                 }
                 catch (Exception ex)
                 {
