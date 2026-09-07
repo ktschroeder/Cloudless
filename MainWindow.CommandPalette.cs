@@ -1193,6 +1193,80 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("play"))
+            {
+                string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? "";
+                bool isVideo = FileTypeManager.IsVideoFile(ext);
+                if (!isVideo)
+                {
+                    Message("The 'play' command only works when a video is loaded");
+                    return true;
+                }
+
+                var vp = VideoHost.Content as IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video player available");
+                    return true;
+                }
+
+                try
+                {
+                    if (vp.IsPaused())
+                    {
+                        vp.TogglePause();
+                        Message("Resumed video playback");
+                    }
+                    else
+                    {
+                        Message("Video is already playing");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Message("Failed to play video: " + ex.Message);
+                }
+
+                return true;
+            }
+
+            if (cmd.Equals("pause"))
+            {
+                string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? "";
+                bool isVideo = FileTypeManager.IsVideoFile(ext);
+                if (!isVideo)
+                {
+                    Message("The 'pause' command only works when a video is loaded");
+                    return true;
+                }
+
+                var vp = VideoHost.Content as IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video player available");
+                    return true;
+                }
+
+                try
+                {
+                    if (!vp.IsPaused())
+                    {
+                        vp.TogglePause();
+                        Message("Paused video playback");
+                    }
+                    else
+                    {
+                        Message("Video is already paused");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Message("Failed to pause video: " + ex.Message);
+                }
+
+                return true;
+            }
+
             if (cmd.StartsWith("time"))
             {
                 string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? "";
