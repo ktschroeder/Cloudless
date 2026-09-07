@@ -1210,6 +1210,32 @@ namespace Cloudless
                 {
                     string timeStr = cmd.Substring(5).Trim();
 
+                    // Support relative seeks: leading '+' or '-' indicates offset from current position
+                    if (timeStr.Length > 0 && (timeStr[0] == '+' || timeStr[0] == '-'))
+                    {
+                        char sign = timeStr[0];
+                        string deltaStr = timeStr.Substring(1).Trim();
+                        TimeSpan? delta = TryParseTimeString(deltaStr);
+                        if (!delta.HasValue)
+                        {
+                            Message($"Could not parse relative time '{timeStr}'. Use formats like: '+90' (seconds), '+1:30' (m:s), '-30s'");
+                            return true;
+                        }
+
+                        TimeSpan current = vp.GetPosition();
+                        TimeSpan target = sign == '+' ? current + delta.Value : current - delta.Value;
+                        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+
+                        TimeSpan duration = vp.GetDuration();
+                        if (duration > TimeSpan.Zero && target > duration) target = duration;
+
+                        vp.SeekTo(target);
+                        string dir = sign == '+' ? "forward" : "backward";
+                        Message($"Seeking {dir} by {FormatTimeSpan(delta.Value)} to {FormatTimeSpan(target)} (was {FormatTimeSpan(current)})");
+                        return true;
+                    }
+
+                    // Otherwise treat as absolute seek
                     // Try to parse the time string
                     TimeSpan? targetTime = TryParseTimeString(timeStr);
                     if (!targetTime.HasValue)
@@ -1226,10 +1252,10 @@ namespace Cloudless
                     }
 
                     // Check if time exceeds video duration
-                    TimeSpan duration = vp.GetDuration();
-                    if (duration > TimeSpan.Zero && targetTime.Value > duration)
+                    TimeSpan durationAbs = vp.GetDuration();
+                    if (durationAbs > TimeSpan.Zero && targetTime.Value > durationAbs)
                     {
-                        Message($"Seek time {FormatTimeSpan(targetTime.Value)} exceeds video duration of {FormatTimeSpan(duration)}");
+                        Message($"Seek time {FormatTimeSpan(targetTime.Value)} exceeds video duration of {FormatTimeSpan(durationAbs)}");
                         return true;
                     }
 
