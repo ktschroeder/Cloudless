@@ -309,6 +309,30 @@ namespace Cloudless
                 return;
             }
 
+            // Ctrl+Alt+Shift + Arrow -> nudge window by 1 device-independent pixel
+            if (control && alt && shift && (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down))
+            {
+                int dx = 0, dy = 0;
+                switch (key)
+                {
+                    case Key.Left: dx = -1; break;
+                    case Key.Right: dx = 1; break;
+                    case Key.Up: dy = -1; break;
+                    case Key.Down: dy = 1; break;
+                }
+
+                try
+                {
+                    NudgeWindow(dx, dy);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Nudge error: {ex.Message}");
+                }
+
+                return;
+            }
+
             // Hotkeys for custom user commands when Control+Alt modifiers are used
             // Ctrl+Alt+[1..8] => commands 9..16 (indexes 8..15)
             // Ctrl+Alt+Shift+[1..8] => commands 17..24 (indexes 16..23)

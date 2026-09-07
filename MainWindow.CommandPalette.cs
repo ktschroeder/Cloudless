@@ -820,6 +820,8 @@ namespace Cloudless
                  return true;
              }
 
+            
+
             // Seek to start or end of the video (respects custom loop start/end when present)
             if (cmd.Equals("goto start"))
             {
@@ -1353,6 +1355,88 @@ namespace Cloudless
                     return true;
                 }
 
+                return true;
+            }
+
+            // Short form: allow 'n' as alias for 'nudge'
+            if (cmd.StartsWith("n ") || cmd.StartsWith("nudge ") || cmd.Equals("n") || cmd.Equals("nudge"))
+            {
+                var parts = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                // normalize: if first token is 'n', treat as 'nudge'
+                int idx = 1;
+                if (parts.Length == 1)
+                {
+                    Message("Usage: nudge left|right|up|down [count]  OR  nudge <x> <y>");
+                    return true;
+                }
+
+                string dirOrX = parts[idx];
+                // map single-letter direction aliases
+                if (dirOrX.Length == 1)
+                {
+                    switch (dirOrX)
+                    {
+                        case "u": dirOrX = "up"; break;
+                        case "d": dirOrX = "down"; break;
+                        case "l": dirOrX = "left"; break;
+                        case "r": dirOrX = "right"; break;
+                    }
+                }
+
+                if (parts.Length == 2)
+                {
+                    // nudge <direction>
+                    int step = 1;
+                    int dx = 0, dy = 0;
+                    switch (dirOrX)
+                    {
+                        case "left": dx = -step; break;
+                        case "right": dx = step; break;
+                        case "up": dy = -step; break;
+                        case "down": dy = step; break;
+                        default:
+                            Message("Invalid nudge direction. Use left/right/up/down or numeric x y.");
+                            return true;
+                    }
+
+                    NudgeWindow(dx, dy);
+                    return true;
+                }
+
+                if (parts.Length == 3)
+                {
+                    // Could be: nudge <direction> <count> OR nudge <x> <y>
+                    if (int.TryParse(parts[1], out int x) && int.TryParse(parts[2], out int y))
+                    {
+                        NudgeWindow(x, y);
+                        return true;
+                    }
+
+                    // direction + count
+                    string dir = dirOrX;
+                    if (!int.TryParse(parts[2], out int count))
+                    {
+                        Message("Invalid numeric value for nudge.");
+                        return true;
+                    }
+
+                    int dx = 0, dy = 0;
+                    switch (dir)
+                    {
+                        case "left": dx = -count; break;
+                        case "right": dx = count; break;
+                        case "up": dy = -count; break;
+                        case "down": dy = count; break;
+                        default:
+                            Message("Invalid nudge direction. Use left/right/up/down or numeric x y.");
+                            return true;
+                    }
+
+                    NudgeWindow(dx, dy);
+                    return true;
+                }
+
+                Message("Usage: nudge left|right|up|down [count]  OR  nudge <x> <y>");
                 return true;
             }
 

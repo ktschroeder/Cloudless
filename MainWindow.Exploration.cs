@@ -1156,6 +1156,19 @@ namespace Cloudless
                 SendWindowToBack();
         }
 
+        /// <summary>
+        /// Move the window by the specified integer deltas (device-independent pixels).
+        /// </summary>
+        /// <param name="dx">Delta X in device-independent pixels (positive moves right)</param>
+        /// <param name="dy">Delta Y in device-independent pixels (positive moves down)</param>
+        private void NudgeWindow(int dx, int dy)
+        {
+            // Use RepositionWindow so behavior (clamping/snap/etc.) is consistent with other moves
+            double newLeft = this.Left + dx;
+            double newTop = this.Top + dy;
+            RepositionWindow(newLeft, newTop);
+        }
+
         // Native structures for Monitor info
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT { public int Left, Top, Right, Bottom; }
