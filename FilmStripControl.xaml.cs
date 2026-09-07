@@ -396,7 +396,7 @@ namespace Cloudless
             //else
             //{
                 // fallback: keep leftmost offset
-                Dispatcher.BeginInvoke(new Action(() => { sv.ScrollToHorizontalOffset(0); }), System.Windows.Threading.DispatcherPriority.Background);
+                //Dispatcher.BeginInvoke(new Action(() => { sv.ScrollToHorizontalOffset(0); }), System.Windows.Threading.DispatcherPriority.Background);
             //}
 
             UpdateOverflowIndicators();
