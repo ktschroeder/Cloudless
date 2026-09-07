@@ -385,23 +385,27 @@ namespace Cloudless
             this.GotKeyboardFocus += MainWindow_Activated;
             // Auto video controls: initialize timer and subscribe to enter/leave
             InitializeAutoVideoControls();
-            this.MouseEnter += (s, e) => { if (!Cloudless.Properties.Settings.Default.UseManualVideoControls) { if (_videoControlsWindow != null) _videoControlsVisible = _videoControlsWindow.IsVisible; ShowVideoControlsAuto(force: true); _videoControlsIdleTimer?.Stop(); _videoControlsIdleTimer?.Start(); } };
+            this.MouseEnter += (s, e) => 
+            { 
+                if (!Cloudless.Properties.Settings.Default.UseManualVideoControls) 
+                { 
+                    if (_videoControlsWindow != null)
+                        _videoControlsVisible = _videoControlsWindow.IsVisible;
+                        
+                    ShowVideoControlsAuto(force: false);
+                    _videoControlsIdleTimer?.Stop();
+                    _videoControlsIdleTimer?.Start(); 
+                } 
+            };
             this.MouseLeave += (s, e) =>
             {
                 _videoControlsIdleTimer?.Stop();
                 // If controls window exists and pointer is over it, keep visible via timer
                 if (_videoControlsWindow != null)
                 {
-                    if (GetCursorPos(out POINT cursor))
+                    if (_videoControlsWindow.IsMouseOver)
                     {
-                        var left = (int)Math.Round(_videoControlsWindow.Left);
-                        var top = (int)Math.Round(_videoControlsWindow.Top);
-                        var w = (int)Math.Round(_videoControlsWindow.ActualWidth);
-                        var h = (int)Math.Round(_videoControlsWindow.ActualHeight);
-                        if (cursor.X >= left && cursor.X <= left + Math.Max(1, w) && cursor.Y >= top && cursor.Y <= top + Math.Max(1, h))
-                            _videoControlsIdleTimer?.Start();
-                        else
-                            HideVideoControlsAuto();
+                        _videoControlsIdleTimer?.Start();
                     }
                     else
                     {
@@ -413,7 +417,7 @@ namespace Cloudless
                     HideVideoControlsAuto();
                 }
             };
-
+            
             RenderOptions.SetBitmapScalingMode(ImageDisplay, BitmapScalingMode.HighQuality);  // Without this, lines can appear jagged, especially for larger images that are scaled down
 
             InitializeZooming();

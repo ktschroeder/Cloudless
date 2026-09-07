@@ -1015,7 +1015,7 @@ namespace Cloudless
             if (Cloudless.Properties.Settings.Default.UseManualVideoControls)
                 return;
             // Suppress immediate auto-show to avoid flicker when hiding/revealing rapidly
-            _videoControlsSuppressUntil = DateTime.UtcNow.AddMilliseconds(300);
+            _videoControlsSuppressUntil = DateTime.UtcNow.AddMilliseconds(50);
             // Detach handlers
                 if (_videoControlsWindow != null)
                 {
