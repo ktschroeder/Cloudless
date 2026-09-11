@@ -678,7 +678,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("set start"))
+            if (cmd.Equals("set start") || cmd.Equals("set s"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -697,7 +697,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("clear start"))
+            if (cmd.Equals("clear start") || cmd.Equals("clear s"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -714,7 +714,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("set end"))
+            if (cmd.Equals("set end") || cmd.Equals("set e"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -731,7 +731,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("clear end"))
+            if (cmd.Equals("clear end") || cmd.Equals("clear e"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -783,7 +783,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("set flag"))
+            if (cmd.Equals("set flag") || cmd.Equals("set f"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -799,7 +799,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("clear flag"))
+            if (cmd.Equals("clear flag") || cmd.Equals("clear f"))
             {
                 _videoFlag = null;
                 UpdateVideoControls();
@@ -1551,9 +1551,9 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.StartsWith("hotkey "))
+            if (cmd.StartsWith("hotkey ") || cmd.StartsWith("hk "))
             {
-                string args = cmd.Substring(6);
+                string args = cmd.StartsWith("hotkey ") ? cmd.Substring(6) : cmd.Substring(3);
                 await SimulateHotkey(args.Trim());
                 return true;
             }
