@@ -430,7 +430,7 @@ namespace Cloudless
             NoImageMessage = new TextBlock
             {
                 Name = "NoImageMessage",
-                Text = "Welcome to Cloudless.\n\nNo image is loaded.\nRight click or press 'x' for options.\n\nPress 'z' to toggle Zen.",
+                Text = "Welcome to Cloudless.\n\nNo media is loaded.\nRight click or press 'x' for options.\n\nPress 'z' to toggle Zen.",
                 Foreground = Brushes.White,
                 FontSize = 20,
                 Padding = new Thickness(20),
