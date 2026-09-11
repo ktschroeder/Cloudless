@@ -21,12 +21,141 @@ namespace Cloudless
         // Current user-defined loop range for video playback. Null means use media bounds.
         private TimeSpan? _videoLoopStart = null;
         private TimeSpan? _videoLoopEnd = null;
+        // Whether this window is marked as a slideshow trigger (used when starting slideshow with triggers)
+        private bool _isSlideshowTrigger = false;
+        private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _triggerTimeChangedHandler = null;
+        private DateTime _lastTriggerFired = DateTime.MinValue;
+        private bool _pluginLoopTemporarilyDisabled = false;
         private TextBox? GetCommandTextBox()
         {
             if (_commandPaletteWindow?.Control != null)
                 return _commandPaletteWindow.Control.CommandTextBoxControl;
             var tb = this.FindName("CommandTextBox") as TextBox;
             return tb;
+        }
+
+        private void SetSlideshowTrigger(bool enabled)
+        {
+            // If already enabled and already subscribed, nothing to do
+            if (enabled && _isSlideshowTrigger && _triggerTimeChangedHandler != null)
+                return;
+
+            // If enabling and not already marked, enforce only one trigger per page
+            if (enabled && !_isSlideshowTrigger)
+            {
+                var other = Application.Current.Windows
+                    .OfType<MainWindow>()
+                    .FirstOrDefault(w => w != this && w.windowPageIndex == this.windowPageIndex && w._isSlideshowTrigger == true);
+                if (other != null)
+                {
+                    Message($"Cannot mark this window as a slideshow trigger because another window on page {this.windowPageIndex} is already a trigger.");
+                    return;
+                }
+            }
+
+            _isSlideshowTrigger = enabled;
+
+            try
+            {
+                if (enabled)
+                {
+                    // register page (idempotent)
+                    SlideshowManager.RegisterTriggerPage(this.windowPageIndex);
+
+                    // attempt to subscribe if plugin is present and not already subscribed
+                    var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                    if (vp != null && _triggerTimeChangedHandler == null)
+                    {
+                        _triggerTimeChangedHandler = new EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>(OnTriggerTimeChanged);
+                        vp.TimeChanged += _triggerTimeChangedHandler;
+                        // If a custom loop end is configured, disable plugin's internal loop behavior so host can handle triggers
+                        try
+                        {
+                            if (_videoLoopEnd.HasValue)
+                            {
+                                vp.SetLoopRange(_videoLoopStart, null);
+                                _pluginLoopTemporarilyDisabled = true;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                else
+                {
+                    // unregister page
+                    SlideshowManager.UnregisterTriggerPage(this.windowPageIndex);
+
+                    // unsubscribe if subscribed
+                    var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                    if (vp != null && _triggerTimeChangedHandler != null)
+                    {
+                        try { vp.TimeChanged -= _triggerTimeChangedHandler; } catch { }
+                        _triggerTimeChangedHandler = null;
+                        // If we previously disabled plugin loop, restore it
+                        try
+                        {
+                            if (_pluginLoopTemporarilyDisabled && _videoLoopEnd.HasValue)
+                            {
+                                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                                _pluginLoopTemporarilyDisabled = false;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SetSlideshowTrigger error: {ex.Message}");
+            }
+        }
+
+        private void OnTriggerTimeChanged(object? sender, Cloudless.PluginBase.VideoTimeChangedEventArgs e)
+        {
+            try
+            {
+                // throttle repeated firings
+                if ((DateTime.Now - _lastTriggerFired).TotalMilliseconds < 300)
+                    return;
+
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null) return;
+
+                long currentMs = e.TimeMilliseconds;
+                TimeSpan? endTs = _videoLoopEnd;
+                if (!endTs.HasValue)
+                {
+                    var dur = vp.GetDuration();
+                    if (dur > TimeSpan.Zero)
+                        endTs = dur;
+                }
+
+                if (!endTs.HasValue) return; // unknown duration
+
+                long endMs = (long)endTs.Value.TotalMilliseconds;
+                if (endMs <= 0) return;
+
+                if (currentMs >= endMs)
+                {
+                    // mark fired and signal manager
+                    _lastTriggerFired = DateTime.Now;
+                    SlideshowManager.SignalTriggerFired(this.windowPageIndex);
+
+                    // restart the video to avoid repeated triggers
+                    try
+                    {
+                        if (_videoLoopStart.HasValue)
+                            vp.SeekTo(_videoLoopStart.Value);
+                        else
+                            vp.Restart();
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"OnTriggerTimeChanged error: {ex.Message}");
+            }
         }
 
         private bool IsCommandPaletteVisible()
@@ -476,6 +605,20 @@ namespace Cloudless
                 vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
                 UpdateVideoControls();
                 Message($"Reset loop end");
+                return true;
+            }
+
+            if (cmd.Equals("set ss trigger") || cmd.Equals("set slideshow trigger"))
+            {
+                SetSlideshowTrigger(true);
+                Message("Marked this window as a slideshow trigger");
+                return true;
+            }
+
+            if (cmd.Equals("clear ss trigger") || cmd.Equals("clear slideshow trigger"))
+            {
+                SetSlideshowTrigger(false);
+                Message("Cleared slideshow trigger for this window");
                 return true;
             }
 
@@ -1570,7 +1713,7 @@ namespace Cloudless
 
             if (cmd.Equals("ss stop") || cmd.Equals("slideshow stop"))
             {
-                SlideshowManager.Stop();
+                StopSlideshow();
                 return true;
             }
 
@@ -1582,13 +1725,43 @@ namespace Cloudless
 
             if (cmd.StartsWith("ss ") || cmd.StartsWith("slideshow "))
             {
-                string timeStr = cmd.StartsWith("ss ") ? cmd.Substring(3).Trim() : cmd.Substring(10).Trim();
-                bool shuffle = timeStr.Split(" ").Length == 2 && timeStr.Split(" ")[1].ToLower().Equals("shuffle");
-                if (shuffle)
-                    timeStr = timeStr.Split(" ")[0];
-                if (double.TryParse(timeStr, out double seconds) && seconds > 0)
+                string args = cmd.StartsWith("ss ") ? cmd.Substring(3).Trim() : cmd.Substring(10).Trim();
+                var parts = args.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+                bool shuffle = false;
+                bool useTriggers = false;
+                string timeToken = "";
+                foreach (var p in parts)
                 {
-                    StartSlideshow(seconds, shuffle);
+                    var lp = p.ToLower();
+                    if (lp == "shuffle") shuffle = true;
+                    else if (lp == "triggers") useTriggers = true;
+                    else if (double.TryParse(p, out _)) timeToken = p;
+                }
+
+                // Special-case: trigger-only slideshow when no numeric time is supplied
+                if (useTriggers && string.IsNullOrEmpty(timeToken))
+                {
+                    var activePages = GetNonemptyPages();
+                    if (activePages.Count == 0)
+                    {
+                        Message("Cannot start slideshow: no active pages");
+                        return true;
+                    }
+
+                    if (!SlideshowManager.AllPagesHaveTriggers(activePages))
+                    {
+                        Message("Cannot start trigger-only slideshow: not all active pages have a configured trigger");
+                        return false;
+                    }
+
+                    // start trigger-only slideshow (interval 0 indicates trigger-only mode)
+                    StartSlideshow(0, shuffle, useTriggers);
+                    return true;
+                }
+
+                if (double.TryParse(timeToken, out double seconds) && seconds > 0)
+                {
+                    StartSlideshow(seconds, shuffle, useTriggers);
                     return true;
                 }
                 else
@@ -2248,9 +2421,9 @@ namespace Cloudless
             }
         }
 
-        private void StartSlideshow(double intervalSeconds, bool shuffle = false)
+        private void StartSlideshow(double intervalSeconds, bool shuffle = false, bool useTriggers = false)
         {
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             var activePages = GetNonemptyPages();
             if (activePages.Count == 0)
@@ -2265,7 +2438,7 @@ namespace Cloudless
             int startingPageIndex = activePages.IndexOf(startPageIndex);
 
             // Initialize global slideshow and pass the tick handler
-            SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick, shuffle);
+            SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick, shuffle, useTriggers);
 
             Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)");
         }
@@ -2292,7 +2465,7 @@ namespace Cloudless
                 var allPages = GetNonemptyPages();
                 if (allPages.Count == 0)
                 {
-                    SlideshowManager.Stop();
+                    StopSlideshow();
                     return;
                 }
 

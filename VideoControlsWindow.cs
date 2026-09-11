@@ -237,6 +237,14 @@ namespace Cloudless
             {
                 if (StartMarker != null)
                     StartMarker.Visibility = Visibility.Collapsed;
+                // Try to collapse trigger marker if present in XAML namescope
+                try
+                {
+                    var trg = MarkerCanvas?.FindName("TriggerMarker") as FrameworkElement;
+                    if (trg != null)
+                        trg.Visibility = Visibility.Collapsed;
+                }
+                catch { }
                 if (EndMarker != null)
                     EndMarker.Visibility = Visibility.Collapsed;
                 return;
@@ -267,7 +275,7 @@ namespace Cloudless
             double rectHeight = StartMarker?.Height ?? 14;
             double top = Math.Max(0, (SeekingSlider.ActualHeight - rectHeight) / 2.0);
 
-            void PositionMarker(FrameworkElement marker, TimeSpan? time)
+            void PositionMarker(FrameworkElement marker, TimeSpan? time, double verticalOffset = 0)
             {
                 if (marker == null) return;
                 if (time.HasValue && durationMs > 0)
@@ -277,7 +285,7 @@ namespace Cloudless
                     double effectiveX = ratio * usableWidth;
                     double left = effectiveX + thumbHalf;
                     Canvas.SetLeft(marker, left - (marker.Width / 2.0));
-                    Canvas.SetTop(marker, top);
+                    Canvas.SetTop(marker, top + verticalOffset);
                     marker.Visibility = Visibility.Visible;
                 }
                 else
@@ -287,6 +295,38 @@ namespace Cloudless
             }
 
             PositionMarker(StartMarker, start);
+
+            // If this window's page is registered as a slideshow trigger, show the trigger marker.
+            bool isRegisteredTrigger = false;
+            try
+            {
+                if (_ownerWindow != null)
+                    isRegisteredTrigger = SlideshowManager.AllPagesHaveTriggers(new System.Collections.Generic.List<int> { _ownerWindow.GetCurrentPageIndex() });
+            }
+            catch { }
+
+            if (isRegisteredTrigger)
+            {
+                TimeSpan? triggerTime = end.HasValue ? end : TimeSpan.FromMilliseconds(durationMs);
+                try
+                {
+                    var trg = MarkerCanvas?.FindName("TriggerMarker") as FrameworkElement;
+                    if (trg != null)
+                        PositionMarker(trg, triggerTime, -13); // move 13px higher
+                }
+                catch { }
+            }
+            else
+            {
+                try
+                {
+                    var trg = MarkerCanvas?.FindName("TriggerMarker") as FrameworkElement;
+                    if (trg != null)
+                        trg.Visibility = Visibility.Collapsed;
+                }
+                catch { }
+            }
+
             PositionMarker(EndMarker, end);
         }
 
@@ -446,6 +486,57 @@ namespace Cloudless
                 Interlocked.Exchange(ref _latestVlcPositionMs, Math.Min(e.TimeMilliseconds, durationMs));
                 Interlocked.Exchange(ref _latestVlcEventTickMs, Environment.TickCount64);
             }
+
+            try
+            {
+                // Detect wrap-to-start / natural end for slideshow triggers.
+                // If this owner window's page has a registered trigger, signal the slideshow manager.
+                if (_ownerWindow != null && videoPlayer != null)
+                {
+                    long pos = e.TimeMilliseconds;
+                    long dur = (long)Math.Max(0, videoPlayer.GetDuration().TotalMilliseconds);
+
+                    bool isRegisteredTrigger = SlideshowManager.AllPagesHaveTriggers(new System.Collections.Generic.List<int> { _ownerWindow.GetCurrentPageIndex() });
+
+                    if (isRegisteredTrigger)
+                    {
+                        // If position is exactly zero (wrap) or very near the end, treat as trigger firing.
+                        bool wrapDetected = pos == 0 || (dur > 0 && pos >= dur - 50);
+
+                        if (wrapDetected)
+                        {
+                            // Prevent rapid duplicate signals by simple debounce
+                            try
+                            {
+                                var now = DateTime.UtcNow;
+                                // use a static-ish field per window via Tag on owner to avoid adding more fields here
+                                var lastSignalObj = _ownerWindow.Tag as System.Collections.Hashtable;
+                                if (lastSignalObj == null)
+                                {
+                                    lastSignalObj = new System.Collections.Hashtable();
+                                    _ownerWindow.Tag = lastSignalObj;
+                                }
+                                var key = "LastSlideshowSignalUtc";
+                                DateTime last = DateTime.MinValue;
+                                if (lastSignalObj.ContainsKey(key))
+                                    last = (DateTime)lastSignalObj[key];
+
+                                if ((now - last).TotalMilliseconds > 500) // 500ms debounce
+                                {
+                                    lastSignalObj[key] = now;
+                                    Console.WriteLine($"[SlideshowTrigger] Page {_ownerWindow.GetCurrentPageIndex()} trigger fired (pos={pos} dur={dur})");
+                                    SlideshowManager.SignalTriggerFired(_ownerWindow.GetCurrentPageIndex());
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[SlideshowTrigger] Signal error: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
         }
 
         private string FormatTime(TimeSpan timeSpan)

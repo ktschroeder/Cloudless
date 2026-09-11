@@ -15,7 +15,7 @@ namespace Cloudless.PluginBase
         event EventHandler<VideoTimeChangedEventArgs>? TimeChanged;
 
         Task Play(Uri uri, Task? postPlayTask = null);
-        void TogglePause();
+        void TogglePause(bool? setTo = null);
         void Stop();
         /// <summary>
         /// Replace the current media source without starting playback.

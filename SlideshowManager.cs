@@ -15,11 +15,15 @@ namespace Cloudless
         private static Action? _onSlideshowTick = null;
         private static Action? _onSlideshowStopped = null;
         private static bool _slideshowShuffle = false;
+        public static bool UseTriggers = false;
+        private static HashSet<int>? _triggerPages = null;
         // lots per page value for smart randomness (pageValue -> lots)
         private static Dictionary<int, int>? _slideshowLots = null;
         // last page value visited prior to the current one (for exclusion rules)
         private static int _slideshowPreviousPage = -1;
         private static readonly Random _rng = new Random();
+        // Guard against rapid duplicate triggers: store the last trigger time in ms
+        private static long _lastTriggerTickMs = 0;
 
         public static event Action? SlideshowStarted;
         public static event Action? SlideshowStopped;
@@ -29,7 +33,7 @@ namespace Cloudless
         // The page selected by the last timer tick (if any). Manager sets this when it chooses the next page.
         public static int? SelectedPage { get; private set; } = null;
 
-        public static void Initialize(double intervalSeconds, List<int> activePages, int startingPageIndex, Dispatcher dispatcher, Action onTick, bool shuffle = false)
+        public static void Initialize(double intervalSeconds, List<int> activePages, int startingPageIndex, Dispatcher dispatcher, Action onTick, bool shuffle = false, bool useTriggers = false)
         {
             // Stop any existing slideshow
             Stop();
@@ -42,22 +46,53 @@ namespace Cloudless
             _slideshowCurrentPageIndex = startingPageIndex;
             _onSlideshowTick = onTick;
             _slideshowShuffle = shuffle;
+            UseTriggers = useTriggers;
+            // Do not reinitialize the trigger pages collection here — registrations may have been made
+            // on each window prior to starting the slideshow. Only create the collection if it doesn't exist.
+            if (_triggerPages == null)
+                _triggerPages = new HashSet<int>();
             SelectedPage = null;
 
-            _slideshowTimer = new DispatcherTimer(DispatcherPriority.Normal, dispatcher)
+            // If using triggers only (no timing), do not create a timer; instead select the starting page and wait for triggers.
+            if (useTriggers && intervalSeconds <= 0)
             {
-                Interval = TimeSpan.FromSeconds(intervalSeconds)
-            };
-
-            _slideshowTimer.Tick += (sender, e) =>
+                _slideshowIntervalSeconds = 0;
+                // startingPageIndex refers to index within activePages
+                _slideshowCurrentPageIndex = startingPageIndex;
+                SelectedPage = _slideshowPages[_slideshowCurrentPageIndex];
+            }
+            else
             {
-                OnTimerTick();
-            };
+                _slideshowTimer = new DispatcherTimer(DispatcherPriority.Normal, dispatcher)
+                {
+                    Interval = TimeSpan.FromSeconds(intervalSeconds)
+                };
 
-            _slideshowTimer.Start();
+                _slideshowTimer.Tick += (sender, e) =>
+                {
+                    OnTimerTick();
+                };
+
+                _slideshowTimer.Start();
+            }
 
             // Raise event to notify all windows
             SlideshowStarted?.Invoke();
+        }
+
+        /// <summary>
+        /// Returns true if all pages in the provided list have a registered trigger.
+        /// </summary>
+        public static bool AllPagesHaveTriggers(List<int> pages)
+        {
+            if (pages == null) return false;
+            if (_triggerPages == null) return false;
+            foreach (var p in pages)
+            {
+                if (!_triggerPages.Contains(p))
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -85,6 +120,8 @@ namespace Cloudless
             _slideshowIntervalSeconds = 0;
             // clear shuffle-related state
             _slideshowShuffle = false;
+            UseTriggers = false;
+            // Do not clear _triggerPages here; trigger registrations are persistent until explicitly unregistered by windows
             _slideshowLots = null;
             _slideshowPreviousPage = -1;
             SelectedPage = null;
@@ -103,10 +140,58 @@ namespace Cloudless
         }
 
         /// <summary>
+        /// Register a page index as having at least one trigger window.
+        /// </summary>
+        public static void RegisterTriggerPage(int pageIndex)
+        {
+            if (_triggerPages == null) _triggerPages = new HashSet<int>();
+            _triggerPages.Add(pageIndex);
+        }
+
+        public static void UnregisterTriggerPage(int pageIndex)
+        {
+            if (_triggerPages == null) return;
+            _triggerPages.Remove(pageIndex);
+        }
+
+        /// <summary>
+        /// Called by windows when a trigger (video end) fires for the given page.
+        /// If the manager is waiting on a trigger for that page, advance the slideshow immediately.
+        /// </summary>
+        public static void SignalTriggerFired(int pageIndex)
+        {
+            try
+            {
+                // Debounce rapid triggers: ignore if a trigger fired very recently
+                long now = Environment.TickCount64;
+                long prev = Interlocked.Read(ref _lastTriggerTickMs);
+                if (prev != 0 && (now - prev) < 50)
+                {
+                    return;
+                }
+                Interlocked.Exchange(ref _lastTriggerTickMs, now);
+
+                if (!UseTriggers) return;
+                if (_triggerPages != null && _triggerPages.Contains(pageIndex))
+                {
+                    // advance immediately
+                    // ensure timer is reset like NextSlideshowPage
+                    if (_slideshowTimer != null)
+                    {
+                        _slideshowTimer.Stop();
+                        _slideshowTimer.Start();
+                    }
+                    OnTimerTick(fromTrigger: true);
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
         /// Internal method called on each timer tick.
         /// Advances to the next page in the slideshow.
         /// </summary>
-        private static void OnTimerTick()
+        private static void OnTimerTick(bool fromTrigger = false)
         {
             if (_slideshowPages == null || _slideshowPages.Count == 0)
             {
@@ -122,6 +207,10 @@ namespace Cloudless
                 _slideshowCurrentPageIndex = (_slideshowCurrentPageIndex + 1) % _slideshowPages.Count;
                 int chosenPage = _slideshowPages[_slideshowCurrentPageIndex];
                 SelectedPage = chosenPage;
+                if (!fromTrigger && UseTriggers && _triggerPages != null && _triggerPages.Contains(chosenPage))
+                {
+                    return;
+                }
                 _onSlideshowTick?.Invoke();
                 return;
             }
@@ -200,6 +289,10 @@ namespace Cloudless
                     _slideshowCurrentPageIndex = (_slideshowCurrentPageIndex + 1) % _slideshowPages.Count;
                     int cp = _slideshowPages[_slideshowCurrentPageIndex];
                     SelectedPage = cp;
+                    if (UseTriggers && _triggerPages != null && _triggerPages.Contains(cp))
+                    {
+                        return;
+                    }
                     _onSlideshowTick?.Invoke();
                     return;
                 }

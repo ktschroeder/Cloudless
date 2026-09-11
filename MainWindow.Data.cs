@@ -447,6 +447,17 @@ namespace Cloudless
                             UpdateVideoControls();
                         }
 
+                        // If this window is marked as a slideshow trigger, ensure we subscribe now that the video player is available
+                        try
+                        {
+                            if (this._isSlideshowTrigger)
+                            {
+                                // Attempt to (re)enable trigger handling which will register and subscribe as needed
+                                SetSlideshowTrigger(true);
+                            }
+                        }
+                        catch { }
+
                         
                         VideoHost.Height = double.NaN;
                         VideoHost.Width = double.NaN;

@@ -104,6 +104,7 @@ namespace Cloudless
             if (this._videoLoopEnd.HasValue)
                 state.LoopEndMs = this._videoLoopEnd.Value.TotalMilliseconds;
 
+            state.IsSlideshowTrigger = this._isSlideshowTrigger;
             state.IsMuted = this._windowVideoIsMuted;
             state.Volume = this._windowVideoVolume;
 
@@ -706,6 +707,11 @@ namespace Cloudless
                 Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
             }
 
+            if (state.IsSlideshowTrigger == true)
+            {
+                SetSlideshowTrigger(true);
+            }
+
             // Apply any saved video playback state (mute and volume)
             try
             {
@@ -787,6 +793,11 @@ namespace Cloudless
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
+                }
+
+                if (state.IsSlideshowTrigger == true)
+                {
+                    SetSlideshowTrigger(true);
                 }
 
                 // Apply any saved video playback state (mute and volume)
@@ -962,13 +973,13 @@ namespace Cloudless
         private bool windowWasMinimizedPriorToHidingForPage = false;
         private bool windowWasMaximizedPriorToHidingForPage = false;
 
-        public void HideWindowForPages()
+        public void HideWindowForPages(bool mustManageTriggerVideo = false)
         {
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
             {
                 _videoPausedBeforeUserChangedPage = player.IsPaused();
                 if (!_videoPausedBeforeUserChangedPage)  // if playing, then pause.
-                    player.TogglePause();
+                    player.TogglePause(setTo: true);
             }
 
             windowWasMinimizedPriorToHidingForPage = this.WindowState == WindowState.Minimized || windowWasMinimizedPriorToHidingForPage;
@@ -1008,6 +1019,16 @@ namespace Cloudless
 
             if (!_videoPausedBeforeUserChangedPage && !string.IsNullOrEmpty(currentlyDisplayedImagePath) && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
             {
+                var loopStart = this.VideoLoopStart;
+                if (loopStart.HasValue)
+                {
+                    var pos = player.GetPosition();
+                    if (pos < loopStart.Value)
+                    {
+                        player.SeekTo(loopStart.Value);
+                    }
+                }
+
                 if (player.IsPaused())
                 {
                     player.TogglePause();
@@ -1023,7 +1044,7 @@ namespace Cloudless
                 return;
             }
 
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             int currentPageIndex = GetCurrentPageIndex();
             if (currentPageIndex == pageIndex)
@@ -1037,6 +1058,16 @@ namespace Cloudless
             {
                 Message($"Window is empty (no image loaded). There's nothing to send.");
                 return;
+            }
+
+            // If this window was a slideshow trigger, unregister from the old page and attempt to re-register on the new page later
+            int oldPage = windowPageIndex;
+            bool wasTrigger = _isSlideshowTrigger;
+            if (wasTrigger)
+            {
+                SlideshowManager.UnregisterTriggerPage(oldPage);
+                // temporarily clear flag so re-registration will be attempted when we set it on target page
+                _isSlideshowTrigger = false;
             }
 
             windowPageIndex = pageIndex;
@@ -1063,6 +1094,12 @@ namespace Cloudless
                 freshWindow.Focus();
                 freshWindow.Message($"Created new Cloudless window since page was empty");
             }
+
+            // If this window used to be a trigger, attempt to re-enable it on the new page (will fail if another trigger exists on that page)
+            if (wasTrigger)
+            {
+                try { SetSlideshowTrigger(true); } catch { }
+            }
         }
 
         public void SendPageToPage(int pageIndex)
@@ -1073,7 +1110,7 @@ namespace Cloudless
                 return;
             }
 
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             int currentPageIndex = GetCurrentPageIndex();
             if (currentPageIndex == pageIndex)
@@ -1105,7 +1142,7 @@ namespace Cloudless
             // Stop slideshow if not initiated by slideshow itself
             if (!fromSlideshow)
             {
-                SlideshowManager.Stop();
+                StopSlideshow();
             }
 
             int currentPageIndex = GetCurrentPageIndex();
@@ -1128,6 +1165,7 @@ namespace Cloudless
                     window.ZIndexBeforePageSwap = window.GetWindowZIndexFromOrderMap(zs);
             }
 
+            bool mustManageTriggerVideo = fromSlideshow && SlideshowManager.UseTriggers;
             if (!skipHide)
             {
                 // minimize all windows on the current page, and also hide them from taskbar and alt-tab
@@ -1138,7 +1176,24 @@ namespace Cloudless
 
                 foreach (var w in windowsToHide)
                 {
-                    w.HideWindowForPages();
+                    if (mustManageTriggerVideo && _isSlideshowTrigger)
+                    {
+                        // Schedule a placeholder block to run after ~1s without blocking the UI thread.
+                        // This is fire-and-forget: any delayed work should be safe to run later and
+                        // must not assume the window is still visible.
+                        System.Threading.Tasks.Task.Run(async () =>
+                        {
+                            await System.Threading.Tasks.Task.Delay(300).ConfigureAwait(false);
+                            Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+                            {
+                                w.HideWindowForPages();
+                            }));
+                        });
+                    }
+                    else
+                    {
+                        w.HideWindowForPages();
+                    }  
                 }
             }
 
@@ -1180,7 +1235,7 @@ namespace Cloudless
                 return;
             }
 
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             var p1Windows = Application.Current.Windows
                 .OfType<MainWindow>()
@@ -1227,7 +1282,7 @@ namespace Cloudless
                 return;
             }
 
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             var windowsToClose = Application.Current.Windows
                 .OfType<MainWindow>()
@@ -1263,7 +1318,7 @@ namespace Cloudless
 
         public void FlattenPages(int targetPage = 1)
         {
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             var windows = Application.Current.Windows
                 .OfType<MainWindow>()
@@ -1335,6 +1390,15 @@ namespace Cloudless
                     Message($"Workspace: {name}");
             }
         }
+
+        public void StopSlideshow()
+        {
+            if (SlideshowManager.IsRunning)
+            {
+                SlideshowManager.Stop();
+                Message("Slideshow stopped.");  // TODO maybe show on all windows on current page? I think I have existing method for this
+            }
+        }
     }
 
     public class CloudlessWorkspace
@@ -1366,6 +1430,8 @@ namespace Cloudless
         // Optional video loop bounds in milliseconds. Null indicates no custom bound saved in workspace.
         public double? LoopStartMs { get; set; }
         public double? LoopEndMs { get; set; }
+
+        public bool? IsSlideshowTrigger { get; set; }
 
         public bool? IsMuted { get; set; }
         public double? Volume { get; set; }

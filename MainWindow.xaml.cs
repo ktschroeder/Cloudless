@@ -22,7 +22,7 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.11.1.2";
+        public const string CURRENT_VERSION = "0.11.1.10";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = true;
 
@@ -133,7 +133,7 @@ namespace Cloudless
         public MainWindow(string filePath, double windowW, double windowH, bool workspaceLoad = false)
         {
             // Stop any running slideshow when a new window is created
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             initialImageToLoad = filePath;
             Setup(workspaceLoad);
@@ -155,7 +155,7 @@ namespace Cloudless
         {
             //filePath = "C:\\Users\\Admin\\Downloads\\rocket.gif";  // uncomment for debugging as if opening app directly for a file
             // Stop any running slideshow when a new window is created
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             initialImageToLoad = filePath;
             GlobalStartup = startUp;
@@ -186,7 +186,7 @@ namespace Cloudless
             SlideshowManager.SlideshowStopped -= OnSlideshowStopped;
 
             // Stop any running slideshow when a window is closed
-            SlideshowManager.Stop();
+            StopSlideshow();
 
             _filmStripWindow?.Close();
             _commandPaletteWindow?.Close();

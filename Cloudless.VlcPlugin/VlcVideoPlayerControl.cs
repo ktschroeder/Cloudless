@@ -263,13 +263,34 @@ namespace Cloudless.VlcPlugin
                     {
                         // Note: App seems to crash here sometimes when this event is triggered but the window has been closed. I think in the QueueUserWorkItem method.
 
-                        // IMPORTANT: Restart playback on a different thread to avoid deadlocks
+                        // IMPORTANT: Notify listeners that playback wrapped to zero so host UI can detect trigger/loop events.
+                        try
+                        {
+                            Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+                            {
+                                try
+                                {
+                                    TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = 0 });
+                                }
+                                catch { }
+                            }));
+                        }
+                        catch { }
+
+                        // Restart playback on a different thread to avoid deadlocks and mimic previous behavior
                         ThreadPool.QueueUserWorkItem(_ =>
                         {
-                            //_mediaPlayer.Stop(); // Recommended to stop before re-playing
-                            _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
-                                                                                 //_videoView.MediaPlayer = _mediaPlayer2;
-                                                                                 //_mediaPlayer2.Play();
+                            try
+                            {
+                                //_mediaPlayer.Stop(); // Recommended to stop before re-playing
+                                _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
+                                                                                     //_videoView.MediaPlayer = _mediaPlayer2;
+                                                                                     //_mediaPlayer2.Play();
+                            }
+                            catch (Exception ex2)
+                            {
+                                Console.WriteLine($"Error restarting media in EndReached handler: {ex2.Message}");
+                            }
                         });
 
                         //Restart();
@@ -503,9 +524,9 @@ namespace Cloudless.VlcPlugin
             return null;
         }
 
-        public void TogglePause()
+        public void TogglePause(bool? setTo = null)
         {
-            _mediaPlayer?.SetPause(_mediaPlayer.IsPlaying);
+            _mediaPlayer?.SetPause(setTo ?? _mediaPlayer.IsPlaying);
         }
 
         public void SetVideoZoom(double scale, double centerX, double centerY)
