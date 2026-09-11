@@ -30,6 +30,10 @@ namespace Cloudless.VlcPlugin
         private TimeSpan? _loopEnd = null;
         private bool _autoRestartAllowed = true;
         private DateTime _lastLoopSeek = DateTime.MinValue;
+        // Desired mute state when _mediaPlayer is not yet available.
+        private bool? _desiredMute = null;
+        // Desired volume when _mediaPlayer is not yet available. Range 0..100
+        private int? _desiredVolume = null;
 
         TaskCompletionSource<bool> _loadSignal;
 
@@ -262,6 +266,16 @@ namespace Cloudless.VlcPlugin
 
                 // subscribe to time changed for precise loop handling
                 _mediaPlayer.TimeChanged += MediaPlayer_TimeChanged;
+
+                // Apply any desired mute/volume state that was requested before media player existed
+                if (_desiredMute.HasValue)
+                {
+                    _mediaPlayer.Mute = _desiredMute.Value;
+                }
+                if (_desiredVolume.HasValue)
+                {
+                    _mediaPlayer.Volume = _desiredVolume.Value;
+                }
 
                 _mediaPlayer.EndReached += (sender, args) =>
                 {
@@ -897,11 +911,12 @@ namespace Cloudless.VlcPlugin
 
         public void Mute()
         {
-            if (_mediaPlayer == null)
-                return;
+            // Record desired state and apply if possible
+            _desiredMute = true;
             try
             {
-                _mediaPlayer.Mute = true;
+                if (_mediaPlayer != null)
+                    _mediaPlayer.Mute = true;
             }
             catch (Exception ex)
             {
@@ -911,11 +926,11 @@ namespace Cloudless.VlcPlugin
 
         public void Unmute ()
         {
-            if (_mediaPlayer == null)
-                return;
+            _desiredMute = false;
             try
             {
-                _mediaPlayer.Mute = false;
+                if (_mediaPlayer != null)
+                    _mediaPlayer.Mute = false;
             }
             catch (Exception ex)
             {
@@ -925,11 +940,13 @@ namespace Cloudless.VlcPlugin
 
         public bool IsMuted()
         {
-            if (_mediaPlayer == null)
-                return false;
             try
             {
-                return _mediaPlayer.Mute;
+                if (_mediaPlayer != null)
+                    return _mediaPlayer.Mute;
+                if (_desiredMute.HasValue)
+                    return _desiredMute.Value;
+                return false;
             }
             catch (Exception ex)
             {
@@ -955,13 +972,13 @@ namespace Cloudless.VlcPlugin
 
         public void SetVolume(double volume)
         {
-            if (_mediaPlayer == null)
-                return;
+            // Persist desired volume and apply if media player exists
+            int volInt = (int)Math.Round(Math.Max(0, Math.Min(100, volume)));
+            _desiredVolume = volInt;
             try
             {
-                // VLC volume is 0-100, so clamp and convert
-                int vol = (int)Math.Round(Math.Max(0, Math.Min(100, volume)));
-                _mediaPlayer.Volume = vol;
+                if (_mediaPlayer != null)
+                    _mediaPlayer.Volume = volInt;
             }
             catch (Exception ex)
             {
@@ -971,11 +988,13 @@ namespace Cloudless.VlcPlugin
 
         public double GetVolume()
         {
-            if (_mediaPlayer == null)
-                return 0.0;
             try
             {
-                return _mediaPlayer.Volume;
+                if (_mediaPlayer != null)
+                    return _mediaPlayer.Volume;
+                if (_desiredVolume.HasValue)
+                    return _desiredVolume.Value;
+                return 0.0;
             }
             catch (Exception ex)
             {
