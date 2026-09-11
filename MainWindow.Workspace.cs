@@ -103,7 +103,10 @@ namespace Cloudless
                 state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
             if (this._videoLoopEnd.HasValue)
                 state.LoopEndMs = this._videoLoopEnd.Value.TotalMilliseconds;
+            if (this._videoFlag.HasValue)
+                state.FlagMs = this._videoFlag.Value.TotalMilliseconds;
 
+            state.IsSynced = this._isVideoSynced;
             state.IsSlideshowTrigger = this._isSlideshowTrigger;
             state.IsMuted = this._windowVideoIsMuted;
             state.Volume = this._windowVideoVolume;
@@ -427,6 +430,9 @@ namespace Cloudless
 
             try
             {
+                // Clear any slideshow trigger registrations/state before loading a new workspace
+                try { SlideshowManager.ClearTriggers(); } catch { }
+
                 // Show loading window. Set initial title to avoid a later resize that moves the window.
                 loadingWindow = new LoadingWindow();
                 loadingWindow.SetMessage("Loading workspace...", "");
@@ -700,6 +706,14 @@ namespace Cloudless
                     this._videoLoopStart = s;
                     this._videoLoopEnd = e;
                 }
+                // Apply saved flag if present
+                if (state.FlagMs.HasValue)
+                {
+                    this._videoFlag = TimeSpan.FromMilliseconds(state.FlagMs.Value);
+                    // Refresh video controls UI to reflect loaded flag
+                    UpdateVideoControls();
+                    _videoControlsWindow?.UpdateLoopMarkers();
+                }
             }
             catch (Exception ex)
             {
@@ -710,6 +724,10 @@ namespace Cloudless
             if (state.IsSlideshowTrigger == true)
             {
                 SetSlideshowTrigger(true);
+            }
+            if (state.IsSynced == true)
+            {
+                SetSync(true);
             }
 
             // Apply any saved video playback state (mute and volume)
@@ -789,6 +807,13 @@ namespace Cloudless
                         this._videoLoopStart = s;
                         this._videoLoopEnd = e;
                     }
+                    // Apply saved flag if present (deferred path)
+                    if (state.FlagMs.HasValue)
+                    {
+                        this._videoFlag = TimeSpan.FromMilliseconds(state.FlagMs.Value);
+                        UpdateVideoControls();
+                        _videoControlsWindow?.UpdateLoopMarkers();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -798,6 +823,10 @@ namespace Cloudless
                 if (state.IsSlideshowTrigger == true)
                 {
                     SetSlideshowTrigger(true);
+                }
+                if (state.IsSynced == true)
+                {
+                    SetSync(true);
                 }
 
                 // Apply any saved video playback state (mute and volume)
@@ -1430,8 +1459,12 @@ namespace Cloudless
         // Optional video loop bounds in milliseconds. Null indicates no custom bound saved in workspace.
         public double? LoopStartMs { get; set; }
         public double? LoopEndMs { get; set; }
+        // Optional video flag time (milliseconds)
+        public double? FlagMs { get; set; }
 
         public bool? IsSlideshowTrigger { get; set; }
+        // Whether this window is a member of a per-page video sync group
+        public bool? IsSynced { get; set; }
 
         public bool? IsMuted { get; set; }
         public double? Volume { get; set; }

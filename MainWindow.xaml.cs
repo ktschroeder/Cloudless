@@ -22,7 +22,7 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.11.1.10";
+        public const string CURRENT_VERSION = "0.11.1.11";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = true;
 
@@ -103,6 +103,9 @@ namespace Cloudless
         // Expose loop start/end for video controls
         public TimeSpan? VideoLoopStart => _videoLoopStart;
         public TimeSpan? VideoLoopEnd => _videoLoopEnd;
+        // Optional per-window seek flag (exposed to video controls)
+        private TimeSpan? _videoFlag = null;
+        public TimeSpan? VideoFlag => _videoFlag;
 
         private Point lastMousePosition;
 
@@ -187,6 +190,7 @@ namespace Cloudless
 
             // Stop any running slideshow when a window is closed
             StopSlideshow();
+            SetSync(false);
 
             _filmStripWindow?.Close();
             _commandPaletteWindow?.Close();
@@ -816,6 +820,8 @@ namespace Cloudless
                 if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
                 {
                     player.TogglePause();
+                    if (!player.IsPaused())
+                        this.NotifySyncWaiting(false);
                     e.Handled = true;
                 }
             }

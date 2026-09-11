@@ -28,6 +28,7 @@ namespace Cloudless.VlcPlugin
         private Media _currentMedia = null;
         private TimeSpan? _loopStart = null;
         private TimeSpan? _loopEnd = null;
+        private bool _autoRestartAllowed = true;
         private DateTime _lastLoopSeek = DateTime.MinValue;
 
         TaskCompletionSource<bool> _loadSignal;
@@ -51,6 +52,11 @@ namespace Cloudless.VlcPlugin
 
         public VlcVideoPlayerControl()
         {
+        }
+
+        public void SetAutoRestartAllowed(bool allowed)
+        {
+            _autoRestartAllowed = allowed;
         }
 
         // Native interop helpers to find and move the native video child window
@@ -277,21 +283,25 @@ namespace Cloudless.VlcPlugin
                         }
                         catch { }
 
-                        // Restart playback on a different thread to avoid deadlocks and mimic previous behavior
-                        ThreadPool.QueueUserWorkItem(_ =>
+                        // Restart only if auto-restart is allowed. Otherwise rely on host to coordinate restarts.
+                        if (_autoRestartAllowed)
                         {
-                            try
+                            // Restart playback on a different thread to avoid deadlocks and mimic previous behavior
+                            ThreadPool.QueueUserWorkItem(_ =>
                             {
-                                //_mediaPlayer.Stop(); // Recommended to stop before re-playing
-                                _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
-                                                                                     //_videoView.MediaPlayer = _mediaPlayer2;
-                                                                                     //_mediaPlayer2.Play();
-                            }
-                            catch (Exception ex2)
-                            {
-                                Console.WriteLine($"Error restarting media in EndReached handler: {ex2.Message}");
-                            }
-                        });
+                                try
+                                {
+                                    //_mediaPlayer.Stop(); // Recommended to stop before re-playing
+                                    _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
+                                                                                         //_videoView.MediaPlayer = _mediaPlayer2;
+                                                                                         //_mediaPlayer2.Play();
+                                }
+                                catch (Exception ex2)
+                                {
+                                    Console.WriteLine($"Error restarting media in EndReached handler: {ex2.Message}");
+                                }
+                            });
+                        }
 
                         //Restart();
                     }

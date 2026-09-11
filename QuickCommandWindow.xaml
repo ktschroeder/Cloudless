@@ -25,11 +25,16 @@
         </Grid.ColumnDefinitions>
 
         <!-- Page selector tabs -->
-        <StackPanel x:Name="TabPanel" Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="3" HorizontalAlignment="Center" Margin="6">
-            <Button Name="Tab1" Click="TabButton_Click" Style="{StaticResource CloudlessButton}" Width="28" Height="22" Margin="2">1</Button>
-            <Button Name="Tab2" Click="TabButton_Click" Style="{StaticResource CloudlessButton}" Width="28" Height="22" Margin="2">2</Button>
-            <Button Name="Tab3" Click="TabButton_Click" Style="{StaticResource CloudlessButton}" Width="28" Height="22" Margin="2">3</Button>
-        </StackPanel>
+        <Grid x:Name="TabPanel" Grid.Row="0" Grid.ColumnSpan="3" Margin="6" VerticalAlignment="Bottom" HorizontalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="80" />
+            </Grid.ColumnDefinitions>
+            <Button Name="Tab1" Click="TabButton_Click" Style="{StaticResource CloudlessButton}" Height="30" Margin="0" Grid.Column="0" HorizontalAlignment="Stretch">1-8</Button>
+            <Button Name="Tab2" Click="TabButton_Click" Style="{StaticResource CloudlessButton}" Height="30" Margin="0" Grid.Column="1" HorizontalAlignment="Stretch">9-16</Button>
+            <Button Name="Tab3" Click="TabButton_Click" Style="{StaticResource CloudlessButton}" Height="30" Margin="0" Grid.Column="2" HorizontalAlignment="Stretch">17-24</Button>
+        </Grid>
 
         <!-- Buttons around the perimeter -->
         <Button Style="{StaticResource CloudlessButton}" Click="QuickButtonClick" Grid.Row="1" Grid.Column="0">

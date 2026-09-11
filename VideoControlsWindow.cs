@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
@@ -123,6 +123,49 @@ namespace Cloudless
             ApplyLatestPosition(videoPlayer);
             RefreshVolumeFromPlayer(videoPlayer);
             RefreshPlaybackState(videoPlayer);
+            try
+            {
+                // If this window was marked waiting but playback has resumed or user has moved away from the
+                // configured loop start via seeking, clear the waiting state so UI updates correctly.
+                if (_ownerWindow != null && _ownerWindow.VideoSyncWaiting)
+                {
+                    bool playing = !videoPlayer.IsPaused();
+                    long posMs = (long)videoPlayer.GetPosition().TotalMilliseconds;
+
+                    // Determine threshold relative to loop start if present. If a custom loop start is set,
+                    // being paused at that start should still be considered "waiting". Only if the position
+                    // moves past a small grace window beyond the loop start should we clear waiting.
+                    long loopStartMs = 0;
+                    bool hasLoopStart = false;
+                    try { hasLoopStart = _ownerWindow.VideoLoopStart.HasValue; } catch { hasLoopStart = false; }
+                    if (hasLoopStart)
+                    {
+                        try { loopStartMs = (long)_ownerWindow.VideoLoopStart.Value.TotalMilliseconds; } catch { loopStartMs = 0; }
+                    }
+
+                    bool movedOffStart;
+                    const long graceMs = 250;
+                    if (hasLoopStart)
+                    {
+                        movedOffStart = posMs > (loopStartMs + graceMs);
+                    }
+                    else
+                    {
+                        movedOffStart = posMs > graceMs;
+                    }
+
+                    if (playing || movedOffStart)
+                    {
+                        _ownerWindow.NotifySyncWaiting(false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"RefreshFromVideoPlayer sync-clear error: {ex.Message}");
+                throw;
+            }
+            UpdateSyncIndicator();
         }
 
         private void RefreshPlaybackState(IVideoPlayer videoPlayer, bool? setTo = null)
@@ -144,6 +187,42 @@ namespace Cloudless
                 }));
             }
             catch { }
+        }
+
+        private void UpdateSyncIndicator()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_ownerWindow == null || SyncIndicator == null)
+                    return;
+
+                bool synced = false;
+                bool waiting = false;
+                synced = _ownerWindow.VideoIsSynced; 
+                waiting = _ownerWindow.VideoSyncWaiting;
+
+                if (!synced)
+                {
+                    SyncIndicator.Text = "";
+                    SyncIndicator.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    SyncIndicator.Visibility = Visibility.Visible;
+                    if (waiting)
+                    {
+                        SyncIndicator.Text = "S⏳";
+                        SyncIndicator.Foreground = Brushes.Goldenrod;
+                        SyncIndicator.ToolTip = "Synced: waiting for other videos";
+                    }
+                    else
+                    {
+                        SyncIndicator.Text = "S";
+                        SyncIndicator.Foreground = Brushes.LimeGreen;
+                        SyncIndicator.ToolTip = "Synced";
+                    }
+                }
+            }));
         }
 
         private void RefreshVolumeFromPlayer(IVideoPlayer videoPlayer)
@@ -295,6 +374,11 @@ namespace Cloudless
             }
 
             PositionMarker(StartMarker, start);
+
+            TimeSpan? flagTime = _ownerWindow?.VideoFlag;
+            var flag = MarkerCanvas?.FindName("FlagMarker") as FrameworkElement;
+            if (flag != null)
+                PositionMarker(flag, flagTime);
 
             // If this window's page is registered as a slideshow trigger, show the trigger marker.
             bool isRegisteredTrigger = false;
@@ -658,6 +742,8 @@ namespace Cloudless
                         videoPlayer.TogglePause();
                     }
                 }
+                // Any user-initiated seek should clear the "waiting" sync state for this window
+                _ownerWindow?.NotifySyncWaiting(false);
             }
 
             if (videoPlayer != null)
@@ -862,10 +948,16 @@ namespace Cloudless
                 // Toggle pause/play
                 videoPlayer.TogglePause();
 
+                if (_ownerWindow != null && !videoPlayer.IsPaused())
+                    _ownerWindow.NotifySyncWaiting(false);
+
                 // Update UI immediately
                 RefreshPlaybackState(videoPlayer);  // TODO use setTo within, for snappier UX perhaps
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"PlayPauseButton_Click error: {ex.Message}");
+            }
         }
 
         [StructLayout(LayoutKind.Sequential)]

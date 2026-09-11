@@ -53,7 +53,7 @@ namespace Cloudless
                 _triggerPages = new HashSet<int>();
             SelectedPage = null;
 
-            // If using triggers only (no timing), do not create a timer; instead select the starting page and wait for triggers.
+        // If using triggers only (no timing), do not create a timer; instead select the starting page and wait for triggers.
             if (useTriggers && intervalSeconds <= 0)
             {
                 _slideshowIntervalSeconds = 0;
@@ -125,6 +125,19 @@ namespace Cloudless
             _slideshowLots = null;
             _slideshowPreviousPage = -1;
             SelectedPage = null;
+        }
+
+        /// <summary>
+        /// Clear any registered trigger pages and reset trigger-related state.
+        /// Used when loading a workspace to ensure trigger registrations from a
+        /// previous session do not leak into the newly loaded workspace.
+        /// </summary>
+        public static void ClearTriggers()
+        {
+            _triggerPages = null;
+            UseTriggers = false;
+            SelectedPage = null;
+            Interlocked.Exchange(ref _lastTriggerTickMs, 0);
         }
 
         public static void NextSlideshowPage()

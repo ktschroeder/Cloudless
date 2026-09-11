@@ -290,7 +290,9 @@ namespace Cloudless
         private void ShowContextMenu()
         {
             ContextMenu menu = ImageContextMenu;
-            // menu.PlacementTarget = target; // UIElement
+            menu.PlacementTarget = this;
+            menu.HorizontalOffset = 0;
+            menu.VerticalOffset = 0;
             menu.Placement = PlacementMode.MousePoint;
             menu.IsOpen = true;
         }

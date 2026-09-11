@@ -38,6 +38,8 @@
                 <!-- Overlay canvas for static loop start/end markers -->
                 <Canvas x:Name="MarkerCanvas" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                     <Rectangle x:Name="StartMarker" Width="3" Height="14" Visibility="Collapsed" Fill="LimeGreen" RadiusX="1" RadiusY="1" />
+                    <!-- Flag marker: small gold chevron for quick-seek flag -->
+                    <Polygon x:Name="FlagMarker" Points="0,0 7,7 14,0 11,0 7,4 3,0" Visibility="Collapsed" Fill="Gold" Width="14" Height="7" IsHitTestVisible="False" Canvas.ZIndex="100" />
                     <!-- Trigger marker: blue 'T' placed at the trigger time. Placed before EndMarker so EndMarker remains on top when both present. -->
                     <TextBlock x:Name="TriggerMarker" Text="T" Width="27" Height="27" Visibility="Collapsed" Foreground="DodgerBlue" FontWeight="Bold" FontSize="27" FontFamily="Segoe UI Black" TextAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
                     <Rectangle x:Name="EndMarker" Width="3" Height="14" Visibility="Collapsed" Fill="OrangeRed" RadiusX="1" RadiusY="1" />
@@ -88,6 +90,8 @@
 
                 <!-- Percentage text (read-only) with fixed width to avoid layout shifts -->
                 <TextBlock x:Name="VolumePercentText" Text="100%" Foreground="{DynamicResource PrimaryForeground}" FontSize="11" VerticalAlignment="Center" Width="40" TextAlignment="Center"/>
+                <!-- Sync indicator: shows 'S' when synced, 'S?' when waiting -->
+                <TextBlock x:Name="SyncIndicator" Text="" Foreground="LimeGreen" FontSize="12" VerticalAlignment="Center" Width="36" TextAlignment="Center" ToolTip="Video sync status"/>
             </StackPanel>
         </Grid>
     </Border>

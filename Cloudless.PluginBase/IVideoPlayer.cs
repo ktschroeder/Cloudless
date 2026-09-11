@@ -67,6 +67,7 @@ namespace Cloudless.PluginBase
         (double, double) GetVideoPan();
 
         void ResetVideoPanZoom();
+        void SetAutoRestartAllowed(bool allowed);
     }
 
     /// <summary>

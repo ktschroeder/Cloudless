@@ -21,6 +21,11 @@ namespace Cloudless
         // Current user-defined loop range for video playback. Null means use media bounds.
         private TimeSpan? _videoLoopStart = null;
         private TimeSpan? _videoLoopEnd = null;
+        // Whether this window is a member of the sync group for its page
+        private bool _isVideoSynced = false;
+        public bool IsVideoSyncWaiting = false;
+        private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _syncTimeChangedHandler = null;
+        private bool _pluginLoopTemporarilyDisabledForSync = false;
         // Whether this window is marked as a slideshow trigger (used when starting slideshow with triggers)
         private bool _isSlideshowTrigger = false;
         private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _triggerTimeChangedHandler = null;
@@ -32,6 +37,141 @@ namespace Cloudless
                 return _commandPaletteWindow.Control.CommandTextBoxControl;
             var tb = this.FindName("CommandTextBox") as TextBox;
             return tb;
+        }
+
+        private void SetSync(bool enabled)
+        {
+            // If already set/unset, nothing to do
+            if (enabled && _isVideoSynced && _syncTimeChangedHandler != null) return;
+            if (!enabled && !_isVideoSynced) return;
+
+            var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+            if (enabled)
+            {
+                // Subscribe to time updates
+                if (vp != null && _syncTimeChangedHandler == null)
+                {
+                    _syncTimeChangedHandler = new EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>(OnSyncTimeChanged);
+                    vp.TimeChanged += _syncTimeChangedHandler;
+                    // Disable plugin auto-restart so host can coordinate synchronized restarts
+                    vp.SetAutoRestartAllowed(false);
+                }
+
+                _isVideoSynced = true;
+            }
+            else
+            {
+                if (vp != null && _syncTimeChangedHandler != null)
+                {
+                    vp.TimeChanged -= _syncTimeChangedHandler;
+                    _syncTimeChangedHandler = null;
+
+                    // Re-enable plugin auto-restart when unsyncing
+                    vp.SetAutoRestartAllowed(true);
+                }
+
+                _isVideoSynced = false;
+            }
+        }
+
+        // Expose sync status for UI
+        public bool VideoIsSynced => _isVideoSynced;
+        public bool VideoSyncWaiting => IsVideoSyncWaiting;
+
+        // Called to set waiting state (used by OnSyncTimeChanged and VideoSyncManager)
+        public void NotifySyncWaiting(bool waiting)
+        {
+            IsVideoSyncWaiting = waiting;
+            // Ensure UI update runs on the UI thread
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    UpdateVideoControls();
+                }));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"NotifySyncWaiting dispatch error: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async void OnSyncTimeChanged(object? sender, Cloudless.PluginBase.VideoTimeChangedEventArgs e)
+        {
+            var vp = sender as Cloudless.PluginBase.IVideoPlayer;
+            if (vp == null) return;
+
+            long currentMs = e.TimeMilliseconds;
+            TimeSpan? endTs = _videoLoopEnd;
+            if (!endTs.HasValue)
+            {
+                var dur = vp.GetDuration();
+                if (dur > TimeSpan.Zero)
+                    endTs = dur;
+            }
+
+            if (!endTs.HasValue) return;
+
+            long endMs = (long)endTs.Value.TotalMilliseconds;
+            if (endMs <= 0) return;
+
+            if (currentMs >= endMs - 550)  // 250 to accommodate VLC polling
+            {
+                // When synced, pause this window at loop start (if available) or pause at end.
+                if (_videoLoopStart.HasValue)
+                {
+                    vp.SeekTo(_videoLoopStart.Value);
+                    vp.TogglePause(true);
+                }
+                else
+                {
+                    vp.SeekTo(TimeSpan.Zero);
+                    vp.TogglePause(true);
+                }
+
+                // Mark this window as waiting so UI may reflect it
+                this.NotifySyncWaiting(true);
+
+                // Evaluate whether all synced videos on this page are paused. If so, restart them all together.
+                await this.Dispatcher.BeginInvoke(new Action(async () =>
+                {
+                    await Task.Delay(250);
+                    var syncedWindows = Application.Current.Windows
+                        .OfType<MainWindow>()
+                        .Where(w => w.windowPageIndex == this.windowPageIndex && w.VideoIsSynced && !string.IsNullOrEmpty(w.currentlyDisplayedImagePath))
+                        .ToList();
+
+                    if (syncedWindows.Count == 0)
+                        return;
+
+                    // If any synced window is currently playing, do not restart yet
+                    foreach (var win in syncedWindows)
+                    {
+                        var otherVp = win.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                        if (otherVp != null && (!otherVp.IsPaused() || !win.IsVideoSyncWaiting))
+                            return;
+                    }
+
+                    // All synced windows are paused => restart all
+                    foreach (var win in syncedWindows.Where(w => w.IsVideoSyncWaiting))
+                    {
+                        var otherVp = win.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                        if (otherVp == null) continue;
+                        if (win.VideoLoopStart.HasValue)
+                        {
+                            otherVp.SeekTo(win.VideoLoopStart.Value);
+                            otherVp.TogglePause(false);
+                        }
+                        else
+                        {
+                            otherVp.Restart();
+                            otherVp.TogglePause(false);
+                        }
+                        win.NotifySyncWaiting(false);
+                    }
+                }));
+            }
         }
 
         private void SetSlideshowTrigger(bool enabled)
@@ -608,17 +748,90 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("set ss trigger") || cmd.Equals("set slideshow trigger"))
+            if (cmd.Equals("set ss trigger") || cmd.Equals("set slideshow trigger") || cmd.Equals("set trigger"))
             {
                 SetSlideshowTrigger(true);
                 Message("Marked this window as a slideshow trigger");
                 return true;
             }
 
-            if (cmd.Equals("clear ss trigger") || cmd.Equals("clear slideshow trigger"))
+            if (cmd.Equals("clear ss trigger") || cmd.Equals("clear slideshow trigger") || cmd.Equals("clear trigger"))
             {
                 SetSlideshowTrigger(false);
                 Message("Cleared slideshow trigger for this window");
+                return true;
+            }
+
+            if (cmd.Equals("sync"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                SetSync(true);
+                Message("Added this window to the page sync group");
+                return true;
+            }
+
+            if (cmd.Equals("unsync"))
+            {
+                SetSync(false);
+                Message("Removed this window from the page sync group");
+                return true;
+            }
+
+            if (cmd.Equals("set flag"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                var pos = vp.GetPosition();
+                _videoFlag = pos;
+                UpdateVideoControls();
+                Message($"Set flag to {pos}");
+                return true;
+            }
+
+            if (cmd.Equals("clear flag"))
+            {
+                _videoFlag = null;
+                UpdateVideoControls();
+                Message("Cleared flag");
+                return true;
+            }
+
+            if (cmd.Equals("goto flag"))
+            {
+                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
+                if (vp == null)
+                {
+                    Message("No video is loaded");
+                    return false;
+                }
+
+                if (!_videoFlag.HasValue)
+                {
+                    Message("No flag is set for this window");
+                    return false;
+                }
+
+                try
+                {
+                    vp.SeekTo(_videoFlag.Value);
+                    Message($"Seeked to flag: {_videoFlag.Value}");
+                }
+                catch (Exception ex)
+                {
+                    Message("Failed to seek to flag: " + ex.Message);
+                }
+
                 return true;
             }
 
@@ -886,11 +1099,18 @@ namespace Cloudless
                 {
                     if (imageOriginalWorkspaceName != null)
                     {
-                        (int windowCount, int pageCount, string? error) = SaveWorkspace(imageOriginalWorkspaceName, true);
-                        if (windowCount == -1)
-                            Message("Failed to save workspace due to unexpected error: " + error);
+                        if (IsReservedWorkspaceName(imageOriginalWorkspaceName))
+                        {
+                            Message($"Cannot save to origin: workspace origin is a system workspace: {imageOriginalWorkspaceName}");
+                        }
                         else
-                            Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows and {pageCount} pages");
+                        {
+                            (int windowCount, int pageCount, string? error) = SaveWorkspace(imageOriginalWorkspaceName, true);
+                            if (windowCount == -1)
+                                Message("Failed to save workspace due to unexpected error: " + error);
+                            else
+                                Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows and {pageCount} pages");
+                        }
                     }
                     else
                         Message("This window does not belong to a workspace");
