@@ -3,6 +3,7 @@ using AnimatedImage.Wpf;
 using Cloudless.PluginBase;
 using Cloudless.Properties;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
@@ -377,6 +378,72 @@ namespace Cloudless
 
                 return;
             }
+
+            // Ctrl+Shift+C reopens the most recently closed window
+            if (control && shift && !alt && key == Key.C)
+            {
+                var closedWindowState = ClosedWindowsHistory.RestoreNextClosedWindow();
+                if (closedWindowState != null)
+                {
+                    // Create a new window with the restored state, following the same pattern as workspace loading
+                    var newWindow = new MainWindow(closedWindowState.ImagePath ?? "");
+                    newWindow.WorkspaceLoadInProgress = true;
+
+                    // Schedule async restoration on dispatcher to ensure proper order
+                    newWindow.Dispatcher.BeginInvoke(async () =>
+                    {
+                        try
+                        {
+                            // Follow the workspace loading pattern:
+                            // 1. Pre-position the window
+                            if (closedWindowState.MonitorLeft.HasValue && closedWindowState.MonitorTop.HasValue)
+                            {
+                                newWindow.Left = closedWindowState.MonitorLeft.Value + 20;
+                                newWindow.Top = closedWindowState.MonitorTop.Value + 20;
+                            }
+                            else
+                            {
+                                newWindow.Left = closedWindowState.Left;
+                                newWindow.Top = closedWindowState.Top;
+                            }
+
+                            // 2. Load the image/media
+                            if (!string.IsNullOrEmpty(closedWindowState.ImagePath))
+                            {
+                                await newWindow.LoadImage(closedWindowState.ImagePath, false);
+                            }
+
+                            // 3. Apply window state (zoom, pan, maximized) - non-maximized done here
+                            if (!closedWindowState.IsMaximized)
+                            {
+                                await newWindow.ApplyWindowState(closedWindowState);
+                            }
+
+                            newWindow.Show();
+
+                            // 4. Apply maximized state after showing window
+                            if (closedWindowState.IsMaximized)
+                            {
+                                await newWindow.ApplyWindowState(closedWindowState);
+                            }
+
+                            // 5. Run post-processing asynchronously
+                            await newWindow.PostProcessLoadedWindowDeferred(closedWindowState);
+                        }
+                        catch (Exception ex)
+                        {
+                            newWindow.Message($"Error restoring window: {ex.Message}");
+                            newWindow.WorkspaceLoadInProgress = false;
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Normal);
+                }
+                else
+                {
+                    Message("No recently closed windows to restore");
+                }
+                return;
+            }
+
             if (control && alt && shift && key >= Key.D1 && key <= Key.D8)
             {
                 int k = (int)(key - Key.D1); // 0..7

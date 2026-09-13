@@ -184,6 +184,18 @@ namespace Cloudless
         }
         private void OnClose()
         {
+            // Record this window's state to the closed windows history before closing
+            try
+            {
+                var zOrderMap = GetZOrderForCurrentProcessWindows();
+                var windowState = GetWindowState(zOrderMap);
+                ClosedWindowsHistory.RecordClosedWindow(windowState);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to record closed window to history: {ex.Message}");
+            }
+
             // Unsubscribe from slideshow events
             SlideshowManager.SlideshowStarted -= OnSlideshowStarted;
             SlideshowManager.SlideshowStopped -= OnSlideshowStopped;
