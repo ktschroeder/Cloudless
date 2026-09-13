@@ -1809,47 +1809,126 @@ namespace Cloudless
                 if (cmd.StartsWith("page "))
                     cmd = "p " + cmd.Substring(5).Trim();
 
-                string pattern = @"^p (\d+) send$";  // e.g. "p 2 send window"
+                // Tokenize and support single-letter aliases for flexible command forms
+                var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+                // tokens[0] == "p"
+                if (tokens.Count >= 2)
+                {
+                    string targetToken = tokens[1];
+
+                    // Handle next-active / previous-active which are special tokens
+                    if (targetToken == "na" || targetToken == "pa")
+                    {
+                        int currentPageIndex = GetCurrentPageIndex();
+                        if (targetToken == "na")
+                        {
+                            var activePages = GetNonemptyPages();
+                            int nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;
+                            if (nextActivePage == 0)
+                                nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;
+
+                            if (nextActivePage != 0)
+                                SwapViewToPage(nextActivePage);
+                            else
+                                Message("There are no other active pages.");
+                        }
+                        else
+                        {
+                            var activePages = GetNonemptyPages();
+                            int prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;
+                            if (prevActivePage == 0)
+                                prevActivePage = activePages?.Order().LastOrDefault() ?? 0;
+
+                            if (prevActivePage != 0)
+                                SwapViewToPage(prevActivePage);
+                            else
+                                Message("There are no other active pages.");
+                        }
+
+                        return true;
+                    }
+
+                    // Resolve numeric or relative target
+                    int? resolvedTarget = null;
+                    if (int.TryParse(targetToken, out int numericTarget))
+                    {
+                        resolvedTarget = numericTarget;
+                    }
+                    else
+                    {
+                        int current = GetCurrentPageIndex();
+                        if (targetToken == "next" || targetToken == "n")
+                            resolvedTarget = current + 1 == 21 ? 1 : current + 1;
+                        else if (targetToken == "previous" || targetToken == "p" || targetToken == "prev")
+                            resolvedTarget = current - 1 == 0 ? 20 : current - 1;
+                    }
+
+                    // If unresolved, allow simple commands like 'p n' or 'p p'
+                    if (!resolvedTarget.HasValue && tokens.Count == 2)
+                    {
+                        if (tokens[1] == "n")
+                        {
+                            int currentPageIndex = GetCurrentPageIndex();
+                            SwapViewToPage(currentPageIndex + 1 == 21 ? 1 : currentPageIndex + 1);
+                            return true;
+                        }
+                        if (tokens[1] == "p")
+                        {
+                            int currentPageIndex = GetCurrentPageIndex();
+                            SwapViewToPage(currentPageIndex - 1 == 0 ? 20 : currentPageIndex - 1);
+                            return true;
+                        }
+                    }
+
+                    // If target resolved, interpret action tokens
+                    if (resolvedTarget.HasValue)
+                    {
+                        int target = resolvedTarget.Value;
+                        if (tokens.Count == 2)
+                        {
+                            // Just swap view to target
+                            SwapViewToPage(target);
+                            return true;
+                        }
+
+                        string action = tokens[2];
+                        string action2 = tokens.Count >= 4 ? tokens[3] : "";
+
+                        bool isSend = action == "send" || action == "s";
+                        bool isBring = action == "bring" || action == "b";
+                        bool qualifierPage = action2 == "page" || action2 == "p";
+
+                        if (isSend && !qualifierPage)
+                        {
+                            SendWindowToPage(target);
+                            return true;
+                        }
+                        if (isBring && !qualifierPage)
+                        {
+                            SendWindowToPage(target);
+                            SwapViewToPage(target);
+                            return true;
+                        }
+                        if (isSend && qualifierPage)
+                        {
+                            SendPageToPage(target);
+                            return true;
+                        }
+                        if (isBring && qualifierPage)
+                        {
+                            SendPageToPage(target);
+                            SwapViewToPage(target);
+                            return true;
+                        }
+                    }
+                }
+
+                // Fall back to handling commands that the tokenized parser doesn't cover below.
+
+                string pattern;
+                pattern = @"^p (\d+) clear$";
                 Match match = Regex.Match(cmd, pattern);
                 int? matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                if (matchInt.HasValue)
-                {
-                    SendWindowToPage((int)matchInt);
-                    return true;
-                }
-
-                pattern = @"^p (\d+) bring$";  // e.g. "p 2 bring window"
-                match = Regex.Match(cmd, pattern);
-                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                if (matchInt.HasValue)
-                {
-                    SendWindowToPage((int)matchInt);
-                    SwapViewToPage((int)matchInt);
-                    return true;
-                }
-
-                pattern = @"^p (\d+) send page$";
-                match = Regex.Match(cmd, pattern);
-                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                if (matchInt.HasValue)
-                {
-                    SendPageToPage((int)matchInt);
-                    return true;
-                }
-
-                pattern = @"^p (\d+) bring page$";
-                match = Regex.Match(cmd, pattern);
-                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                if (matchInt.HasValue)
-                {
-                    SendPageToPage((int)matchInt);
-                    SwapViewToPage((int)matchInt);
-                    return true;
-                }
-
-                pattern = @"^p (\d+) clear$";
-                match = Regex.Match(cmd, pattern);
-                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
                 if (matchInt.HasValue)
                 {
                     ClearPage((int)matchInt);
@@ -1866,60 +1945,7 @@ namespace Cloudless
                     return true;
                 }
 
-                pattern = @"^p (\d+)$";  // e.g. "p2"
-                match = Regex.Match(cmd, pattern);
-                matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                if (matchInt.HasValue)
-                {
-                    SwapViewToPage((int)matchInt);
-                    return true;
-                }
-
-                if (cmd.Equals("p n") || cmd.Equals("p p") || cmd.Equals("p na") || cmd.Equals("p pa"))
-                {
-                    int currentPageIndex = GetCurrentPageIndex();
-
-                    if (cmd.Equals("p n"))
-                        SwapViewToPage(currentPageIndex + 1 == 9 ? 1 : currentPageIndex + 1);
-                    else if (cmd.Equals("p p"))
-                        SwapViewToPage(currentPageIndex - 1 == 0 ? 8 : currentPageIndex - 1);
-                    else if (cmd.Equals("p na"))
-                    {
-                        var activePages = GetNonemptyPages();
-                        int nextActivePage = 0;
-                        nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;  // lowest int above current
-                        if (nextActivePage == 0)
-                            nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;  // lowest int below current
-
-                        if (nextActivePage != 0)
-                            SwapViewToPage(nextActivePage);
-                        else
-                            Message("There are no other active pages.");
-                    }
-                    else if (cmd.Equals("p pa"))
-                    {
-                        var activePages = GetNonemptyPages();
-                        int prevActivePage = 0;
-                        prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;  // highest int below current
-                        if (prevActivePage == 0)
-                            prevActivePage = activePages?.Order().LastOrDefault() ?? 0;  // highest int above current
-
-                        if (prevActivePage != 0)
-                            SwapViewToPage(prevActivePage);
-                        else
-                            Message("There are no other active pages.");
-                    }
-
-                    return true;
-                }
-
-                if (cmd.Equals("p ?"))
-                {
-                    var pages = GetNonemptyPages();
-                    Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
-
-                    return true;
-                }
+                // 'p ?' remains handled below
             }
 
             if (cmd.Equals("flatten"))
