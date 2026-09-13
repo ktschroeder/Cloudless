@@ -1153,6 +1153,11 @@ namespace Cloudless
                     string name = cmd.Substring(11);
                     bool success = await PreviewWorkspace(name.Trim());
                 }
+                else if (cmd.StartsWith("ws p ") && cmd.Length > 5)
+                {
+                    string name = cmd.Substring(5);
+                    bool success = await PreviewWorkspace(name.Trim());
+                }
                 else if (cmd.Equals("ws list"))
                 {
                     if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
