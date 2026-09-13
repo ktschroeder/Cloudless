@@ -1821,6 +1821,14 @@ namespace Cloudless
                 {
                     string targetToken = tokens[1];
 
+                    if (targetToken == "?")
+                    {
+                        var pages = GetNonemptyPages();
+                        Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
+
+                        return true;
+                    }
+
                     // Handle next-active / previous-active which are special tokens
                     if (targetToken == "na" || targetToken == "pa")
                     {
