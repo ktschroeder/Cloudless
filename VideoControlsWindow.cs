@@ -27,6 +27,7 @@ namespace Cloudless
         private Cloudless.PluginBase.IVideoPlayer? _subscribedPlayer;
         private bool _isUserAdjustingVolume = false;
         private double _volumeDragThumbHalfWidth = 0.0;
+        private DispatcherTimer? _zOrderRestoreTimer;
 
         public VideoControlsWindow()
         {
@@ -417,7 +418,9 @@ namespace Cloudless
         public void AttachToOwner(MainWindow owner)
         {
             _ownerWindow = owner;
-            this.Owner = owner;
+            // NOTE: Deliberately NOT setting this.Owner = owner to avoid WPF automatically bringing
+            // the owner window to the foreground when this window is shown. Instead, we manage the
+            // z-order relationship ourselves using SetWindowPos.
 
             // Subscribe to owner window changes to reposition
             owner.LocationChanged += Owner_LocationOrSizeChanged;
@@ -1020,5 +1023,77 @@ namespace Cloudless
             }
             return null;
         }
+
+        /// <summary>
+        /// Ensures this window stays positioned above the owner window without changing z-order of the owner.
+        /// This uses a timer to continuously maintain the z-order relationship.
+        /// </summary>
+        public void EnsureZOrderAboveOwner()
+        {
+            if (_ownerWindow == null) return;
+
+            // Schedule the z-order restoration to happen after Windows has finished its window reordering.
+            // This is necessary because a single click triggers window activation, which Windows processes
+            // asynchronously. By scheduling with a small delay, we ensure our SetWindowPos call happens
+            // after Windows has completed its activation handling.
+            ScheduleZOrderRestore();
+        }
+
+        private void ScheduleZOrderRestore()
+        {
+            // If a restore is already scheduled, don't schedule another
+            if (_zOrderRestoreTimer?.IsEnabled == true)
+                return;
+
+            if (_zOrderRestoreTimer == null)
+            {
+                _zOrderRestoreTimer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher)
+                {
+                    Interval = TimeSpan.FromMilliseconds(10)
+                };
+                _zOrderRestoreTimer.Tick += (s, e) =>
+                {
+                    _zOrderRestoreTimer.Stop();
+                    RestoreZOrder();
+                };
+            }
+
+            _zOrderRestoreTimer.Start();
+        }
+
+        private void RestoreZOrder()
+        {
+            if (_ownerWindow == null) return;
+
+            IntPtr thisHwnd = new WindowInteropHelper(this).Handle;
+            IntPtr ownerHwnd = new WindowInteropHelper(_ownerWindow).Handle;
+
+            if (thisHwnd == IntPtr.Zero || ownerHwnd == IntPtr.Zero) return;
+
+            // Get the window that is currently just above the owner window in z-order
+            IntPtr windowAboveOwner = GetWindow(ownerHwnd, GW_HWNDPREV);
+
+            // Position this window just above the owner (right after the window that was above owner)
+            if (windowAboveOwner != IntPtr.Zero)
+            {
+                SetWindowPos(thisHwnd, windowAboveOwner, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
+            else
+            {
+                // If no window above owner, bring to top
+                SetWindowPos(thisHwnd, IntPtr.Zero, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private const uint GW_HWNDPREV = 3;  // Get previous window (window above in z-order)
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOACTIVATE = 0x0010;
     }
 }

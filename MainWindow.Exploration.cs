@@ -927,18 +927,38 @@ namespace Cloudless
             {
                 _videoControlsWindow?.Show();
                 _videoControlsWindow?.AlignToOwner();
+                _videoControlsWindow?.EnsureZOrderAboveOwner();
 
                 UpdateVideoControls();
                 _videoControlsWindow?.StartPositionUpdates();
 
                 // Hook into the video player's time changed event if available
                 AttachToVideoPlayerEvents();
+
+                // Only attach auto-hide logic if NOT in manual mode
+                if (!Cloudless.Properties.Settings.Default.UseManualVideoControls)
+                {
+                    if (_videoControlsWindow != null)
+                    {
+                        _videoControlsWindow.MouseEnter += VideoControlsWindow_MouseEnter;
+                        _videoControlsWindow.MouseLeave += VideoControlsWindow_MouseLeave;
+                    }
+                    _videoControlsMonitorTimer?.Start();
+                }
             }
             else
             {
                 _videoControlsWindow?.StopPositionUpdates();
                 _videoControlsWindow?.Hide();
                 DetachFromVideoPlayerEvents();
+
+                // Detach auto-hide handlers if they were attached
+                if (_videoControlsWindow != null)
+                {
+                    _videoControlsWindow.MouseEnter -= VideoControlsWindow_MouseEnter;
+                    _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
+                }
+                _videoControlsMonitorTimer?.Stop();
             }
         }
 
@@ -992,6 +1012,7 @@ namespace Cloudless
                 _videoControlsVisible = true;
                 _videoControlsWindow?.Show();
                 _videoControlsWindow?.AlignToOwner();
+                _videoControlsWindow?.EnsureZOrderAboveOwner();
                 UpdateVideoControls();
                 _videoControlsWindow?.StartPositionUpdates();
                 AttachToVideoPlayerEvents();
@@ -1154,6 +1175,12 @@ namespace Cloudless
         {
             if (Bottommost)
                 SendWindowToBack();
+
+            // Ensure video controls window stays on top if it's currently visible
+            if (_videoControlsVisible && _videoControlsWindow != null)
+            {
+                _videoControlsWindow.EnsureZOrderAboveOwner();
+            }
         }
 
         /// <summary>

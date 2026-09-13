@@ -31,6 +31,12 @@ namespace Cloudless
         private Point videoPanLastMousePos;
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // Ensure video controls window stays on top if it's currently visible
+            if (_videoControlsVisible && _videoControlsWindow != null)
+            {
+                _videoControlsWindow.EnsureZOrderAboveOwner();
+            }
+
             if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Pressed)
             {
                 Point currentMousePosition = e.GetPosition(this);
