@@ -1065,7 +1065,7 @@ namespace Cloudless
             }
         }
 
-        public void SendWindowToPage(int pageIndex, bool skipHide = false)
+        public void SendWindowToPage(int pageIndex, bool skipHide = false, bool fromFlatten = false)
         {
             if (pageIndex < 1 || pageIndex > 20)
             {
@@ -1076,14 +1076,14 @@ namespace Cloudless
             StopSlideshow();
 
             int currentPageIndex = GetCurrentPageIndex();
-            if (currentPageIndex == pageIndex)
+            if (currentPageIndex == pageIndex && !fromFlatten)
             {
-                if (!WorkspaceLoadInProgress)
+                if (!WorkspaceLoadInProgress && !fromFlatten)
                     Message($"Window is already on page {pageIndex}.");
                 return;
             }
 
-            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePath) && !fromFlatten)
             {
                 Message($"Window is empty (no image loaded). There's nothing to send.");
                 return;
@@ -1355,7 +1355,23 @@ namespace Cloudless
                 .ToList();
             foreach (var w in windows)
             {
-                w.SendWindowToPage(targetPage, skipHide: true);
+                w.SendWindowToPage(targetPage, skipHide: true, fromFlatten: true);
+            }
+
+            if (GetCurrentPageIndex() != 1)
+                SwapViewToPage(1);
+            else
+            {
+                var windowsToReveal = Application.Current.Windows
+                    .OfType<MainWindow>()
+                    .Where(w => w.windowPageIndex == 1)
+                    .OrderByDescending(w => w.ZIndexBeforePageSwap)
+                    .ToList();
+
+                foreach (var w in windowsToReveal)
+                {
+                    w.RevealWindowForPages();
+                }
             }
         }
 

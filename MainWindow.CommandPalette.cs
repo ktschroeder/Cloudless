@@ -1957,16 +1957,11 @@ namespace Cloudless
                     SwapPageWithPage((int)matchInt1, (int)matchInt2);
                     return true;
                 }
-
-                // 'p ?' remains handled below
             }
 
             if (cmd.Equals("flatten"))
             {
                 FlattenPages();
-
-                SwapViewToPage(1);
-
                 return true;
             }
 
