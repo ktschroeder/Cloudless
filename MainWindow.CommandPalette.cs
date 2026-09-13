@@ -1158,6 +1158,10 @@ namespace Cloudless
                     string name = cmd.Substring(5);
                     bool success = await PreviewWorkspace(name.Trim());
                 }
+                else if (cmd.Equals("ws rev"))
+                {
+                    RevealDirectoryInExplorer(workspaceFilesPath);
+                }
                 else if (cmd.Equals("ws list"))
                 {
                     if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
@@ -1178,12 +1182,12 @@ namespace Cloudless
 
                     ListWorkspacesContainingPath(resolvedPath);
                     return true;
-                 }
-                 else
-                 {
-                     Message("Could not parse your ws command: " + cmd);
-                     return false;
-                 }
+                }
+                else
+                {
+                    Message("Could not parse your ws command: " + cmd);
+                    return false;
+                }
 
                  return true;
              }
