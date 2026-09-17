@@ -27,7 +27,7 @@ namespace Cloudless
 
         public static event Action? SlideshowStarted;
         public static event Action? SlideshowStopped;
-        public static bool IsRunning => _slideshowTimer != null && _slideshowTimer.IsEnabled;
+        public static bool IsRunning => _slideshowPages != null;
         public static double CurrentIntervalSeconds => _slideshowIntervalSeconds;
         public static List<int>? CurrentPages => _slideshowPages;
         // The page selected by the last timer tick (if any). Manager sets this when it chooses the next page.
@@ -101,6 +101,8 @@ namespace Cloudless
         /// </summary>
         public static void Stop()
         {
+            bool wasRunning = _slideshowPages != null;
+
             if (_slideshowTimer != null)
             {
                 _slideshowTimer.Stop();
@@ -111,7 +113,7 @@ namespace Cloudless
             _slideshowCurrentPageIndex = 0;
             _onSlideshowTick = null;
 
-            if (_slideshowIntervalSeconds > 0)
+            if (wasRunning)
             {
                 // Raise event to notify all windows
                 SlideshowStopped?.Invoke();
@@ -142,12 +144,16 @@ namespace Cloudless
 
         public static void NextSlideshowPage()
         {
-            if (_slideshowTimer == null || !_slideshowTimer.IsEnabled)
+            // Check if slideshow is actually running (works for both timer-based and trigger-based)
+            if (!IsRunning)
                 return;
 
-            // reset timer
-            _slideshowTimer.Stop();
-            _slideshowTimer.Start();
+            // Reset timer if it exists (for time-based slideshows)
+            if (_slideshowTimer != null)
+            {
+                _slideshowTimer.Stop();
+                _slideshowTimer.Start();
+            }
 
             OnTimerTick();
         }
