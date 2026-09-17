@@ -1183,7 +1183,8 @@ namespace Cloudless
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
             {
                 _cursorIdleTimer?.Stop();
-                _cursorIdleTimer.Interval = TimeSpan.FromMilliseconds(CursorHideDelayMs);
+                if (_cursorIdleTimer != null)
+                    _cursorIdleTimer.Interval = TimeSpan.FromMilliseconds(CursorHideDelayMs);
                 _cursorIdleTimer?.Start();
             }
         }

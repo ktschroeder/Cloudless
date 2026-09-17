@@ -167,6 +167,7 @@ namespace Cloudless
                 throw;
             }
             UpdateSyncIndicator();
+            UpdateTriggerIndicator();
         }
 
         private void RefreshPlaybackState(IVideoPlayer videoPlayer, bool? setTo = null)
@@ -222,6 +223,32 @@ namespace Cloudless
                         SyncIndicator.Foreground = Brushes.LimeGreen;
                         SyncIndicator.ToolTip = "Synced";
                     }
+                }
+            }));
+        }
+
+        private void UpdateTriggerIndicator()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_ownerWindow == null || TriggerIndicator == null)
+                    return;
+
+                // Get the trigger count and current hit count from the owner window
+                int triggerCount = _ownerWindow.GetSlideshowTriggerCount();
+                int hitCount = _ownerWindow.GetSlideshowTriggerHitCount();
+
+                if (triggerCount <= 0)
+                {
+                    TriggerIndicator.Text = "";
+                    TriggerIndicator.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    TriggerIndicator.Visibility = Visibility.Visible;
+                    TriggerIndicator.Text = $"T: {hitCount}/{triggerCount}";
+                    TriggerIndicator.Foreground = Brushes.DodgerBlue;
+                    TriggerIndicator.ToolTip = $"Trigger: {hitCount}/{triggerCount} hits";
                 }
             }));
         }

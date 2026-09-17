@@ -89,9 +89,11 @@
                         PreviewMouseUp="VolumeSlider_PreviewMouseUp"/>
 
                 <!-- Percentage text (read-only) with fixed width to avoid layout shifts -->
-                <TextBlock x:Name="VolumePercentText" Text="100%" Foreground="{DynamicResource PrimaryForeground}" FontSize="11" VerticalAlignment="Center" Width="40" TextAlignment="Center"/>
+                <TextBlock x:Name="VolumePercentText" Text="100%" Foreground="{DynamicResource PrimaryForeground}" FontSize="12" VerticalAlignment="Center" Width="40" TextAlignment="Center"/>
                 <!-- Sync indicator: shows 'S' when synced, 'S?' when waiting -->
                 <TextBlock x:Name="SyncIndicator" Text="" Foreground="LimeGreen" FontSize="12" VerticalAlignment="Center" Width="36" TextAlignment="Center" ToolTip="Video sync status"/>
+                <!-- Trigger indicator: shows 'T: X/Y' when this is a trigger window (X current hits, Y required hits) -->
+                <TextBlock x:Name="TriggerIndicator" Text="" Foreground="DodgerBlue" FontSize="12" VerticalAlignment="Center" Width="45" TextAlignment="Center" ToolTip="Trigger hit counter"/>
             </StackPanel>
         </Grid>
     </Border>

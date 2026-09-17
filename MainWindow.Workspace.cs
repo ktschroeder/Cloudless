@@ -107,7 +107,7 @@ namespace Cloudless
                 state.FlagMs = this._videoFlag.Value.TotalMilliseconds;
 
             state.IsSynced = this._isVideoSynced;
-            state.IsSlideshowTrigger = this._isSlideshowTrigger;
+            state.SlideshowTriggerCount = this._slideshowTriggerCount > 0 ? this._slideshowTriggerCount : null;
             state.IsMuted = this._windowVideoIsMuted;
             state.Volume = this._windowVideoVolume;
 
@@ -721,9 +721,9 @@ namespace Cloudless
                 Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
             }
 
-            if (state.IsSlideshowTrigger == true)
+            if (state.SlideshowTriggerCount.HasValue && state.SlideshowTriggerCount > 0)
             {
-                SetSlideshowTrigger(true);
+                SetSlideshowTrigger(state.SlideshowTriggerCount.Value);
             }
             if (state.IsSynced == true)
             {
@@ -820,9 +820,9 @@ namespace Cloudless
                     Console.WriteLine($"Failed to apply saved loop range: {ex.Message}");
                 }
 
-                if (state.IsSlideshowTrigger == true)
+                if (state.SlideshowTriggerCount.HasValue && state.SlideshowTriggerCount > 0)
                 {
-                    SetSlideshowTrigger(true);
+                    SetSlideshowTrigger(state.SlideshowTriggerCount.Value);
                 }
                 if (state.IsSynced == true)
                 {
@@ -1091,12 +1091,13 @@ namespace Cloudless
 
             // If this window was a slideshow trigger, unregister from the old page and attempt to re-register on the new page later
             int oldPage = windowPageIndex;
-            bool wasTrigger = _isSlideshowTrigger;
-            if (wasTrigger)
+            int triggerCountBeforePageSwap = _slideshowTriggerCount;
+            if (triggerCountBeforePageSwap > 0)
             {
                 SlideshowManager.UnregisterTriggerPage(oldPage);
                 // temporarily clear flag so re-registration will be attempted when we set it on target page
-                _isSlideshowTrigger = false;
+                _slideshowTriggerCount = 0;
+                _slideshowTriggerHitCount = 0;
             }
 
             windowPageIndex = pageIndex;
@@ -1125,9 +1126,9 @@ namespace Cloudless
             }
 
             // If this window used to be a trigger, attempt to re-enable it on the new page (will fail if another trigger exists on that page)
-            if (wasTrigger)
+            if (triggerCountBeforePageSwap > 0)
             {
-                try { SetSlideshowTrigger(true); } catch { }
+                try { SetSlideshowTrigger(triggerCountBeforePageSwap); } catch { }
             }
         }
 
@@ -1205,7 +1206,7 @@ namespace Cloudless
 
                 foreach (var w in windowsToHide)
                 {
-                    if (mustManageTriggerVideo && _isSlideshowTrigger)
+                    if (mustManageTriggerVideo && w._slideshowTriggerCount > 0)
                     {
                         // Schedule a placeholder block to run after ~1s without blocking the UI thread.
                         // This is fire-and-forget: any delayed work should be safe to run later and
@@ -1448,7 +1449,7 @@ namespace Cloudless
 
     public class CloudlessWorkspace
     {
-        public int SchemaVersion { get; set; } = 6;
+        public int SchemaVersion { get; set; } = 7;
         public List<CloudlessWindowState> CloudlessWindows { get; set; } = new();
         public string? WorkspaceName { get; set; }
         public int CurrentPageIndex { get; set; } = 1;
@@ -1478,7 +1479,7 @@ namespace Cloudless
         // Optional video flag time (milliseconds)
         public double? FlagMs { get; set; }
 
-        public bool? IsSlideshowTrigger { get; set; }
+        public int? SlideshowTriggerCount { get; set; }
         // Whether this window is a member of a per-page video sync group
         public bool? IsSynced { get; set; }
 

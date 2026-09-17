@@ -26,8 +26,10 @@ namespace Cloudless
         public bool IsVideoSyncWaiting = false;
         private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _syncTimeChangedHandler = null;
         private bool _pluginLoopTemporarilyDisabledForSync = false;
-        // Whether this window is marked as a slideshow trigger (used when starting slideshow with triggers)
-        private bool _isSlideshowTrigger = false;
+        // Number of times the trigger must be hit before the slideshow progresses (e.g., 1 = single hit, 3 = must loop 3 times)
+        private int _slideshowTriggerCount = 0;
+        // Current count of how many times the trigger has been hit
+        private int _slideshowTriggerHitCount = 0;
         private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _triggerTimeChangedHandler = null;
         private DateTime _lastTriggerFired = DateTime.MinValue;
         private bool _pluginLoopTemporarilyDisabled = false;
@@ -77,6 +79,10 @@ namespace Cloudless
         // Expose sync status for UI
         public bool VideoIsSynced => _isVideoSynced;
         public bool VideoSyncWaiting => IsVideoSyncWaiting;
+
+        // Expose trigger status for UI
+        public int GetSlideshowTriggerCount() => _slideshowTriggerCount;
+        public int GetSlideshowTriggerHitCount() => _slideshowTriggerHitCount;
 
         // Called to set waiting state (used by OnSyncTimeChanged and VideoSyncManager)
         public void NotifySyncWaiting(bool waiting)
@@ -174,18 +180,24 @@ namespace Cloudless
             }
         }
 
-        private void SetSlideshowTrigger(bool enabled)
+        private void SetSlideshowTrigger(int triggerCount)
         {
-            // If already enabled and already subscribed, nothing to do
-            if (enabled && _isSlideshowTrigger && _triggerTimeChangedHandler != null)
+            // Validate input: must be 0 (to disable) or greater than 0
+            if (triggerCount < 0)
+                triggerCount = 0;
+
+            bool enabled = triggerCount > 0;
+
+            // If already enabled and already subscribed, and count unchanged, nothing to do
+            if (enabled && _slideshowTriggerCount == triggerCount && _triggerTimeChangedHandler != null)
                 return;
 
             // If enabling and not already marked, enforce only one trigger per page
-            if (enabled && !_isSlideshowTrigger)
+            if (enabled && _slideshowTriggerCount <= 0)
             {
                 var other = Application.Current.Windows
                     .OfType<MainWindow>()
-                    .FirstOrDefault(w => w != this && w.windowPageIndex == this.windowPageIndex && w._isSlideshowTrigger == true);
+                    .FirstOrDefault(w => w != this && w.windowPageIndex == this.windowPageIndex && w._slideshowTriggerCount > 0);
                 if (other != null)
                 {
                     Message($"Cannot mark this window as a slideshow trigger because another window on page {this.windowPageIndex} is already a trigger.");
@@ -193,7 +205,8 @@ namespace Cloudless
                 }
             }
 
-            _isSlideshowTrigger = enabled;
+            _slideshowTriggerCount = triggerCount;
+            _slideshowTriggerHitCount = 0;
 
             try
             {
@@ -277,9 +290,25 @@ namespace Cloudless
 
                 if (currentMs >= endMs)
                 {
-                    // mark fired and signal manager
-                    _lastTriggerFired = DateTime.Now;
-                    SlideshowManager.SignalTriggerFired(this.windowPageIndex);
+                    // Increment the hit counter
+                    _slideshowTriggerHitCount++;
+
+                    // Update UI immediately to show the hit
+                    UpdateVideoControls();
+
+                    // Only signal the manager if we've hit the required number of times
+                    if (_slideshowTriggerHitCount >= _slideshowTriggerCount)
+                    {
+                        // Signal manager to advance the slideshow
+                        _lastTriggerFired = DateTime.Now;
+                        SlideshowManager.SignalTriggerFired(this.windowPageIndex);
+                        _slideshowTriggerHitCount = 0;
+                    }
+                    else
+                    {
+                        // Still waiting for more hits
+                        _lastTriggerFired = DateTime.Now;
+                    }
 
                     // restart the video to avoid repeated triggers
                     try
@@ -748,16 +777,49 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("set ss trigger") || cmd.Equals("set slideshow trigger") || cmd.Equals("set trigger"))
+            // Handle "set trigger" with optional count parameter
+            if (cmd.Equals("set ss trigger") || cmd.Equals("set slideshow trigger") || cmd.Equals("set trigger") ||
+                cmd.StartsWith("set ss trigger ") || cmd.StartsWith("set slideshow trigger ") || cmd.StartsWith("set trigger "))
             {
-                SetSlideshowTrigger(true);
-                Message("Marked this window as a slideshow trigger");
+                int triggerCount = 1; // default to 1 if no count specified
+
+                // Extract count if present
+                if (cmd.StartsWith("set ss trigger "))
+                {
+                    string countStr = cmd.Substring("set ss trigger ".Length).Trim();
+                    if (!int.TryParse(countStr, out triggerCount) || triggerCount <= 0)
+                    {
+                        Message("Trigger count must be a positive integer");
+                        return false;
+                    }
+                }
+                else if (cmd.StartsWith("set slideshow trigger "))
+                {
+                    string countStr = cmd.Substring("set slideshow trigger ".Length).Trim();
+                    if (!int.TryParse(countStr, out triggerCount) || triggerCount <= 0)
+                    {
+                        Message("Trigger count must be a positive integer");
+                        return false;
+                    }
+                }
+                else if (cmd.StartsWith("set trigger "))
+                {
+                    string countStr = cmd.Substring("set trigger ".Length).Trim();
+                    if (!int.TryParse(countStr, out triggerCount) || triggerCount <= 0)
+                    {
+                        Message("Trigger count must be a positive integer");
+                        return false;
+                    }
+                }
+
+                SetSlideshowTrigger(triggerCount);
+                Message($"Marked this window as a slideshow trigger (requires {triggerCount} hit{(triggerCount > 1 ? "s" : "")})");
                 return true;
             }
 
             if (cmd.Equals("clear ss trigger") || cmd.Equals("clear slideshow trigger") || cmd.Equals("clear trigger"))
             {
-                SetSlideshowTrigger(false);
+                SetSlideshowTrigger(0);
                 Message("Cleared slideshow trigger for this window");
                 return true;
             }
