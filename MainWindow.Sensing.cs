@@ -113,6 +113,8 @@ namespace Cloudless
         // MouseMove: Handle Dragging with Axis Constraining
         private async void Window_MouseMove(object sender, MouseEventArgs e)
         {
+            ShowCursorIfHidden();
+
             // Route to selection mode if active
             if (isDrawingSelection)
             {
@@ -274,6 +276,8 @@ namespace Cloudless
 
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            ShowCursorIfHidden();
+
             ModifierKeys modifiers = Keyboard.Modifiers;
             bool control = (modifiers & ModifierKeys.Control) != 0;
             bool alt = (modifiers & ModifierKeys.Alt) != 0;

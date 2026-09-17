@@ -442,6 +442,8 @@ namespace Cloudless
                             _newUi.PreviewKeyDown += VideoControl_PreviewKeyDown;
                         }
 
+                        InitializeCursorAutoHideForVideo();
+
                         if (_videoControlsVisible)
                         {
                             UpdateVideoControls();

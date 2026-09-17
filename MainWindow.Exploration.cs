@@ -935,6 +935,8 @@ namespace Cloudless
                 // Hook into the video player's time changed event if available
                 AttachToVideoPlayerEvents();
 
+                ShowCursorIfHidden();
+
                 // Only attach auto-hide logic if NOT in manual mode
                 if (!Cloudless.Properties.Settings.Default.UseManualVideoControls)
                 {
@@ -959,6 +961,14 @@ namespace Cloudless
                     _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
                 }
                 _videoControlsMonitorTimer?.Stop();
+
+                // Restart cursor hide timer when controls are hidden
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer && Cloudless.Properties.Settings.Default.UseManualVideoControls)
+                {
+                    _cursorIdleTimer?.Stop();
+                    _cursorIdleTimer.Interval = TimeSpan.FromMilliseconds(CursorHideDelayMs);
+                    _cursorIdleTimer?.Start();
+                }
             }
         }
 
@@ -1016,6 +1026,7 @@ namespace Cloudless
                 UpdateVideoControls();
                 _videoControlsWindow?.StartPositionUpdates();
                 AttachToVideoPlayerEvents();
+                ShowCursorIfHidden();
 
                 if (!Cloudless.Properties.Settings.Default.UseManualVideoControls)
                 {
@@ -1044,16 +1055,24 @@ namespace Cloudless
                     _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
                 }
             _videoControlsMonitorTimer?.Stop();
+            _cursorIdleTimer?.Stop();
 
             _videoControlsWindow?.StopPositionUpdates();
             _videoControlsWindow?.Hide();
             DetachFromVideoPlayerEvents();
+
+            // Start cursor hide timer when controls are hidden
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+            {
+                _cursorIdleTimer?.Start();
+            }
         }
 
         private void VideoControlsWindow_MouseEnter(object? sender, System.Windows.Input.MouseEventArgs e)
         {
             _videoControlsIdleTimer?.Stop();
             ShowVideoControlsAuto(force: true);
+            ShowCursorIfHidden();
         }
 
         private void VideoControlsWindow_MouseLeave(object? sender, System.Windows.Input.MouseEventArgs e)
@@ -1149,6 +1168,71 @@ namespace Cloudless
             vp.SetLoopRange(TimeSpan.Zero, null);            
         }
 
+        private void InitializeCursorAutoHide()
+        {
+            _cursorIdleTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(CursorHideDelayMs) };
+            _cursorIdleTimer.Tick += (s, e) =>
+            {
+                HideCursorIfVideoPlaying();
+                _cursorIdleTimer.Stop();
+            };
+        }
+
+        private void InitializeCursorAutoHideForVideo()
+        {
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+            {
+                _cursorIdleTimer?.Stop();
+                _cursorIdleTimer.Interval = TimeSpan.FromMilliseconds(CursorHideDelayMs);
+                _cursorIdleTimer?.Start();
+            }
+        }
+
+        private void HideCursorIfVideoPlaying()
+        {
+            // Only hide cursor if:
+            // 1. A video is currently playing
+            // 2. The cursor is over the main window (not the controls)
+            // 3. The cursor is not already hidden
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+            {
+                if (!_cursorIsHidden)
+                {
+                    // Check if cursor is over the main window but not over video controls
+                    if (GetCursorPos(out POINT cursor))
+                    {
+                        IntPtr hwndUnder = WindowFromPoint(cursor);
+                        IntPtr root = GetAncestor(hwndUnder, 2); // GA_ROOT
+                        IntPtr ownerHwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                        IntPtr controlsHwnd = (_videoControlsWindow != null) ? new System.Windows.Interop.WindowInteropHelper(_videoControlsWindow).Handle : IntPtr.Zero;
+
+                        // Hide cursor only if it's over the main window, not the controls
+                        if (root == ownerHwnd && root != controlsHwnd)
+                        {
+                            this.Cursor = Cursors.None;
+                            _cursorIsHidden = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ShowCursorIfHidden()
+        {
+            if (_cursorIsHidden)
+            {
+                this.Cursor = Cursors.Arrow;
+                _cursorIsHidden = false;
+            }
+
+            // Reset the idle timer when there's activity during video playback
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+            {
+                _cursorIdleTimer?.Stop();
+                _cursorIdleTimer.Interval = TimeSpan.FromMilliseconds(CursorHideDelayMs);
+                _cursorIdleTimer?.Start();
+            }
+        }
         public void CleanupVideoControls()
         {
             if (_videoControlsWindow != null)
@@ -1158,6 +1242,10 @@ namespace Cloudless
                 _videoControlsWindow.Close();
                 _videoControlsWindow = null;
             }
+
+            // Ensure cursor is shown when cleaning up video
+            _cursorIdleTimer?.Stop();
+            ShowCursorIfHidden();
         }
 
         public bool SendWindowToBackInProgress = false;

@@ -112,6 +112,11 @@ namespace Cloudless
         private bool isDraggingWindowFromFullscreen = false;
         private bool isPanningImage = false;
 
+        // Cursor auto-hide for video playback
+        private DispatcherTimer? _cursorIdleTimer;
+        private bool _cursorIsHidden = false;
+        public const int CursorHideDelayMs = 1500;
+
         public ScaleTransform? imageScaleTransform = new ScaleTransform();
         public TranslateTransform? imageTranslateTransform = new TranslateTransform();
 
@@ -536,6 +541,7 @@ namespace Cloudless
             PrepareCommandPalette();
 
             InitializeVideoControls();
+            InitializeCursorAutoHide();
 
             //_commandPaletteWindow.Opacity = 0;
             //_commandPaletteWindow.Show();
