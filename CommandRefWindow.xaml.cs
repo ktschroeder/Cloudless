@@ -19,6 +19,7 @@ namespace Cloudless
         private void LoadReferenceData()
         {
             var tabs = CommandReferenceData.GetTabs();
+            const double maxContentWidth = 1100; // Reasonable max width for content
 
             if (TabControlReference != null)
             {
@@ -57,7 +58,8 @@ namespace Cloudless
                         TextBlock descBlock = new TextBlock 
                         { 
                             Text = item.Description,
-                            TextWrapping = TextWrapping.NoWrap
+                            TextWrapping = TextWrapping.Wrap,
+                            MaxWidth = Math.Min(col2Width, 500)
                         };
                         Grid.SetColumn(descBlock, 1);
                         Grid.SetRow(descBlock, rowIndex);
@@ -70,7 +72,9 @@ namespace Cloudless
                     maxTabContentWidth = Math.Max(maxTabContentWidth, measureGrid.DesiredSize.Width);
                 }
 
-                maxTabContentWidth += 28;
+                // Cap the width to a reasonable maximum
+                // Cap the width to a reasonable maximum
+                maxTabContentWidth = Math.Min(maxTabContentWidth + 28, maxContentWidth);
 
                 // Second pass: build the actual tabs with calculated width
                 foreach (var tabData in tabs)
@@ -92,14 +96,14 @@ namespace Cloudless
                             Text = tabData.Description,
                             Margin = new Thickness(0, 0, 0, 10),
                             TextWrapping = TextWrapping.Wrap,
-                            Width = maxTabContentWidth
+                            Width = maxTabContentWidth - 28
                         };
                         stackPanel.Children.Add(descBlock);
                     }
 
                     Grid grid = new Grid();
 
-                        
+
                     double col1Width = CalculateKeyColumnWidth(tabData.Items);
                     double col2Width = CalculateDescriptionColumnWidth(tabData.Items);
 
@@ -128,7 +132,7 @@ namespace Cloudless
                         { 
                             Text = item.Description,
                             TextWrapping = TextWrapping.Wrap,
-                            MaxWidth = maxTabContentWidth - col1Width - 24
+                            MaxWidth = Math.Max(maxTabContentWidth - col1Width - 24 - 40, 300)
                         };
                         Grid.SetColumn(cmdDescBlock, 1);
                         Grid.SetRow(cmdDescBlock, rowIndex);
@@ -147,7 +151,7 @@ namespace Cloudless
                             Text = tabData.Footer,
                             Margin = new Thickness(0, 10, 0, 1),
                             TextWrapping = TextWrapping.Wrap,
-                            Width = maxTabContentWidth  
+                            Width = maxTabContentWidth - 28
                         };
                         stackPanel.Children.Add(footerBlock);
                     }
@@ -202,14 +206,17 @@ namespace Cloudless
         private double CalculateDescriptionColumnWidth(List<ReferenceItem> items)
         {
             // Use a temporary TextBlock to measure text width
+            // but constrain to a reasonable maximum to force text wrapping
             double maxWidth = 0;
+            const double maxDescriptionWidth = 500; // Maximum width before forcing wrap
             var tempTb = new TextBlock { FontWeight = FontWeights.Bold };
 
             foreach (var item in items)
             {
                 tempTb.Text = item.Description;
-                tempTb.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-                maxWidth = Math.Max(maxWidth, tempTb.DesiredSize.Width);
+                // Measure with a max constraint to account for text wrapping
+                tempTb.Measure(new System.Windows.Size(maxDescriptionWidth, double.PositiveInfinity));
+                maxWidth = Math.Max(maxWidth, Math.Min(tempTb.DesiredSize.Width, maxDescriptionWidth));
             }
 
             // Add some padding
