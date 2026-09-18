@@ -38,6 +38,7 @@ namespace Cloudless.ReferenceData
                 {
                     new ReferenceItem("X", "Show the context menu (as if you've right-clicked)"),
                     new ReferenceItem("C", "Close window or secondary window"),
+                    new ReferenceItem("Ctrl Shift C", "Re-open most recently closed window (this history extends backwards and is cleared when Cloudless is shutdown)"),
                     new ReferenceItem("M", "Minimize window"),
                     new ReferenceItem("Esc", "Exit fullscreen or close a secondary window"),
                     new ReferenceItem("F11 or double-click", "Toggle fullscreen"),
@@ -65,6 +66,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Ctrl, click and drag", "Pan image"),
                     new ReferenceItem("L", "Zoom image to fill view"),
                     new ReferenceItem("Ctrl E", "Toggle 'Comic Mode': when loading next image in directory, retain zoom, and send pan to upper corner"),
+                    new ReferenceItem("Ctrl Alt Shift Left/Right/Up/Down", "Nudge the window 1 pixel in the respective direction"),
                 }),
                 new ReferenceTab("Image", new List<ReferenceItem>
                 {
@@ -110,6 +112,11 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Long-hold middle click", "Swap mouse mode to an unused, third mouse mode (this currently has no effect on behavior)"),
                     new ReferenceItem("Double Middle click", "Toggle crop mode (same as hotkey Q)"),
                     new ReferenceItem("Number keys 1-8", "Change view to the corresponding page. See command palette reference for more info about pages."),
+                    new ReferenceItem("Ctrl S", "Perform a quick save (see command palette reference)"),
+                    new ReferenceItem("Ctrl L", "Perform a quick load (see command palette reference)"),
+                    new ReferenceItem("Alt Left/Right", "Swap page view to the previous/next page in index order"),
+                    new ReferenceItem("Ctrl Alt F", "Lock/Unlock layout of global workspace: prevents most changes to window positions and sizes"),
+                    new ReferenceItem("placeholder", "placeholder TODO"),
                 }),
             };
         }
