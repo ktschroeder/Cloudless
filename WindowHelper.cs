@@ -57,6 +57,23 @@ public static class WindowHelper
         window.Close();
     }
 
+    public static void HandleMouseWheel(Window window, MouseWheelEventArgs e)
+    {
+        // Handle tab navigation with mouse scroll wheel
+        var tabControl = FindVisualChild<TabControl>(window);
+        if (tabControl != null && tabControl.Items.Count > 0)
+        {
+            int currentIndex = tabControl.SelectedIndex;
+
+            if (e.Delta > 0) // wheel up -> previous tab
+                tabControl.SelectedIndex = currentIndex == 0 ? tabControl.Items.Count - 1 : currentIndex - 1;
+            else // wheel down -> next tab
+                tabControl.SelectedIndex = currentIndex == tabControl.Items.Count - 1 ? 0 : currentIndex + 1;
+
+            e.Handled = true;
+        }
+    }
+
     private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
     {
         if (parent == null) return null;

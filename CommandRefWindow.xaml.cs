@@ -224,5 +224,7 @@ namespace Cloudless
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) { WindowHelper.Close_Click(this, e); }
+
+        private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e) { WindowHelper.HandleMouseWheel(this, e); }
     }
 }

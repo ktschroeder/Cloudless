@@ -206,5 +206,7 @@ namespace Cloudless
         {
 
         }
+
+        private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e) { WindowHelper.HandleMouseWheel(this, e); }
     }
 }

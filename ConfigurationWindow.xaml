@@ -2,13 +2,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Preferences"
-        Height="350"
+        Height="400"
         Width="600"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
         MouseDown="Window_MouseDown"
         KeyDown="Window_KeyDown"
+        PreviewMouseWheel="Window_PreviewMouseWheel"
         AllowsTransparency="True">
 
     <Border Background="{DynamicResource WindowBackground}"
@@ -29,9 +30,9 @@
             </Border>
             <StackPanel Margin="12">
 
-                <StackPanel Height="260">
+                <StackPanel Height="310">
 
-                    <TabControl Background="Transparent" BorderThickness="0">
+                    <TabControl x:Name="PreferencesTabControl" Background="Transparent" BorderThickness="0">
 
                         <TabItem Header="General">
                             <StackPanel Margin="12" VerticalAlignment="Top">

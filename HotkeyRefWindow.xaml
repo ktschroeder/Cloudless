@@ -9,6 +9,7 @@
     Background="Transparent"
     MouseDown="Window_MouseDown"
     KeyDown="Window_KeyDown"
+    PreviewMouseWheel="Window_PreviewMouseWheel"
     AllowsTransparency="True">
 
     <Border Background="{DynamicResource WindowBackground}"
