@@ -501,10 +501,17 @@ namespace Cloudless
                 TabScroll = false;
                 TabScrollCtrl = false;
             }
-                
+
             string foundCommandBase = null;
-            string[] tabbableCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p", "fs ws", "fs preview", "fs p", "fs workspace", "filmstrip ws", "filmstrip preview", "filmstrip p", "filmstrip workspace" };
-            foreach (string tcb in tabbableCommandBases) 
+            string[] workspaceCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p", "fs ws", "fs preview", "fs p", "fs workspace", "filmstrip ws", "filmstrip preview", "filmstrip p", "filmstrip workspace" };
+            string[] tagCommandBases = { 
+                "tag add", "tag a", "tag remove", "tag r", "tag destroy",
+                "fs tag", "fs t", "open tag", "open t", "open! tag", "open! t", "gallery tag", "gallery t",
+                "t add", "t a", "t remove", "t r", "t destroy"
+            };
+
+            // Check workspace commands first
+            foreach (string tcb in workspaceCommandBases) 
             { 
                  var _tb_for_check = GetCommandTextBox();
                  if (_tb_for_check != null && _tb_for_check.Text.ToLower().StartsWith($"{tcb} "))
@@ -514,40 +521,107 @@ namespace Cloudless
                  }
              }
 
-             if (foundCommandBase != null)
-             {
-                 string commandBase = $"{foundCommandBase} ";
-                 if (!TabScroll && !controlPressed)
-                 {
-                     var _tb_for_query = GetCommandTextBox();
-                     string query = "";
-                     if (_tb_for_query != null)
-                         query = _tb_for_query.Text.Length == commandBase.Length ? "" : _tb_for_query.Text.Substring(commandBase.Length);
-                    var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
-                    wsNames ??= new List<string>();
-                    wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws) && ws.ToLower().Contains(query.ToLower())).Order().ToList();
-                    AutocompleteCandidates.Clear();
-                    foreach (var wsName in wsNames)
+            // If no workspace command found, check tag commands
+            if (foundCommandBase == null)
+            {
+                foreach (string tcb in tagCommandBases)
+                {
+                    var _tb_for_check = GetCommandTextBox();
+                    if (_tb_for_check != null && _tb_for_check.Text.ToLower().StartsWith($"{tcb} "))
                     {
-                        AutocompleteCandidates.AddLast(wsName);
+                        foundCommandBase = tcb;
+                        break;
+                    }
+                }
+            }
+
+            if (foundCommandBase != null)
+            {
+                string commandBase = $"{foundCommandBase} ";
+
+                // Determine if this is a workspace command or a tag command
+                bool isWorkspaceCommand = workspaceCommandBases.Contains(foundCommandBase);
+                bool isTagNameCommand = foundCommandBase.Contains("add") || foundCommandBase.Contains("a ") || 
+                                       foundCommandBase.Contains("remove") || foundCommandBase.Contains("r ") || 
+                                       foundCommandBase.Contains("destroy");
+
+                if (!TabScroll && !controlPressed)
+                {
+                    var _tb_for_query = GetCommandTextBox();
+                    string query = "";
+                    if (_tb_for_query != null)
+                        query = _tb_for_query.Text.Length == commandBase.Length ? "" : _tb_for_query.Text.Substring(commandBase.Length);
+
+                    if (isWorkspaceCommand)
+                    {
+                        // For workspace commands, autocomplete with workspace names
+                        var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
+                        wsNames ??= new List<string>();
+                        wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws) && ws.ToLower().Contains(query.ToLower())).Order().ToList();
+                        AutocompleteCandidates.Clear();
+                        foreach (var wsName in wsNames)
+                        {
+                            AutocompleteCandidates.AddLast(wsName);
+                        }
+                    }
+                    else if (isTagNameCommand)
+                    {
+                        // For tag name commands and tag query commands, autocomplete with tag names
+                        var tagManager = TagManager.Instance;
+                        var allTags = tagManager.GetAllTags();
+                        var matchingTags = allTags.Where(tag => tag.ToLower().Contains(query.ToLower())).OrderBy(t => t).ToList();
+
+                        AutocompleteCandidates.Clear();
+                        foreach (var tag in matchingTags)
+                        {
+                            AutocompleteCandidates.AddLast(tag);
+                        }
                     }
                     TabScroll = true;
                 }
                 else if (!TabScrollCtrl && controlPressed)
                 {
-                    var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
-                    wsNames ??= new List<string>();
-                    var recentNames = GetRecentlySavedAndLoadedWorkspaceNames();
-                    wsNames = recentNames.Where(ws => wsNames.Contains(ws)).ToList();  // filter out names not present in recent history
-                    wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
-                    AutocompleteCandidatesCtrl.Clear();
-                    foreach (var wsName in wsNames)
+                    if (isWorkspaceCommand)
                     {
-                        AutocompleteCandidatesCtrl.AddFirst(wsName);
+                        // For workspace commands, Ctrl+Tab cycles through recency
+                        var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
+                        wsNames ??= new List<string>();
+                        var recentNames = GetRecentlySavedAndLoadedWorkspaceNames();
+                        wsNames = recentNames.Where(ws => wsNames.Contains(ws)).ToList();  // filter out names not present in recent history
+                        wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
+                        AutocompleteCandidatesCtrl.Clear();
+                        foreach (var wsName in wsNames)
+                        {
+                            AutocompleteCandidatesCtrl.AddFirst(wsName);
+                        }
+                    }
+                    else
+                    {
+                        // For tag commands, Ctrl+Tab doesn't cycle through recency - just use regular candidates
+                        if (isTagNameCommand)
+                        {
+                            var tagManager = TagManager.Instance;
+                            var allTags = tagManager.GetAllTags();
+                            AutocompleteCandidatesCtrl.Clear();
+                            foreach (var tag in allTags.OrderBy(t => t))
+                            {
+                                AutocompleteCandidatesCtrl.AddFirst(tag);
+                            }
+                        }
+                        else
+                        {
+                            var tagManager = TagManager.Instance;
+                            var allTags = tagManager.GetAllTags();
+                            AutocompleteCandidatesCtrl.Clear();
+                            foreach (var tag in allTags.OrderBy(t => t))
+                            {
+                                AutocompleteCandidatesCtrl.AddFirst(tag);
+                            }
+                        }
                     }
                     TabScrollCtrl = true;
                 }
-                CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed, recency: controlPressed);  // TODO assign to list here if needed. Return result.
+                CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed, recency: controlPressed);
             }
         }
 
@@ -1356,7 +1430,7 @@ namespace Cloudless
                 }
             }
 
-            if (cmd.StartsWith("o "))
+            if (cmd.StartsWith("o ") && !cmd.StartsWith("o tag ") && !cmd.StartsWith("o t "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
                 string relativeOrAbsolutePath = cmd.Substring(2);
@@ -1374,7 +1448,7 @@ namespace Cloudless
                 }
                 return true;
             }
-            if (cmd.StartsWith("o! "))
+            if (cmd.StartsWith("o! ") && !cmd.StartsWith("o! tag ") && !cmd.StartsWith("o! t "))
             {
                 // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
                 string relativeOrAbsolutePath = cmd.Substring(3);
@@ -1411,7 +1485,8 @@ namespace Cloudless
             }
 
             // filmstrip command: fs / filmstrip
-            if (cmd.StartsWith("fs") || cmd.StartsWith("filmstrip"))
+            // NOTE: Tag commands like "fs tag" are handled separately below, so check and skip those here
+            if ((cmd.StartsWith("fs") || cmd.StartsWith("filmstrip")) && !cmd.StartsWith("fs tag ") && !cmd.StartsWith("fs t ") && !cmd.StartsWith("filmstrip tag ") && !cmd.StartsWith("filmstrip t "))
             {
                 // parse tokens
                 var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -2145,6 +2220,62 @@ namespace Cloudless
                 targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
                 await JumpToIndex(targetIndex);
                 return true;
+            }
+
+            // Tag commands: support both "tag add" and new syntax like "fs tag" or "open tag"
+            if (cmd.StartsWith("tag ") || cmd.StartsWith("t "))
+            {
+                return await ExecuteTagCommand(cmd);
+            }
+
+            // New syntax: "fs tag" or "open tag" or "gallery tag" 
+            // e.g., "fs tag landscape AND processed" or "open tag portrait"
+            if (cmd.StartsWith("fs tag ") || cmd.StartsWith("fs t ") || cmd.StartsWith("filmstrip tag ") || cmd.StartsWith("filmstrip t "))
+            {
+                string query;
+                if (cmd.StartsWith("fs tag "))
+                    query = cmd.Substring(7);
+                else if (cmd.StartsWith("fs t "))
+                    query = cmd.Substring(5);
+                else if (cmd.StartsWith("filmstrip tag "))
+                    query = cmd.Substring(14);
+                else
+                    query = cmd.Substring(12);
+                return await HandleTagFilmstrip(query);
+            }
+
+            if (cmd.StartsWith("open tag ") || cmd.StartsWith("o tag ") || cmd.StartsWith("open t ") || cmd.StartsWith("o t "))
+            {
+                string query;
+                if (cmd.StartsWith("open tag "))
+                    query = cmd.Substring(9);
+                else if (cmd.StartsWith("o tag "))
+                    query = cmd.Substring(6);
+                else if (cmd.StartsWith("open t "))
+                    query = cmd.Substring(7);
+                else
+                    query = cmd.Substring(4);
+                return await HandleTagOpen(query, maxFiles: 10);
+            }
+
+            if (cmd.StartsWith("open! tag ") || cmd.StartsWith("o! tag ") || cmd.StartsWith("open! t ") || cmd.StartsWith("o! t "))
+            {
+                string query;
+                if (cmd.StartsWith("open! tag "))
+                    query = cmd.Substring(10);
+                else if (cmd.StartsWith("o! tag "))
+                    query = cmd.Substring(7);
+                else if (cmd.StartsWith("open! t "))
+                    query = cmd.Substring(8);
+                else
+                    query = cmd.Substring(5);
+                return await HandleTagOpen(query, maxFiles: int.MaxValue);
+            }
+
+            if (cmd.StartsWith("gallery tag ") || cmd.StartsWith("gallery t "))
+            {
+                string query = cmd.StartsWith("gallery tag ") ? cmd.Substring(12) : cmd.Substring(10);
+                return await HandleTagGallery(query);
             }
 
             Message("Command not recognized");

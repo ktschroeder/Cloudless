@@ -43,6 +43,9 @@ namespace Cloudless
             var theme = Cloudless.Properties.Settings.Default["Theme"] as string;
             ThemeManager.ApplyThemeGlobalResources(theme);
 
+            // Initialize TagManager (loads tags from disk)
+            TagManager.Instance.Load();
+
             bool startInBackground = e.Args.Contains("--background");
 
             if (!startInBackground)
