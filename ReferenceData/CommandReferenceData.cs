@@ -16,9 +16,9 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Ctrl [1 through 8]", "Run custom commands stored at the respective index (commands 1-8)"),
                     new ReferenceItem("Ctrl Alt [1 through 8]", "Run custom commands stored at the respective index (commands 9-16)"),
                     new ReferenceItem("Ctrl Alt Shift [1 through 8]", "Run custom commands stored at the respective index (commands 17-24)"),
-                    new ReferenceItem("(palette) Tab", "For workspace commands (e.g. 'ws l [name]'), autocomplete workspace name via substring search, or cycle through matches."),
+                    new ReferenceItem("(palette) Tab", "For workspace commands (e.g. 'ws l [name]'), autocomplete workspace name via substring search, or cycle through matches. For tag queries (e.g. 'fs tag'), autocomplete tag name."),
                     new ReferenceItem("(palette) Shift Tab", "Similar to above, but cycle in the reverse direction."),
-                    new ReferenceItem("(palette) Ctrl Tab", "For workspace commands (e.g. 'ws l [name]'), traverse workspace names sorted by recency of save/load."),
+                    new ReferenceItem("(palette) Ctrl Tab", "For workspace commands (e.g. 'ws l [name]'), traverse workspace names sorted by recency of save/load. For tag queries, cycle through tags."),
                     new ReferenceItem("(palette) Ctrl Shift Tab", "Similar to above, but cycle in the reverse direction."),
                 }, "The command palette provides advanced features using a text-based interface."),
                 new ReferenceTab("General", new List<ReferenceItem>
@@ -49,6 +49,17 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("filmstrip | fs bookmark | b", "Open filmstrip and populate it with your bookmarked images"),
                     new ReferenceItem("filmstrip | fs preview | p [workspace]", "Open filmstrip and populate it with images from [workspace]"),
                 }),
+                new ReferenceTab("Tags", new List<ReferenceItem>
+                {
+                    new ReferenceItem("tag | t add | a [tag1] [tag2] ...", "Add one or more space-separated tags to the currently displayed image"),
+                    new ReferenceItem("tag | t remove | r [tag1] [tag2] ...", "Remove one or more space-separated tags from the currently displayed image"),
+                    new ReferenceItem("tag | t destroy [tag]", "Delete a tag entirely (removes it from all media regardless of what is loaded)"),
+                    new ReferenceItem("tag | t list | l", "List all tags associated with the current window's media"),
+                    new ReferenceItem("filmstrip | fs tag | t [query]", "Open filmstrip and populate it with images matching the tag query. Supports Boolean operators like 'tag1 AND tag2', 'tag1 OR tag2', 'NOT tag1', etc. Parentheses for logical grouping. Use tab autocomplete to search/cycle through tag names."),
+                    new ReferenceItem("open | o tag | t [query]", "Open images matching the tag query (max 10). Supports same Boolean operators as above. Use tab autocomplete for tag search."),
+                    new ReferenceItem("open! | o! tag | t [query]", "Open all images matching the tag query (ignore max). See above for more notes."),
+                    new ReferenceItem("gallery tag | t [query]", "Open gallery view of images matching the tag query. Supports same Boolean operators as above."),
+                }, "Tags are logic-ready, searchable labels you can apply to individual media. Use tab autocomplete when entering tag queries to search and cycle through available tags."),
                 new ReferenceTab("Image", new List<ReferenceItem>
                 {
                     new ReferenceItem("[Int]", "Jump to the image with index [Int] in the current directory"),
