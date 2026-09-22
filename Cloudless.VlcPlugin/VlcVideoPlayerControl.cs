@@ -284,18 +284,10 @@ namespace Cloudless.VlcPlugin
                         // Note: App seems to crash here sometimes when this event is triggered but the window has been closed. I think in the QueueUserWorkItem method.
 
                         // IMPORTANT: Notify listeners that playback wrapped to zero so host UI can detect trigger/loop events.
-                        try
+                        Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
                         {
-                            Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
-                            {
-                                try
-                                {
-                                    TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = 0 });
-                                }
-                                catch { }
-                            }));
-                        }
-                        catch { }
+                            TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = 0 });
+                        }));
 
                         // Restart only if auto-restart is allowed. Otherwise rely on host to coordinate restarts.
                         if (_autoRestartAllowed)

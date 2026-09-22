@@ -179,31 +179,27 @@ namespace Cloudless
         /// </summary>
         public static void SignalTriggerFired(int pageIndex)
         {
-            try
+            // Debounce rapid triggers: ignore if a trigger fired very recently
+            long now = Environment.TickCount64;
+            long prev = Interlocked.Read(ref _lastTriggerTickMs);
+            if (prev != 0 && (now - prev) < 50)
             {
-                // Debounce rapid triggers: ignore if a trigger fired very recently
-                long now = Environment.TickCount64;
-                long prev = Interlocked.Read(ref _lastTriggerTickMs);
-                if (prev != 0 && (now - prev) < 50)
-                {
-                    return;
-                }
-                Interlocked.Exchange(ref _lastTriggerTickMs, now);
-
-                if (!UseTriggers) return;
-                if (_triggerPages != null && _triggerPages.Contains(pageIndex))
-                {
-                    // advance immediately
-                    // ensure timer is reset like NextSlideshowPage
-                    if (_slideshowTimer != null)
-                    {
-                        _slideshowTimer.Stop();
-                        _slideshowTimer.Start();
-                    }
-                    OnTimerTick(fromTrigger: true);
-                }
+                return;
             }
-            catch { }
+            Interlocked.Exchange(ref _lastTriggerTickMs, now);
+
+            if (!UseTriggers) return;
+            if (_triggerPages != null && _triggerPages.Contains(pageIndex))
+            {
+                // advance immediately
+                // ensure timer is reset like NextSlideshowPage
+                if (_slideshowTimer != null)
+                {
+                    _slideshowTimer.Stop();
+                    _slideshowTimer.Start();
+                }
+                OnTimerTick(fromTrigger: true);
+            }
         }
 
         /// <summary>

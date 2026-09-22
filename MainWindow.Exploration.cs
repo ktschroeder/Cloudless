@@ -1059,7 +1059,11 @@ namespace Cloudless
 
             _videoControlsWindow?.StopPositionUpdates();
             _videoControlsWindow?.Hide();
-            DetachFromVideoPlayerEvents();
+
+            if (!SlideshowManager.UseTriggers)
+            {
+                DetachFromVideoPlayerEvents();
+            }
 
             // Start cursor hide timer when controls are hidden
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
@@ -1120,12 +1124,13 @@ namespace Cloudless
             }
         }
 
+        // TODO remove if not needed
         private void DetachFromVideoPlayerEvents()
         {
-            if (VideoHost.Content is IVideoPlayer videoPlayer)
-            {
-                videoPlayer.TimeChanged -= VideoPlayer_TimeChanged;
-            }
+            //if (VideoHost.Content is IVideoPlayer videoPlayer)
+            //{
+            //    videoPlayer.TimeChanged -= VideoPlayer_TimeChanged;
+            //}
         }
 
         private void VideoPlayer_TimeChanged(object? sender, VideoTimeChangedEventArgs e)
