@@ -2890,7 +2890,10 @@ namespace Cloudless
             // Initialize global slideshow and pass the tick handler
             SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick, shuffle, useTriggers);
 
-            Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)");
+            if (intervalSeconds == 0)
+                Message($"Slideshow started: cycling through {activePages.Count} active page(s) when triggers fire");
+            else
+                Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)");
         }
 
         /// <summary>
