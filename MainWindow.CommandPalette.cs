@@ -192,12 +192,20 @@ namespace Cloudless
             if (enabled && _slideshowTriggerCount == triggerCount && _triggerTimeChangedHandler != null)
                 return;
 
+            string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? "";
+            if (!FileTypeManager.IsVideoFile(ext))
+            {
+                Message($"Only windows that have a loaded video file can be marked as triggers.");
+                return;
+            }
+
             // If enabling and not already marked, enforce only one trigger per page
             if (enabled && _slideshowTriggerCount <= 0)
             {
                 var other = Application.Current.Windows
                     .OfType<MainWindow>()
                     .FirstOrDefault(w => w != this && w.windowPageIndex == this.windowPageIndex && w._slideshowTriggerCount > 0);
+
                 if (other != null)
                 {
                     Message($"Cannot mark this window as a slideshow trigger because another window on page {this.windowPageIndex} is already a trigger.");
