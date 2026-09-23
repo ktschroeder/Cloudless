@@ -483,12 +483,12 @@ namespace Cloudless
                 EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
             };
 
-            var midY = (startY + endY) / 2.0;
-            double arcHeight = 30 + _random.NextDouble() * 90; // arc magnitude
-            var moveY = new DoubleAnimationUsingKeyFrames();
-            moveY.KeyFrames.Add(new SplineDoubleKeyFrame(startY, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-            moveY.KeyFrames.Add(new SplineDoubleKeyFrame(midY - arcHeight, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds * 0.5))));
-            moveY.KeyFrames.Add(new SplineDoubleKeyFrame(endY, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(durationSeconds))));
+            var moveY = new DoubleAnimation
+            {
+                From = startY,
+                To = endY,
+                Duration = TimeSpan.FromSeconds(durationSeconds)
+            };
 
             // Head pulse and fade
             var headPulse = new DoubleAnimationUsingKeyFrames();
