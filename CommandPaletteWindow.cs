@@ -8,6 +8,7 @@ namespace Cloudless
     public class CommandPaletteWindow : Window
     {
         public CommandPaletteControl? Control { get; set; }
+        private Window? _ownerWindow;
 
         public CommandPaletteWindow(MainWindow mw)
         {
@@ -27,14 +28,10 @@ namespace Cloudless
         {
             if (owner == null) return;
 
-            try
-            {
-                this.Owner = owner;
-            }
-            catch
-            {
-                return;
-            }
+            _ownerWindow = owner;
+            // NOTE: Deliberately NOT setting this.Owner = owner to avoid managing this window as a child window,
+            // which would interfere with the visibility and z-order of sibling windows like VideoControlsWindow.
+            // Instead, we manage positioning manually.
             
             const double margin = 1.0; // inner margin around film strip; palette will use desired offsets
 
@@ -83,9 +80,9 @@ namespace Cloudless
 
         private void Owner_LocationOrSizeChanged(object? s, EventArgs e)
         {
-            if (this.Owner != null)
+            if (_ownerWindow != null)
             {
-                AlignToOwner(this.Owner);
+                AlignToOwner(_ownerWindow);
             }
         }
 
@@ -110,14 +107,14 @@ namespace Cloudless
 
         private void Owner_StateChanged(object? s, EventArgs e)
         {
-            if (this.Owner == null) return;
-            if (this.Owner.WindowState == WindowState.Minimized)
+            if (_ownerWindow == null) return;
+            if (_ownerWindow.WindowState == WindowState.Minimized)
             {
                 //this.Hide();
                 return;
             }
 
-            AlignToOwner(this.Owner);
+            AlignToOwner(_ownerWindow);
             //if (!this.IsVisible)
             //    this.Show();
         }
