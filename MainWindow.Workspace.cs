@@ -99,6 +99,13 @@ namespace Cloudless
                 } 
             }
 
+            state = UpdateWindowStateWithVideoInfo(state);
+            return state;
+        }
+
+        // Separated this from main state method above, for use when we want to augment a pre-minimalization-state for workspace save (otherwise, e.g., we miss slideshow triggers set with 'all set triggers'), since the pre-min-state is used for off-page windows during workspace save.
+        public CloudlessWindowState UpdateWindowStateWithVideoInfo(CloudlessWindowState state)
+        {
             if (this._videoLoopStart.HasValue)
                 state.LoopStartMs = this._videoLoopStart.Value.TotalMilliseconds;
             if (this._videoLoopEnd.HasValue)
@@ -107,7 +114,7 @@ namespace Cloudless
                 state.FlagMs = this._videoFlag.Value.TotalMilliseconds;
 
             state.IsSynced = this._isVideoSynced;
-            state.SlideshowTriggerCount = this._slideshowTriggerCount > 0 ? this._slideshowTriggerCount : null;
+            state.SlideshowTriggerCount = this.SlideshowTriggerCount > 0 ? this.SlideshowTriggerCount : null;
             state.IsMuted = this._windowVideoIsMuted;
             state.Volume = this._windowVideoVolume;
 
@@ -145,6 +152,7 @@ namespace Cloudless
                     {  // "WindowState" on this line refers to Windows's window state (maximied, e.g.), not CloudlessWindowState
                         cws = window.stateUponMinimizing;
                         cws.IsMinimized = true;
+                        cws = UpdateWindowStateWithVideoInfo(cws);  // ensure we capture any video info that may have changed since the window was minimized, such as set triggers, or loop range
                     }
                     else
                         cws = window.GetWindowState(zs);
@@ -1091,12 +1099,12 @@ namespace Cloudless
 
             // If this window was a slideshow trigger, unregister from the old page and attempt to re-register on the new page later
             int oldPage = windowPageIndex;
-            int triggerCountBeforePageSwap = _slideshowTriggerCount;
+            int triggerCountBeforePageSwap = SlideshowTriggerCount;
             if (triggerCountBeforePageSwap > 0)
             {
                 SlideshowManager.UnregisterTriggerPage(oldPage);
                 // temporarily clear flag so re-registration will be attempted when we set it on target page
-                _slideshowTriggerCount = 0;
+                SlideshowTriggerCount = 0;
                 _slideshowTriggerHitCount = 0;
             }
 
@@ -1206,7 +1214,7 @@ namespace Cloudless
 
                 foreach (var w in windowsToHide)
                 {
-                    if (mustManageTriggerVideo && w._slideshowTriggerCount > 0)
+                    if (mustManageTriggerVideo && w.SlideshowTriggerCount > 0)
                     {
                         // Schedule a placeholder block to run after ~1s without blocking the UI thread.
                         // This is fire-and-forget: any delayed work should be safe to run later and

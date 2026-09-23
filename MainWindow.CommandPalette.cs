@@ -27,7 +27,7 @@ namespace Cloudless
         private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _syncTimeChangedHandler = null;
         private bool _pluginLoopTemporarilyDisabledForSync = false;
         // Number of times the trigger must be hit before the slideshow progresses (e.g., 1 = single hit, 3 = must loop 3 times)
-        private int _slideshowTriggerCount = 0;
+        public int SlideshowTriggerCount = 0;
         // Current count of how many times the trigger has been hit
         private int _slideshowTriggerHitCount = 0;
         private EventHandler<Cloudless.PluginBase.VideoTimeChangedEventArgs>? _triggerTimeChangedHandler = null;
@@ -81,7 +81,7 @@ namespace Cloudless
         public bool VideoSyncWaiting => IsVideoSyncWaiting;
 
         // Expose trigger status for UI
-        public int GetSlideshowTriggerCount() => _slideshowTriggerCount;
+        public int GetSlideshowTriggerCount() => SlideshowTriggerCount;
         public int GetSlideshowTriggerHitCount() => _slideshowTriggerHitCount;
 
         // Called to set waiting state (used by OnSyncTimeChanged and VideoSyncManager)
@@ -189,7 +189,7 @@ namespace Cloudless
             bool enabled = triggerCount > 0;
 
             // If already enabled and already subscribed, and count unchanged, nothing to do
-            if (enabled && _slideshowTriggerCount == triggerCount && _triggerTimeChangedHandler != null)
+            if (enabled && SlideshowTriggerCount == triggerCount && _triggerTimeChangedHandler != null)
                 return;
 
             string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? "";
@@ -199,12 +199,12 @@ namespace Cloudless
                 return;
             }
 
-            // If enabling and not already marked, enforce only one trigger per page
-            if (enabled && _slideshowTriggerCount <= 0)
+                // If enabling and not already marked, enforce only one trigger per page
+            if (enabled && SlideshowTriggerCount <= 0)
             {
                 var other = Application.Current.Windows
                     .OfType<MainWindow>()
-                    .FirstOrDefault(w => w != this && w.windowPageIndex == this.windowPageIndex && w._slideshowTriggerCount > 0);
+                    .FirstOrDefault(w => w != this && w.windowPageIndex == this.windowPageIndex && w.SlideshowTriggerCount > 0);
 
                 if (other != null)
                 {
@@ -213,7 +213,7 @@ namespace Cloudless
                 }
             }
 
-            _slideshowTriggerCount = triggerCount;
+            SlideshowTriggerCount = triggerCount;
             _slideshowTriggerHitCount = 0;
 
             try
@@ -305,7 +305,7 @@ namespace Cloudless
                     UpdateVideoControls();
 
                     // Only signal the manager if we've hit the required number of times
-                    if (_slideshowTriggerHitCount >= _slideshowTriggerCount)
+                    if (_slideshowTriggerHitCount >= SlideshowTriggerCount)
                     {
                         // Signal manager to advance the slideshow
                         _lastTriggerFired = DateTime.Now;

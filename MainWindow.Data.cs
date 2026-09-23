@@ -452,10 +452,10 @@ namespace Cloudless
                         // If this window is marked as a slideshow trigger, ensure we subscribe now that the video player is available
                         try
                         {
-                            if (this._slideshowTriggerCount > 0)
+                            if (this.SlideshowTriggerCount > 0)
                             {
                                 // Attempt to (re)enable trigger handling which will register and subscribe as needed
-                                SetSlideshowTrigger(_slideshowTriggerCount);
+                                SetSlideshowTrigger(SlideshowTriggerCount);
                             }
                         }
                         catch { }
