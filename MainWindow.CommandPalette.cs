@@ -1970,35 +1970,21 @@ namespace Cloudless
                         return true;
                     }
 
-                    // Handle next-active / previous-active which are special tokens
-                    if (targetToken == "na" || targetToken == "pa")
+                    // Handle next-active / previous-active / next-inactive / previous-inactive when used for navigation only
+                    if ((targetToken == "na" || targetToken == "pa" || targetToken == "ni" || targetToken == "pi") && tokens.Count == 2)
                     {
-                        int currentPageIndex = GetCurrentPageIndex();
-                        if (targetToken == "na")
+                        var resolvedPage = ResolveSpecialPageToken(targetToken);
+                        if (resolvedPage.HasValue)
                         {
-                            var activePages = GetNonemptyPages();
-                            int nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;
-                            if (nextActivePage == 0)
-                                nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;
-
-                            if (nextActivePage != 0)
-                                SwapViewToPage(nextActivePage);
-                            else
-                                Message("There are no other active pages.");
+                            SwapViewToPage(resolvedPage.Value);
                         }
                         else
                         {
-                            var activePages = GetNonemptyPages();
-                            int prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;
-                            if (prevActivePage == 0)
-                                prevActivePage = activePages?.Order().LastOrDefault() ?? 0;
-
-                            if (prevActivePage != 0)
-                                SwapViewToPage(prevActivePage);
-                            else
+                            if (targetToken == "na" || targetToken == "pa")
                                 Message("There are no other active pages.");
+                            else
+                                Message("There are no other inactive pages.");
                         }
-
                         return true;
                     }
 
@@ -2007,6 +1993,11 @@ namespace Cloudless
                     if (int.TryParse(targetToken, out int numericTarget))
                     {
                         resolvedTarget = numericTarget;
+                    }
+                    else if (targetToken == "na" || targetToken == "pa" || targetToken == "ni" || targetToken == "pi")
+                    {
+                        // Special tokens can also be used as targets for send/bring commands
+                        resolvedTarget = ResolveSpecialPageToken(targetToken);
                     }
                     else
                     {

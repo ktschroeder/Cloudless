@@ -1346,6 +1346,70 @@ namespace Cloudless
             return pages;
         }
 
+        /// <summary>
+        /// Get pages that are inactive (either no windows on the page, or all windows have no media loaded).
+        /// </summary>
+        public List<int> GetInactivePages()
+        {
+            var activePages = GetNonemptyPages();
+            var inactivePages = new List<int>();
+
+            for (int page = 1; page <= 20; page++)
+            {
+                if (!activePages.Contains(page))
+                {
+                    inactivePages.Add(page);
+                }
+            }
+
+            return inactivePages;
+        }
+
+        /// <summary>
+        /// Resolve special page tokens to actual page numbers.
+        /// Tokens: "na" (next active), "pa" (previous active), "ni" (next inactive), "pi" (previous inactive)
+        /// Returns null if the token is not recognized or no such page exists.
+        /// </summary>
+        public int? ResolveSpecialPageToken(string token)
+        {
+            int currentPageIndex = GetCurrentPageIndex();
+
+            if (token == "na")
+            {
+                var activePages = GetNonemptyPages();
+                int nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;
+                if (nextActivePage == 0)
+                    nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;
+                return nextActivePage != 0 ? nextActivePage : null;
+            }
+            else if (token == "pa")
+            {
+                var activePages = GetNonemptyPages();
+                int prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;
+                if (prevActivePage == 0)
+                    prevActivePage = activePages?.Order().LastOrDefault() ?? 0;
+                return prevActivePage != 0 ? prevActivePage : null;
+            }
+            else if (token == "ni")
+            {
+                var inactivePages = GetInactivePages();
+                int nextInactivePage = inactivePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;
+                if (nextInactivePage == 0)
+                    nextInactivePage = inactivePages?.Order().FirstOrDefault() ?? 0;
+                return nextInactivePage != 0 ? nextInactivePage : null;
+            }
+            else if (token == "pi")
+            {
+                var inactivePages = GetInactivePages();
+                int prevInactivePage = inactivePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;
+                if (prevInactivePage == 0)
+                    prevInactivePage = inactivePages?.Order().LastOrDefault() ?? 0;
+                return prevInactivePage != 0 ? prevInactivePage : null;
+            }
+
+            return null;
+        }
+
         public void FlattenPages(int targetPage = 1)
         {
             StopSlideshow();

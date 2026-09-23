@@ -117,17 +117,15 @@ namespace Cloudless.ReferenceData
                 }, "A \"workspace\" is the collective arrangement of all open Cloudless windows. When you save a workspace, you can later load it to quickly open all its media, with their identical position, zoom, pan, crop, and Z-order. Also, any custom video start/end points are saved/applied.", "With \"ws l\", \"ws s\", etc., press tab to search name (press repeatedly to traverse matches. Hold Shift to reverse direction)"),
                 new ReferenceTab("Pages", new List<ReferenceItem>
                 {
-                    new ReferenceItem("p [int]", "Change view to page [int]"),
+                    new ReferenceItem("p [target]", "Change view to page [target]"),
                     new ReferenceItem("p ?", "Display a message showing the currently open page index, and all indices of non-empty pages"),
-                    new ReferenceItem("p [int] send | s", "Send the current window to page [int]"),
-                    new ReferenceItem("p [int] bring | b", "Send the current window to page [int], and change view to that page"),
-                    new ReferenceItem("p [int] send | s page | p", "Send all windows in the current page to page [int]"),
-                    new ReferenceItem("p [int] bring | b page | p", "Send all windows in the current page to page [int], and change view to that page"),
-                    new ReferenceItem("p [int] clear", "Close all windows on page [int]"),
-                    new ReferenceItem("p [int] swap p [int]", "Swap all windows between page [int] and page [int] (the order of the 2 ints does not matter)"),
+                    new ReferenceItem("p [target] send | s", "Send the current window to page [target]"),
+                    new ReferenceItem("p [target] bring | b", "Send the current window to page [target], and change view to that page"),
+                    new ReferenceItem("p [target] send | s page | p", "Send all windows in the current page to page [target]"),
+                    new ReferenceItem("p [target] bring | b page | p", "Send all windows in the current page to page [target], and change view to that page"),
+                    new ReferenceItem("p [target] clear", "Close all windows on page [target]"),
+                    new ReferenceItem("p [target] swap p [target]", "Swap all windows between page [target] and page [target] (the order of the 2 targets does not matter)"),
                     new ReferenceItem("flatten", "Send all windows from all pages to page 1, and change view to page 1"),
-                    new ReferenceItem("p p / p n", "Change the view to the previous/next page (wraps around at end). 'p' and 'n' can be used similarly in place of a page number in the above page commands."),
-                    new ReferenceItem("p pa / p na", "Change the view to the previous/next active page (wraps around at end). See above note about 'p'/'n'; 'pa' and 'na' work similarly."),
                     new ReferenceItem("slideshow | ss [seconds]", "Start automatic slideshow: cycle through active pages every [seconds] seconds"),
                     new ReferenceItem("slideshow | ss [seconds] shuffle", "Similar to above, but traverse pages in smart-random order"),
                     new ReferenceItem("slideshow | ss [optionally 'shuffle'] triggers", "Start slideshow, where pre-configured videos can serve as page-turn triggers. Optional 'shuffle' is explained above"),
@@ -135,7 +133,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("slideshow | ss next", "Advance to the next slide in the current slideshow without stopping the slideshow"),
                     new ReferenceItem("set/clear trigger", "Set or clear a trigger for current window and video: Triggers fire when a video ends and can be used as a page-turn trigger in slideshows"),
                     new ReferenceItem("set trigger [int]", "Set a trigger (see above), but the video must finish [int] times before the trigger fires"),
-                }, "A \"page\" is similar to a simple workspace, but all pages' windows are kept in memory simultaneously. A workspace can contain up to 20 pages. The benefit of this is that you can swap full arrangements (pages) almost immediately, whereas loading a different workspace could take longer. It also enables more complex and organized workspaces with manageable layers, and enables slideshows. Beware of performance losses if you have lots of media in active memory."),
+                }, "A \"page\" is similar to a simple workspace, but all pages' windows are kept in memory simultaneously. A workspace can contain up to 20 pages. The benefit of this is that you can swap full arrangements (pages) almost immediately, whereas loading a different workspace could take longer. It also enables more complex and organized workspaces with manageable layers, and enables slideshows. Beware of performance losses if you have lots of media in active memory. For commands with a [target], the target can be a page index, or any of: p (prev), n (next), pa/na (prev/next active), or pi/ni (prev/next inactive). Pages are considered active if they have any windows with loaded media."),
                 new ReferenceTab("Advanced", new List<ReferenceItem>
                 {
                     new ReferenceItem("hotkey | hk [modifiers] [key]", "Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."),
