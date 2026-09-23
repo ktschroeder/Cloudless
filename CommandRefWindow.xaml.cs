@@ -164,6 +164,8 @@ namespace Cloudless
                     maxTabContentHeight = Math.Max(maxTabContentHeight, scrollViewer.DesiredSize.Height);
                 }
 
+                maxTabContentHeight += 20;
+
                 if (ContentArea != null)
                 {
                     ContentArea.Height = maxTabContentHeight;

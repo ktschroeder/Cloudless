@@ -116,7 +116,6 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Ctrl L", "Perform a quick load (see command palette reference)"),
                     new ReferenceItem("Alt Left/Right", "Swap page view to the previous/next page in index order"),
                     new ReferenceItem("Ctrl Alt F", "Lock/Unlock layout of global workspace: prevents most changes to window positions and sizes"),
-                    new ReferenceItem("placeholder", "placeholder TODO"),
                 }),
             };
         }
