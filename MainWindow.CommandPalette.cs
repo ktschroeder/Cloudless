@@ -1981,7 +1981,7 @@ namespace Cloudless
                     // Handle next-active / previous-active / next-inactive / previous-inactive when used for navigation only
                     if ((targetToken == "na" || targetToken == "pa" || targetToken == "ni" || targetToken == "pi") && tokens.Count == 2)
                     {
-                        var resolvedPage = ResolveSpecialPageToken(targetToken);
+                        var resolvedPage = GetPageIndexFromTargetToken(targetToken);
                         if (resolvedPage.HasValue)
                         {
                             SwapViewToPage(resolvedPage.Value);
@@ -1997,43 +1997,7 @@ namespace Cloudless
                     }
 
                     // Resolve numeric or relative target
-                    int? resolvedTarget = null;
-                    if (int.TryParse(targetToken, out int numericTarget))
-                    {
-                        resolvedTarget = numericTarget;
-                    }
-                    else if (targetToken == "na" || targetToken == "pa" || targetToken == "ni" || targetToken == "pi")
-                    {
-                        // Special tokens can also be used as targets for send/bring commands
-                        resolvedTarget = ResolveSpecialPageToken(targetToken);
-                    }
-                    else
-                    {
-                        int current = GetCurrentPageIndex();
-                        if (targetToken == "next" || targetToken == "n")
-                            resolvedTarget = current + 1 == 21 ? 1 : current + 1;
-                        else if (targetToken == "previous" || targetToken == "p" || targetToken == "prev")
-                            resolvedTarget = current - 1 == 0 ? 20 : current - 1;
-                        else if (targetToken == "this" || targetToken == "t")
-                            resolvedTarget = current;
-                    }
-
-                    // If unresolved, allow simple commands like 'p n' or 'p p'
-                    if (!resolvedTarget.HasValue && tokens.Count == 2)
-                    {
-                        if (tokens[1] == "n")
-                        {
-                            int currentPageIndex = GetCurrentPageIndex();
-                            SwapViewToPage(currentPageIndex + 1 == 21 ? 1 : currentPageIndex + 1);
-                            return true;
-                        }
-                        if (tokens[1] == "p")
-                        {
-                            int currentPageIndex = GetCurrentPageIndex();
-                            SwapViewToPage(currentPageIndex - 1 == 0 ? 20 : currentPageIndex - 1);
-                            return true;
-                        }
-                    }
+                    int? resolvedTarget = GetPageIndexFromTargetToken(targetToken);
 
                     // If target resolved, interpret action tokens
                     if (resolvedTarget.HasValue)
@@ -2075,28 +2039,28 @@ namespace Cloudless
                             SwapViewToPage(target);
                             return true;
                         }
+                        if (action == "clear" || action == "c")
+                        {
+                            ClearPage(target);
+                            return true;
+                        }
+                        if (action == "swap" || action == "x")
+                        {
+                            int? secondTarget = GetPageIndexFromTargetToken(action2);
+                            if (secondTarget.HasValue)
+                            {
+                                SwapPageWithPage(target, secondTarget.Value);
+                                return true;
+                            }
+                            else
+                            {
+                                Message("Swap command requires a valid second page target. Usage: p <page1> swap <page2>");
+                                return true;
+                            }
+                        }
                     }
-                }
 
-                // Fall back to handling commands that the tokenized parser doesn't cover below.
-                // TODO add support for special targets for below 2 commands as well.
-                string pattern;
-                pattern = @"^p (\d+) clear$";
-                Match match = Regex.Match(cmd, pattern);
-                int? matchInt = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                if (matchInt.HasValue)
-                {
-                    ClearPage((int)matchInt);
-                    return true;
-                }
-
-                pattern = @"^p (\d+) swap (\d+)$";
-                match = Regex.Match(cmd, pattern);
-                int? matchInt1 = match.Success ? int.Parse(match.Groups[1].Value) : null;
-                int? matchInt2 = match.Success ? int.Parse(match.Groups[2].Value) : null;
-                if (matchInt1.HasValue && matchInt2.HasValue)
-                {
-                    SwapPageWithPage((int)matchInt1, (int)matchInt2);
+                    Message("Could not parse page command. See command palette reference.");
                     return true;
                 }
             }
@@ -2281,6 +2245,55 @@ namespace Cloudless
 
             Message("Command not recognized");
             return false;
+        }
+
+        private int? GetPageIndexFromTargetToken(string targetToken)
+        {
+            int current = GetCurrentPageIndex();
+            if (int.TryParse(targetToken, out int numericTarget))
+            {
+                return numericTarget;
+            }
+            else if (targetToken == "na")
+            {
+                var activePages = GetNonemptyPages();
+                int nextActivePage = activePages?.Where(p => p > current)?.Order().FirstOrDefault() ?? 0;
+                if (nextActivePage == 0)
+                    nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;
+                return nextActivePage != 0 ? nextActivePage : null;
+            }
+            else if (targetToken == "pa")
+            {
+                var activePages = GetNonemptyPages();
+                int prevActivePage = activePages?.Where(p => p < current)?.Order().LastOrDefault() ?? 0;
+                if (prevActivePage == 0)
+                    prevActivePage = activePages?.Order().LastOrDefault() ?? 0;
+                return prevActivePage != 0 ? prevActivePage : null;
+            }
+            else if (targetToken == "ni")
+            {
+                var inactivePages = GetInactivePages();
+                int nextInactivePage = inactivePages?.Where(p => p > current)?.Order().FirstOrDefault() ?? 0;
+                if (nextInactivePage == 0)
+                    nextInactivePage = inactivePages?.Order().FirstOrDefault() ?? 0;
+                return nextInactivePage != 0 ? nextInactivePage : null;
+            }
+            else if (targetToken == "pi")
+            {
+                var inactivePages = GetInactivePages();
+                int prevInactivePage = inactivePages?.Where(p => p < current)?.Order().LastOrDefault() ?? 0;
+                if (prevInactivePage == 0)
+                    prevInactivePage = inactivePages?.Order().LastOrDefault() ?? 0;
+                return prevInactivePage != 0 ? prevInactivePage : null;
+            }
+            else if (targetToken == "next" || targetToken == "n")
+                return current + 1 == 21 ? 1 : current + 1;
+            else if (targetToken == "previous" || targetToken == "p" || targetToken == "prev")
+                return current - 1 == 0 ? 20 : current - 1;
+            else if (targetToken == "this" || targetToken == "t")
+                return current;
+
+            return null;
         }
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
