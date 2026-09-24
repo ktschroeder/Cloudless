@@ -22,7 +22,7 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.12.0";
+        public const string CURRENT_VERSION = "0.12.0.100";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 

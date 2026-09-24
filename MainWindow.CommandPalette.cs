@@ -2014,6 +2014,8 @@ namespace Cloudless
                             resolvedTarget = current + 1 == 21 ? 1 : current + 1;
                         else if (targetToken == "previous" || targetToken == "p" || targetToken == "prev")
                             resolvedTarget = current - 1 == 0 ? 20 : current - 1;
+                        else if (targetToken == "this" || targetToken == "t")
+                            resolvedTarget = current;
                     }
 
                     // If unresolved, allow simple commands like 'p n' or 'p p'
@@ -2077,7 +2079,7 @@ namespace Cloudless
                 }
 
                 // Fall back to handling commands that the tokenized parser doesn't cover below.
-
+                // TODO add support for special targets for below 2 commands as well.
                 string pattern;
                 pattern = @"^p (\d+) clear$";
                 Match match = Regex.Match(cmd, pattern);
