@@ -867,6 +867,11 @@ namespace Cloudless.VlcPlugin
             }
         }
 
+        public TimeSpan? GetCustomEnd()
+        {
+            return _loopEnd ?? null;
+        }
+
         public void SeekFineForward()
         {
             if (_mediaPlayer == null)

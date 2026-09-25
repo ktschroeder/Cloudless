@@ -84,6 +84,11 @@ namespace Cloudless
         public int GetSlideshowTriggerCount() => SlideshowTriggerCount;
         public int GetSlideshowTriggerHitCount() => _slideshowTriggerHitCount;
 
+
+        // Increment and reset trigger hit count (used by both custom end and natural end paths)
+        public void IncrementSlideshowTriggerHitCount() => _slideshowTriggerHitCount++;
+        public void ResetSlideshowTriggerHitCount() => _slideshowTriggerHitCount = 0;
+
         // Called to set waiting state (used by OnSyncTimeChanged and VideoSyncManager)
         public void NotifySyncWaiting(bool waiting)
         {
@@ -296,7 +301,7 @@ namespace Cloudless
                 long endMs = (long)endTs.Value.TotalMilliseconds;
                 if (endMs <= 0) return;
 
-                if (currentMs >= endMs)
+                if (currentMs >= endMs)  // This flow is only reached when there is a custom end. Not when there is no custom end.
                 {
                     // Increment the hit counter
                     _slideshowTriggerHitCount++;

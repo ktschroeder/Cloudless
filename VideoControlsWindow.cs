@@ -28,6 +28,9 @@ namespace Cloudless
         private bool _isUserAdjustingVolume = false;
         private double _volumeDragThumbHalfWidth = 0.0;
         private DispatcherTimer? _zOrderRestoreTimer;
+        // Track the previous position to detect rising-edge (when video enters end zone)
+        private long _previousTriggerDetectionPositionMs = -1;
+        private const long TRIGGER_END_THRESHOLD_MS = 50;
 
         public VideoControlsWindow()
         {
@@ -251,6 +254,15 @@ namespace Cloudless
                     TriggerIndicator.ToolTip = $"Trigger: {hitCount}/{triggerCount} hits";
                 }
             }));
+        }
+
+        /// <summary>
+        /// Reset the trigger end detection state. Called when trigger is reset or page is revealed.
+        /// This ensures we can properly count the next video end as a new completion.
+        /// </summary>
+        public void ResetTriggerEndDetectionTimer()
+        {
+            _previousTriggerDetectionPositionMs = -1;
         }
 
         private void RefreshVolumeFromPlayer(IVideoPlayer videoPlayer)
@@ -614,39 +626,58 @@ namespace Cloudless
 
                     if (isRegisteredTrigger)
                     {
-                        // If position is exactly zero (wrap) or very near the end, treat as trigger firing.
-                        bool wrapDetected = pos == 0 || (dur > 0 && pos >= dur - 50);
+                        // Also detect wrap (pos == 0 and we were not at 0 before)
+                        bool isWrap = pos == 0 && _previousTriggerDetectionPositionMs != 0;
+                        bool hasCustomEnd = videoPlayer.GetCustomEnd() != null;
 
-                        if (wrapDetected)
+                        if (isWrap && !hasCustomEnd)  // this flow is for no custom end; custom end has its own flow for trigger detection.
                         {
-                            // Prevent rapid duplicate signals by simple debounce
-                            try
-                            {
-                                var now = DateTime.UtcNow;
-                                // use a static-ish field per window via Tag on owner to avoid adding more fields here
-                                var lastSignalObj = _ownerWindow.Tag as System.Collections.Hashtable;
-                                if (lastSignalObj == null)
-                                {
-                                    lastSignalObj = new System.Collections.Hashtable();
-                                    _ownerWindow.Tag = lastSignalObj;
-                                }
-                                var key = "LastSlideshowSignalUtc";
-                                DateTime last = DateTime.MinValue;
-                                if (lastSignalObj.ContainsKey(key))
-                                    last = (DateTime)lastSignalObj[key];
+                            // Increment the hit counter exactly once per playback end
+                            int triggerCount = _ownerWindow.GetSlideshowTriggerCount();
+                            _ownerWindow.IncrementSlideshowTriggerHitCount();
+                            int hitCount = _ownerWindow.GetSlideshowTriggerHitCount();
 
-                                if ((now - last).TotalMilliseconds > 500) // 500ms debounce
-                                {
-                                    lastSignalObj[key] = now;
-                                    Console.WriteLine($"[SlideshowTrigger] Page {_ownerWindow.GetCurrentPageIndex()} trigger fired (pos={pos} dur={dur})");
-                                    SlideshowManager.SignalTriggerFired(_ownerWindow.GetCurrentPageIndex());
-                                }
-                            }
-                            catch (Exception ex)
+                            // Update UI immediately to show the hit
+                            UpdateTriggerIndicator();
+
+                            // Check if we've reached the required number of hits
+                            if (triggerCount > 0 && hitCount >= triggerCount)
                             {
-                                Console.WriteLine($"[SlideshowTrigger] Signal error: {ex.Message}");
+                                // Prevent rapid duplicate signals by simple debounce
+                                try
+                                {
+                                    var now = DateTime.UtcNow;
+                                    // use a static-ish field per window via Tag on owner to avoid adding more fields here
+                                    var lastSignalObj = _ownerWindow.Tag as System.Collections.Hashtable;
+                                    if (lastSignalObj == null)
+                                    {
+                                        lastSignalObj = new System.Collections.Hashtable();
+                                        _ownerWindow.Tag = lastSignalObj;
+                                    }
+                                    var key = "LastSlideshowSignalUtc";
+                                    DateTime last = DateTime.MinValue;
+                                    if (lastSignalObj.ContainsKey(key))
+                                        last = (DateTime)lastSignalObj[key];
+
+                                    if ((now - last).TotalMilliseconds > 500) // 500ms debounce
+                                    {
+                                        lastSignalObj[key] = now;
+                                        Console.WriteLine($"[SlideshowTrigger] Page {_ownerWindow.GetCurrentPageIndex()} trigger fired (pos={pos} dur={dur})");
+                                        SlideshowManager.SignalTriggerFired(_ownerWindow.GetCurrentPageIndex());
+                                        // Reset hit count after firing
+                                        _ownerWindow.ResetSlideshowTriggerHitCount();
+                                        UpdateTriggerIndicator();
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[SlideshowTrigger] Signal error: {ex.Message}");
+                                }
                             }
                         }
+
+                        // Update previous position for next edge detection
+                        _previousTriggerDetectionPositionMs = pos;
                     }
                 }
             }

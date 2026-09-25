@@ -32,7 +32,7 @@ namespace Cloudless
                 string[] pluginPaths = new string[]
                 {
                     @"Cloudless\Cloudless.AnimatedWebpPlugin\bin\Debug\net8.0-windows\Cloudless.AnimatedWebpPlugin.dll",
-                    @"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll"
+                    @"Cloudless\Cloudless.VlcPlugin\bin\Release\net8.0-windows\Cloudless.VlcPlugin.dll"
                 };
 
                 IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>

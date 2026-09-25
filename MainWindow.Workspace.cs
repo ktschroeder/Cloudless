@@ -152,7 +152,7 @@ namespace Cloudless
                     {  // "WindowState" on this line refers to Windows's window state (maximied, e.g.), not CloudlessWindowState
                         cws = window.stateUponMinimizing;
                         cws.IsMinimized = true;
-                        cws = UpdateWindowStateWithVideoInfo(cws);  // ensure we capture any video info that may have changed since the window was minimized, such as set triggers, or loop range
+                        cws = window.UpdateWindowStateWithVideoInfo(cws);  // ensure we capture any video info that may have changed since the window was minimized, such as set triggers, or loop range
                     }
                     else
                         cws = window.GetWindowState(zs);
@@ -1038,7 +1038,7 @@ namespace Cloudless
                 // tried to show a closed window
                 return;
             }
-            
+
             this.ShowInTaskbar = true;
 
             this.WindowState = windowWasMinimizedPriorToHidingForPage ? WindowState.Minimized
@@ -1053,6 +1053,15 @@ namespace Cloudless
 
             windowWasMinimizedPriorToHidingForPage = false;
             windowWasMaximizedPriorToHidingForPage = false;
+
+            // Reset slideshow trigger hit count when returning to a page during a slideshow.
+            // This ensures the video will cycle the configured number of times again.
+            if (fromSlideshow && this.SlideshowTriggerCount > 0)
+            {
+                this._slideshowTriggerHitCount = 0;
+                this.UpdateVideoControls();
+                _videoControlsWindow?.ResetTriggerEndDetectionTimer();
+            }
 
             if (!_videoPausedBeforeUserChangedPage && !string.IsNullOrEmpty(currentlyDisplayedImagePath) && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer player)
             {
