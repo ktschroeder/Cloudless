@@ -139,7 +139,6 @@ namespace Cloudless
             _triggerPages = null;
             UseTriggers = false;
             SelectedPage = null;
-            Interlocked.Exchange(ref _lastTriggerTickMs, 0);
         }
 
         public static void NextSlideshowPage()
@@ -179,15 +178,6 @@ namespace Cloudless
         /// </summary>
         public static void SignalTriggerFired(int pageIndex)
         {
-            // Debounce rapid triggers: ignore if a trigger fired very recently
-            long now = Environment.TickCount64;
-            long prev = Interlocked.Read(ref _lastTriggerTickMs);
-            if (prev != 0 && (now - prev) < 50)
-            {
-                return;
-            }
-            Interlocked.Exchange(ref _lastTriggerTickMs, now);
-
             if (!UseTriggers) return;
             if (_triggerPages != null && _triggerPages.Contains(pageIndex))
             {
@@ -337,6 +327,21 @@ namespace Cloudless
                 _slideshowCurrentPageIndex = (_slideshowCurrentPageIndex + 1) % _slideshowPages.Count;
                 _onSlideshowTick?.Invoke();
             }
+        }
+
+        private static DateTime _lastTriggerTime = DateTime.MinValue;
+        public static bool HasSufficientTimePassedSinceLastTrigger_ConsumeIfYes()
+        {
+            const int DEBOUNCE_MS = 250; // minimum time in milliseconds between triggers
+            DateTime now = DateTime.Now;
+            DateTime prev = _lastTriggerTime;
+
+            bool ready = (prev == DateTime.MinValue || (now - prev).TotalMilliseconds >= DEBOUNCE_MS);
+            if (!ready)
+                return false;
+
+            _lastTriggerTime = now;
+            return true;
         }
     }
 }

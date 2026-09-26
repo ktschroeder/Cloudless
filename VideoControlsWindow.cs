@@ -659,7 +659,7 @@ namespace Cloudless
                                     if (lastSignalObj.ContainsKey(key))
                                         last = (DateTime)lastSignalObj[key];
 
-                                    if ((now - last).TotalMilliseconds > 500) // 500ms debounce
+                                    if ((now - last).TotalMilliseconds > 500 && SlideshowManager.HasSufficientTimePassedSinceLastTrigger_ConsumeIfYes()) // 500ms debounce
                                     {
                                         lastSignalObj[key] = now;
                                         Console.WriteLine($"[SlideshowTrigger] Page {_ownerWindow.GetCurrentPageIndex()} trigger fired (pos={pos} dur={dur})");

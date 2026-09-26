@@ -310,7 +310,7 @@ namespace Cloudless
                     UpdateVideoControls();
 
                     // Only signal the manager if we've hit the required number of times
-                    if (_slideshowTriggerHitCount >= SlideshowTriggerCount)
+                    if (_slideshowTriggerHitCount >= SlideshowTriggerCount && SlideshowManager.HasSufficientTimePassedSinceLastTrigger_ConsumeIfYes())
                     {
                         // Signal manager to advance the slideshow
                         _lastTriggerFired = DateTime.Now;
