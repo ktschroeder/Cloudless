@@ -1989,6 +1989,12 @@ namespace Cloudless
                         return true;
                     }
 
+                    if (targetToken == "arrange")
+                    {
+                        BringActivePagesTogether();
+                        return true;
+                    }
+
                     // Handle next-active / previous-active / next-inactive / previous-inactive when used for navigation only
                     if ((targetToken == "na" || targetToken == "pa" || targetToken == "ni" || targetToken == "pi") && tokens.Count == 2)
                     {

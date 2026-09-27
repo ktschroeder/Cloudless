@@ -1393,6 +1393,29 @@ namespace Cloudless
             return inactivePages;
         }
 
+        public void BringActivePagesTogether()
+        {
+            var activePages = GetNonemptyPages();  // already ordered
+            if (activePages.Count == 0)
+            {
+                Message("No active pages to bring together.");
+                return;
+            }
+            
+            for (int i = 1; i <= 20; i++)
+            {
+                if (activePages.Count == 0)
+                    break;
+                int nextActivePage = activePages.First();
+                activePages.RemoveAt(0);
+
+                if (nextActivePage != i)
+                {
+                    SwapPageWithPage(nextActivePage, i);
+                }
+            }
+        }
+
         /// <summary>
         /// Resolve special page tokens to actual page numbers.
         /// Tokens: "na" (next active), "pa" (previous active), "ni" (next inactive), "pi" (previous inactive)
