@@ -204,8 +204,9 @@ namespace Cloudless
                 return;
             }
 
-                // If enabling and not already marked, enforce only one trigger per page
-            if (enabled && SlideshowTriggerCount <= 0)
+            // If enabling and not already marked, enforce only one trigger per page
+            // We also check whether workspace is loading: without the check, triggers can fail to get assigned because of timing of other windows briefly on-screen during load
+            if (enabled && SlideshowTriggerCount <= 0 && !WorkspaceLoadInProgress)
             {
                 var other = Application.Current.Windows
                     .OfType<MainWindow>()
