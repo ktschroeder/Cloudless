@@ -1062,6 +1062,12 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("c empty"))
+            {
+                CloseEmptyInstances();
+                return true;
+            }
+
             if (cmd.Equals("m others"))
             {
                 MinimizeAllOtherInstances();

@@ -226,6 +226,17 @@ namespace Cloudless
             Close();
         }
 
+        private void CloseEmptyInstances()
+        {
+            foreach (var window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (string.IsNullOrEmpty(window.currentlyDisplayedImagePath) && window != this)
+                    window.Close();
+            }
+
+            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+                Close();
+        }
 
         private void MinimizeAllOtherInstances()
         {
