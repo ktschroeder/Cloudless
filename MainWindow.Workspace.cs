@@ -1093,7 +1093,7 @@ namespace Cloudless
             }
         }
 
-        public void SendWindowToPage(int pageIndex, bool skipHide = false, bool fromFlatten = false)
+        public void SendWindowToPage(int pageIndex, bool skipHide = false, bool fromFlatten = false, bool fromSwap = false)
         {
             if (pageIndex < 1 || pageIndex > 20)
             {
@@ -1104,7 +1104,7 @@ namespace Cloudless
             StopSlideshow();
 
             int currentPageIndex = GetCurrentPageIndex();
-            if (currentPageIndex == pageIndex && !fromFlatten)
+            if (currentPageIndex == pageIndex && !fromFlatten && !fromSwap)
             {
                 if (!WorkspaceLoadInProgress && !fromFlatten)
                     Message($"Window is already on page {pageIndex}.");
@@ -1144,7 +1144,7 @@ namespace Cloudless
                 windowToRemove.Close();
             }
 
-            if (!GetNonemptyPages().Contains(currentPageIndex))  // if this page is now empty after the send, create a new window for convenience
+            if (!fromSwap && !GetNonemptyPages().Contains(currentPageIndex))  // if this page is now empty after the send, create a new window for convenience
             {
                 var freshWindow = new MainWindow("");
                 freshWindow.Show();
@@ -1307,11 +1307,11 @@ namespace Cloudless
 
             foreach (var w in p1Windows)
             {
-                w.SendWindowToPage(p2, skipHide: GetCurrentPageIndex() != p1);  // skip hiding if they are already hidden (i.e. not in current page)
+                w.SendWindowToPage(p2, skipHide: GetCurrentPageIndex() != p1, fromSwap: true);  // skip hiding if they are already hidden (i.e. not in current page)
             }
             foreach (var w in p2Windows)
             {
-                w.SendWindowToPage(p1, skipHide: GetCurrentPageIndex() != p2);
+                w.SendWindowToPage(p1, skipHide: GetCurrentPageIndex() != p2, fromSwap: true);
             }
 
             List<MainWindow> windowsToNowReveal;
