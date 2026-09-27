@@ -11,8 +11,8 @@ namespace Cloudless.VlcPlugin
     public class VlcPlugin : IPlugin
     {
         public string Name { get => "VLC Plugin"; }
-        public string PluginVersion { get => "1.1.0"; }
-        public string MinAppVersion { get => "0.12.0"; }
+        public string PluginVersion { get => "1.2.0"; }
+        public string MinAppVersion { get => "0.12.1"; }
         public string Description { get => "Prepares a WPF view for a WEBM/MKV/MP4 video using external VLC libraries"; }
         public List<string> SupportsFileTypes { get => new List<string> { "webm", "mkv", "mp4" }; }
 
