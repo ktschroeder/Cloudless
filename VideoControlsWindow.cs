@@ -171,6 +171,7 @@ namespace Cloudless
             }
             UpdateSyncIndicator();
             UpdateTriggerIndicator();
+            UpdateNoAudioIndicator(videoPlayer);
         }
 
         private void RefreshPlaybackState(IVideoPlayer videoPlayer, bool? setTo = null)
@@ -252,6 +253,29 @@ namespace Cloudless
                     TriggerIndicator.Text = $"T: {hitCount}/{triggerCount}";
                     TriggerIndicator.Foreground = Brushes.DodgerBlue;
                     TriggerIndicator.ToolTip = $"Trigger: {hitCount}/{triggerCount} hits";
+                }
+            }));
+        }
+
+        private void UpdateNoAudioIndicator(IVideoPlayer videoPlayer)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (NoAudioIndicator == null || videoPlayer == null)
+                    return;
+
+                bool hasAudio = videoPlayer.HasAudio();
+                if (hasAudio)
+                {
+                    NoAudioIndicator.Text = "";
+                    NoAudioIndicator.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    NoAudioIndicator.Visibility = Visibility.Visible;
+                    NoAudioIndicator.Text = "🔇";
+                    NoAudioIndicator.Foreground = Brushes.OrangeRed;
+                    NoAudioIndicator.ToolTip = "No audio track";
                 }
             }));
         }

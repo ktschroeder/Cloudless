@@ -125,6 +125,8 @@
 
                 <!-- Percentage text (read-only) with fixed width to avoid layout shifts -->
                 <TextBlock x:Name="VolumePercentText" Text="100%" Foreground="{DynamicResource PrimaryForeground}" FontSize="12" VerticalAlignment="Center" Width="40" TextAlignment="Center"/>
+                <!-- No audio indicator: shows '??' when video has no audio tracks -->
+                <TextBlock x:Name="NoAudioIndicator" Text="" Foreground="OrangeRed" FontSize="12" VerticalAlignment="Center" Width="20" TextAlignment="Center" ToolTip="No audio track"/>
                 <!-- Sync indicator: shows 'S' when synced, 'S?' when waiting -->
                 <TextBlock x:Name="SyncIndicator" Text="" Foreground="LimeGreen" FontSize="12" VerticalAlignment="Center" Width="36" TextAlignment="Center" ToolTip="Video sync status"/>
                 <!-- Trigger indicator: shows 'T: X/Y' when this is a trigger window (X current hits, Y required hits) -->

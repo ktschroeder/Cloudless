@@ -54,6 +54,12 @@ namespace Cloudless.PluginBase
         bool IsMuted();
         bool IsPaused();
 
+        /// <summary>
+        /// Check if the current video has audio tracks available.
+        /// Returns true if at least one audio track exists, false otherwise.
+        /// </summary>
+        bool HasAudio();
+
         void SetVolume(double volume);
         double GetVolume();
 

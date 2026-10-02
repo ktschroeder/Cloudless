@@ -1000,5 +1000,30 @@ namespace Cloudless.VlcPlugin
             }
         }
 
+        public bool HasAudio()
+        {
+            try
+            {
+                if (_mediaPlayer?.Media == null)
+                    return false;
+
+                var tracks = _mediaPlayer.Media.Tracks;
+                if (tracks == null) return false;
+
+                // Check if there's at least one audio track
+                foreach (var track in tracks)
+                {
+                    if (track.TrackType == TrackType.Audio)
+                        return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"HasAudio error: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 }
