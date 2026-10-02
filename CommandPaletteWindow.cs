@@ -9,6 +9,8 @@ namespace Cloudless
     {
         public CommandPaletteControl? Control { get; set; }
         private Window? _ownerWindow;
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
 
         public CommandPaletteWindow(MainWindow mw)
         {
@@ -22,6 +24,19 @@ namespace Cloudless
 
             Control = new CommandPaletteControl(mw);
             this.Content = Control;
+
+            // Apply WS_EX_TOOLWINDOW extended style to hide from alt-tab switcher
+            this.SourceInitialized += CommandPaletteWindow_SourceInitialized;
+        }
+
+        private void CommandPaletteWindow_SourceInitialized(object? sender, EventArgs e)
+        {
+            if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
+            {
+                IntPtr hwnd = hwndSource.Handle;
+                int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW);
+            }
         }
 
         public void AlignToOwner(Window owner, double desiredLeftOffset = 7, double desiredBottomOffset = 7, double? contentHeight = null)
@@ -157,6 +172,12 @@ namespace Cloudless
             public RECT rcWork;
             public uint dwFlags;
         }
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
         // SetWindowPos removed to avoid interfering with input routing.
     }
