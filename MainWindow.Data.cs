@@ -1144,7 +1144,7 @@ namespace Cloudless
 
             MenuItem bookmarkCurrentItem = new()
             {
-                Header = isCurrentBookmarked ? "Unbookmark Current Image" : "Bookmark Current Image",
+                Header = isCurrentBookmarked ? "Unbookmark Current Media" : "Bookmark Current Media",
                 IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath)
             };
             bookmarkCurrentItem.Click += (s, e) =>
@@ -1191,32 +1191,6 @@ namespace Cloudless
                 if (added >= MaxRecentFilesInContextWindow)
                     break;
             }
-
-            // Add additional menu items
-            if (bookmarks.Count > 0 && added < bookmarks.Count)
-            {
-                BookmarksMenu.Items.Add(CreateFullWidthSeparator());
-
-                MenuItem viewAllItem = new()
-                {
-                    Header = $"View All Bookmarks ({bookmarks.Count} total)"
-                };
-                viewAllItem.Click += (s, e) =>
-                {
-                    OpenBookmarksGalleryWindow();
-                };
-                BookmarksMenu.Items.Add(viewAllItem);
-            }
-            else if (bookmarks.Count == 0)
-            {
-                BookmarksMenu.Items.Add(CreateFullWidthSeparator());
-                MenuItem noBookmarksItem = new()
-                {
-                    Header = "No Bookmarks",
-                    IsEnabled = false
-                };
-                BookmarksMenu.Items.Add(noBookmarksItem);
-            }
         }
 
         private void OpenBookmarksGalleryWindow()
@@ -1256,11 +1230,11 @@ namespace Cloudless
                                       bookmarkManager.IsBookmarked(currentlyDisplayedImagePath);
 
             var bookmarkCurrentItem = BookmarksMenu.Items.OfType<MenuItem>().FirstOrDefault(m => 
-                ((m.Header as string) ?? m.Header?.ToString() ?? "").Contains("Bookmark Current Image"));
+                ((m.Header as string) ?? m.Header?.ToString() ?? "").Contains("Bookmark Current Media"));
 
             if (bookmarkCurrentItem != null)
             {
-                bookmarkCurrentItem.Header = isCurrentBookmarked ? "Unbookmark Current Image" : "Bookmark Current Image";
+                bookmarkCurrentItem.Header = isCurrentBookmarked ? "Unbookmark Current Media" : "Bookmark Current Media";
                 bookmarkCurrentItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
             }
         }
