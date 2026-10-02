@@ -8,7 +8,41 @@
         Topmost="False"
         ShowActivated="False">
 
-    <Border Background="{DynamicResource OverlayBackground}" 
+    <Window.Resources>
+        <!-- Custom volume slider template that allows dynamic thumb styling -->
+        <Style x:Key="VolumeSliderStyle" TargetType="Slider">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="18" MinWidth="120">
+                            <!-- Track background -->
+                            <Border x:Name="TrackBackground" Height="6" VerticalAlignment="Center" CornerRadius="3" Background="{DynamicResource ControlBackground}" />
+
+                            <Track x:Name="PART_Track" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Background="{DynamicResource PrimaryButtonBackgroundBrush}" BorderThickness="0" IsTabStop="False" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="VolumeThumb" Style="{StaticResource SliderThumbStyle}" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Background="Transparent" BorderThickness="0" IsTabStop="False" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Vertical">
+                                <Setter TargetName="TrackBackground" Property="Width" Value="6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{DynamicResource OverlayBackground}"
             Padding="8" 
             CornerRadius="4,4,0,0"
             BorderBrush="{DynamicResource ControlBorderBrush}"
@@ -77,6 +111,7 @@
 
                 <!-- Volume slider gauge -->
                 <Slider x:Name="VolumeSlider"
+                        Style="{StaticResource VolumeSliderStyle}"
                         Minimum="0"
                         Maximum="100"
                         Value="100"

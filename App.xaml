@@ -99,6 +99,22 @@
             </Setter>
         </Style>
 
+        <!-- Volume slider muted thumb style - shows red 'X' instead of circle -->
+        <Style x:Key="VolumeSliderMutedThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Grid Width="12" Height="12">
+                            <!-- Red background circle -->
+                            <Ellipse Fill="#FF8888" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                            <!-- Red 'X' text in center -->
+                            <TextBlock Text="✕" Foreground="White" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Slider template for a sleek thin track with filled portion -->
         <Style TargetType="Slider">
             <Setter Property="SnapsToDevicePixels" Value="True" />

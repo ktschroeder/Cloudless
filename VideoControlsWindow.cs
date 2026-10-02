@@ -288,11 +288,45 @@ namespace Cloudless
                         {
                             MuteButton.Content = muted ? "Unmute" : "Mute";
                         }
+                        // Update volume slider thumb appearance to reflect mute state
+                        UpdateVolumeSilderThumbStyle(muted);
                     }
                     catch { }
                 }));
             }
             catch { }
+        }
+
+        private void UpdateVolumeSilderThumbStyle(bool isMuted)
+        {
+            if (VolumeSlider == null) return;
+
+            // Get the thumb from the slider's template
+            var thumb = GetThumbFromSlider(VolumeSlider);
+            if (thumb == null) return;
+
+            if (isMuted)
+            {
+                // Apply the muted thumb style (red X)
+                thumb.Style = (Style)FindResource("VolumeSliderMutedThumbStyle");
+            }
+            else
+            {
+                // Apply the normal thumb style (circle)
+                thumb.Style = (Style)FindResource("SliderThumbStyle");
+            }
+        }
+
+        private Thumb? GetThumbFromSlider(Slider slider)
+        {
+            if (slider.Template == null) return null;
+
+            // Get the track from the slider template
+            var track = slider.Template.FindName("PART_Track", slider) as Track;
+            if (track == null) return null;
+
+            // Get the thumb from the track
+            return track.Thumb as Thumb;
         }
 
         private void ApplyLatestPosition(IVideoPlayer videoPlayer)
