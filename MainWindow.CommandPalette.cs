@@ -1608,22 +1608,55 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.StartsWith("dim "))
+            if (cmd.Equals("dim", StringComparison.OrdinalIgnoreCase))
+            {
+                Message($"Current window dimensions: {this.Width:0.##} x {this.Height:0.##}");
+                return true;
+            }
+
+            if (cmd.StartsWith("dim ", StringComparison.OrdinalIgnoreCase))
             {
                 if (cmd.Length < 5)
                     return false;
 
                 string dim = cmd.Substring(4);
-                var dims = dim.Split(' ');
+                var dims = dim.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                double width = this.Width;
+                double height = this.Height;
 
-                if (dims.Length != 2 || !int.TryParse(dims[0], out int width) || !int.TryParse(dims[1], out int height))
+                if (dims.Length != 2 ||
+                    (dims[0] == "_" && dims[1] == "_") ||
+                    !TryApplyDimension(dims[0], ref width) ||
+                    !TryApplyDimension(dims[1], ref height))
                 {
-                    Message("Unexpected format. Usage: dim [int] [int]");
+                    Message("Unexpected format. Usage: dim [int|+/-int|_] [int|+/-int|_]. Unsigned values set a dimension; signed values change it.");
                     return false;
                 }
-                    
+
+                if (width <= 0 || height <= 0)
+                {
+                    Message("Window dimensions must be greater than zero.");
+                    return false;
+                }
+
                 ResizeWindow(width, height);
                 CenterWindowOnCurrentScreen();
+
+                return true;
+            }
+
+            static bool TryApplyDimension(string value, ref double dimension)
+            {
+                if (value == "_")
+                    return true;
+
+                if (!int.TryParse(value, out int amount))
+                    return false;
+
+                if (value.StartsWith('+') || value.StartsWith('-'))
+                    dimension += amount;
+                else
+                    dimension = amount;
 
                 return true;
             }

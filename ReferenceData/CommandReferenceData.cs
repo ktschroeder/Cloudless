@@ -44,7 +44,8 @@ namespace Cloudless.ReferenceData
                 new ReferenceTab("View", new List<ReferenceItem>
                 {
                     new ReferenceItem("dm [mode]", "Set display mode: stretch/zoom/best/bestnozoom. Numbers 1-4 can also be used."),
-                    new ReferenceItem("dim [Int] [Int]", "Set window dimensions to [Int]x[Int]"),
+                    new ReferenceItem("dim", "Show the current window dimensions."),
+                    new ReferenceItem("dim [Int|+/-Int|_] [Int|+/-Int|_]", "Set dimensions with unsigned values, change them by signed offsets, or use _ to leave a dimension unchanged."),
                     new ReferenceItem("filmstrip | fs directory | d", "Open filmstrip and populate it with images in the current image's directory"),
                     new ReferenceItem("filmstrip | fs recent | r", "Open filmstrip and populate it with your recent images"),
                     new ReferenceItem("filmstrip | fs bookmark | b", "Open filmstrip and populate it with your bookmarked images"),
