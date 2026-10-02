@@ -1,12 +1,11 @@
 using Cloudless.Properties;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -15,8 +14,12 @@ namespace Cloudless
     public partial class FilmStripControl : UserControl
     {
         public event Action<string, bool>? ThumbnailClicked;
-        
+
         private CancellationTokenSource? _populateCts;
+
+        // Static retain storage - global in-memory filmstrip contents retained across instances
+        private static string[]? _retainedFilmstripContents;
+        private static HashSet<FilmStripControl> _allInstances = new HashSet<FilmStripControl>();
 
         public FilmStripControl()
         {
@@ -24,6 +27,15 @@ namespace Cloudless
             this.Loaded += FilmStripControl_Loaded;
 
             UpdateCheckboxesFromSettings();
+
+            // Initialize retain checkbox to unchecked (it will be set to checked only if retain is actually active)
+            PART_RetainContents.IsChecked = false;
+
+            // Register this instance globally
+            lock (_allInstances)
+            {
+                _allInstances.Add(this);
+            }
         }
 
         private bool _isResizing = false;
@@ -62,13 +74,13 @@ namespace Cloudless
                 drag.MouseMove += Drag_MouseMove;
                 drag.MouseLeftButtonUp += Drag_MouseLeftButtonUp;
             }
-                
+
             var sv = this.FindName("PART_ScrollViewer") as ScrollViewer;
             if (sv != null)
             {
                 sv.ScrollChanged += (s, ev) => UpdateOverflowIndicators();
             }
-                
+
         }
 
         private void Drag_MouseLeftButtonDown(object? sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -155,7 +167,7 @@ namespace Cloudless
 
             // Wait a bit for layout to stabilize so we can measure available height
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
-            
+
             // Check if cancelled before continuing
             if (cancellationToken.IsCancellationRequested)
                 return;
@@ -377,27 +389,6 @@ namespace Cloudless
                     img.Height = thumbHeight;
                 }
             }
-            //// After layout updates, reposition scroll so the centerChild remains centered
-            //if (centerChild != null)
-            //{
-            //    Dispatcher.BeginInvoke(new Action(() =>
-            //    {
-            //        if (centerChild == null) return;
-            //        var transform = centerChild.TransformToVisual(PART_Panel);
-            //        var pt = transform.Transform(new Point(0, 0));
-            //        double centerX = pt.X + centerChild.ActualWidth / 2.0;
-            //        double newOffset = centerX - sv.ViewportWidth / 2.0;
-            //        if (newOffset < 0) newOffset = 0;
-            //        double maxOffset = Math.Max(0, PART_Panel.ActualWidth - sv.ViewportWidth);
-            //        if (newOffset > maxOffset) newOffset = maxOffset;
-            //        sv.ScrollToHorizontalOffset(newOffset);
-            //    }), System.Windows.Threading.DispatcherPriority.Background);
-            //}
-            //else
-            //{
-                // fallback: keep leftmost offset
-                //Dispatcher.BeginInvoke(new Action(() => { sv.ScrollToHorizontalOffset(0); }), System.Windows.Threading.DispatcherPriority.Background);
-            //}
 
             UpdateOverflowIndicators();
         }
@@ -429,5 +420,192 @@ namespace Cloudless
         public bool CloseAfterSelect => PART_CloseAfterSelect.IsChecked == true;
         public bool OpenInNewWindow => PART_OpenInNewWindow.IsChecked == true;
         public bool ResizeWindow => PART_Resize.IsChecked == true;
+
+        /// <summary>
+        /// Returns true if there are retained filmstrip contents available globally.
+        /// </summary>
+        public static bool HasRetainedContents => _retainedFilmstripContents?.Length > 0;
+
+        /// <summary>
+        /// Gets the retained filmstrip contents, or null if none are retained.
+        /// </summary>
+        public static string[]? GetRetainedContents => _retainedFilmstripContents;
+
+        /// <summary>
+        /// Gets the current filmstrip file list by examining child borders in PART_Panel.
+        /// </summary>
+        private string[] GetCurrentFilmstripFiles()
+        {
+            var panel = this.FindName("PART_Panel") as StackPanel;
+            if (panel == null) return Array.Empty<string>();
+
+            return panel.Children.OfType<Border>()
+                .Where(b => b.Tag is string)
+                .Select(b => (string)b.Tag)
+                .ToArray();
+        }
+
+        private void PART_RetainContents_Checked(object sender, RoutedEventArgs e)
+        {
+            // Save current filmstrip contents and mark this instance as the last retained
+            _retainedFilmstripContents = GetCurrentFilmstripFiles();
+
+            // Clear the retain checkbox in all other instances globally
+            ClearRetainCheckboxInAllOtherInstances(this);
+        }
+
+        private void PART_RetainContents_Unchecked(object sender, RoutedEventArgs e)
+        {
+            // Clear retained contents from memory and uncheck all instances globally
+            _retainedFilmstripContents = null;
+
+            // Clear retain checkbox in all instances (including this one, but SetRetainCheckboxCheckedSilently
+            // will prevent recursive event triggers)
+            ClearRetainCheckboxInAllInstances();
+        }
+
+        /// <summary>
+        /// Sets the retain checkbox state for this instance without triggering the Checked/Unchecked events.
+        /// </summary>
+        public void SetRetainCheckboxCheckedSilently(bool isChecked)
+        {
+            // Ensure we're on the UI thread
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => SetRetainCheckboxCheckedSilently(isChecked));
+                return;
+            }
+
+            CheckBox? checkbox = null;
+
+            // Try to find the checkbox by name
+            try
+            {
+                checkbox = this.FindName("PART_RetainContents") as CheckBox;
+            }
+            catch
+            {
+                // FindName might fail in some scenarios
+            }
+
+            // If FindName didn't work, search the visual tree directly
+            if (checkbox == null)
+            {
+                checkbox = FindVisualChild<CheckBox>(this, "PART_RetainContents");
+            }
+
+            if (checkbox != null)
+            {
+                // Temporarily disable event handlers
+                checkbox.Checked -= PART_RetainContents_Checked;
+                checkbox.Unchecked -= PART_RetainContents_Unchecked;
+
+                try
+                {
+                    // Set the property using SetCurrentValue to avoid property change notifications
+                    checkbox.SetCurrentValue(ToggleButton.IsCheckedProperty, isChecked);
+                }
+                finally
+                {
+                    // Re-add event handlers even if setting the value failed
+                    checkbox.Checked += PART_RetainContents_Checked;
+                    checkbox.Unchecked += PART_RetainContents_Unchecked;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper to find a CheckBox in the visual tree by name.
+        /// </summary>
+        private static T? FindVisualChild<T>(DependencyObject parent, string name) where T : FrameworkElement
+        {
+            if (parent == null) return null;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t && t.Name == name)
+                {
+                    return t;
+                }
+
+                var result = FindVisualChild<T>(child, name);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Marks this instance as displaying retained contents.
+        /// </summary>
+        public void MarkAsDisplayingRetainedContents()
+        {
+            SetRetainCheckboxCheckedSilently(true);
+        }
+
+        /// <summary>
+        /// Clears the retain checkbox in the specified instance without triggering events.
+        /// </summary>
+        private static void ClearCheckboxInInstance(FilmStripControl instance)
+        {
+            if (instance != null)
+            {
+                instance.SetRetainCheckboxCheckedSilently(false);
+            }
+        }
+
+        /// <summary>
+        /// Clears the retain checkbox in all instances except the specified one.
+        /// </summary>
+        public static void ClearRetainCheckboxInAllOtherInstances(FilmStripControl exceptInstance)
+        {
+            lock (_allInstances)
+            {
+                foreach (var instance in _allInstances)
+                {
+                    if (instance != exceptInstance)
+                    {
+                        ClearCheckboxInInstance(instance);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clears the retain checkbox in all instances globally.
+        /// </summary>
+        private static void ClearRetainCheckboxInAllInstances()
+        {
+            lock (_allInstances)
+            {
+                foreach (var instance in _allInstances)
+                {
+                    ClearCheckboxInInstance(instance);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clears the retain checkbox on this specific instance only, without affecting global retain state or other windows.
+        /// Used when an explicit filmstrip target is sent to this window.
+        /// </summary>
+        public void ClearRetainCheckboxOnThisInstanceOnly()
+        {
+            SetRetainCheckboxCheckedSilently(false);
+        }
+
+        /// <summary>
+        /// Returns a public accessor to the FilmStripControl instance from a FilmStripWindow.
+        /// </summary>
+        public static FilmStripControl? GetControlFromWindow(Window? window)
+        {
+            if (window is FilmStripWindow fsw)
+            {
+                return fsw.Content as FilmStripControl;
+            }
+            return null;
+        }
     }
 }

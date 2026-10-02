@@ -1519,6 +1519,9 @@ namespace Cloudless
                         param = string.Join(' ', tokens.Skip(2));
                 }
 
+                // Determine if this is an explicit target (not basic "fs" or implied directory)
+                bool isExplicitTarget = tokens.Length >= 2 && source != "fs" && source != "filmstrip";
+
                 string[] filesToShow = Array.Empty<string>();
 
                 if (source == "fs" || source == "filmstrip")
@@ -1530,7 +1533,15 @@ namespace Cloudless
                 {
                     if (source == "d" || source == "directory")
                     {
-                        filesToShow = imageFiles ?? Array.Empty<string>();
+                        // For directory source, only use retained contents if NOT an explicit target and retain is checked
+                        if (!isExplicitTarget && FilmStripControl.HasRetainedContents)
+                        {
+                            filesToShow = FilmStripControl.GetRetainedContents ?? Array.Empty<string>();
+                        }
+                        else
+                        {
+                            filesToShow = imageFiles ?? Array.Empty<string>();
+                        }
                     }
                     else if (source == "r" || source == "recent")
                     {

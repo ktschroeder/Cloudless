@@ -44,16 +44,52 @@ namespace Cloudless
             }
             else
             {
+                // Reset the retain checkbox before showing the window
+                // This ensures it starts in the correct state for explicit targets
+                var filmStripControl = FilmStripControl.GetControlFromWindow(_filmStripWindow);
+                if (filmStripControl != null)
+                {
+                    // Always reset to unchecked when showing the filmstrip
+                    filmStripControl.ClearRetainCheckboxOnThisInstanceOnly();
+                }
+
                 // Align to owner and attach handlers so it follows owner movements
                 double desiredHeight = 140;
                 _filmStripWindow.AlignToOwner(this, desiredHeight);
                 _filmStripWindow.AttachOwnerHandlers(this);
                 _filmStripWindow.Show();
 
+                // If this is an explicit target, the checkbox is already cleared above
+                // If it's NOT an explicit target, we may need to check for retained contents
                 if (!skipPopulation)
                 {
-                    _filmStripImages = imageFiles ?? Array.Empty<string>();
+                    // If retained contents exist, use them instead of directory contents
+                    bool isUsingRetainedContents = FilmStripControl.HasRetainedContents;
+                    if (isUsingRetainedContents)
+                    {
+                        _filmStripImages = FilmStripControl.GetRetainedContents ?? Array.Empty<string>();
+                        NonstandardFilmstrip = true;
+                    }
+                    else
+                    {
+                        _filmStripImages = imageFiles ?? Array.Empty<string>();
+                        NonstandardFilmstrip = false;
+                    }
+
                     _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager);
+
+                    // If using retained contents, mark the checkbox as checked immediately
+                    if (isUsingRetainedContents)
+                    {
+                        if (filmStripControl == null)
+                        {
+                            filmStripControl = FilmStripControl.GetControlFromWindow(_filmStripWindow);
+                        }
+                        if (filmStripControl != null)
+                        {
+                            filmStripControl.MarkAsDisplayingRetainedContents();
+                        }
+                    }
                 }
             }
         }
@@ -69,6 +105,8 @@ namespace Cloudless
         {
             NonstandardFilmstrip = true;
             _filmStripImages = files;
+            // Any nonstandard (explicit) population overrides retained contents in this window
+            ClearFilmstripRetainCheckbox();
             _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager);
         }
 
@@ -98,6 +136,27 @@ namespace Cloudless
             if (_filmStripWindow != null && _filmStripWindow.CloseAfterSelect)
             {
                 _filmStripWindow.Hide();
+            }
+        }
+
+        /// <summary>
+        /// Clears the retain checkbox in the currently visible filmstrip only.
+        /// Called when an explicit target is applied to clear retain in the receiving window only.
+        /// Does not affect other windows or global retain state.
+        /// </summary>
+        private void ClearFilmstripRetainCheckbox()
+        {
+            if (_filmStripWindow != null)
+            {
+                var filmStripControl = FilmStripControl.GetControlFromWindow(_filmStripWindow);
+                if (filmStripControl != null)
+                {
+                    // Use main window dispatcher to ensure proper synchronization
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        filmStripControl.ClearRetainCheckboxOnThisInstanceOnly();
+                    }, System.Windows.Threading.DispatcherPriority.Send);
+                }
             }
         }
     }
