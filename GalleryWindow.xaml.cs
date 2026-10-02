@@ -276,10 +276,11 @@ namespace Cloudless
             if (sender is FrameworkElement fe &&
                 fe.DataContext is GalleryItem item)
             {
-                if (Owner is MainWindow mw)
-                    await mw.OpenRecentFile(item.FilePath ?? "");
-
                 Close();
+                if (Owner is MainWindow mw)
+                {
+                    await mw.OpenRecentFile(item.FilePath ?? "");
+                }
             }
         }
 
