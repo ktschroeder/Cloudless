@@ -516,48 +516,43 @@ namespace Cloudless
                 TabScrollCtrl = false;
             }
 
+            if (TryGetTagAutocompleteContext(_tbTextPrev, out string tagPrefix, out string tagQuery))
+            {
+                if (!TabScroll)
+                {
+                    var matchingTags = TagManager.Instance.GetAllTags()
+                        .Where(tag => tag.Contains(tagQuery, StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(tag => tag)
+                        .ToList();
+
+                    AutocompleteCandidates.Clear();
+                    foreach (var tag in matchingTags)
+                        AutocompleteCandidates.AddLast(tag);
+
+                    TabScroll = true;
+                }
+
+                // Ctrl+Tab has no recency behavior for tags; it cycles the same tag list.
+                CycleToNextAutocompleteCandidate(tagPrefix, reverse: shiftPressed);
+                return;
+            }
+
             string foundCommandBase = null;
             string[] workspaceCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p", "fs ws", "fs preview", "fs p", "fs workspace", "filmstrip ws", "filmstrip preview", "filmstrip p", "filmstrip workspace" };
-            string[] tagCommandBases = { 
-                "tag add", "tag a", "tag remove", "tag r", "tag destroy",
-                "fs tag", "fs t", "open tag", "open t", "open! tag", "open! t", "gallery tag", "gallery t",
-                "t add", "t a", "t remove", "t r", "t destroy"
-            };
 
             // Check workspace commands first
             foreach (string tcb in workspaceCommandBases) 
             { 
-                 var _tb_for_check = GetCommandTextBox();
-                 if (_tb_for_check != null && _tb_for_check.Text.ToLower().StartsWith($"{tcb} "))
-                 {
-                     foundCommandBase = tcb;
-                     break;
-                 }
-             }
-
-            // If no workspace command found, check tag commands
-            if (foundCommandBase == null)
-            {
-                foreach (string tcb in tagCommandBases)
+                if (_tbTextPrev.StartsWith($"{tcb} ", StringComparison.OrdinalIgnoreCase))
                 {
-                    var _tb_for_check = GetCommandTextBox();
-                    if (_tb_for_check != null && _tb_for_check.Text.ToLower().StartsWith($"{tcb} "))
-                    {
-                        foundCommandBase = tcb;
-                        break;
-                    }
+                    foundCommandBase = tcb;
+                    break;
                 }
             }
 
             if (foundCommandBase != null)
             {
                 string commandBase = $"{foundCommandBase} ";
-
-                // Determine if this is a workspace command or a tag command
-                bool isWorkspaceCommand = workspaceCommandBases.Contains(foundCommandBase);
-                bool isTagNameCommand = foundCommandBase.Contains("add") || foundCommandBase.Contains("a ") || 
-                                       foundCommandBase.Contains("remove") || foundCommandBase.Contains("r ") || 
-                                       foundCommandBase.Contains("destroy");
 
                 if (!TabScroll && !controlPressed)
                 {
@@ -566,77 +561,117 @@ namespace Cloudless
                     if (_tb_for_query != null)
                         query = _tb_for_query.Text.Length == commandBase.Length ? "" : _tb_for_query.Text.Substring(commandBase.Length);
 
-                    if (isWorkspaceCommand)
+                    // For workspace commands, autocomplete with workspace names
+                    var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
+                    wsNames ??= new List<string>();
+                    wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws) && ws.ToLower().Contains(query.ToLower())).Order().ToList();
+                    AutocompleteCandidates.Clear();
+                    foreach (var wsName in wsNames)
                     {
-                        // For workspace commands, autocomplete with workspace names
-                        var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
-                        wsNames ??= new List<string>();
-                        wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws) && ws.ToLower().Contains(query.ToLower())).Order().ToList();
-                        AutocompleteCandidates.Clear();
-                        foreach (var wsName in wsNames)
-                        {
-                            AutocompleteCandidates.AddLast(wsName);
-                        }
-                    }
-                    else if (isTagNameCommand)
-                    {
-                        // For tag name commands and tag query commands, autocomplete with tag names
-                        var tagManager = TagManager.Instance;
-                        var allTags = tagManager.GetAllTags();
-                        var matchingTags = allTags.Where(tag => tag.ToLower().Contains(query.ToLower())).OrderBy(t => t).ToList();
-
-                        AutocompleteCandidates.Clear();
-                        foreach (var tag in matchingTags)
-                        {
-                            AutocompleteCandidates.AddLast(tag);
-                        }
+                        AutocompleteCandidates.AddLast(wsName);
                     }
                     TabScroll = true;
                 }
                 else if (!TabScrollCtrl && controlPressed)
                 {
-                    if (isWorkspaceCommand)
+                    // Ctrl+Tab cycles workspace recency.
+                    var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
+                    wsNames ??= new List<string>();
+                    var recentNames = GetRecentlySavedAndLoadedWorkspaceNames();
+                    wsNames = recentNames.Where(ws => wsNames.Contains(ws)).ToList();
+                    wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();
+                    AutocompleteCandidatesCtrl.Clear();
+                    foreach (var wsName in wsNames)
                     {
-                        // For workspace commands, Ctrl+Tab cycles through recency
-                        var wsNames = Directory.GetFiles(workspaceFilesPath)?.Where(f => f.ToLower().EndsWith(".cloudless"))?.Select(f => Path.GetFileNameWithoutExtension(f))?.ToList();
-                        wsNames ??= new List<string>();
-                        var recentNames = GetRecentlySavedAndLoadedWorkspaceNames();
-                        wsNames = recentNames.Where(ws => wsNames.Contains(ws)).ToList();  // filter out names not present in recent history
-                        wsNames = wsNames.Where(ws => !IsReservedWorkspaceName(ws)).ToList();  // filter out system/reserved workspace names
-                        AutocompleteCandidatesCtrl.Clear();
-                        foreach (var wsName in wsNames)
-                        {
-                            AutocompleteCandidatesCtrl.AddFirst(wsName);
-                        }
-                    }
-                    else
-                    {
-                        // For tag commands, Ctrl+Tab doesn't cycle through recency - just use regular candidates
-                        if (isTagNameCommand)
-                        {
-                            var tagManager = TagManager.Instance;
-                            var allTags = tagManager.GetAllTags();
-                            AutocompleteCandidatesCtrl.Clear();
-                            foreach (var tag in allTags.OrderBy(t => t))
-                            {
-                                AutocompleteCandidatesCtrl.AddFirst(tag);
-                            }
-                        }
-                        else
-                        {
-                            var tagManager = TagManager.Instance;
-                            var allTags = tagManager.GetAllTags();
-                            AutocompleteCandidatesCtrl.Clear();
-                            foreach (var tag in allTags.OrderBy(t => t))
-                            {
-                                AutocompleteCandidatesCtrl.AddFirst(tag);
-                            }
-                        }
+                        AutocompleteCandidatesCtrl.AddFirst(wsName);
                     }
                     TabScrollCtrl = true;
                 }
                 CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed, recency: controlPressed);
             }
+        }
+
+        private bool TryGetTagAutocompleteContext(string text, out string completionPrefix, out string query)
+        {
+            completionPrefix = "";
+            query = "";
+
+            string[] tagListCommandBases =
+            {
+                "tag add", "tag a", "tag remove", "tag r", "tag destroy",
+                "t add", "t a", "t remove", "t r", "t destroy"
+            };
+            string[] tagQueryCommandBases =
+            {
+                "fs tag", "fs t", "filmstrip tag", "filmstrip t",
+                "open tag", "open t", "o tag", "o t",
+                "open! tag", "open! t", "o! tag", "o! t",
+                "gallery tag", "gallery t"
+            };
+
+            foreach (string commandBase in tagListCommandBases)
+            {
+                string prefix = commandBase + " ";
+                if (!text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string args = text.Substring(prefix.Length);
+                int lastWhitespace = args.LastIndexOfAny(new[] { ' ', '\t', '\r', '\n' });
+                if (args.Length == 0 || char.IsWhiteSpace(args[^1]))
+                {
+                    completionPrefix = text;
+                }
+                else
+                {
+                    completionPrefix = text.Substring(0, prefix.Length + lastWhitespace + 1);
+                    query = args.Substring(lastWhitespace + 1);
+                }
+
+                return true;
+            }
+
+            foreach (string commandBase in tagQueryCommandBases)
+            {
+                string prefix = commandBase + " ";
+                if (!text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string args = text.Substring(prefix.Length);
+                string trimmedArgs = args.TrimEnd();
+                bool hasTrailingWhitespace = trimmedArgs.Length < args.Length;
+                if (trimmedArgs.Length == 0)
+                {
+                    completionPrefix = text;
+                    return true;
+                }
+
+                int lastDelimiter = trimmedArgs.LastIndexOfAny(new[] { ' ', '\t', '\r', '\n', '(' });
+                string lastToken = trimmedArgs.Substring(lastDelimiter + 1);
+                bool isOperator = lastToken.Equals("AND", StringComparison.OrdinalIgnoreCase) ||
+                                  lastToken.Equals("OR", StringComparison.OrdinalIgnoreCase) ||
+                                  lastToken.Equals("NOT", StringComparison.OrdinalIgnoreCase);
+
+                if (lastToken == "(")
+                {
+                    completionPrefix = text;
+                    return true;
+                }
+
+                if (isOperator)
+                {
+                    completionPrefix = hasTrailingWhitespace ? text : text + " ";
+                    return true;
+                }
+
+                if (hasTrailingWhitespace || lastToken.EndsWith(')'))
+                    return false;
+
+                completionPrefix = text.Substring(0, prefix.Length + lastDelimiter + 1);
+                query = lastToken;
+                return true;
+            }
+
+            return false;
         }
 
         private void CycleToNextAutocompleteCandidate(string commandBase, bool reverse = false, bool recency = false)
