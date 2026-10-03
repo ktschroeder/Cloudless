@@ -1527,11 +1527,59 @@ namespace Cloudless
                 string countStr = cmd.Substring(2).Trim();
                 if (int.TryParse(countStr, out int count) && count > 0)
                 {
-                    var paths = recentFiles?.Take(count) ?? new List<string>();
+                    var paths = recentFiles?.Take(count).ToArray() ?? Array.Empty<string>();
                     foreach (var path in paths)
                     {
-                        var newWindow = new MainWindow(path);
-                        newWindow.Show();
+                        if (!File.Exists(path))
+                            continue;
+
+                        try
+                        {
+                            var newWindow = await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                var window = new MainWindow(path, workspaceLoad: true);
+                                window.WorkspaceLoadInProgress = true;
+                                return window;
+                            });
+
+                            var loadTask = await Application.Current.Dispatcher.InvokeAsync(() => newWindow.LoadImage(path, true));
+                            await loadTask;
+                            await Application.Current.Dispatcher.InvokeAsync(() => newWindow.Show());
+                            await newWindow.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                            if (newWindow.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                            {
+                                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                                while (stopwatch.ElapsedMilliseconds < 2000)
+                                {
+                                    try
+                                    {
+                                        var dimensionsTask = await newWindow.Dispatcher.InvokeAsync(() =>
+                                            (newWindow.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer)?.GetDimensions());
+
+                                        if (dimensionsTask != null)
+                                        {
+                                            var dimensions = await dimensionsTask.WaitAsync(TimeSpan.FromMilliseconds(250)).ConfigureAwait(false);
+                                            if (dimensions != null)
+                                                break;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"Recent-media video dimension polling error: {ex}");
+                                    }
+
+                                    await Task.Delay(100).ConfigureAwait(false);
+                                }
+                            }
+
+                            await newWindow.Dispatcher.InvokeAsync(() => newWindow.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
+                            await newWindow.Dispatcher.InvokeAsync(() => newWindow.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
+                        }
+                        catch (Exception ex)
+                        {
+                            Message($"Failed to open recent media '{path}' in a new window: {ex.Message}");
+                        }
                     }
                     return true;
                 }

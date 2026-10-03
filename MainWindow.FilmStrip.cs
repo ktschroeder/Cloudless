@@ -114,8 +114,53 @@ namespace Cloudless
         {
             if (openInNewWindow)
             {
-                var w = new MainWindow(path);
-                w.Show();
+                try
+                {
+                    var window = await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var newWindow = new MainWindow(path, workspaceLoad: true);
+                        newWindow.WorkspaceLoadInProgress = true;
+                        return newWindow;
+                    });
+
+                    var loadTask = await window.Dispatcher.InvokeAsync(() => window.LoadImage(path, true));
+                    await loadTask;
+                    await window.Dispatcher.InvokeAsync(() => window.Show());
+                    await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                    if (window.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                    {
+                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                        while (stopwatch.ElapsedMilliseconds < 2000)
+                        {
+                            try
+                            {
+                                var dimensionsTask = await window.Dispatcher.InvokeAsync(() =>
+                                    (window.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer)?.GetDimensions());
+
+                                if (dimensionsTask != null)
+                                {
+                                    var dimensions = await dimensionsTask.WaitAsync(TimeSpan.FromMilliseconds(250));
+                                    if (dimensions != null)
+                                        break;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Filmstrip video dimension polling error: {ex}");
+                            }
+
+                            await Task.Delay(100);
+                        }
+                    }
+
+                    await window.Dispatcher.InvokeAsync(() => window.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
+                    await window.Dispatcher.InvokeAsync(() => window.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
+                }
+                catch (Exception ex)
+                {
+                    Message($"Failed to open filmstrip media '{path}' in a new window: {ex.Message}");
+                }
             }
             else
             {
