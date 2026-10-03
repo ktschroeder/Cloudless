@@ -232,7 +232,12 @@ namespace Cloudless
                 {
                     IsVideo = VideoThumbnailOverlay.IsVlcVideoPath(path)
                 });
+                var animatedOverlay = new AnimatedThumbnailOverlay();
+                thumbnailGrid.Children.Add(animatedOverlay);
                 border.Child = thumbnailGrid;
+
+                if (AnimatedImageDetector.IsSupportedAnimatedImagePath(path))
+                    _ = SetAnimatedOverlayAsync(path, animatedOverlay, cancellationToken);
 
                 border.MouseLeftButtonUp += (s, e) =>
                 {
@@ -367,6 +372,19 @@ namespace Cloudless
                 await Dispatcher.InvokeAsync(() => PART_ScrollViewer.ScrollToLeftEnd());
                 UpdateOverflowIndicators();
             }
+        }
+
+        private async Task SetAnimatedOverlayAsync(string path, AnimatedThumbnailOverlay overlay, CancellationToken cancellationToken)
+        {
+            bool isAnimated = await AnimatedImageDetector.IsAnimatedAsync(path);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    overlay.IsAnimated = isAnimated;
+            }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
@@ -504,7 +522,7 @@ namespace Cloudless
                 .ToArray();
         }
 
-        private static string GetTooltipFileName(string path)
+        internal static string GetTooltipFileName(string path)
         {
             const int maxLength = 48;
             string fileName = Path.GetFileName(path);

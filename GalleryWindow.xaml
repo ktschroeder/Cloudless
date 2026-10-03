@@ -99,12 +99,16 @@
 
                                     <StackPanel MouseLeftButtonUp="Thumbnail_Click">
 
-                                        <Grid Width="128" Height="128" Margin="4">
+                                        <Grid Width="128" Height="128" Margin="4"
+                                              ToolTip="{Binding TooltipFileName}"
+                                              ToolTipService.InitialShowDelay="500"
+                                              ToolTipService.BetweenShowDelay="0">
                                             <Image Source="{Binding Thumbnail}"
                                                    Width="128"
                                                    Height="128"
                                                    Stretch="UniformToFill"/>
                                             <local:VideoThumbnailOverlay IsVideo="{Binding IsVlcVideo}"/>
+                                            <local:AnimatedThumbnailOverlay IsAnimated="{Binding IsAnimated}"/>
                                         </Grid>
 
                                         <TextBlock Text="{Binding FileName}"

@@ -16,7 +16,22 @@ namespace Cloudless
     {
         public string? FilePath { get; init; }
         public string? FileName => Path.GetFileName(FilePath);
+        public string TooltipFileName => FilmStripControl.GetTooltipFileName(FilePath ?? string.Empty);
         public bool IsVlcVideo => VideoThumbnailOverlay.IsVlcVideoPath(FilePath);
+
+        private bool _isAnimated;
+        public bool IsAnimated
+        {
+            get => _isAnimated;
+            set
+            {
+                if (_isAnimated != value)
+                {
+                    _isAnimated = value;
+                    PropertyChanged?.Invoke(this, new(nameof(IsAnimated)));
+                }
+            }
+        }
 
         private ImageSource? _thumbnail;
         public ImageSource? Thumbnail
@@ -193,11 +208,14 @@ namespace Cloudless
         private async Task LoadAndSetThumbnailAsync(GalleryItem item, int width, int height)
         {
             ImageSource? thumb = null;
+            Task<bool>? animationTask = null;
             try
             {
                 string path = item.FilePath ?? "";
                 string ext = Path.GetExtension(path)?.ToLowerInvariant() ?? "";
                 bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
+                if (AnimatedImageDetector.IsSupportedAnimatedImagePath(path))
+                    animationTask = AnimatedImageDetector.IsAnimatedAsync(path);
 
                 if (isVideo)
                 {
@@ -240,6 +258,12 @@ namespace Cloudless
             if (thumb != null)
             {
                 await Dispatcher.InvokeAsync(() => item.Thumbnail = thumb);
+            }
+
+            if (animationTask != null)
+            {
+                bool isAnimated = await animationTask;
+                await Dispatcher.InvokeAsync(() => item.IsAnimated = isAnimated);
             }
         }
 
