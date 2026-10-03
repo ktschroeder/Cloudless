@@ -16,6 +16,7 @@ namespace Cloudless
     {
         public string? FilePath { get; init; }
         public string? FileName => Path.GetFileName(FilePath);
+        public bool IsVlcVideo => VideoThumbnailOverlay.IsVlcVideoPath(FilePath);
 
         private ImageSource? _thumbnail;
         public ImageSource? Thumbnail

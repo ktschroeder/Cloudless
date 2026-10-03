@@ -222,7 +222,17 @@ namespace Cloudless
                     SnapsToDevicePixels = true
                 };
 
-                border.Child = img;
+                var thumbnailGrid = new Grid
+                {
+                    Width = thumbWidth,
+                    Height = thumbHeight
+                };
+                thumbnailGrid.Children.Add(img);
+                thumbnailGrid.Children.Add(new VideoThumbnailOverlay
+                {
+                    IsVideo = VideoThumbnailOverlay.IsVlcVideoPath(path)
+                });
+                border.Child = thumbnailGrid;
 
                 border.MouseLeftButtonUp += (s, e) =>
                 {
@@ -398,10 +408,12 @@ namespace Cloudless
 
             foreach (var child in PART_Panel.Children)
             {
-                if (child is Border b && b.Child is Image img)
+                if (child is Border b && b.Child is Grid thumbnailGrid && thumbnailGrid.Children.OfType<Image>().FirstOrDefault() is Image img)
                 {
                     b.Width = thumbWidth;
                     b.Height = thumbHeight;
+                    thumbnailGrid.Width = thumbWidth;
+                    thumbnailGrid.Height = thumbHeight;
                     img.Width = thumbWidth;
                     img.Height = thumbHeight;
                 }
