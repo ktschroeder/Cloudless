@@ -262,6 +262,7 @@ namespace Cloudless
             if (imageInfoMenuItem != null)
                 imageInfoMenuItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
 
+            UpdateVideoTrackMenus();
             await UpdateZoomMenuHeaderAsync();
 
             await UpdateRecentFilesMenu(isStartUp);
@@ -296,6 +297,78 @@ namespace Cloudless
                 }
             }
         }
+
+        private void UpdateVideoTrackMenus()
+        {
+            if (_audioTrackMenu == null || _subtitleTrackMenu == null)
+                return;
+
+            _audioTrackMenu.Items.Clear();
+            _subtitleTrackMenu.Items.Clear();
+
+            if (VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer videoPlayer)
+            {
+                _audioTrackMenu.Items.Add(new MenuItem { Header = "No video loaded", IsEnabled = false });
+                _subtitleTrackMenu.Items.Add(new MenuItem { Header = "No video loaded", IsEnabled = false });
+                _audioTrackMenu.IsEnabled = false;
+                _subtitleTrackMenu.IsEnabled = false;
+                return;
+            }
+
+            var audioTracks = videoPlayer.GetAudioTracks().ToList();
+            if (audioTracks.Any(track => track.Id != -1))
+            {
+                if (audioTracks.All(track => track.Id != -1))
+                    audioTracks.Insert(0, new Cloudless.PluginBase.MediaTrackInfo(-1, "Off"));
+
+                int currentAudioTrackId = videoPlayer.GetCurrentAudioTrackId();
+                foreach (var track in audioTracks)
+                    _audioTrackMenu.Items.Add(CreateVideoTrackMenuItem(track, currentAudioTrackId, isSubtitle: false));
+                _audioTrackMenu.IsEnabled = true;
+            }
+            else
+            {
+                _audioTrackMenu.Items.Add(new MenuItem { Header = "No audio tracks", IsEnabled = false });
+                _audioTrackMenu.IsEnabled = false;
+            }
+
+            var subtitleTracks = videoPlayer.GetSubtitleTracks().ToList();
+            if (subtitleTracks.All(track => track.Id != -1))
+                subtitleTracks.Insert(0, new Cloudless.PluginBase.MediaTrackInfo(-1, "Off"));
+
+            int currentSubtitleTrackId = videoPlayer.GetCurrentSubtitleTrackId();
+            foreach (var track in subtitleTracks)
+                _subtitleTrackMenu.Items.Add(CreateVideoTrackMenuItem(track, currentSubtitleTrackId, isSubtitle: true));
+            _subtitleTrackMenu.IsEnabled = true;
+        }
+
+        private MenuItem CreateVideoTrackMenuItem(Cloudless.PluginBase.MediaTrackInfo track, int currentTrackId, bool isSubtitle)
+        {
+            var item = new MenuItem
+            {
+                Header = string.IsNullOrWhiteSpace(track.Name) ? $"Track {track.Id}" : track.Name,
+                IsCheckable = true,
+                IsChecked = track.Id == currentTrackId,
+                Tag = track.Id
+            };
+
+            item.Click += (sender, _) =>
+            {
+                if (sender is not MenuItem selectedItem || VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer currentPlayer)
+                    return;
+
+                int trackId = (int)selectedItem.Tag;
+                bool succeeded = isSubtitle
+                    ? currentPlayer.SetSubtitleTrack(trackId)
+                    : currentPlayer.SetAudioTrack(trackId);
+                if (!succeeded)
+                    Message($"Failed to select {(isSubtitle ? "subtitle" : "audio")} track.");
+
+                UpdateVideoTrackMenus();
+            };
+
+            return item;
+        }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {
             OpenMessageHistory();
@@ -312,6 +385,7 @@ namespace Cloudless
         private async void ShowContextMenu()
         {
             await UpdateZoomMenuHeaderAsync();
+            UpdateVideoTrackMenus();
             ContextMenu menu = ImageContextMenu;
             menu.PlacementTarget = this;
             menu.HorizontalOffset = 0;

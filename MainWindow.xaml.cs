@@ -123,6 +123,8 @@ namespace Cloudless
         public TranslateTransform? imageTranslateTransform = new TranslateTransform();
 
         private TextBlock? NoImageMessage = null;
+        private MenuItem? _audioTrackMenu;
+        private MenuItem? _subtitleTrackMenu;
 
         private ImageAnimationController? animationController;
 
@@ -927,6 +929,12 @@ namespace Cloudless
             // Ensure submenu uses full-width items panel so separators stretch
             zoomMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
             cm.Items.Add(zoomMenu);
+
+            _audioTrackMenu = new MenuItem { Header = "Audio Track", IsEnabled = false };
+            cm.Items.Add(_audioTrackMenu);
+
+            _subtitleTrackMenu = new MenuItem { Header = "Subtitle Track", IsEnabled = false };
+            cm.Items.Add(_subtitleTrackMenu);
 
             // Recent files menu (populated dynamically)
             var recentMenu = new MenuItem { Header = "Recent Images" };

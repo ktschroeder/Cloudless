@@ -1253,6 +1253,7 @@ namespace Cloudless
             if (!SkipNextContextMenu)
             {
                 await UpdateZoomMenuHeaderAsync();
+                UpdateVideoTrackMenus();
                 // Get mouse position in screen coordinates
                 Point mousePos = e.GetPosition(this);
                 

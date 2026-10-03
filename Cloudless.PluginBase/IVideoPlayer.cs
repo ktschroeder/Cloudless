@@ -60,6 +60,13 @@ namespace Cloudless.PluginBase
         /// </summary>
         bool HasAudio();
 
+        IReadOnlyList<MediaTrackInfo> GetAudioTracks();
+        IReadOnlyList<MediaTrackInfo> GetSubtitleTracks();
+        int GetCurrentAudioTrackId();
+        int GetCurrentSubtitleTrackId();
+        bool SetAudioTrack(int trackId);
+        bool SetSubtitleTrack(int trackId);
+
         void SetVolume(double volume);
         double GetVolume();
 
@@ -78,6 +85,8 @@ namespace Cloudless.PluginBase
         void SetAutoRestartAllowed(bool allowed);
         TimeSpan? GetCustomEnd();
     }
+
+    public sealed record MediaTrackInfo(int Id, string Name);
 
     /// <summary>
     /// Event args for video time changed events

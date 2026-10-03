@@ -1,7 +1,9 @@
 using Cloudless.PluginBase;
 using LibVLCSharp.Shared;
+using LibVLCSharp.Shared.Structures;
 using LibVLCSharp.WPF;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -1044,6 +1046,28 @@ namespace Cloudless.VlcPlugin
                 return false;
             }
         }
+
+        public IReadOnlyList<MediaTrackInfo> GetAudioTracks() => GetVideoTracks(_mediaPlayer?.AudioTrackDescription);
+
+        public IReadOnlyList<MediaTrackInfo> GetSubtitleTracks() => GetVideoTracks(_mediaPlayer?.SpuDescription);
+
+        private static IReadOnlyList<MediaTrackInfo> GetVideoTracks(IEnumerable<TrackDescription>? descriptions)
+        {
+            if (descriptions == null)
+                return Array.Empty<MediaTrackInfo>();
+
+            return descriptions
+                .Select(track => new MediaTrackInfo(track.Id, track.Name ?? string.Empty))
+                .ToArray();
+        }
+
+        public int GetCurrentAudioTrackId() => _mediaPlayer?.AudioTrack ?? -1;
+
+        public int GetCurrentSubtitleTrackId() => _mediaPlayer?.Spu ?? -1;
+
+        public bool SetAudioTrack(int trackId) => _mediaPlayer?.SetAudioTrack(trackId) == true;
+
+        public bool SetSubtitleTrack(int trackId) => _mediaPlayer?.SetSpu(trackId) == true;
 
         public void SetVolume(double volume)
         {
