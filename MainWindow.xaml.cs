@@ -228,6 +228,7 @@ namespace Cloudless
 
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
             {
+                SaveCurrentVideoPosition();
                 videoPlayer.Stop();
                 videoPlayer.Dispose();
             }

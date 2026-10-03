@@ -89,6 +89,9 @@
     <Setting Name="StartVideosMuted" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="ResumeVideosFromPreviousPosition" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
     <Setting Name="UseManualVideoControls" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>

@@ -49,6 +49,7 @@ namespace Cloudless
         public bool FilmStripCloseAfterward { get; private set; }
         public bool FilmStripOpenImageInNewWindow { get; private set; }
         public bool StartVideosMuted { get; private set; }
+        public bool ResumeVideosFromPreviousPosition { get; private set; }
         public bool UseManualVideoControls { get; private set; }
 
         private MainWindow _mw;
@@ -134,6 +135,10 @@ namespace Cloudless
             var currentStartVideosMuted = Cloudless.Properties.Settings.Default.StartVideosMuted;
             StartVideosMutedCheckbox.IsChecked = currentStartVideosMuted;
             StartVideosMuted = currentStartVideosMuted;
+
+            var currentResumeVideosFromPreviousPosition = Cloudless.Properties.Settings.Default.ResumeVideosFromPreviousPosition;
+            ResumeVideosFromPreviousPositionCheckbox.IsChecked = currentResumeVideosFromPreviousPosition;
+            ResumeVideosFromPreviousPosition = currentResumeVideosFromPreviousPosition;
 
             var currentUseManualVideoControls = Cloudless.Properties.Settings.Default.UseManualVideoControls;
             UseManualVideoControlsCheckbox.IsChecked = currentUseManualVideoControls;
@@ -393,6 +398,7 @@ namespace Cloudless
             FilmStripCloseAfterward = FilmStripCloseAfterwardCheckbox.IsChecked ?? false;
             FilmStripOpenImageInNewWindow = FilmStripOpenImageInNewWindowCheckbox.IsChecked ?? false;
             StartVideosMuted = StartVideosMutedCheckbox.IsChecked ?? false;
+            ResumeVideosFromPreviousPosition = ResumeVideosFromPreviousPositionCheckbox.IsChecked ?? false;
             UseManualVideoControls = UseManualVideoControlsCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);

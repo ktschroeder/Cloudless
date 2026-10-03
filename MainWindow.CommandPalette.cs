@@ -2088,6 +2088,25 @@ namespace Cloudless
                     return true;
                 }
 
+                if (cmd.Equals("seek p") || cmd.Equals("seek previous"))
+                {
+                    TimeSpan? previousPosition = VideoPlaybackPositionStore.GetPosition(currentlyDisplayedImagePath);
+                    if (!previousPosition.HasValue)
+                    {
+                        Message("No previous closed position is saved for this video.");
+                        return true;
+                    }
+
+                    TimeSpan target = previousPosition.Value;
+                    TimeSpan duration = vp.GetDuration();
+                    if (duration > TimeSpan.Zero && target > duration)
+                        target = duration;
+
+                    vp.SeekTo(target);
+                    Message($"Seeking to previous closed position: {FormatTimeSpan(target)}");
+                    return true;
+                }
+
                 if (cmd.Equals("seek ?"))
                 {
                     TimeSpan position = vp.GetPosition();

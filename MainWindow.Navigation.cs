@@ -66,6 +66,7 @@ namespace Cloudless
                 Cloudless.Properties.Settings.Default.FilmStripCloseAfterward = configWindow.FilmStripCloseAfterward;             //
                 Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow = configWindow.FilmStripOpenImageInNewWindow; //
                 Cloudless.Properties.Settings.Default.StartVideosMuted = configWindow.StartVideosMuted;
+                Cloudless.Properties.Settings.Default.ResumeVideosFromPreviousPosition = configWindow.ResumeVideosFromPreviousPosition;
                 Cloudless.Properties.Settings.Default.UseManualVideoControls = configWindow.UseManualVideoControls;
                 Cloudless.Properties.Settings.Default["Theme"] = configWindow.SelectedTheme ?? "Light";
 

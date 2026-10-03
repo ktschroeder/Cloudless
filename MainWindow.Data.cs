@@ -329,6 +329,7 @@ namespace Cloudless
             {
                 if (index < 0 || imageFiles == null || index >= imageFiles.Length) return;
 
+                SaveCurrentVideoPosition();
                 var uri = new Uri(imageFiles[index]);
 
                 currentlyDisplayedImagePath = uri.LocalPath;
@@ -534,8 +535,10 @@ namespace Cloudless
                                 });
                             }
 
-                                // Start playback without blocking; Play will await the provided postPlayTask which is already started.
-                                _ = player.Play(uri, postPlayTask);  // sync, to avoid thread issues that occurred when using async play method
+                                TimeSpan? resumePosition = Cloudless.Properties.Settings.Default.ResumeVideosFromPreviousPosition
+                                    ? VideoPlaybackPositionStore.GetPosition(uri.LocalPath)
+                                    : null;
+                                _ = PlayVideoWithOptionalResumeAsync(player, uri, postPlayTask, resumePosition);
 
                         }  // TODO else?
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
@@ -674,6 +677,44 @@ namespace Cloudless
                 Message($"Failed to display image: {ex.Message}");
             }
         }
+
+        private void SaveCurrentVideoPosition()
+        {
+            if (VideoHost.Content is IVideoPlayer videoPlayer && !string.IsNullOrWhiteSpace(currentlyDisplayedImagePath))
+                VideoPlaybackPositionStore.SavePosition(currentlyDisplayedImagePath, videoPlayer.GetPosition());
+        }
+
+        private async Task PlayVideoWithOptionalResumeAsync(IVideoPlayer player, Uri uri, Task? postPlayTask, TimeSpan? resumePosition)
+        {
+            try
+            {
+                await player.Play(uri, postPlayTask);
+                if (!resumePosition.HasValue || !ReferenceEquals(VideoHost.Content, player))
+                    return;
+
+                for (int attempt = 0; attempt < 100; attempt++)
+                {
+                    TimeSpan duration = player.GetDuration();
+                    if (duration > TimeSpan.Zero)
+                    {
+                        TimeSpan position = resumePosition.Value > duration ? duration : resumePosition.Value;
+                        player.SeekTo(position);
+                        return;
+                    }
+
+                    await Task.Delay(50);
+                }
+
+                if (ReferenceEquals(VideoHost.Content, player))
+                    Message("Could not resume the video because its duration is not available yet.");
+            }
+            catch (Exception ex)
+            {
+                if (ReferenceEquals(VideoHost.Content, player))
+                    Message($"Failed to play video: {ex.Message}");
+            }
+        }
+
         private void CopyCompressedImageToClipboardAsJpgFile()
         {
             if (ImageDisplay.Source is not BitmapSource bitmapSource)

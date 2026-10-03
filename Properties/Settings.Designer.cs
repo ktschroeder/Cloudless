@@ -368,6 +368,18 @@ namespace Cloudless.Properties {
 
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ResumeVideosFromPreviousPosition {
+            get {
+                return ((bool)(this["ResumeVideosFromPreviousPosition"]));
+            }
+            set {
+                this["ResumeVideosFromPreviousPosition"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool UseManualVideoControls {
             get {
