@@ -30,9 +30,9 @@ namespace Cloudless
                 return;
             }
 
-            if (ImageDisplay.Source == null)
+            if (ImageDisplay.Source == null && VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer)
             {
-                Message("No image loaded");
+                Message("No media loaded");
                 return;
             }
 
@@ -144,16 +144,48 @@ namespace Cloudless
                 selectionRectangleVisual = null;
             }
 
-            // Convert to image coordinates and apply crop
-            if (TryConvertWindowRectToImageCoordinates(windowSelectionRect, out SelectionRectangle selectionData))
+            bool selectionOverContent;
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                selectionOverContent = await IsSelectionOverVideoAsync(windowSelectionRect, videoPlayer);
+            else
+                selectionOverContent = TryConvertWindowRectToImageCoordinates(windowSelectionRect, out _);
+
+            if (selectionOverContent)
             {
                 await ApplyCropToSelection(windowSelectionRect);
                 Message("Crop applied to selection");
             }
             else
             {
-                Message("Selection is outside image bounds"); // TODO unclear edge case where we get here erroneously.
+                Message("Selection is outside the media bounds");
             }
+        }
+
+        private async Task<bool> IsSelectionOverVideoAsync(Rect windowSelectionRect, Cloudless.PluginBase.IVideoPlayer videoPlayer)
+        {
+            var dimensions = await videoPlayer.GetDimensions();
+            double hostWidth = VideoHost.ActualWidth;
+            double hostHeight = VideoHost.ActualHeight;
+            if (dimensions == null || dimensions.Value.Item1 <= 0 || dimensions.Value.Item2 <= 0 || hostWidth <= 0 || hostHeight <= 0)
+                return false;
+
+            double fitScale = Math.Min(hostWidth / dimensions.Value.Item1, hostHeight / dimensions.Value.Item2);
+            double fittedWidth = dimensions.Value.Item1 * fitScale;
+            double fittedHeight = dimensions.Value.Item2 * fitScale;
+            var pan = videoPlayer.GetVideoPan();
+            double zoom = videoPlayer.GetVideoZoom();
+            double centerX = hostWidth / 2;
+            double centerY = hostHeight / 2;
+
+            var videoBoundsInHost = new Rect(
+                centerX + ((hostWidth - fittedWidth) / 2 - centerX) * zoom + pan.Item1,
+                centerY + ((hostHeight - fittedHeight) / 2 - centerY) * zoom + pan.Item2,
+                fittedWidth * zoom,
+                fittedHeight * zoom);
+
+            Rect videoBoundsInWindow = VideoHost.TransformToAncestor(this).TransformBounds(videoBoundsInHost);
+            Rect intersection = Rect.Intersect(windowSelectionRect, videoBoundsInWindow);
+            return !intersection.IsEmpty && intersection.Width > 0 && intersection.Height > 0;
         }
 
         /// <summary>

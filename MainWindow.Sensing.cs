@@ -142,6 +142,8 @@ namespace Cloudless
                 if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
                 {
                     videoPlayer.PanVideoBy(delta.X, delta.Y, !Cloudless.Properties.Settings.Default.DisableSmartZoom);
+                    if (isCropMode)
+                        UpdateCropModeInfo();
                     InvalidateVisual();
                 }
             }
@@ -1034,6 +1036,8 @@ namespace Cloudless
                         video.ResetVideoPanZoom();
                         VideoHost.InvalidateVisual();
                         InvalidateVisual();
+                        if (isCropMode)
+                            UpdateCropModeInfo();
                     }
                     else
                     {

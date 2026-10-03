@@ -70,6 +70,8 @@ namespace Cloudless
         private bool isCropMode;
         private double cropModeStartingImagePosX = 0;
         private double cropModeStartingImagePosY = 0;
+        private double cropModeStartingVideoPanX = 0;
+        private double cropModeStartingVideoPanY = 0;
         private double cropModeStartingWindowWidth = 0;
         private double cropModeStartingWindowHeight = 0;
         private double cropModeStartingWindowTop = 0;

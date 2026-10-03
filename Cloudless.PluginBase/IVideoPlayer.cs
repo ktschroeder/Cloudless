@@ -68,6 +68,8 @@ namespace Cloudless.PluginBase
 
         void PanVideoBy(double deltaX, double deltaY, bool constrainToBounds);
 
+        void SetVideoCropMode(bool enabled);
+
         double GetVideoZoom();
 
         (double, double) GetVideoPan();

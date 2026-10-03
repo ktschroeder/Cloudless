@@ -41,6 +41,8 @@ namespace Cloudless.VlcPlugin
         private double _videoScale = 1.0;
         private double _videoPanX = 0.0;
         private double _videoPanY = 0.0;
+        private bool _videoCropMode;
+        private double _cropLockedVideoScale;
         // Whether to attempt calling into native LibVLC scale APIs. Disabled by default because some
         // native calls can reposition/center video unexpectedly. Enable only after confirming behavior.
         private bool _preferNativeScale = false;
@@ -224,6 +226,7 @@ namespace Cloudless.VlcPlugin
             // Wrap the VideoView in a container so we can apply transforms to the container
             _videoHostContainer = new Grid();
             _videoHostContainer.Children.Add(_videoView);
+            _videoHostContainer.SizeChanged += (s, e) => UpdateVideoScaleForCropResize();
             // Monitor layout/size/transform changes to help diagnose unexpected recentering behavior
             _videoHostContainer.LayoutUpdated += (s, e) =>
             {
@@ -553,37 +556,18 @@ namespace Cloudless.VlcPlugin
             Console.WriteLine($"[VLC] SetVideoZoom called: scaleRequested={scale:F3} newScale={newScale:F3} oldScale={oldScale:F3} center=({centerX:F1},{centerY:F1}) preferNative={_preferNativeScale}");
             // assign new scale
             _videoScale = newScale;
+            if (_videoCropMode)
+            {
+                double fitScale = GetVideoFitScale();
+                if (fitScale > 0)
+                    _cropLockedVideoScale = fitScale * newScale;
+            }
 
             // As a fallback, try applying a WPF transform to the VideoView (may not affect native surface due to airspace).
             if (_videoHostContainer == null)
                 return;
 
-            _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
-
             Console.WriteLine($"[VLC] Applying transform: newScale={newScale:F3} _videoPan=({_videoPanX:F1},{_videoPanY:F1}) hostSize={_videoHostContainer.ActualWidth:F0}x{_videoHostContainer.ActualHeight:F0}");
-            // Ensure transforms exist on the host container and use center origin so scaling behaves like images
-            var tg = _videoHostContainer.RenderTransform as TransformGroup;
-            if (tg == null)
-            {
-                tg = new TransformGroup();
-                tg.Children.Add(new ScaleTransform(1, 1));
-                tg.Children.Add(new TranslateTransform(0, 0));
-                _videoHostContainer.RenderTransform = tg;
-                _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
-            }
-
-            var st = tg.Children.OfType<ScaleTransform>().FirstOrDefault();
-            var tt = tg.Children.OfType<TranslateTransform>().FirstOrDefault();
-            if (st == null)
-            {
-                st = new ScaleTransform(1, 1);
-                tg.Children.Insert(0, st);
-            }
-            if (tt == null)
-            {
-                tt = new TranslateTransform(0, 0);
-                tg.Children.Add(tt);
-            }
 
             // Compute derivedDelta (newScale / oldScale) using captured variables
             double derivedDelta = (oldScale > 0) ? (newScale / oldScale) : 1.0;
@@ -602,18 +586,8 @@ namespace Cloudless.VlcPlugin
             if (constrainPan)
                 ClampVideoPanToBounds();
 
-            // Apply scale and pan values using the same coordinate system as image zooming
-            st.ScaleX = newScale;
-            st.ScaleY = newScale;
-
-            // apply pan adjustments
-            tt.X = _videoPanX;
-            tt.Y = _videoPanY;
-
-            // persist pan
-            _videoPanX = tt.X;
-            _videoPanY = tt.Y;
-            Console.WriteLine($"[VLC] Applied transform: scale={st.ScaleX:F3} pan=({tt.X:F1},{tt.Y:F1})");
+            ApplyVideoTransform();
+            Console.WriteLine($"[VLC] Applied transform: scale={_videoScale:F3} pan=({_videoPanX:F1},{_videoPanY:F1})");
 
             // Force render pass
             //_videoHostContainer.Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Render);
@@ -634,30 +608,97 @@ namespace Cloudless.VlcPlugin
             // Try to apply as a RenderTransform
             _videoHostContainer.Dispatcher.BeginInvoke(new Action(() =>
             {
-                var tg = _videoHostContainer.RenderTransform as TransformGroup;
-                if (tg == null)
+                ApplyVideoTransform();
+            }), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        public void SetVideoCropMode(bool enabled)
+        {
+            if (_videoCropMode == enabled)
+                return;
+
+            _videoCropMode = enabled;
+            if (enabled)
+            {
+                double fitScale = GetVideoFitScale();
+                _cropLockedVideoScale = fitScale > 0 ? fitScale * _videoScale : 0;
+            }
+            else
+            {
+                _cropLockedVideoScale = 0;
+            }
+        }
+
+        private void UpdateVideoScaleForCropResize()
+        {
+            if (!_videoCropMode)
+                return;
+
+            double fitScale = GetVideoFitScale();
+            if (fitScale <= 0)
+                return;
+
+            if (_cropLockedVideoScale <= 0)
+                _cropLockedVideoScale = fitScale * _videoScale;
+
+            _videoScale = _cropLockedVideoScale / fitScale;
+            ApplyVideoTransform();
+        }
+
+        private double GetVideoFitScale()
+        {
+            if (_videoHostContainer == null || _videoHostContainer.ActualWidth <= 0 || _videoHostContainer.ActualHeight <= 0)
+                return 0;
+
+            var dimensions = GetCurrentVideoDimensions();
+            if (!dimensions.HasValue)
+                return 0;
+
+            return Math.Min(
+                _videoHostContainer.ActualWidth / dimensions.Value.Width,
+                _videoHostContainer.ActualHeight / dimensions.Value.Height);
+        }
+
+        private void ApplyVideoTransform()
+        {
+            if (_videoHostContainer == null)
+                return;
+
+            var tg = _videoHostContainer.RenderTransform as TransformGroup;
+            if (tg == null)
+            {
+                tg = new TransformGroup();
+                tg.Children.Add(new ScaleTransform(_videoScale, _videoScale));
+                tg.Children.Add(new TranslateTransform(_videoPanX, _videoPanY));
+                _videoHostContainer.RenderTransform = tg;
+            }
+            else
+            {
+                var st = tg.Children.OfType<ScaleTransform>().FirstOrDefault();
+                if (st == null)
                 {
-                    tg = new TransformGroup();
-                    tg.Children.Add(new ScaleTransform(_videoScale, _videoScale));
-                    tg.Children.Add(new TranslateTransform(_videoPanX, _videoPanY));
-                    _videoHostContainer.RenderTransform = tg;
-                    _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
+                    st = new ScaleTransform(_videoScale, _videoScale);
+                    tg.Children.Insert(0, st);
                 }
                 else
                 {
-                    var tt = tg.Children.OfType<TranslateTransform>().FirstOrDefault();
-                    if (tt == null)
-                    {
-                        tt = new TranslateTransform(_videoPanX, _videoPanY);
-                        tg.Children.Add(tt);
-                    }
-                    else
-                    {
-                        tt.X = _videoPanX;
-                        tt.Y = _videoPanY;
-                    }
+                    st.ScaleX = _videoScale;
+                    st.ScaleY = _videoScale;
                 }
-            }), System.Windows.Threading.DispatcherPriority.Render);
+
+                var tt = tg.Children.OfType<TranslateTransform>().FirstOrDefault();
+                if (tt == null)
+                {
+                    tg.Children.Add(new TranslateTransform(_videoPanX, _videoPanY));
+                }
+                else
+                {
+                    tt.X = _videoPanX;
+                    tt.Y = _videoPanY;
+                }
+            }
+
+            _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
         }
 
         private void ClampVideoPanToBounds()
@@ -721,6 +762,11 @@ namespace Cloudless.VlcPlugin
             _videoScale = 1.0;
             _videoPanX = 0.0;
             _videoPanY = 0.0;
+            if (_videoCropMode)
+            {
+                double fitScale = GetVideoFitScale();
+                _cropLockedVideoScale = fitScale > 0 ? fitScale * _videoScale : 0;
+            }
 
             if (_mediaPlayer != null)
             {
@@ -735,7 +781,7 @@ namespace Cloudless.VlcPlugin
             {
                 _videoHostContainer.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    _videoHostContainer.RenderTransform = Transform.Identity;
+                    ApplyVideoTransform();
                 }), System.Windows.Threading.DispatcherPriority.Render);
             }
         }

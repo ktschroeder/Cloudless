@@ -124,6 +124,20 @@ namespace Cloudless
         {
             if (!isCropMode && Cloudless.Properties.Settings.Default.DisplayMode.StartsWith("Best"))
                 ScaleImageToWindow();
+            else if (isCropMode && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+            {
+                if (!WorkspaceLoadInProgress)
+                {
+                    var videoPan = videoPlayer.GetVideoPan();
+                    double heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
+                    double widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
+                    double topDiff = cropModeStartingWindowTop - this.Top;
+                    double leftDiff = cropModeStartingWindowLeft - this.Left;
+                    double targetPanX = cropModeStartingVideoPanX + widthDiff / 2.0 + leftDiff;
+                    double targetPanY = cropModeStartingVideoPanY + heightDiff / 2.0 + topDiff;
+                    videoPlayer.PanVideoBy(targetPanX - videoPan.Item1, targetPanY - videoPan.Item2, constrainToBounds: false);
+                }
+            }
             else if (imageTranslateTransform != null)
             {
                 // The lines in this block mess with the image panning upon loading from a workspace (different scenario), so just skip these initially if that's the case.
@@ -574,6 +588,8 @@ namespace Cloudless
             video.SetVideoZoom(Math.Max(0.01, scale), point.X, point.Y, !Cloudless.Properties.Settings.Default.DisableSmartZoom);
             VideoHost.InvalidateVisual();
             InvalidateVisual();
+            if (isCropMode)
+                UpdateCropModeInfo();
             _ = UpdateZoomMenuHeaderAsync();
         }
 
@@ -825,14 +841,21 @@ namespace Cloudless
         {
             if (isCropMode)
             {
-                if (imageTranslateTransform != null)
+                cropModeStartingWindowHeight = this.ActualHeight;
+                cropModeStartingWindowWidth = this.ActualWidth;
+                cropModeStartingWindowTop = this.Top;
+                cropModeStartingWindowLeft = this.Left;
+
+                if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                {
+                    var videoPan = videoPlayer.GetVideoPan();
+                    cropModeStartingVideoPanX = videoPan.Item1;
+                    cropModeStartingVideoPanY = videoPan.Item2;
+                }
+                else if (imageTranslateTransform != null)
                 {
                     cropModeStartingImagePosX = imageTranslateTransform.X;  // 0
                     cropModeStartingImagePosY = imageTranslateTransform.Y;  // 0
-                    cropModeStartingWindowHeight = this.ActualHeight;       // 1080
-                    cropModeStartingWindowWidth = this.ActualWidth;         // 1728
-                    cropModeStartingWindowTop = this.Top;                   // 0
-                    cropModeStartingWindowLeft = this.Left;                 // 2656
                 }
             }
         }
@@ -854,6 +877,9 @@ namespace Cloudless
             }
             else
                 isCropMode = !isCropMode;
+
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                videoPlayer.SetVideoCropMode(isCropMode);
 
             UpdateCropModeInfo();
 
