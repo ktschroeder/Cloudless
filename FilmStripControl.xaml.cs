@@ -417,6 +417,25 @@ namespace Cloudless
             sv.ScrollToHorizontalOffset(target);
         }
 
+        public bool IsPointerOverOptions => PART_OptionsScrollViewer.IsMouseOver;
+
+        public void ScrollOptionsByOffset(double offset)
+        {
+            var scrollViewer = PART_OptionsScrollViewer;
+            double target = scrollViewer.HorizontalOffset + offset;
+            if (target < 0) target = 0;
+            scrollViewer.ScrollToHorizontalOffset(target);
+        }
+
+        private void PART_OptionsScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            bool optionsFit = e.ExtentWidth <= e.ViewportWidth + 1;
+            PART_OptionsPanel.HorizontalAlignment = optionsFit ? HorizontalAlignment.Center : HorizontalAlignment.Left;
+
+            if (optionsFit && PART_OptionsScrollViewer.HorizontalOffset > 0)
+                PART_OptionsScrollViewer.ScrollToHorizontalOffset(0);
+        }
+
         public bool CloseAfterSelect => PART_CloseAfterSelect.IsChecked == true;
         public bool OpenInNewWindow => PART_OpenInNewWindow.IsChecked == true;
         public bool ResizeWindow => PART_Resize.IsChecked == true;

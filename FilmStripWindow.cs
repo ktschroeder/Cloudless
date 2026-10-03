@@ -36,7 +36,10 @@ namespace Cloudless
 
         private void FilmStripWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            _control.ScrollByOffset(-e.Delta);
+            if (_control.IsPointerOverOptions)
+                _control.ScrollOptionsByOffset(-e.Delta);
+            else
+                _control.ScrollByOffset(-e.Delta);
             e.Handled = true;
         }
 

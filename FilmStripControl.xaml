@@ -73,16 +73,20 @@
             </Grid>
 
             <!-- Checkboxes below thumbnails -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="6">
-            <!-- Use global CheckBox style to match theme -->
-                <StackPanel.Resources>
-                </StackPanel.Resources>
-
-                <CheckBox x:Name="PART_CloseAfterSelect" Content="Close film strip afterward" Margin="6,4" Checked="PART_CloseAfterSelect_Checked" Unchecked="PART_CloseAfterSelect_Unchecked" />
-                <CheckBox x:Name="PART_OpenInNewWindow" Content="Open image in new window" Margin="6,4" Checked="PART_OpenInNewWindow_Checked" Unchecked="PART_OpenInNewWindow_Unchecked" />
-                <CheckBox x:Name="PART_Resize" Content="Resize window for image" Margin="6,4" Checked="PART_Resize_Checked" Unchecked="PART_Resize_Unchecked" />
-                <CheckBox x:Name="PART_RetainContents" Content="Retain contents" Margin="6,4" Checked="PART_RetainContents_Checked" Unchecked="PART_RetainContents_Unchecked" />
-            </StackPanel>
+            <ScrollViewer x:Name="PART_OptionsScrollViewer" Grid.Row="2"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled"
+                          CanContentScroll="False"
+                          PanningMode="HorizontalOnly"
+                          ScrollChanged="PART_OptionsScrollViewer_ScrollChanged"
+                          Margin="6">
+                <StackPanel x:Name="PART_OptionsPanel" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <CheckBox x:Name="PART_CloseAfterSelect" Content="Close film strip afterward" Margin="6,4" Checked="PART_CloseAfterSelect_Checked" Unchecked="PART_CloseAfterSelect_Unchecked" />
+                    <CheckBox x:Name="PART_OpenInNewWindow" Content="Open image in new window" Margin="6,4" Checked="PART_OpenInNewWindow_Checked" Unchecked="PART_OpenInNewWindow_Unchecked" />
+                    <CheckBox x:Name="PART_Resize" Content="Resize window for image" Margin="6,4" Checked="PART_Resize_Checked" Unchecked="PART_Resize_Unchecked" />
+                    <CheckBox x:Name="PART_RetainContents" Content="Retain filmstrip contents" Margin="6,4" Checked="PART_RetainContents_Checked" Unchecked="PART_RetainContents_Unchecked" />
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Border>
 </UserControl>
