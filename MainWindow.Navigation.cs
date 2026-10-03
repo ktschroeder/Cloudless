@@ -344,11 +344,13 @@ namespace Cloudless
 
         private MenuItem CreateVideoTrackMenuItem(Cloudless.PluginBase.MediaTrackInfo track, int currentTrackId, bool isSubtitle)
         {
+            string trackName = string.IsNullOrWhiteSpace(track.Name) ? $"Track {track.Id}" : track.Name;
+            bool isSelected = track.Id == currentTrackId;
             var item = new MenuItem
             {
-                Header = string.IsNullOrWhiteSpace(track.Name) ? $"Track {track.Id}" : track.Name,
+                Header = $"{(isSelected ? "✓ " : "  ")}{trackName}",
                 IsCheckable = true,
-                IsChecked = track.Id == currentTrackId,
+                IsChecked = isSelected,
                 Tag = track.Id
             };
 
