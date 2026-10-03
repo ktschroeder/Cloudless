@@ -71,6 +71,9 @@ namespace Cloudless.PluginBase
         bool SetAudioDelay(long delayMicroseconds);
         bool SetSubtitleDelay(long delayMicroseconds);
 
+        double GetPlaybackSpeed();
+        bool SetPlaybackSpeed(double speed);
+
         void SetVolume(double volume);
         double GetVolume();
 

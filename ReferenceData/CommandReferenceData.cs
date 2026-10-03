@@ -94,6 +94,8 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("goto start/end", "Seek to the video start/end (or custom start/end, if set)"),
                     new ReferenceItem("play", "Play/resume the current video"),
                     new ReferenceItem("pause", "Pause the current video"),
+                    new ReferenceItem("speed", "Show the current video playback speed"),
+                    new ReferenceItem("speed [multiplier]", "Set playback speed (e.g. 'speed 2.5' for 250% or 'speed 0.5' for 50%)"),
                     new ReferenceItem("set/clear flag | f", "Set/Clear a custom flag at the current time in this video. (Useful for cross-instance coordination)"),
                     new ReferenceItem("goto flag | f", "Seek to the custom flag time, if one is set"),
                     new ReferenceItem("sync", "Register this video in the page's sync group. All synced videos on a page wait to restart until all synced videos on the page finish"),

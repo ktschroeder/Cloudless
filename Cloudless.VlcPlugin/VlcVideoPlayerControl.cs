@@ -1077,6 +1077,24 @@ namespace Cloudless.VlcPlugin
 
         public bool SetSubtitleDelay(long delayMicroseconds) => _mediaPlayer?.SetSpuDelay(delayMicroseconds) == true;
 
+        public double GetPlaybackSpeed() => _mediaPlayer?.Rate ?? 1.0;
+
+        public bool SetPlaybackSpeed(double speed)
+        {
+            if (_mediaPlayer == null || !double.IsFinite(speed) || speed <= 0 || speed > float.MaxValue)
+                return false;
+
+            try
+            {
+                return _mediaPlayer.SetRate((float)speed) == 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SetPlaybackSpeed error: {ex.Message}");
+                return false;
+            }
+        }
+
         public void SetVolume(double volume)
         {
             // Persist desired volume and apply if media player exists

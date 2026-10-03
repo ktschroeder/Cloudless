@@ -1888,6 +1888,39 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("speed") || cmd.StartsWith("speed "))
+            {
+                if (VideoHost.Content is not IVideoPlayer videoPlayer)
+                {
+                    Message("No video is loaded");
+                    return true;
+                }
+
+                if (cmd.Equals("speed"))
+                {
+                    double currentSpeed = videoPlayer.GetPlaybackSpeed();
+                    Message($"Current playback speed: {currentSpeed.ToString("0.##", CultureInfo.InvariantCulture)}×");
+                    return true;
+                }
+
+                string speedText = cmd.Substring("speed ".Length).Trim();
+                if (!double.TryParse(speedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double speed) ||
+                    !double.IsFinite(speed) || speed <= 0)
+                {
+                    Message("Invalid playback speed. Provide a positive multiplier, e.g. 'speed 2.5'.");
+                    return true;
+                }
+
+                if (!videoPlayer.SetPlaybackSpeed(speed))
+                {
+                    Message("The video player could not set that playback speed.");
+                    return true;
+                }
+
+                Message($"Set playback speed to {speed.ToString("0.##", CultureInfo.InvariantCulture)}×");
+                return true;
+            }
+
             if (cmd.Equals("unmute"))
             {
                 ToggleMute(setTo: false);
