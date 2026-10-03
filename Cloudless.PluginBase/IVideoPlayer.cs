@@ -66,6 +66,10 @@ namespace Cloudless.PluginBase
         int GetCurrentSubtitleTrackId();
         bool SetAudioTrack(int trackId);
         bool SetSubtitleTrack(int trackId);
+        long GetAudioDelay();
+        long GetSubtitleDelay();
+        bool SetAudioDelay(long delayMicroseconds);
+        bool SetSubtitleDelay(long delayMicroseconds);
 
         void SetVolume(double volume);
         double GetVolume();

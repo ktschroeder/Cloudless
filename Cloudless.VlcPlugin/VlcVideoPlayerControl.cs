@@ -1069,6 +1069,14 @@ namespace Cloudless.VlcPlugin
 
         public bool SetSubtitleTrack(int trackId) => _mediaPlayer?.SetSpu(trackId) == true;
 
+        public long GetAudioDelay() => _mediaPlayer?.AudioDelay ?? 0;
+
+        public long GetSubtitleDelay() => _mediaPlayer?.SpuDelay ?? 0;
+
+        public bool SetAudioDelay(long delayMicroseconds) => _mediaPlayer?.SetAudioDelay(delayMicroseconds) == true;
+
+        public bool SetSubtitleDelay(long delayMicroseconds) => _mediaPlayer?.SetSpuDelay(delayMicroseconds) == true;
+
         public void SetVolume(double volume)
         {
             // Persist desired volume and apply if media player exists

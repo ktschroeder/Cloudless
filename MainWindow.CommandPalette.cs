@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text.Json;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -737,6 +738,95 @@ namespace Cloudless
             }
         }
 
+        //private static bool TryGetCommandArguments(string command, out string arguments, params string[] commandNames)
+        //{
+        //    foreach (string commandName in commandNames)
+        //    {
+        //        if (command.Equals(commandName, StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            arguments = string.Empty;
+        //            return true;
+        //        }
+
+        //        if (command.StartsWith(commandName + " ", StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            arguments = command[(commandName.Length + 1)..].Trim();
+        //            return true;
+        //        }
+        //    }
+
+        //    arguments = string.Empty;
+        //    return false;
+        //}
+
+        private void HandleVideoTrackDelayCommand(string trackType, string arguments, bool isSubtitle)
+        {
+            if (VideoHost.Content is not IVideoPlayer videoPlayer)
+            {
+                Message($"The {trackType} delay command requires a loaded video.");
+                return;
+            }
+
+            long currentDelay = isSubtitle ? videoPlayer.GetSubtitleDelay() : videoPlayer.GetAudioDelay();
+            if (string.IsNullOrWhiteSpace(arguments))
+            {
+                Message($"Current {trackType}/video sync offset: {FormatVideoDelay(currentDelay)}");
+                return;
+            }
+
+            if (!TryParseVideoDelay(arguments, out long requestedDelay))
+            {
+                Message($"Invalid {trackType}/video sync offset. Provide a time in seconds or milliseconds, e.g. {trackType} sync -0.25 or {trackType} sync 120ms.");
+                return;
+            }
+
+            bool succeeded = isSubtitle
+                ? videoPlayer.SetSubtitleDelay(requestedDelay)
+                : videoPlayer.SetAudioDelay(requestedDelay);
+            if (!succeeded)
+            {
+                Message($"Failed to set {trackType}/video sync offset.");
+                return;
+            }
+
+            Message($"Set {trackType}/video sync offset to {FormatVideoDelay(requestedDelay)}");
+            return;
+        }
+
+        private static bool TryParseVideoDelay(string value, out long delayMicroseconds)
+        {
+            delayMicroseconds = 0;
+            value = value.Trim();
+            decimal multiplier = 1_000_000m;
+
+            if (value.EndsWith("ms", StringComparison.OrdinalIgnoreCase))
+            {
+                multiplier = 1_000m;
+                value = value[..^2].Trim();
+            }
+            else if (value.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value[..^1].Trim();
+            }
+
+            if (!decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal amount))
+                return false;
+
+            decimal microseconds = decimal.Round(amount * multiplier, 0, MidpointRounding.AwayFromZero);
+            if (microseconds < long.MinValue || microseconds > long.MaxValue)
+                return false;
+
+            delayMicroseconds = (long)microseconds;
+            return true;
+        }
+
+        private static string FormatVideoDelay(long delayMicroseconds)
+        {
+            double seconds = delayMicroseconds / 1_000_000d;
+            double milliseconds = delayMicroseconds / 1_000d;
+            return $"{seconds.ToString("+0.###;-0.###;0", CultureInfo.InvariantCulture)} s ({milliseconds.ToString("+0.##;-0.##;0", CultureInfo.InvariantCulture)} ms)";
+        }
+
         // returns whether successful (i.e. valid) command
         private async Task<bool> ExecuteCommandInner(string cmd)
         {
@@ -944,6 +1034,29 @@ namespace Cloudless
             {
                 SetSlideshowTrigger(0);
                 Message("Cleared slideshow trigger for this window");
+                return true;
+            }
+
+            if (cmd.Equals("audio sync"))
+            {
+                HandleVideoTrackDelayCommand("audio", "", isSubtitle: false);
+                return true;
+            }
+            if (cmd.Equals("subtitle sync"))
+            {
+                HandleVideoTrackDelayCommand("subtitle", "", isSubtitle: true);
+                return true;
+            }
+            if (cmd.StartsWith("audio sync "))
+            {
+                string audioSyncArguments = cmd.Substring("audio sync ".Length).Trim();
+                HandleVideoTrackDelayCommand("audio", audioSyncArguments, isSubtitle: false);
+                return true;
+            }
+            if (cmd.StartsWith("subtitle sync "))
+            {
+                string subtitleSyncArguments = cmd.Substring("subtitle sync ".Length).Trim();
+                HandleVideoTrackDelayCommand("subtitle", subtitleSyncArguments, isSubtitle: true);
                 return true;
             }
 
