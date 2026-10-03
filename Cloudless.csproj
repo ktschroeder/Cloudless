@@ -33,8 +33,8 @@
 
   <ItemGroup>
     <PackageReference Include="AnimatedImage.Wpf" Version="2.1.4" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.6" />
-    <PackageReference Include="System.Drawing.Common" Version="10.0.7" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.12" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>
