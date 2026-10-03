@@ -294,7 +294,7 @@ namespace Cloudless
             var key = e.Key;
 
             // capture ALT + num key events that otherwise get swallowed by Windows as system inputs
-            if (alt && ((e.SystemKey >= Key.D0 && e.SystemKey <= Key.D9) || e.SystemKey == Key.Left || e.SystemKey == Key.Right || e.SystemKey == Key.Up || e.SystemKey == Key.Down))
+            if (alt && (IsNumberKey(e.SystemKey) || e.SystemKey == Key.Left || e.SystemKey == Key.Right || e.SystemKey == Key.Up || e.SystemKey == Key.Down))
             {
                 key = e.SystemKey;
             }
@@ -309,8 +309,28 @@ namespace Cloudless
 
         private bool _duplicating = false;  // TODO fix better; this is a band-aid for odd issue where hotkey D is recorded twice when duplicating specifically an open GIF.
 
+        private static bool IsNumberKey(Key key) =>
+            (key >= Key.D0 && key <= Key.D9) || (key >= Key.NumPad0 && key <= Key.NumPad9);
+
+        private static Key NormalizeNumberKey(Key key) => key switch
+        {
+            Key.NumPad0 => Key.D0,
+            Key.NumPad1 => Key.D1,
+            Key.NumPad2 => Key.D2,
+            Key.NumPad3 => Key.D3,
+            Key.NumPad4 => Key.D4,
+            Key.NumPad5 => Key.D5,
+            Key.NumPad6 => Key.D6,
+            Key.NumPad7 => Key.D7,
+            Key.NumPad8 => Key.D8,
+            Key.NumPad9 => Key.D9,
+            _ => key
+        };
+
         private async Task ProcessKeyEvent(Key key, bool shift, bool control, bool alt)
         {
+            key = NormalizeNumberKey(key);
+
             // Alt + arrow keys: page navigation (previous/next page)
             if (alt && !control && (key == Key.Left || key == Key.Right || key == Key.Up || key == Key.Down))
             {
