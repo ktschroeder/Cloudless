@@ -261,26 +261,39 @@ namespace Cloudless
             if (imageInfoMenuItem != null)
                 imageInfoMenuItem.IsEnabled = !string.IsNullOrEmpty(currentlyDisplayedImagePath);
 
-            var zoomMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => ((m.Header as string) ?? m.Header?.ToString() ?? "").StartsWith("Zoom"));
-            var scaleX = imageScaleTransform?.ScaleX;
-            var scaleY = imageScaleTransform?.ScaleY;
-            if (zoomMenuItem != null)
-            {
-                zoomMenuItem.Header = "Zoom";  // TODO maybe disable here, e.g. cannot use in zen mode
-
-                if (ImageDisplay != null && ImageDisplay.Source is BitmapSource bitmap && scaleX != null && scaleY != null)
-                {
-                    double imageWidth = ImageDisplay.ActualWidth;
-                    double imageTrueWidth = bitmap.PixelWidth;
-                    var realScale = imageWidth / (double)imageTrueWidth * (double)scaleX;  // ignores nuance if x and y scales don't match, i.e. stretching
-
-                    zoomMenuItem.Header = $"Zoom ({(int)double.Round(realScale * 100)}%)";
-                }
-            }
+            await UpdateZoomMenuHeaderAsync();
 
             await UpdateRecentFilesMenu(isStartUp);
             await UpdateBookmarksMenuState();
             PrepareZoomMenu();
+        }
+
+        private async Task UpdateZoomMenuHeaderAsync()
+        {
+            var zoomMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => ((m.Header as string) ?? m.Header?.ToString() ?? "").StartsWith("Zoom"));
+            if (zoomMenuItem == null)
+                return;
+
+            zoomMenuItem.Header = "Zoom";
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer video)
+            {
+                double? trueResolutionScale = await GetVideoTrueResolutionScaleAsync(video);
+                if (trueResolutionScale is > 0)
+                {
+                    double realScale = video.GetVideoZoom() / trueResolutionScale.Value;
+                    zoomMenuItem.Header = $"Zoom ({(int)double.Round(realScale * 100)}%)";
+                }
+            }
+            else if (ImageDisplay != null && ImageDisplay.Source is BitmapSource bitmap && imageScaleTransform != null)
+            {
+                double imageWidth = ImageDisplay.ActualWidth;
+                double imageTrueWidth = bitmap.PixelWidth;
+                if (imageTrueWidth > 0)
+                {
+                    double realScale = imageWidth / imageTrueWidth * imageScaleTransform.ScaleX;
+                    zoomMenuItem.Header = $"Zoom ({(int)double.Round(realScale * 100)}%)";
+                }
+            }
         }
         private void OpenMessageHistory_Click(object sender, RoutedEventArgs e)
         {
@@ -295,8 +308,9 @@ namespace Cloudless
             historyWindow.Show();
         }
 
-        private void ShowContextMenu()
+        private async void ShowContextMenu()
         {
+            await UpdateZoomMenuHeaderAsync();
             ContextMenu menu = ImageContextMenu;
             menu.PlacementTarget = this;
             menu.HorizontalOffset = 0;

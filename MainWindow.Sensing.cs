@@ -141,7 +141,7 @@ namespace Cloudless
 
                 if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
                 {
-                    videoPlayer.PanVideoBy(delta.X, delta.Y);
+                    videoPlayer.PanVideoBy(delta.X, delta.Y, !Cloudless.Properties.Settings.Default.DisableSmartZoom);
                     InvalidateVisual();
                 }
             }
@@ -1007,15 +1007,30 @@ namespace Cloudless
                 {
                     await ZoomFromCenter(false);
                 }
-                else if (key == Key.D0) // Reset to Best Fit
+                else if (key == Key.D0 || key == Key.NumPad0) // Reset to Best Fit
                 {
-                    ResetPan();
-                    ResetZoom();
+                    if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer video)
+                    {
+                        video.ResetVideoPanZoom();
+                        VideoHost.InvalidateVisual();
+                        InvalidateVisual();
+                    }
+                    else
+                    {
+                        ResetPan();
+                        ResetZoom();
+                    }
                 }
-                else if (key == Key.D9) // True Resolution (100%)
+                else if (key == Key.D9 || key == Key.NumPad9) // True Resolution (100%)
                 {
-                    //ResetPan();
-                    ResetZoomToTrueResolution();
+                    if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer video)
+                    {
+                        await ZoomVideoToTrueResolutionAsync(video);
+                    }
+                    else
+                    {
+                        ResetZoomToTrueResolution();
+                    }
                 }
                 else if (key >= Key.D1 && key <= Key.D8) // Hotkeys for custom user commands
                 {
@@ -1148,7 +1163,6 @@ namespace Cloudless
                 var maybeVideo = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (maybeVideo != null)
                 {
-                    // Pass the cursor position relative to the video host.
                     Point cursorPosition = e.GetPosition(VideoHost);
 
                     double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
@@ -1157,11 +1171,9 @@ namespace Cloudless
                         zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;
                     }
 
-                    double current = maybeVideo.GetVideoZoom();
-                    double target = Math.Max(0.01, current * zoomDelta);
                     try
                     {
-                        maybeVideo.SetVideoZoom(target, cursorPosition.X, cursorPosition.Y);
+                        SetVideoZoomAtPoint(maybeVideo, maybeVideo.GetVideoZoom() * zoomDelta, cursorPosition);
                         // ensure video display is refreshed
                         //Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Render);
                         InvalidateVisual();
@@ -1212,10 +1224,11 @@ namespace Cloudless
                 await ToggleFullscreen();
             }
         }
-        private void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        private async void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (!SkipNextContextMenu)
             {
+                await UpdateZoomMenuHeaderAsync();
                 // Get mouse position in screen coordinates
                 Point mousePos = e.GetPosition(this);
                 

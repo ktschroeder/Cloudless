@@ -667,8 +667,9 @@ namespace Cloudless
                     var videoPlayer = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                     if (videoPlayer != null)
                     {
-                        videoPlayer.SetVideoZoom(state.Zoom, 0, 0);
-                        videoPlayer.PanVideoBy(state.PanX, state.PanY);
+                        bool constrainPan = !Cloudless.Properties.Settings.Default.DisableSmartZoom;
+                        videoPlayer.SetVideoZoom(state.Zoom, 0, 0, constrainPan);
+                        videoPlayer.PanVideoBy(state.PanX, state.PanY, constrainPan);
                     }
                 }
                 else

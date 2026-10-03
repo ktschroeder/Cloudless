@@ -512,6 +512,13 @@ namespace Cloudless
         }
         private async Task ZoomFromCenter(bool zoomIn)
         {
+            if (VideoHost.Content is IVideoPlayer video)
+            {
+                double videoZoomDelta = zoomIn ? 1.1 : 1 / 1.1;
+                SetVideoZoomAtPoint(video, video.GetVideoZoom() * videoZoomDelta, GetVideoZoomCenter());
+                return;
+            }
+
             if (!isExplorationMode) EnterExplorationMode();
 
             // Get window center relative to the image
@@ -525,6 +532,19 @@ namespace Cloudless
 
         private async Task ZoomFromCenterToGivenScale(double scale)
         {
+            if (VideoHost.Content is IVideoPlayer video)
+            {
+                double? trueResolutionScale = await GetVideoTrueResolutionScaleAsync(video);
+                if (!trueResolutionScale.HasValue)
+                {
+                    Message("Unable to determine video dimensions for zooming.");
+                    return;
+                }
+
+                SetVideoZoomAtPoint(video, scale * trueResolutionScale.Value, GetVideoZoomCenter());
+                return;
+            }
+
             if (!isExplorationMode) EnterExplorationMode();
 
             // Get window center relative to the image
@@ -541,6 +561,48 @@ namespace Cloudless
 
             await Zoom(windowCenter, zoomFinal: scale);
         }
+
+        private void SetVideoZoomAtPoint(IVideoPlayer video, double scale, Point point, bool constrainScale = true)
+        {
+            if (constrainScale)
+            {
+                double minScale = Cloudless.Properties.Settings.Default.DisableSmartZoom ? 0.01 : 1.0;
+                double maxScale = Cloudless.Properties.Settings.Default.DisableSmartZoom ? double.MaxValue : 10.0;
+                scale = Math.Clamp(scale, minScale, maxScale);
+            }
+
+            video.SetVideoZoom(Math.Max(0.01, scale), point.X, point.Y, !Cloudless.Properties.Settings.Default.DisableSmartZoom);
+            VideoHost.InvalidateVisual();
+            InvalidateVisual();
+            _ = UpdateZoomMenuHeaderAsync();
+        }
+
+        private Point GetVideoZoomCenter() => new(VideoHost.ActualWidth / 2, VideoHost.ActualHeight / 2);
+
+        private async Task<double?> GetVideoTrueResolutionScaleAsync(IVideoPlayer video)
+        {
+            var dimensions = await video.GetDimensions();
+            double hostWidth = VideoHost.ActualWidth;
+            double hostHeight = VideoHost.ActualHeight;
+            if (dimensions == null || dimensions.Value.Item1 <= 0 || dimensions.Value.Item2 <= 0 || hostWidth <= 0 || hostHeight <= 0)
+                return null;
+
+            double fitScale = Math.Min(hostWidth / dimensions.Value.Item1, hostHeight / dimensions.Value.Item2);
+            return fitScale > 0 ? 1 / fitScale : null;
+        }
+
+        private async Task ZoomVideoToTrueResolutionAsync(IVideoPlayer video)
+        {
+            double? trueResolutionScale = await GetVideoTrueResolutionScaleAsync(video);
+            if (!trueResolutionScale.HasValue)
+            {
+                Message("Unable to determine video dimensions for zooming.");
+                return;
+            }
+
+            SetVideoZoomAtPoint(video, trueResolutionScale.Value, GetVideoZoomCenter(), constrainScale: false);
+        }
+
         private async Task Zoom(Point zoomOrigin, double? zoomDelta = null, double? zoomFinal = null)
         {
             if (zoomDelta == null && zoomFinal == null)

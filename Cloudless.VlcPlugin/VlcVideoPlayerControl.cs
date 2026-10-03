@@ -545,7 +545,7 @@ namespace Cloudless.VlcPlugin
             _mediaPlayer?.SetPause(setTo ?? _mediaPlayer.IsPlaying);
         }
 
-        public void SetVideoZoom(double scale, double centerX, double centerY)
+        public void SetVideoZoom(double scale, double centerX, double centerY, bool constrainPan)
         {
             // compute new scale but preserve old scale value for delta computations
             double oldScale = _videoScale;
@@ -599,6 +599,8 @@ namespace Cloudless.VlcPlugin
             // Adjust pan so zoom is centered on the provided point
             _videoPanX -= offsetX * (derivedDelta - 1.0);
             _videoPanY -= offsetY * (derivedDelta - 1.0);
+            if (constrainPan)
+                ClampVideoPanToBounds();
 
             // Apply scale and pan values using the same coordinate system as image zooming
             st.ScaleX = newScale;
@@ -617,10 +619,12 @@ namespace Cloudless.VlcPlugin
             //_videoHostContainer.Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Render);
         }
 
-        public void PanVideoBy(double deltaX, double deltaY)
+        public void PanVideoBy(double deltaX, double deltaY, bool constrainToBounds)
         {
             _videoPanX += deltaX;
             _videoPanY += deltaY;
+            if (constrainToBounds)
+                ClampVideoPanToBounds();
 
             Console.WriteLine($"[VLC] PanVideoBy called: delta=({deltaX:F1},{deltaY:F1}) -> pan=({_videoPanX:F1},{_videoPanY:F1})");
 
@@ -654,6 +658,52 @@ namespace Cloudless.VlcPlugin
                     }
                 }
             }), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        private void ClampVideoPanToBounds()
+        {
+            if (_videoHostContainer == null)
+                return;
+
+            double hostWidth = _videoHostContainer.ActualWidth;
+            double hostHeight = _videoHostContainer.ActualHeight;
+            if (hostWidth <= 0 || hostHeight <= 0)
+                return;
+
+            double fittedWidth = hostWidth;
+            double fittedHeight = hostHeight;
+            var dimensions = GetCurrentVideoDimensions();
+            if (dimensions.HasValue)
+            {
+                double fitScale = Math.Min(hostWidth / dimensions.Value.Width, hostHeight / dimensions.Value.Height);
+                fittedWidth = dimensions.Value.Width * fitScale;
+                fittedHeight = dimensions.Value.Height * fitScale;
+            }
+
+            double scaledWidth = fittedWidth * _videoScale;
+            double scaledHeight = fittedHeight * _videoScale;
+            double maxPanX = Math.Max(0, (scaledWidth - hostWidth) / 2);
+            double maxPanY = Math.Max(0, (scaledHeight - hostHeight) / 2);
+            _videoPanX = Math.Clamp(_videoPanX, -maxPanX, maxPanX);
+            _videoPanY = Math.Clamp(_videoPanY, -maxPanY, maxPanY);
+        }
+
+        private (double Width, double Height)? GetCurrentVideoDimensions()
+        {
+            if (_mediaPlayer?.Media == null)
+                return null;
+
+            foreach (var track in _mediaPlayer.Media.Tracks)
+            {
+                if (track.TrackType == TrackType.Video)
+                {
+                    var video = track.Data.Video;
+                    if (video.Width > 0 && video.Height > 0)
+                        return (video.Width, video.Height);
+                }
+            }
+
+            return null;
         }
 
         public double GetVideoZoom()

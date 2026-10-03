@@ -64,9 +64,9 @@ namespace Cloudless.PluginBase
         double GetVolume();
 
         
-        void SetVideoZoom(double scale, double centerX, double centerY);
+        void SetVideoZoom(double scale, double centerX, double centerY, bool constrainPan);
 
-        void PanVideoBy(double deltaX, double deltaY);
+        void PanVideoBy(double deltaX, double deltaY, bool constrainToBounds);
 
         double GetVideoZoom();
 
