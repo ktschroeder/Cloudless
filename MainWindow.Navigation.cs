@@ -160,6 +160,7 @@ namespace Cloudless
 
             await duplicateWindow.ApplyWindowState(state);
             await duplicateWindow.PostProcessLoadedWindow(state, isDuplicating: true);
+            await duplicateWindow.RestoreVideoPanZoomAfterLayout(state);
         }
         private void About_Click(object sender, RoutedEventArgs e)
         {

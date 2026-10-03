@@ -693,6 +693,22 @@ namespace Cloudless
             }
         }
 
+        internal async Task RestoreVideoPanZoomAfterLayout(CloudlessWindowState state)
+        {
+            if (VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer videoPlayer)
+                return;
+
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input);
+
+            videoPlayer.ResetVideoPanZoom();
+            var videoControl = VideoHost.Content as FrameworkElement;
+            double centerX = videoControl?.ActualWidth > 0 ? videoControl.ActualWidth / 2 : VideoHost.ActualWidth / 2;
+            double centerY = videoControl?.ActualHeight > 0 ? videoControl.ActualHeight / 2 : VideoHost.ActualHeight / 2;
+            videoPlayer.SetVideoZoom(state.Zoom, centerX, centerY, constrainPan: false);
+            videoPlayer.PanVideoBy(state.PanX, state.PanY, constrainToBounds: false);
+        }
+
         public async Task PostProcessLoadedWindow(CloudlessWindowState state, string? workspaceName = null, int startingPageIndex = 1, bool isDuplicating = false)
         {
             Show();
