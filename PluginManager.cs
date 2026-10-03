@@ -251,11 +251,14 @@ namespace Cloudless
                 {
                     Version existingVersion = Version.Parse(existingPlugin.PluginVersion);
                     Version newVersion = Version.Parse(manifest.PluginVersion);
-                    if (existingVersion >= newVersion)
+                    if (existingVersion > newVersion)
                     {
-                        progress?.Report("Did not install: This plugin is already up-to-date.");
+                        progress?.Report("Did not install: A newer plugin version is already installed.");
                         return false;
                     }
+
+                    if (existingVersion == newVersion)
+                        progress?.Report("Re-downloading the currently installed plugin version...");
                 }
 
                 Directory.CreateDirectory(versionDir);

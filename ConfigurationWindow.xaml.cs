@@ -1,15 +1,31 @@
-﻿using Cloudless.PluginBase;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace Cloudless
 {
     public partial class ConfigurationWindow : Window
     {
+        private static readonly HttpClient PluginManifestClient = new()
+        {
+            Timeout = TimeSpan.FromSeconds(10)
+        };
+
+        private const string WebpManifestUrl = "https://raw.githubusercontent.com/ktschroeder/Cloudless/master/Cloudless.AnimatedWebpPlugin/manifest.json";
+        private const string VlcManifestUrl = "https://raw.githubusercontent.com/ktschroeder/Cloudless/master/Cloudless.VlcPlugin/manifest.json";
+        private const string GitHubTreeUrl = "https://api.github.com/repos/ktschroeder/Cloudless/git/trees/master?recursive=1";
+        private const string WebpArchivePath = "Cloudless.AnimatedWebpPlugin/HostedPlugin/AnimatedWebPPlugin.zip";
+        private const string VlcArchivePart0Path = "Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_0.zip";
+        private const string VlcArchivePart1Path = "Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_1.zip";
+        private static readonly object HostedPluginSizesLock = new();
+        private static Dictionary<string, long>? _cachedHostedPluginSizes;
+        private static DateTimeOffset _hostedPluginSizesCachedAt;
+        private static Task<Dictionary<string, long>>? _hostedPluginSizesRequest;
+
         public string SelectedDisplayMode { get; private set; }
         public string SelectedBackground { get; private set; }
         public string SelectedTheme { get; private set; }
@@ -162,13 +178,157 @@ namespace Cloudless
             var webpPlugin = PluginManager.GetPluginForFiletype("webp");
             var vlcPlugin = PluginManager.GetPluginForFiletype("webm");
 
-            if (webpPlugin != null)
+            _ = UpdatePluginVersionStatusAsync("Animated WebP", webpPlugin?.PluginVersion, webpPlugin?.MinAppVersion, WebpManifestUrl, WebpStatusText, WebpInstallButton);
+            _ = UpdatePluginVersionStatusAsync("WebM/MKV/MP4", vlcPlugin?.PluginVersion, vlcPlugin?.MinAppVersion, VlcManifestUrl, VlcStatusText, VlcInstallButton);
+            _ = UpdateHostedPluginSizesAsync();
+        }
+
+        private static async Task<Dictionary<string, long>> FetchHostedPluginSizesAsync()
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, GitHubTreeUrl);
+            request.Headers.UserAgent.ParseAdd("Cloudless");
+            using var response = await PluginManifestClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = document.RootElement;
+            if (root.TryGetProperty("truncated", out var truncated) && truncated.GetBoolean())
+                throw new InvalidDataException("The GitHub tree response was truncated.");
+
+            var wantedPaths = new HashSet<string>(StringComparer.Ordinal)
             {
-                WebpStatusText.Text = $"WebP support is installed. Plugin version {webpPlugin.PluginVersion}, minimum Cloudless app version {webpPlugin.MinAppVersion}";  // TODO add: current version and new version to prompt for update
+                WebpArchivePath,
+                VlcArchivePart0Path,
+                VlcArchivePart1Path
+            };
+            var sizes = new Dictionary<string, long>(StringComparer.Ordinal);
+            foreach (var entry in root.GetProperty("tree").EnumerateArray())
+            {
+                if (entry.GetProperty("type").GetString() != "blob")
+                    continue;
+
+                string? path = entry.GetProperty("path").GetString();
+                if (path != null && wantedPaths.Contains(path))
+                    sizes[path] = entry.GetProperty("size").GetInt64();
             }
-            if (vlcPlugin != null)
+
+            if (sizes.Count != wantedPaths.Count)
+                throw new InvalidDataException("The GitHub tree did not include all hosted plugin archives.");
+
+            return sizes;
+        }
+
+        private async Task UpdateHostedPluginSizesAsync()
+        {
+            try
             {
-                VlcStatusText.Text = $"WebM/MKV/MP4 support is installed. Plugin version {vlcPlugin.PluginVersion}, minimum Cloudless app version {vlcPlugin.MinAppVersion}";
+                var sizes = await GetHostedPluginSizesAsync();
+                WebpDescriptionText.Text = $"Animated WEBP support ({FormatDownloadSize(sizes[WebpArchivePath])} download)";
+                long vlcTotalSize = sizes[VlcArchivePart0Path] + sizes[VlcArchivePart1Path];
+                VlcDescriptionText.Text = $"WEBM/MKV/MP4 support ({FormatDownloadSize(vlcTotalSize)} download)";
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to retrieve hosted plugin archive sizes: {ex.Message}");
+                WebpDescriptionText.Text = "Animated WEBP support (download size unavailable)";
+                VlcDescriptionText.Text = "WEBM/MKV/MP4 support (download size unavailable)";
+            }
+        }
+
+        private static async Task<Dictionary<string, long>> GetHostedPluginSizesAsync()
+        {
+            Task<Dictionary<string, long>> request;
+            lock (HostedPluginSizesLock)
+            {
+                if (_cachedHostedPluginSizes != null && DateTimeOffset.UtcNow - _hostedPluginSizesCachedAt < TimeSpan.FromMinutes(10))
+                    return _cachedHostedPluginSizes;
+
+                request = _hostedPluginSizesRequest ??= FetchHostedPluginSizesAsync();
+            }
+
+            try
+            {
+                var sizes = await request;
+                lock (HostedPluginSizesLock)
+                {
+                    if (ReferenceEquals(_hostedPluginSizesRequest, request))
+                    {
+                        _cachedHostedPluginSizes = sizes;
+                        _hostedPluginSizesCachedAt = DateTimeOffset.UtcNow;
+                        _hostedPluginSizesRequest = null;
+                    }
+                }
+
+                return sizes;
+            }
+            catch
+            {
+                lock (HostedPluginSizesLock)
+                {
+                    if (ReferenceEquals(_hostedPluginSizesRequest, request))
+                        _hostedPluginSizesRequest = null;
+                }
+
+                throw;
+            }
+        }
+
+        private static string FormatDownloadSize(long bytes) => $"{bytes / 1_000_000d:0.#} MB";
+
+        private async Task UpdatePluginVersionStatusAsync(string pluginName, string? installedVersion, string? installedMinAppVersion, string manifestUrl, TextBlock statusText, Button installButton)
+        {
+            statusText.Text = installedVersion == null
+                ? "Checking hosted version..."
+                : $"Installed version {installedVersion}; minimum Cloudless version {installedMinAppVersion ?? "unknown"}; checking hosted version...";
+
+            try
+            {
+                string json = await PluginManifestClient.GetStringAsync(manifestUrl);
+                var manifest = JsonSerializer.Deserialize<PluginManifest>(json);
+                if (manifest == null || !Version.TryParse(manifest.PluginVersion, out var hostedVersion))
+                    throw new InvalidDataException("The hosted plugin manifest has no valid version.");
+                string minimumAppVersion = string.IsNullOrWhiteSpace(manifest.MinAppVersion)
+                    ? ""
+                    : $" Minimum Cloudless version {manifest.MinAppVersion}.";
+
+                if (installedVersion == null)
+                {
+                    statusText.Text = $"Hosted version {manifest.PluginVersion} is available; plugin is not installed.{minimumAppVersion}";
+                    installButton.Content = $"Download and install {manifest.PluginVersion}";
+                    return;
+                }
+
+                if (Version.TryParse(installedVersion, out var currentVersion))
+                {
+                    int comparison = currentVersion.CompareTo(hostedVersion);
+                    if (comparison == 0)
+                    {
+                        statusText.Text = $"Installed version {installedVersion} matches hosted version {manifest.PluginVersion}.{minimumAppVersion}";
+                        installButton.Content = $"Re-download current version ({installedVersion})";
+                    }
+                    else if (comparison < 0)
+                    {
+                        statusText.Text = $"Installed version {installedVersion}; newer hosted version {manifest.PluginVersion} is available.{minimumAppVersion}";
+                        installButton.Content = $"Download and update to {manifest.PluginVersion}";
+                    }
+                    else
+                    {
+                        statusText.Text = $"Installed version {installedVersion} is newer than hosted version {manifest.PluginVersion}.{minimumAppVersion}";
+                        installButton.Content = $"Download hosted version {manifest.PluginVersion}";
+                    }
+                }
+                else
+                {
+                    statusText.Text = $"Installed version {installedVersion}; hosted version {manifest.PluginVersion}.{minimumAppVersion}";
+                    installButton.Content = $"Download and install/update {manifest.PluginVersion}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to check hosted {pluginName} plugin version: {ex.Message}");
+                statusText.Text = installedVersion == null
+                    ? "Could not check hosted version. The download remains available."
+                    : $"Installed version {installedVersion}; minimum Cloudless version {installedMinAppVersion ?? "unknown"}; could not check hosted version. The download remains available.";
             }
         }
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
@@ -277,14 +437,16 @@ namespace Cloudless
 
             if (success)
             {
-                WebpStatusText.Text = "WebP support installed!";
-
                 var plugin = PluginManager.GetPluginForFiletype("webp");
-                Task.Run(() => plugin.WarmupAsync());
-            }
-            else
-            {
-                //WebpStatusText.Text = "Installation failed: " + progress.ToString();
+                if (plugin != null)
+                {
+                    _ = Task.Run(() => plugin.WarmupAsync());
+                    await UpdatePluginVersionStatusAsync("Animated WebP", plugin.PluginVersion, plugin.MinAppVersion, WebpManifestUrl, WebpStatusText, WebpInstallButton);
+                }
+                else
+                {
+                    WebpStatusText.Text = "Installation completed, but the installed plugin version could not be verified.";
+                }
             }
 
             WebpInstallButton.IsEnabled = true;
@@ -299,28 +461,32 @@ namespace Cloudless
                 VlcStatusText.Text = msg; // TextBlock in UI
             });
 
-            var success = await PluginManager.InstallPluginAsync(
+            bool success = await PluginManager.InstallPluginAsync(
                 pluginName: "Vlc",
                 downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_0.zip",
                 progress: progress);
 
-            // TODO clean this up
-            success = await PluginManager.InstallPluginAsync(
-                pluginName: "Vlc",
-                downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_1.zip",
-                progress: progress,
-                continuingInstallInParts: true);  // this tells the installer to not delete the plugin folder
+            if (success)
+            {
+                success = await PluginManager.InstallPluginAsync(
+                    pluginName: "Vlc",
+                    downloadUrl: "https://raw.github.com/ktschroeder/Cloudless/master/Cloudless.VlcPlugin/HostedPlugin/VlcPlugin_1.zip",
+                    progress: progress,
+                    continuingInstallInParts: true);
+            }
 
             if (success)
             {
-                VlcStatusText.Text = "WebM/MKV/MP4 support installed!";
-
                 var plugin = PluginManager.GetPluginForFiletype("webm");
-                Task.Run(() => plugin.WarmupAsync());
-            }
-            else
-            {
-                //VlcStatusText.Text = "Installation failed: " + progress.ToString();
+                if (plugin != null)
+                {
+                    _ = Task.Run(() => plugin.WarmupAsync());
+                    await UpdatePluginVersionStatusAsync("WebM/MKV/MP4", plugin.PluginVersion, plugin.MinAppVersion, VlcManifestUrl, VlcStatusText, VlcInstallButton);
+                }
+                else
+                {
+                    VlcStatusText.Text = "Installation completed, but the installed plugin version could not be verified.";
+                }
             }
 
             VlcInstallButton.IsEnabled = true;

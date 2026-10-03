@@ -142,13 +142,13 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
                         <TabItem Header="Plugins">
                             <StackPanel Margin="12" VerticalAlignment="Top">
 
-                                <TextBlock>Animated WEBP support (7 MB)</TextBlock>
+                                <TextBlock x:Name="WebpDescriptionText">Animated WEBP support (checking download size...)</TextBlock>
                                 <Button Name="WebpInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallWebP_Click">Download and Install/Update</Button>
                                 <TextBlock Name="WebpStatusText">Ready to install</TextBlock>
 
                                 <TextBlock></TextBlock>
 
-                                <TextBlock>WEBM/MKV/MP4 support (279 MB)</TextBlock>
+                                <TextBlock x:Name="VlcDescriptionText">WEBM/MKV/MP4 support (checking download size...)</TextBlock>
                                 <Button Name="VlcInstallButton" Style="{StaticResource CloudlessButton}" Click="InstallVlc_Click">Download and Install/Update</Button>
                                 <TextBlock Name="VlcStatusText">Ready to install</TextBlock>
 
