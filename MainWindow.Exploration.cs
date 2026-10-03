@@ -878,14 +878,29 @@ namespace Cloudless
             else
                 isCropMode = !isCropMode;
 
+            if (isCropMode)
+                UpdateCropModeInfo();
+
+            if (isCropMode && !silent)
+            {
+                UpdateBorderColor();
+                UpdateLayout();
+                VideoHost.UpdateLayout();
+            }
+
             if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
                 videoPlayer.SetVideoCropMode(isCropMode);
+
+            if (!isCropMode && !silent)
+            {
+                UpdateBorderColor();
+                UpdateLayout();
+            }
 
             UpdateCropModeInfo();
 
             if (!silent)
             {
-                UpdateBorderColor();
                 string message = isCropMode ? "Entered Cropping Mode" : "Exited Cropping Mode";
                 Message(message);
             }
@@ -894,7 +909,7 @@ namespace Cloudless
         private void UpdateBorderColor()
         {
             bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
-            if (isCropMode)
+            if (isCropMode && VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer)
             {
                 this.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
                 this.BorderThickness = new Thickness(2);
