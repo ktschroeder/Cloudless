@@ -1148,9 +1148,8 @@ namespace Cloudless
                 var maybeVideo = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (maybeVideo != null)
                 {
-                    // Determine cursor position relative to window
-                    Point cursorPosition = e.GetPosition(this);
-                    // TODO: is not used.
+                    // Pass the cursor position relative to the video host.
+                    Point cursorPosition = e.GetPosition(VideoHost);
 
                     double zoomDelta = e.Delta > 0 ? 1.1 : 1 / 1.1;
                     if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt))

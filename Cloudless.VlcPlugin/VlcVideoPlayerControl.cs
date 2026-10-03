@@ -558,6 +558,8 @@ namespace Cloudless.VlcPlugin
             if (_videoHostContainer == null)
                 return;
 
+            _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
+
             Console.WriteLine($"[VLC] Applying transform: newScale={newScale:F3} _videoPan=({_videoPanX:F1},{_videoPanY:F1}) hostSize={_videoHostContainer.ActualWidth:F0}x{_videoHostContainer.ActualHeight:F0}");
             // Ensure transforms exist on the host container and use center origin so scaling behaves like images
             var tg = _videoHostContainer.RenderTransform as TransformGroup;
@@ -586,34 +588,13 @@ namespace Cloudless.VlcPlugin
             // Compute derivedDelta (newScale / oldScale) using captured variables
             double derivedDelta = (oldScale > 0) ? (newScale / oldScale) : 1.0;
 
-            // Determine zoom origin in local (pre-transform) coordinates relative to the host container
-            Point mouseLocal = System.Windows.Input.Mouse.GetPosition(_videoHostContainer);
-            double localX = mouseLocal.X;
-            double localY = mouseLocal.Y;
-
-            localX = centerX;  // TODO remove above if not using.
-            localY = centerY;
-
-            var rt2 = _videoHostContainer.RenderTransform;
-            if (rt2 != null && !rt2.Value.IsIdentity)
-            {
-                var m2 = rt2.Value;
-                if (m2.HasInverse)
-                {
-                    m2.Invert();
-                    var pre = m2.Transform(mouseLocal);
-                    localX = pre.X;
-                    localY = pre.Y;
-                }
-            }
-
-            // Use host container actual size as the container for pan math
+            // The host passes cursor coordinates in the video control's untransformed coordinate space.
             double containerWidth = _videoHostContainer.ActualWidth;
             double containerHeight = _videoHostContainer.ActualHeight;
 
-            // Calculate offset relative to the center of the host container
-            double offsetX = localX - _videoPanX - (containerWidth / 2.0);
-            double offsetY = localY - _videoPanY - (containerHeight / 2.0);
+            // Calculate the cursor's offset from the transformed center before applying the new scale.
+            double offsetX = centerX - _videoPanX - (containerWidth / 2.0);
+            double offsetY = centerY - _videoPanY - (containerHeight / 2.0);
 
             // Adjust pan so zoom is centered on the provided point
             _videoPanX -= offsetX * (derivedDelta - 1.0);
@@ -656,6 +637,7 @@ namespace Cloudless.VlcPlugin
                     tg.Children.Add(new ScaleTransform(_videoScale, _videoScale));
                     tg.Children.Add(new TranslateTransform(_videoPanX, _videoPanY));
                     _videoHostContainer.RenderTransform = tg;
+                    _videoHostContainer.RenderTransformOrigin = new Point(0.5, 0.5);
                 }
                 else
                 {
