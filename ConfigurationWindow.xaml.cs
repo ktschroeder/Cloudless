@@ -252,13 +252,6 @@ namespace Cloudless
             OpenDefaultAppsSettings();
         }
 
-        private void ManageGifCache_Click(object sender, RoutedEventArgs e)
-        {
-            string directory = Path.GetTempPath();
-            string cloudlessTempPath = Path.Combine(directory, "CloudlessTempData");
-            _mw.RevealDirectoryInExplorer(cloudlessTempPath);
-        }
-
         private void OpenDefaultAppsSettings()
         {
             Process.Start(new ProcessStartInfo

@@ -162,10 +162,6 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
     Content="Disable smart zoom/pan corrections (generally not recommended)" 
     Margin="0,2"/>
 
-                                <Button Content="Manage cache (GIFs from converted WEBMs, thumbnails, etc.)"
-    Click="ManageGifCache_Click" 
-    Margin="0,6,0,6"
-    Style="{StaticResource CloudlessButton}"/>
 
                                 <CheckBox x:Name="AlwaysOnTopByDefaultCheckbox" 
     Content="This window and all new windows have always-on-top enabled. (Toggle per-window with T.)" 
