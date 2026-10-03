@@ -16,6 +16,7 @@ namespace Cloudless
         public event Action<string, bool>? ThumbnailClicked;
 
         private CancellationTokenSource? _populateCts;
+        private ToolTip? _activeThumbnailToolTip;
 
         // Static retain storage - global in-memory filmstrip contents retained across instances
         private static string[]? _retainedFilmstripContents;
@@ -78,7 +79,12 @@ namespace Cloudless
             var sv = this.FindName("PART_ScrollViewer") as ScrollViewer;
             if (sv != null)
             {
-                sv.ScrollChanged += (s, ev) => UpdateOverflowIndicators();
+                sv.ScrollChanged += (s, ev) =>
+                {
+                    UpdateOverflowIndicators();
+                    if (ev.HorizontalChange != 0)
+                        HideActiveThumbnailToolTip();
+                };
             }
 
         }
@@ -185,6 +191,14 @@ namespace Cloudless
 
                 string path = files[i];
 
+                var tooltip = new ToolTip { Content = GetTooltipFileName(path) };
+                tooltip.Opened += (s, e) => _activeThumbnailToolTip = tooltip;
+                tooltip.Closed += (s, e) =>
+                {
+                    if (ReferenceEquals(_activeThumbnailToolTip, tooltip))
+                        _activeThumbnailToolTip = null;
+                };
+
                 var border = new Border
                 {
                     Width = thumbWidth,
@@ -192,8 +206,11 @@ namespace Cloudless
                     Margin = new Thickness(6),
                     Background = new SolidColorBrush(Color.FromArgb(12, 255, 255, 255)),
                     CornerRadius = new CornerRadius(6),
-                    Tag = path
+                    Tag = path,
+                    ToolTip = tooltip
                 };
+                ToolTipService.SetInitialShowDelay(border, 500);
+                ToolTipService.SetBetweenShowDelay(border, 0);
 
                 var img = new Image
                 {
@@ -412,8 +429,9 @@ namespace Cloudless
         {
             var sv = PART_ScrollViewer;
             if (sv == null) return;
-            double target = sv.HorizontalOffset + offset;
-            if (target < 0) target = 0;
+            double target = Math.Clamp(sv.HorizontalOffset + offset, 0, sv.ScrollableWidth);
+            if (target != sv.HorizontalOffset)
+                HideActiveThumbnailToolTip();
             sv.ScrollToHorizontalOffset(target);
         }
 
@@ -422,18 +440,28 @@ namespace Cloudless
         public void ScrollOptionsByOffset(double offset)
         {
             var scrollViewer = PART_OptionsScrollViewer;
-            double target = scrollViewer.HorizontalOffset + offset;
-            if (target < 0) target = 0;
+            double target = Math.Clamp(scrollViewer.HorizontalOffset + offset, 0, scrollViewer.ScrollableWidth);
+            if (target != scrollViewer.HorizontalOffset)
+                HideActiveThumbnailToolTip();
             scrollViewer.ScrollToHorizontalOffset(target);
         }
 
         private void PART_OptionsScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
+            if (e.HorizontalChange != 0)
+                HideActiveThumbnailToolTip();
+
             bool optionsFit = e.ExtentWidth <= e.ViewportWidth + 1;
             PART_OptionsPanel.HorizontalAlignment = optionsFit ? HorizontalAlignment.Center : HorizontalAlignment.Left;
 
             if (optionsFit && PART_OptionsScrollViewer.HorizontalOffset > 0)
                 PART_OptionsScrollViewer.ScrollToHorizontalOffset(0);
+        }
+
+        private void HideActiveThumbnailToolTip()
+        {
+            if (_activeThumbnailToolTip?.IsOpen == true)
+                _activeThumbnailToolTip.IsOpen = false;
         }
 
         public bool CloseAfterSelect => PART_CloseAfterSelect.IsChecked == true;
@@ -462,6 +490,23 @@ namespace Cloudless
                 .Where(b => b.Tag is string)
                 .Select(b => (string)b.Tag)
                 .ToArray();
+        }
+
+        private static string GetTooltipFileName(string path)
+        {
+            const int maxLength = 48;
+            string fileName = Path.GetFileName(path);
+            if (fileName.Length <= maxLength)
+                return fileName;
+
+            string extension = Path.GetExtension(fileName);
+            if (string.IsNullOrEmpty(extension))
+                return fileName.Substring(0, maxLength - 1) + "…";
+
+            string suffix = $"… [{extension}]";
+            int stemLength = Math.Max(0, maxLength - suffix.Length);
+            string stem = Path.GetFileNameWithoutExtension(fileName);
+            return stem.Substring(0, Math.Min(stem.Length, stemLength)) + suffix;
         }
 
         private void PART_RetainContents_Checked(object sender, RoutedEventArgs e)
