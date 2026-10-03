@@ -657,6 +657,8 @@ namespace Cloudless
                 }
 
                 await ToggleFullscreen();
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input);
             }
 
             if (state.DisplayMode.ToLower().StartsWith("best"))  // best fit or zoomless best fit
@@ -667,9 +669,9 @@ namespace Cloudless
                     var videoPlayer = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                     if (videoPlayer != null)
                     {
-                        bool constrainPan = !Cloudless.Properties.Settings.Default.DisableSmartZoom;
-                        videoPlayer.SetVideoZoom(state.Zoom, 0, 0, constrainPan);
-                        videoPlayer.PanVideoBy(state.PanX, state.PanY, constrainPan);
+                        videoPlayer.ResetVideoPanZoom();
+                        videoPlayer.SetVideoZoom(state.Zoom, VideoHost.ActualWidth / 2, VideoHost.ActualHeight / 2, constrainPan: false);
+                        videoPlayer.PanVideoBy(state.PanX, state.PanY, constrainToBounds: false);
                     }
                 }
                 else
