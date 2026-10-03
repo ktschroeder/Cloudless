@@ -42,6 +42,7 @@ namespace Cloudless
             if (configWindow.ShowDialog() == true)
             {
                 // Save the new preference
+                bool zenModeSettingChanged = Cloudless.Properties.Settings.Default.DisableZenMode != configWindow.DisableZenMode;
                 Cloudless.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
                 Cloudless.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
                 Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
@@ -56,6 +57,7 @@ namespace Cloudless
                 var previousSortOrder = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
                 Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
                 Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
+                Cloudless.Properties.Settings.Default.DisableZenMode = configWindow.DisableZenMode;
                 Cloudless.Properties.Settings.Default.ImgBBKey = configWindow.ImgBBKey;
                 Cloudless.Properties.Settings.Default.StartOnWindowsStart = configWindow.StartOnWindowsStart;
                 Cloudless.Properties.Settings.Default.MouseLongPressMS = configWindow.MouseLongHoldMs;
@@ -77,6 +79,12 @@ namespace Cloudless
                 }
 
                 SetBackground();
+
+                if (zenModeSettingChanged)
+                {
+                    foreach (var window in Application.Current.Windows.OfType<MainWindow>().Where(window => window.isZen).ToList())
+                        window.Zen(false);
+                }
 
                 ApplyDisplayMode();
 

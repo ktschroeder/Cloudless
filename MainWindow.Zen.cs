@@ -38,7 +38,7 @@ namespace Cloudless
             _resizeStarTimer.Tick += (s, e) =>
             {
                 _resizeStarTimer.Stop();
-                if (isZen) {
+                if (isZen && !Properties.Settings.Default.DisableZenMode) {
                     GenerateStars();
                 }; // Only regenerate stars once resizing stops
             };
@@ -56,7 +56,7 @@ namespace Cloudless
             };
             _shootingStarTimer.Tick += (s, e) =>
             {
-                if (isZen)
+                if (isZen && !Properties.Settings.Default.DisableZenMode)
                 {
                     double rand = _random.NextDouble();
                     if (rand < 0.0005)
@@ -83,9 +83,16 @@ namespace Cloudless
             VideoHost.Height = 0;
             VideoHost.Width = 0;
 
-            magicLayersCreated = 0;
-            GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
-            GenerateStars();
+            if (Properties.Settings.Default.DisableZenMode)
+            {
+                Background = Brushes.Black;
+            }
+            else
+            {
+                magicLayersCreated = 0;
+                GradientMagic(); // Zen in context menu, also ability to unload image, possibly disable this
+                GenerateStars();
+            }
             if (includeInfoText)
             {
                 if (!MyGrid.Children.Contains(NoImageMessage))

@@ -40,6 +40,7 @@ namespace Cloudless
         public bool AlwaysOnTopByDefault { get; private set; }
         public double MaxCompressedCopySizeMB { get; private set; }
         public bool DisableSmartZoom { get; private set; }
+        public bool DisableZenMode { get; private set; }
         public string ImgBBKey { get; private set; }
         public bool StartOnWindowsStart { get; private set; }
         public int MouseLongHoldMs { get; private set; }
@@ -105,6 +106,10 @@ namespace Cloudless
             var currentDisableSmartZoom = Cloudless.Properties.Settings.Default.DisableSmartZoom;
             DisableSmartZoomCheckbox.IsChecked = currentDisableSmartZoom;
             DisableSmartZoom = currentDisableSmartZoom;
+
+            var currentDisableZenMode = Cloudless.Properties.Settings.Default.DisableZenMode;
+            DisableZenModeCheckbox.IsChecked = currentDisableZenMode;
+            DisableZenMode = currentDisableZenMode;
 
             var currentStartOnWindowsStartCheckbox = Cloudless.Properties.Settings.Default.StartOnWindowsStart;
             StartOnWindowsStartCheckbox.IsChecked = currentStartOnWindowsStartCheckbox;
@@ -381,6 +386,7 @@ namespace Cloudless
             MuteMessages = MuteMessagesCheckbox.IsChecked ?? false;
             AlwaysOnTopByDefault = AlwaysOnTopByDefaultCheckbox.IsChecked ?? false;
             DisableSmartZoom = DisableSmartZoomCheckbox.IsChecked ?? false;
+            DisableZenMode = DisableZenModeCheckbox.IsChecked ?? false;
             StartOnWindowsStart = StartOnWindowsStartCheckbox.IsChecked ?? false;
             PreloadImages = PreloadImagesCheckbox.IsChecked ?? false;
             ComicModeMouseControlScroll = ComicModeMouseControlScrollCheckbox.IsChecked ?? false;

@@ -162,6 +162,10 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
     Content="Disable smart zoom/pan corrections (generally not recommended)" 
     Margin="0,2"/>
 
+                                <CheckBox x:Name="DisableZenModeCheckbox"
+    Content="Disable Zen visuals (use a plain black background instead)"
+    Margin="0,2"/>
+
 
                                 <CheckBox x:Name="AlwaysOnTopByDefaultCheckbox" 
     Content="This window and all new windows have always-on-top enabled. (Toggle per-window with T.)" 

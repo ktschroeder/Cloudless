@@ -177,6 +177,18 @@ namespace Cloudless.Properties {
                 this["DisableSmartZoom"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DisableZenMode {
+            get {
+                return ((bool)(this["DisableZenMode"]));
+            }
+            set {
+                this["DisableZenMode"] = value;
+            }
+        }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
