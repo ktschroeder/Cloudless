@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 
@@ -35,7 +34,7 @@ namespace Cloudless
 
             double fontSize = Math.Clamp(ActualHeight * 0.075, 8, 10);
             var text = new FormattedText(
-                "? ANIM",
+                "ANIM",
                 CultureInfo.CurrentUICulture,
                 FlowDirection.LeftToRight,
                 new Typeface("Segoe UI Semibold"),
