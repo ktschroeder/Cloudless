@@ -1019,6 +1019,8 @@ namespace Cloudless
         {
             int[] roundZooms = { 10, 25, 50, 75, 100, 150, 200, 400, 800 };
 
+            ZoomMenu.IsEnabled = !string.IsNullOrWhiteSpace(currentlyDisplayedImagePath);
+
             // Clear the existing items
             ZoomMenu.Items.Clear();
 
