@@ -24,6 +24,9 @@ namespace Cloudless
         private static readonly Random _rng = new Random();
         // Guard against rapid duplicate triggers: store the last trigger time in ms
         private static long _lastTriggerTickMs = 0;
+        private static long _lastTriggerTimeMs = long.MinValue;
+        // Reentrancy guard for OnTimerTick (non-zero while a tick is in progress).
+        private static int _tickInProgress = 0;
 
         public static event Action? SlideshowStarted;
         public static event Action? SlideshowStopped;
@@ -198,6 +201,23 @@ namespace Cloudless
         /// </summary>
         private static void OnTimerTick(bool fromTrigger = false)
         {
+            // If we're already inside a tick (e.g. a page swap reentered via a timer reset or
+            // a nested trigger), don't advance again. This prevents the rapid double transition.
+            if (Interlocked.CompareExchange(ref _tickInProgress, 1, 0) != 0)
+                return;
+
+            try
+            {
+                OnTimerTickCore(fromTrigger);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _tickInProgress, 0);
+            }
+        }
+
+        private static void OnTimerTickCore(bool fromTrigger)
+        {
             if (_slideshowPages == null || _slideshowPages.Count == 0)
             {
                 Stop();
@@ -329,19 +349,24 @@ namespace Cloudless
             }
         }
 
-        private static DateTime _lastTriggerTime = DateTime.MinValue;
         public static bool HasSufficientTimePassedSinceLastTrigger_ConsumeIfYes()
         {
-            const int DEBOUNCE_MS = 250; // minimum time in milliseconds between triggers
-            DateTime now = DateTime.Now;
-            DateTime prev = _lastTriggerTime;
+            const long DEBOUNCE_MS = 2000; // minimum time in milliseconds between triggers
+            long now = Environment.TickCount64;
 
-            bool ready = (prev == DateTime.MinValue || (now - prev).TotalMilliseconds >= DEBOUNCE_MS);
-            if (!ready)
-                return false;
+            // Atomically claim this trigger slot. If another caller already claimed a slot
+            // within the debounce window, this call fails. Using Interlocked.CompareExchange
+            // in a loop makes the read-check-write atomic so two handlers firing in the same
+            // window (e.g. the two TimeChanged paths) cannot both pass.
+            while (true)
+            {
+                long prev = _lastTriggerTimeMs;
+                if (prev != long.MinValue && (now - prev) < DEBOUNCE_MS)
+                    return false;
 
-            _lastTriggerTime = now;
-            return true;
+                if (Interlocked.CompareExchange(ref _lastTriggerTimeMs, now, prev) == prev)
+                    return true;
+            }
         }
     }
 }
