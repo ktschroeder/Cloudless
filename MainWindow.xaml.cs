@@ -1,5 +1,4 @@
-﻿//using WpfAnimatedGif;
-using AnimatedImage.Wpf;
+﻿using AnimatedImage.Wpf;
 using Cloudless.Properties;
 using Microsoft.Win32;
 using System.Diagnostics;
@@ -22,9 +21,9 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.12.1.300";
+        public const string CURRENT_VERSION = "0.13.0";
         // RemoveBeforeFlight
-        public const bool LOCAL_DEV = true;
+        public const bool LOCAL_DEV = false;
 
 
 

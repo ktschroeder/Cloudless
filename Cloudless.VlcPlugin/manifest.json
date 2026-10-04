@@ -1,5 +1,5 @@
 {
   "Name": "VLC Plugin",
-  "PluginVersion": "1.2.0",
-  "MinAppVersion": "0.12.1"
+  "PluginVersion": "1.3.0",
+  "MinAppVersion": "0.13.0"
 }
