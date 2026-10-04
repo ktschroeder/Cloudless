@@ -345,6 +345,8 @@ namespace Cloudless
                 {
                     videoPlayer.Stop();
                     videoPlayer.Dispose();
+                    VideoHost.Content = null;
+                    HideVideoControlsForMediaChange();
                 }
 
                 //System.GC.Collect();

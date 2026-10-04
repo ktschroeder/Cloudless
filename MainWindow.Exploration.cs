@@ -1024,6 +1024,12 @@ namespace Cloudless
 
         public void ToggleVideoControlsVisibility()
         {
+            if (VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer)
+            {
+                HideVideoControlsForMediaChange();
+                return;
+            }
+
             _videoControlsVisible = !_videoControlsVisible;
 
             if (_videoControlsVisible)
@@ -1115,8 +1121,11 @@ namespace Cloudless
             if (Cloudless.Properties.Settings.Default.UseManualVideoControls)
                 return;
 
-            if (!(VideoHost.Content is Cloudless.PluginBase.IVideoPlayer))
+            if (VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer)
+            {
+                HideVideoControlsForMediaChange();
                 return;
+            }
 
             if (_videoControlsWindow == null)
                 InitializeVideoControls();
@@ -1174,6 +1183,24 @@ namespace Cloudless
             {
                 _cursorIdleTimer?.Start();
             }
+        }
+
+        private void HideVideoControlsForMediaChange()
+        {
+            _videoControlsIdleTimer?.Stop();
+            _videoControlsMonitorTimer?.Stop();
+            _cursorIdleTimer?.Stop();
+            _videoControlsVisible = false;
+
+            if (_videoControlsWindow != null)
+            {
+                _videoControlsWindow.MouseEnter -= VideoControlsWindow_MouseEnter;
+                _videoControlsWindow.MouseLeave -= VideoControlsWindow_MouseLeave;
+                _videoControlsWindow.StopPositionUpdates();
+                _videoControlsWindow.Hide();
+            }
+
+            ShowCursorIfHidden();
         }
 
         private void VideoControlsWindow_MouseEnter(object? sender, System.Windows.Input.MouseEventArgs e)
