@@ -31,6 +31,8 @@ namespace Cloudless.VlcPlugin
         private TimeSpan? _loopStart = null;
         private TimeSpan? _loopEnd = null;
         private bool _autoRestartAllowed = true;
+        private bool _playerInitializationStarted;
+        private bool _disposed;
         private DateTime _lastLoopSeek = DateTime.MinValue;
         // Desired mute state when _mediaPlayer is not yet available.
         private bool? _desiredMute = null;
@@ -264,7 +266,14 @@ namespace Cloudless.VlcPlugin
         {
             try
             {
+                if (_disposed || _mediaPlayer != null || _playerInitializationStarted)
+                    return;
+
+                _playerInitializationStarted = true;
                 _libVLC = await LibVlcProvider.GetInstance();
+                if (_disposed)
+                    return;
+
                 _mediaPlayer = new MediaPlayer(_libVLC);
 
                 Cloudless.Diagnostics.LeakTracker.Register(_mediaPlayer, "LibVLC.MediaPlayer");
@@ -282,51 +291,11 @@ namespace Cloudless.VlcPlugin
                     _mediaPlayer.Volume = _desiredVolume.Value;
                 }
 
-                _mediaPlayer.EndReached += (sender, args) =>
-                {
-                    try
-                    {
-                        // Note: App seems to crash here sometimes when this event is triggered but the window has been closed. I think in the QueueUserWorkItem method.
-
-                        // IMPORTANT: Notify listeners that playback wrapped to zero so host UI can detect trigger/loop events.
-                        Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
-                        {
-                            TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = 0 });
-                        }));
-
-                        // Restart only if auto-restart is allowed. Otherwise rely on host to coordinate restarts.
-                        if (_autoRestartAllowed)
-                        {
-                            // Restart playback on a different thread to avoid deadlocks and mimic previous behavior
-                            ThreadPool.QueueUserWorkItem(_ =>
-                            {
-                                try
-                                {
-                                    //_mediaPlayer.Stop(); // Recommended to stop before re-playing
-                                    _mediaPlayer.Play(new Media(_libVLC, _currentUri));  // TODO explore hacks for smoth looping... https://stackoverflow.com/questions/56487740/how-to-achieve-looping-playback-with-libvlcsharp  // media.add_option(":input-repeat=65535")
-                                                                                         //_videoView.MediaPlayer = _mediaPlayer2;
-                                                                                         //_mediaPlayer2.Play();
-                                }
-                                catch (Exception ex2)
-                                {
-                                    Console.WriteLine($"Error restarting media in EndReached handler: {ex2.Message}");
-                                }
-                            });
-                        }
-
-                        //Restart();
-                    }
-                    catch (Exception ex)
-                    {
-                        // TODO probably pass in messenger to plugins to be used like here
-                        Console.WriteLine($"Error in EndReached handler: {ex.Message}");
-                    }
-                };
+                _mediaPlayer.EndReached += MediaPlayer_EndReached;
 
                 _mediaPlayer.EnableMouseInput = false;
                 _mediaPlayer.EnableKeyInput = false;
 
-                // No EndReached handler here to avoid captured closures keeping media player alive.
                 _videoView.MediaPlayer = _mediaPlayer;
 
                 _loadSignal.SetResult(true);
@@ -336,6 +305,30 @@ namespace Cloudless.VlcPlugin
                 // signal load to avoid deadlocks
                 _loadSignal.TrySetResult(true);
                 Console.WriteLine($"VlcVideoPlayerControl.VideoView_Loaded failed: {ex.Message}");
+            }
+        }
+
+        private void MediaPlayer_EndReached(object? sender, EventArgs e)
+        {
+            if (_disposed)
+                return;
+
+            try
+            {
+                Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+                {
+                    if (_disposed)
+                        return;
+
+                    TimeChanged?.Invoke(this, new Cloudless.PluginBase.VideoTimeChangedEventArgs { TimeMilliseconds = 0 });
+
+                    if (_autoRestartAllowed && _mediaPlayer != null && _currentMedia != null)
+                        _mediaPlayer.Play(_currentMedia);
+                }));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in EndReached handler: {ex.Message}");
             }
         }
 
@@ -431,10 +424,15 @@ namespace Cloudless.VlcPlugin
         public async Task Play(Uri uri, Task? postPlayTask = null)
         {
             await _loadSignal.Task;  // ensure video view is loaded, or else VLC will open the media in an external player
+            if (_disposed)
+                return;
+
             // Additionally ensure the VideoView has been attached to a PresentationSource (HWND) so LibVLC
             // will use the WPF host instead of creating an external native window. In some timing scenarios
             // Loaded can fire before the native handle is ready, especially when creating many windows quickly.
             await EnsureVideoViewReadyAsync();
+            if (_disposed)
+                return;
 
             try
             {
@@ -793,8 +791,6 @@ namespace Cloudless.VlcPlugin
             if (_mediaPlayer != null)
             {
                 _mediaPlayer.Stop();
-                _currentMedia?.Dispose();
-                _currentMedia = null;
             }
         }
 
@@ -884,6 +880,12 @@ namespace Cloudless.VlcPlugin
 
         public void Dispose()
         {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            _loadSignal?.TrySetResult(true);
+
             if (_videoView != null)
             {
                 _videoView.Loaded -= VideoView_Loaded;
@@ -892,24 +894,13 @@ namespace Cloudless.VlcPlugin
                 if (_mediaPlayer != null)
                 {
                     _mediaPlayer.TimeChanged -= MediaPlayer_TimeChanged;
+                    _mediaPlayer.EndReached -= MediaPlayer_EndReached;
+                    _mediaPlayer.Stop();
                 }
 
-                // Detach MediaPlayer from VideoView (MediaPlayer may be same as _mediaPlayer)
-                if (_videoView.MediaPlayer != null)
-                {
-                    _videoView.MediaPlayer.Stop();
-                    _videoView.MediaPlayer.Dispose();
-                    _videoView.MediaPlayer = null;
-                }
+                _videoView.MediaPlayer = null;
 
                 _videoView.Dispose();
-            }
-
-            // Stop and dispose managed media objects
-            if (_currentMedia != null)
-            {
-                _currentMedia.Dispose();
-                _currentMedia = null;
             }
 
             if (_mediaPlayer != null)
@@ -917,6 +908,14 @@ namespace Cloudless.VlcPlugin
                 _mediaPlayer.Dispose();
                 _mediaPlayer = null;
             }
+
+            if (_currentMedia != null)
+            {
+                _currentMedia.Dispose();
+                _currentMedia = null;
+            }
+
+            TimeChanged = null;
 
             // Do NOT dispose the shared LibVLC instance provided by LibVlcProvider; it is shared across players.
             _libVLC = null;

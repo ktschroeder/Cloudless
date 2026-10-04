@@ -339,22 +339,12 @@ namespace Cloudless
                 if (!WorkspaceLoadInProgress)
                     AddToRecentFiles(uri.LocalPath);
 
-                animationController = ImageBehavior.GetAnimationController(ImageDisplay);
-                if (animationController != null)
-                {
-                    animationController.Dispose();
-                    animationController = null;  // can probably more efficiently reuse this. see https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/WpfAnimatedGif.Demo/MainWindow.xaml.cs
-                }
+                ReleaseDisplayedImage();
 
                 if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
                 {
                     videoPlayer.Stop();
                     videoPlayer.Dispose();
-                }
-
-                if (ImageDisplay.Source is BitmapImage bi)
-                {
-                    bi.StreamSource?.Dispose();
                 }
 
                 //System.GC.Collect();
@@ -675,6 +665,64 @@ namespace Cloudless
                 }
 
                 Message($"Failed to display image: {ex.Message}");
+            }
+        }
+
+        private void ReleaseDisplayedImage()
+        {
+            var controller = ImageBehavior.GetAnimationController(ImageDisplay);
+            var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
+            var imageSource = ImageDisplay.Source;
+
+            if (controller != null)
+            {
+                try
+                {
+                    controller.Pause();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to pause image animation: {ex.Message}");
+                }
+            }
+
+            try
+            {
+                ImageBehavior.SetAnimatedSource(ImageDisplay, null);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to detach image animation: {ex.Message}");
+            }
+
+            ImageDisplay.Source = null;
+
+            if (controller != null)
+            {
+                try
+                {
+                    controller.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to dispose image animation: {ex.Message}");
+                }
+
+            }
+
+            animationController = null;
+
+            try
+            {
+                if (imageSource is BitmapImage bitmap)
+                    bitmap.StreamSource?.Dispose();
+
+                if (animatedSource is BitmapImage animatedBitmap && !ReferenceEquals(animatedBitmap, imageSource))
+                    animatedBitmap.StreamSource?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to dispose image source stream: {ex.Message}");
             }
         }
 

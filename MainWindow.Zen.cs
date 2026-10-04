@@ -38,6 +38,7 @@ namespace Cloudless
             _resizeStarTimer.Tick += (s, e) =>
             {
                 _resizeStarTimer.Stop();
+                if (!IsLoaded) return;
                 if (isZen && !Properties.Settings.Default.DisableZenMode) {
                     GenerateStars();
                 }; // Only regenerate stars once resizing stops
@@ -56,6 +57,11 @@ namespace Cloudless
             };
             _shootingStarTimer.Tick += (s, e) =>
             {
+                if (!IsLoaded)
+                {
+                    _shootingStarTimer.Stop();
+                    return;
+                }
                 if (isZen && !Properties.Settings.Default.DisableZenMode)
                 {
                     double rand = _random.NextDouble();

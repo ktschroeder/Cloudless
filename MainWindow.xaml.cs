@@ -22,7 +22,7 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.12.1.1";
+        public const string CURRENT_VERSION = "0.12.1.300";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = true;
 
@@ -118,6 +118,7 @@ namespace Cloudless
         private DispatcherTimer? _cursorIdleTimer;
         private bool _cursorIsHidden = false;
         public const int CursorHideDelayMs = 1500;
+        private DispatcherTimer? _memoryTimer;
 
         public ScaleTransform? imageScaleTransform = new ScaleTransform();
         public TranslateTransform? imageTranslateTransform = new TranslateTransform();
@@ -241,81 +242,7 @@ namespace Cloudless
             _preloadManager = null;
 
 
-            // Animated GIF cleanup
-            var controller = ImageBehavior.GetAnimationController(ImageDisplay);
-            var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
-
-            ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-
-            // If we have a controller, try to stop it cleanly using any available API, then dispose it.
-            if (controller != null)
-            {
-                Cloudless.Diagnostics.LeakTracker.Register(controller, "ImageAnimationController");
-
-                // Prefer Stop if present, then Pause
-                var t = controller.GetType();
-                var stop = t.GetMethod("Stop", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (stop != null)
-                {
-                    stop.Invoke(controller, null);
-                }
-
-                var pause = t.GetMethod("Pause", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (pause != null)
-                {
-                    pause.Invoke(controller, null);
-                }
-
-                if (controller is IDisposable d)
-                {
-                    d.Dispose();
-                }
-                else
-                {
-                    // fallback: try calling Dispose via reflection if it exists but interface isn't visible
-                    var disp = controller.GetType().GetMethod("Dispose", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    if (disp != null)
-                        disp.Invoke(controller, null);
-                }
-
-                Cloudless.Diagnostics.LeakTracker.MarkClosed(controller);
-
-                animationController = null;
-            }
-
-            // If BitmapImage backed the Source, dispose its stream if present
-            if (ImageDisplay.Source is BitmapImage bim)
-            {
-                bim.StreamSource?.Dispose();
-            }
-
-            ImageDisplay.Source = null;
-
-            // bandaid fix for issue where controller gets null upon opening app directly for a GIF
-            //if (gifController == null && currentlyDisplayedImagePath != null && currentlyDisplayedImagePath.ToLower().EndsWith(".gif"))
-            animationController = ImageBehavior.GetAnimationController(ImageDisplay);  // gets null when there isn't one
-            if (animationController != null)  // weirdly, this is somehow null sometimes when closing a window that has a GIF loaded. Could contribute to memory leak danger.
-            {
-                animationController.Pause();
-                animationController.Dispose();
-                animationController = null;
-            }
-
-            if (ImageDisplay.Source is BitmapImage bi)
-            {
-                bi.StreamSource?.Dispose();
-            }
-
-            //var animatedSource = ImageBehavior.GetAnimatedSource(ImageDisplay);
-
-            //if (animatedSource is ImageSource src)
-            //{
-            //    // TODO
-            //}
-
-            //ImageBehavior.SetAnimatedSource(ImageDisplay, null);
-
-            ImageDisplay.Source = null;
+            ReleaseDisplayedImage();
 
             // Unsubscribe from static/long-lived events so this window can be GC'd
             CompositionTarget.Rendering -= UpdateDebugInfo;
@@ -326,7 +253,13 @@ namespace Cloudless
             _rightClickHoldTimer?.Stop();
             _middleClickHoldTimer?.Stop();
             _resizeStarTimer?.Stop();
+            _shootingStarTimer?.Stop();
+            _cursorIdleTimer?.Stop();
+            _memoryTimer?.Stop();
 
+            // Tear down Zen-mode storyboards so their clocks stop rooting this window
+            try { RemoveZen(true); } catch { }
+            
             // Remove WndProc hook if present
             _hwndSource?.RemoveHook(WndProc);
             _hwndSource = null;
@@ -345,13 +278,7 @@ namespace Cloudless
                 {
                     await Task.Delay(3000); // allow finalizers and queued operations to run
                     string tempPath = Cloudless.Diagnostics.LeakTracker.WriteReportToTempFile();
-                    string report = System.IO.File.ReadAllText(tempPath);
-                    Debug.WriteLine(report);
-                    // Try to show a short overlay message with the path if window is still interactive.
-                    Dispatcher.Invoke(() =>
-                    {
-                        Message($"Leak diagnostic written: {tempPath}");
-                    });
+                    Debug.WriteLine($"Leak diagnostic written: {tempPath}");
                 }
                 catch (Exception ex)
                 {
@@ -477,9 +404,9 @@ namespace Cloudless
             _ = CheckForUpdatesAsync();  // fire and forget check for newer app version
 
 
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(1);
-            timer.Tick += (s, e) =>
+            _memoryTimer = new DispatcherTimer();
+            _memoryTimer.Interval = TimeSpan.FromSeconds(1);
+            _memoryTimer.Tick += (s, e) =>
             {
                 using (Process currentProcess = Process.GetCurrentProcess())
                 {
@@ -489,7 +416,7 @@ namespace Cloudless
                     MemoryMB = memoryMegaBytes;
                 }
             };
-            timer.Start();
+            _memoryTimer.Start();
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)

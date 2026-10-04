@@ -112,6 +112,8 @@ namespace Cloudless
                         // Create BitmapImage on UI thread and Freeze it
                         await _uiDispatcher.InvokeAsync(() =>
                         {
+                            if (token.IsCancellationRequested) return;
+
                             using var ms = new MemoryStream(bytes);
                             var bitmap = new BitmapImage();
                             bitmap.BeginInit();
