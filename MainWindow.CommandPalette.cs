@@ -1229,7 +1229,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("help"))
+            if (cmd.Equals("help") || cmd.Equals("h"))
             {
                 var window = CommandPaletteRef();
                 window.Activate(); // TODO bug
@@ -1870,7 +1870,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("deflash"))
+            if (cmd.Equals("deflash") || cmd.Equals("df"))
             {
                 Deflash();
                 return true;
@@ -2387,7 +2387,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("ss next") || cmd.Equals("slideshow next"))
+            if (cmd.Equals("ss next") || cmd.Equals("slideshow next") || cmd.Equals("slideshow n") || cmd.Equals("ss n"))
             {
                 SlideshowManager.NextSlideshowPage();
                 return true;
