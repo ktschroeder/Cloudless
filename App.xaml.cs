@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -46,6 +44,8 @@ namespace Cloudless
             // Initialize TagManager (loads tags from disk)
             TagManager.Instance.Load();
 
+            _ = InitializePluginsAsync();
+
             bool startInBackground = e.Args.Contains("--background");
 
             if (!startInBackground)
@@ -53,6 +53,18 @@ namespace Cloudless
                 var mainWindow = new MainWindow(filePath, startUp: true);
                 MainWindow = mainWindow;
                 mainWindow.Show();
+            }
+        }
+
+        private static async Task InitializePluginsAsync()
+        {
+            try
+            {
+                await PluginManager.InitializePluginsAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"Error preparing plugins: {ex}");
             }
         }
 

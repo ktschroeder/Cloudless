@@ -16,12 +16,19 @@ namespace Cloudless
     // Plugin framework adapted from https://learn.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
     public static class PluginManager
     {
-        public static void InitializePlugins()
+        private static readonly object _initializationSync = new();
+        private static Task? _initializationTask;
+
+        public static Task InitializePluginsAsync()
         {
-            IEnumerable<IPlugin> plugins = GetPlugins();
-            foreach (IPlugin plugin in plugins)
+            lock (_initializationSync)
             {
-                Task.Run(() => plugin.WarmupAsync());
+                return _initializationTask ??= Task.Run(async () =>
+                {
+                    IEnumerable<IPlugin> plugins = GetPlugins();
+                    await Task.WhenAll(plugins.Select(plugin => Task.Run(() => plugin.WarmupAsync())))
+                        .ConfigureAwait(false);
+                });
             }
         }
 

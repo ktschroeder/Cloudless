@@ -424,15 +424,6 @@ namespace Cloudless
             // Prepare overlay message window using same pattern as command palette/film strip
             PrepareOverlayWindow();
 
-            try
-            {
-                PluginManager.InitializePlugins();
-            }
-            catch (Exception ex)
-            {
-                Message("Error preparing plugins: " + ex.Message);
-            }
-
             _ = UpdateContextMenuState(isStartUp: true);
 
             if ((Path.GetExtension(initialImageToLoad) ?? "").ToLower().Equals(".cloudless"))
