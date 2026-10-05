@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Point = System.Windows.Point;
@@ -1168,6 +1169,43 @@ namespace Cloudless
         }
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
+            ModifierKeys modifiers = Keyboard.Modifiers;
+            ModifierKeys controlAltAndShift = ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Shift;
+            if ((modifiers & controlAltAndShift) == controlAltAndShift)
+            {  // scale window up or down from center as anchor
+                e.Handled = true;
+
+                if (MainWindow.LayoutLocked || WindowState != WindowState.Normal)
+                    return;
+
+                double currentWidth = ActualWidth;
+                double currentHeight = ActualHeight;
+                if (currentWidth <= 0 || currentHeight <= 0 || !double.IsFinite(Left) || !double.IsFinite(Top))
+                    return;
+
+                double scaleFactor = Math.Pow(1.05, e.Delta / 120.0);
+                double minScale = Math.Max(
+                    Math.Max(100, MinWidth) / currentWidth,
+                    Math.Max(100, MinHeight) / currentHeight);
+                double maxScale = Math.Min(
+                    Math.Min(MaxWidth / currentWidth, MaxHeight / currentHeight),
+                    GetCurrentDisplayHeight() / currentHeight);
+                double minimumAllowedScale = Math.Min(1, minScale);
+                maxScale = Math.Max(minimumAllowedScale, maxScale);
+                scaleFactor = Math.Clamp(scaleFactor, minimumAllowedScale, maxScale);
+
+                double newWidth = currentWidth * scaleFactor;
+                double newHeight = currentHeight * scaleFactor;
+                double centerX = Left + currentWidth / 2;
+                double centerY = Top + currentHeight / 2;
+
+                Width = newWidth;
+                Height = newHeight;
+                Left = centerX - newWidth / 2;
+                Top = centerY - newHeight / 2;
+                return;
+            }
+
             bool comicScrollMode = Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll;
 
             if (MouseControlMode && comicScrollMode && isComicMode && imageTranslateTransform != null)
@@ -1241,6 +1279,21 @@ namespace Cloudless
                 }
             }
         }
+
+        private double GetCurrentDisplayHeight()
+        {
+            IntPtr monitor = MonitorFromWindow(new WindowInteropHelper(this).Handle, 2);
+            MONITORINFO monitorInfo = new() { cbSize = Marshal.SizeOf<MONITORINFO>() };
+
+            if (monitor != IntPtr.Zero && GetMonitorInfo(monitor, ref monitorInfo))
+            {
+                double dpiScaleY = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M22 ?? 1.0;
+                return (monitorInfo.rcMonitor.Bottom - monitorInfo.rcMonitor.Top) / dpiScaleY;
+            }
+
+            return SystemParameters.PrimaryScreenHeight;
+        }
+
         private async void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
