@@ -2403,8 +2403,8 @@ namespace Cloudless
                 foreach (var p in parts)
                 {
                     var lp = p.ToLower();
-                    if (lp == "shuffle") shuffle = true;
-                    else if (lp == "triggers") useTriggers = true;
+                    if (lp == "shuffle" || lp == "s") shuffle = true;
+                    else if (lp == "triggers" || lp == "t") useTriggers = true;
                     else if (double.TryParse(p, out _)) timeToken = p;
                 }
 
@@ -3216,9 +3216,9 @@ namespace Cloudless
             SlideshowManager.Initialize(intervalSeconds, activePages, startingPageIndex, Dispatcher, SlideshowTick, shuffle, useTriggers);
 
             if (intervalSeconds == 0)
-                Message($"Slideshow started: cycling through {activePages.Count} active page(s) when triggers fire");
+                Message($"Slideshow started: cycling through {activePages.Count} active page(s) when triggers fire" + (shuffle ? " (shuffle enabled)" : ""));
             else
-                Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)");
+                Message($"Slideshow started: cycling through {activePages.Count} active page(s) every {intervalSeconds} second(s)" + (shuffle ? " (shuffle enabled)" : ""));
         }
 
         /// <summary>
