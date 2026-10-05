@@ -13,6 +13,10 @@ namespace Cloudless
 {
     public partial class VideoControlsWindow : Window
     {
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_APPWINDOW = 0x00040000;
+
         private MainWindow? _ownerWindow;
         private bool _isUserSeeking = false;
         private bool _wasPlayingBeforeSeek = false;
@@ -40,6 +44,9 @@ namespace Cloudless
             Width = 800;
             // Increase height to ensure controls (button and slider thumb) are not clipped at the bottom
             Height = 64;
+            ShowInTaskbar = false;
+
+            SourceInitialized += VideoControlsWindow_SourceInitialized;
 
             // Set up event handlers
             SeekingSlider.PreviewMouseDown += SeekingSlider_PreviewMouseDown;
@@ -48,6 +55,20 @@ namespace Cloudless
 
             InitializePositionTimer();
         }
+
+        private void VideoControlsWindow_SourceInitialized(object? sender, EventArgs e)
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            exStyle = (exStyle | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW;
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle);
+        }
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
         private void EnsureSubscribedToPlayer(IVideoPlayer player)
         {
