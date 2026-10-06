@@ -14,6 +14,7 @@ namespace Cloudless
     public partial class MainWindow
     {
         private bool isDrawingSelection = false;
+        private bool _hasCroppedViewport;
         private Point selectionStart = new Point();
         private Point selectionCurrent = new Point();
         private Rectangle? selectionRectangleVisual = null;
@@ -311,6 +312,7 @@ namespace Cloudless
             ImageDisplay.Height = selection.CropRenderHeight;
             imageTranslateTransform.X = selection.CropPanX;
             imageTranslateTransform.Y = selection.CropPanY;
+            _hasCroppedViewport = true;
 
             // Update crop mode info to lock in these values so SizeChanged doesn't override them
             UpdateCropModeInfo();
@@ -336,6 +338,7 @@ namespace Cloudless
             this.Height = selection.Height;
 
             await ToggleCropMode(false, silent: true);
+            _hasCroppedViewport = true;
 
             // Apply the crop parameters exactly as they are calculated
             //ImageDisplay.Width = selection.CropRenderWidth;

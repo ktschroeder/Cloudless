@@ -318,6 +318,7 @@ namespace Cloudless
         {
             RemoveZen();
             _currentImageEverCropped = false;
+            _hasCroppedViewport = false;
             autoResizingSpaceIsToggled = false;
             imageOriginalWorkspaceName = null;  // reset this whenever an image is loaded, e.g. left/right iteration. When loading workspaces, we define this in post-process.
 

@@ -52,6 +52,7 @@ namespace Cloudless
         {
             var wasExplorationMode = isExplorationMode;
             isExplorationMode = false;
+            _hasCroppedViewport = false;
 
             string displayMode = Cloudless.Properties.Settings.Default.DisplayMode;
             if (simulateZoomlessBestFit || isComicMode)
@@ -122,41 +123,44 @@ namespace Cloudless
         }
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!isCropMode && Cloudless.Properties.Settings.Default.DisplayMode.StartsWith("Best"))
+            if (!isCropMode && !isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode.StartsWith("Best"))
                 ScaleImageToWindow();
             else if (isCropMode && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
             {
                 if (!WorkspaceLoadInProgress)
                 {
                     var videoPan = videoPlayer.GetVideoPan();
-                    double heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
-                    double widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
-                    double topDiff = cropModeStartingWindowTop - this.Top;
-                    double leftDiff = cropModeStartingWindowLeft - this.Left;
-                    double targetPanX = cropModeStartingVideoPanX + widthDiff / 2.0 + leftDiff;
-                    double targetPanY = cropModeStartingVideoPanY + heightDiff / 2.0 + topDiff;
+                    Point currentVideoCenter = GetVideoHostScreenCenter();
+                    double targetPanX = cropModeStartingVideoPanX + cropModeStartingVideoCenterX - currentVideoCenter.X;
+                    double targetPanY = cropModeStartingVideoPanY + cropModeStartingVideoCenterY - currentVideoCenter.Y;
                     videoPlayer.PanVideoBy(targetPanX - videoPan.Item1, targetPanY - videoPan.Item2, constrainToBounds: false);
                 }
             }
-            else if (imageTranslateTransform != null)
+            else if (isCropMode && ImageDisplay.Source is BitmapSource && imageTranslateTransform != null)
             {
-                // The lines in this block mess with the image panning upon loading from a workspace (different scenario), so just skip these initially if that's the case.
                 if (!WorkspaceLoadInProgress)
                 {
-                    var heightDiff = cropModeStartingWindowHeight - this.ActualHeight;
-                    var widthDiff = cropModeStartingWindowWidth - this.ActualWidth;
-
-                    var topDiff = cropModeStartingWindowTop - this.Top;
-                    var leftDiff = cropModeStartingWindowLeft - this.Left;
+                    double heightDiff = cropModeStartingWindowHeight - ActualHeight;
+                    double widthDiff = cropModeStartingWindowWidth - ActualWidth;
+                    double topDiff = cropModeStartingWindowTop - Top;
+                    double leftDiff = cropModeStartingWindowLeft - Left;
 
                     imageTranslateTransform.Y = cropModeStartingImagePosY + heightDiff / 2.0 + topDiff;
                     imageTranslateTransform.X = cropModeStartingImagePosX + widthDiff / 2.0 + leftDiff;
-                    //return;
                 }
+            }
+            else if (!isCropMode && _hasCroppedViewport && ImageDisplay.Source is BitmapSource)
+            {
+                ScaleImageZoomWithWindow(e.PreviousSize, e.NewSize);
+            }
+            else if (!isCropMode && _hasCroppedViewport && VideoHost.Content is Cloudless.PluginBase.IVideoPlayer croppedVideo)
+            {
+                ScaleVideoPanWithWindow(croppedVideo, e.PreviousSize, e.NewSize);
             }
 
 
-            if (!isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
+            bool preserveSelectionViewport = _hasCroppedViewport && isExplorationMode && !isCropMode;
+            if (!preserveSelectionViewport && !isExplorationMode && Cloudless.Properties.Settings.Default.DisplayMode == "BestFitWithoutZooming")
             {
                 UpdateMargins();
                 // Ensure the image is not clipped by setting Stretch to Uniform // Later note TODO, this contradicts stretch mode given for zoomless best fit, and is only used in this mode too.
@@ -165,12 +169,69 @@ namespace Cloudless
             else
             {
                 UpdateMargins();
-                if (!isCropMode)
+                if (!isCropMode && !preserveSelectionViewport)
                 {
                     ClampTransformToIntuitiveBounds();
                 }
             }
         }
+
+        private void ScaleImageZoomWithWindow(Size previousSize, Size newSize)
+        {
+            if (imageScaleTransform == null || imageTranslateTransform == null ||
+                previousSize.Width <= 0 || previousSize.Height <= 0 ||
+                newSize.Width <= 0 || newSize.Height <= 0)
+            {
+                return;
+            }
+
+            double requestedScale = GetWindowResizeScale(previousSize, newSize);
+            if (!double.IsFinite(requestedScale) || requestedScale <= 0)
+                return;
+
+            double scale = requestedScale;
+            if (scale > 1 && !Cloudless.Properties.Settings.Default.DisableSmartZoom)
+            {
+                double currentMaxScale = Math.Max(imageScaleTransform.ScaleX, imageScaleTransform.ScaleY);
+                scale = Math.Min(scale, Math.Max(1.0, 10.0 / currentMaxScale));
+            }
+
+            imageScaleTransform.ScaleX *= scale;
+            imageScaleTransform.ScaleY *= scale;
+            imageTranslateTransform.X *= scale;
+            imageTranslateTransform.Y *= scale;
+        }
+
+        private void ScaleVideoPanWithWindow(IVideoPlayer videoPlayer, Size previousSize, Size newSize)
+        {
+            double scale = GetWindowResizeScale(previousSize, newSize);
+            if (!double.IsFinite(scale) || scale <= 0)
+                return;
+
+            var pan = videoPlayer.GetVideoPan();
+            videoPlayer.PanVideoBy(pan.Item1 * (scale - 1), pan.Item2 * (scale - 1), constrainToBounds: false);
+        }
+
+        private static double GetWindowResizeScale(Size previousSize, Size newSize)
+        {
+            if (previousSize.Width <= 0 || previousSize.Height <= 0 || newSize.Width <= 0 || newSize.Height <= 0)
+                return double.NaN;
+
+            return Math.Sqrt(
+                (newSize.Width / previousSize.Width) *
+                (newSize.Height / previousSize.Height));
+        }
+
+        private Point GetVideoHostScreenCenter()
+        {
+            if (VideoHost.ActualWidth <= 0 || VideoHost.ActualHeight <= 0)
+                return new Point(Left + ActualWidth / 2, Top + ActualHeight / 2);
+
+            Point centerInWindow = VideoHost.TranslatePoint(
+                new Point(VideoHost.ActualWidth / 2, VideoHost.ActualHeight / 2), this);
+            return new Point(Left + centerInWindow.X, Top + centerInWindow.Y);
+        }
+
         private void ScaleImageToWindow()
         {
             if (ImageDisplay.Source is BitmapSource bitmap)
@@ -257,7 +318,7 @@ namespace Cloudless
                 marginX = Double.IsNaN(marginX) ? 0 : marginX;
                 marginY = Double.IsNaN(marginY) ? 0 : marginY;
 
-                if (isCropMode)
+                if (isCropMode || _hasCroppedViewport)
                 {
                     ImageDisplay.Margin = new Thickness(
                     marginX,
@@ -851,11 +912,14 @@ namespace Cloudless
                     var videoPan = videoPlayer.GetVideoPan();
                     cropModeStartingVideoPanX = videoPan.Item1;
                     cropModeStartingVideoPanY = videoPan.Item2;
+                    Point videoCenter = GetVideoHostScreenCenter();
+                    cropModeStartingVideoCenterX = videoCenter.X;
+                    cropModeStartingVideoCenterY = videoCenter.Y;
                 }
                 else if (imageTranslateTransform != null)
                 {
-                    cropModeStartingImagePosX = imageTranslateTransform.X;  // 0
-                    cropModeStartingImagePosY = imageTranslateTransform.Y;  // 0
+                    cropModeStartingImagePosX = imageTranslateTransform.X;
+                    cropModeStartingImagePosY = imageTranslateTransform.Y;
                 }
             }
         }
@@ -879,7 +943,14 @@ namespace Cloudless
                 isCropMode = !isCropMode;
 
             if (isCropMode)
+            {
+                _hasCroppedViewport = false;
                 UpdateCropModeInfo();
+            }
+            else if (ImageDisplay.Source is BitmapSource || VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+            {
+                _hasCroppedViewport = true;
+            }
 
             if (isCropMode && !silent)
             {

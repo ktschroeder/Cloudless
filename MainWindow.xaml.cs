@@ -71,6 +71,8 @@ namespace Cloudless
         private double cropModeStartingImagePosY = 0;
         private double cropModeStartingVideoPanX = 0;
         private double cropModeStartingVideoPanY = 0;
+        private double cropModeStartingVideoCenterX = 0;
+        private double cropModeStartingVideoCenterY = 0;
         private double cropModeStartingWindowWidth = 0;
         private double cropModeStartingWindowHeight = 0;
         private double cropModeStartingWindowTop = 0;
