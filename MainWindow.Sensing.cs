@@ -1437,6 +1437,12 @@ namespace Cloudless
 
             if (msg == WM_NCHITTEST)
             {
+                if (isDrawingSelection)
+                {
+                    handled = true;
+                    return (IntPtr)HTCLIENT;
+                }
+
                 // If layout lock is enabled, don't allow resizing by reporting client area for hit tests
                 if (MainWindow.LayoutLocked)
                 {
