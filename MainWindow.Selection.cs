@@ -93,6 +93,7 @@ namespace Cloudless
 
             selectionStart = windowPoint;
             selectionCurrent = windowPoint;
+            CaptureMouse();
 
             // Create the visual rectangle
             if (selectionRectangleVisual != null)
@@ -134,9 +135,11 @@ namespace Cloudless
 
             selectionCurrent = windowPoint;
             isDrawingSelection = false;
+            ReleaseMouseCapture();
 
             // Get the final selection rectangle in window coordinates
             Rect windowSelectionRect = GetNormalizedRectangle(selectionStart, selectionCurrent);
+            windowSelectionRect.Intersect(new Rect(0, 0, ActualWidth, ActualHeight));
 
             // Clear visual
             if (selectionRectangleVisual != null)
@@ -363,6 +366,7 @@ namespace Cloudless
                 return;
 
             isDrawingSelection = false;
+            ReleaseMouseCapture();
 
             if (selectionRectangleVisual != null)
             {
