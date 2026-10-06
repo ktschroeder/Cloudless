@@ -326,6 +326,8 @@ namespace Cloudless
 
                 if (src != null)
                 {
+                    src = CreateIndependentThumbnailSource(src, (int)Math.Ceiling(thumbWidth * 2), (int)Math.Ceiling(thumbHeight * 2));
+
                     // center-crop the source to match thumbnail aspect ratio
                     int sw = src.PixelWidth;
                     int sh = src.PixelHeight;
@@ -372,6 +374,26 @@ namespace Cloudless
                 await Dispatcher.InvokeAsync(() => PART_ScrollViewer.ScrollToLeftEnd());
                 UpdateOverflowIndicators();
             }
+        }
+
+        private static BitmapSource CreateIndependentThumbnailSource(BitmapSource source, int maxWidth, int maxHeight)
+        {
+            double scale = Math.Min(1.0, Math.Min(maxWidth / (double)source.PixelWidth, maxHeight / (double)source.PixelHeight));
+            if (scale >= 1.0)
+                return source;
+
+            int width = Math.Max(1, (int)Math.Round(source.PixelWidth * scale));
+            int height = Math.Max(1, (int)Math.Round(source.PixelHeight * scale));
+            var drawing = new DrawingVisual();
+            using (var context = drawing.RenderOpen())
+            {
+                context.DrawImage(source, new Rect(0, 0, width, height));
+            }
+
+            var thumbnail = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            thumbnail.Render(drawing);
+            thumbnail.Freeze();
+            return thumbnail;
         }
 
         private async Task SetAnimatedOverlayAsync(string path, AnimatedThumbnailOverlay overlay, CancellationToken cancellationToken)

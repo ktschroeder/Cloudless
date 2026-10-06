@@ -53,6 +53,8 @@ namespace Cloudless
 
     public partial class GalleryWindow : Window
     {
+        private readonly SemaphoreSlim _thumbnailLoadSemaphore = new(2);
+
         public ObservableCollection<GalleryItem> GalleryImages { get; } = new();
         public string? PreviewWorkspace;
 
@@ -217,26 +219,22 @@ namespace Cloudless
                 if (AnimatedImageDetector.IsSupportedAnimatedImagePath(path))
                     animationTask = AnimatedImageDetector.IsAnimatedAsync(path);
 
-                if (isVideo)
+                await _thumbnailLoadSemaphore.WaitAsync();
+                try
                 {
-                    // ThumbnailService returns a frozen BitmapSource and does IO off-thread
-                    thumb = await ThumbnailService.GetThumbnailAsync(path, width, height);
-                }
-                else
-                {
-                    // Load image on a background thread and freeze it so it can be assigned from UI thread
-                    thumb = await Task.Run(() =>
+                    if (isVideo)
                     {
-                            using var fs = File.OpenRead(path);
-                            var decoder = BitmapDecoder.Create(fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-                            var frame = decoder.Frames.FirstOrDefault();
-                            if (frame != null)
-                            {
-                                frame.Freeze();
-                                return (ImageSource)frame;
-                            }
-                            return (ImageSource?)null;
-                    });
+                        // ThumbnailService returns a frozen BitmapSource and does IO off-thread
+                        thumb = await ThumbnailService.GetThumbnailAsync(path, width, height);
+                    }
+                    else
+                    {
+                        thumb = await Task.Run(() => LoadDownsampledImageThumbnail(path, width, height));
+                    }
+                }
+                finally
+                {
+                    _thumbnailLoadSemaphore.Release();
                 }
             }
             catch (Exception ex)
@@ -265,6 +263,43 @@ namespace Cloudless
                 bool isAnimated = await animationTask;
                 await Dispatcher.InvokeAsync(() => item.IsAnimated = isAnimated);
             }
+        }
+
+        private static ImageSource? LoadDownsampledImageThumbnail(string path, int maxWidth, int maxHeight)
+        {
+            int sourceWidth;
+            int sourceHeight;
+
+            using (var stream = File.OpenRead(path))
+            {
+                var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.None);
+                var frame = decoder.Frames.FirstOrDefault();
+                if (frame == null)
+                    return null;
+
+                sourceWidth = frame.PixelWidth;
+                sourceHeight = frame.PixelHeight;
+            }
+
+            if (sourceWidth <= 0 || sourceHeight <= 0)
+                return null;
+
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+
+            double sourceAspectRatio = (double)sourceWidth / sourceHeight;
+            double targetAspectRatio = (double)maxWidth / maxHeight;
+            if (sourceAspectRatio >= targetAspectRatio)
+                bitmap.DecodePixelWidth = maxWidth;
+            else
+                bitmap.DecodePixelHeight = maxHeight;
+
+            bitmap.UriSource = new Uri(Path.GetFullPath(path), UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
         }
 
 
