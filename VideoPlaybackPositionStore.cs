@@ -4,16 +4,32 @@ using System.Text.Json;
 
 namespace Cloudless
 {
-    internal static class VideoPlaybackPositionStore
+    internal sealed class VideoPlaybackPositionStore : IDisposable
     {
         private const int MaxStoredPositions = 500;
         private static readonly string StorePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Cloudless",
             "video_positions.json");
-        private static readonly Mutex StoreMutex = new(false, "Local\\CloudlessVideoPlaybackPositions");
+        private static readonly VideoPlaybackPositionStore Default = new(StorePath, "Local\\CloudlessVideoPlaybackPositions");
+
+        private readonly string _storePath;
+        private readonly Mutex _storeMutex;
+
+        internal VideoPlaybackPositionStore(string storePath, string mutexName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(storePath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(mutexName);
+            _storePath = Path.GetFullPath(storePath);
+            _storeMutex = new Mutex(false, mutexName);
+        }
 
         public static TimeSpan? GetPosition(string? mediaPath)
+        {
+            return Default.ReadPosition(mediaPath);
+        }
+
+        internal TimeSpan? ReadPosition(string? mediaPath)
         {
             if (string.IsNullOrWhiteSpace(mediaPath))
                 return null;
@@ -39,11 +55,16 @@ namespace Cloudless
             finally
             {
                 if (ownsMutex)
-                    StoreMutex.ReleaseMutex();
+                    _storeMutex.ReleaseMutex();
             }
         }
 
         public static void SavePosition(string? mediaPath, TimeSpan position)
+        {
+            Default.WritePosition(mediaPath, position);
+        }
+
+        internal void WritePosition(string? mediaPath, TimeSpan position)
         {
             if (string.IsNullOrWhiteSpace(mediaPath) || position < TimeSpan.Zero)
                 return;
@@ -58,16 +79,17 @@ namespace Cloudless
 
                 string key = Path.GetFullPath(mediaPath);
                 var positions = ReadPositions();
-                positions.Remove(key);
+                if (positions.Remove(key))
+                    positions = new Dictionary<string, long>(positions, StringComparer.OrdinalIgnoreCase);
                 positions[key] = position.Ticks;
 
                 while (positions.Count > MaxStoredPositions)
                     positions.Remove(positions.Keys.First());
 
-                Directory.CreateDirectory(Path.GetDirectoryName(StorePath)!);
-                temporaryPath = StorePath + "." + Environment.ProcessId + ".tmp";
+                Directory.CreateDirectory(Path.GetDirectoryName(_storePath)!);
+                temporaryPath = _storePath + "." + Environment.ProcessId + ".tmp";
                 File.WriteAllText(temporaryPath, JsonSerializer.Serialize(positions));
-                File.Move(temporaryPath, StorePath, overwrite: true);
+                File.Move(temporaryPath, _storePath, overwrite: true);
             }
             catch (Exception ex)
             {
@@ -86,15 +108,15 @@ namespace Cloudless
                 }
 
                 if (ownsMutex)
-                    StoreMutex.ReleaseMutex();
+                    _storeMutex.ReleaseMutex();
             }
         }
 
-        private static bool AcquireMutex()
+        private bool AcquireMutex()
         {
             try
             {
-                StoreMutex.WaitOne();
+                _storeMutex.WaitOne();
             }
             catch (AbandonedMutexException)
             {
@@ -104,15 +126,15 @@ namespace Cloudless
             return true;
         }
 
-        private static Dictionary<string, long> ReadPositions()
+        private Dictionary<string, long> ReadPositions()
         {
             var positions = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-            if (!File.Exists(StorePath))
+            if (!File.Exists(_storePath))
                 return positions;
 
             try
             {
-                var loaded = JsonSerializer.Deserialize<Dictionary<string, long>>(File.ReadAllText(StorePath));
+                var loaded = JsonSerializer.Deserialize<Dictionary<string, long>>(File.ReadAllText(_storePath));
                 if (loaded != null)
                 {
                     foreach (var entry in loaded)
@@ -128,6 +150,11 @@ namespace Cloudless
             }
 
             return positions;
+        }
+
+        public void Dispose()
+        {
+            _storeMutex.Dispose();
         }
     }
 }

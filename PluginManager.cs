@@ -38,8 +38,12 @@ namespace Cloudless
             {
                 string[] pluginPaths = new string[]
                 {
-                    @"Cloudless\Cloudless.AnimatedWebpPlugin\bin\Debug\net8.0-windows\Cloudless.AnimatedWebpPlugin.dll",
-                    @"Cloudless\Cloudless.VlcPlugin\bin\Release\net8.0-windows\Cloudless.VlcPlugin.dll"
+                    FindDevelopmentPluginPath(
+                        @"Cloudless\Cloudless.AnimatedWebpPlugin\bin\Debug\net8.0-windows\Cloudless.AnimatedWebpPlugin.dll",
+                        @"Cloudless\Cloudless.AnimatedWebpPlugin\bin\Release\net8.0-windows\Cloudless.AnimatedWebpPlugin.dll"),
+                    FindDevelopmentPluginPath(
+                        @"Cloudless\Cloudless.VlcPlugin\bin\Release\net8.0-windows\Cloudless.VlcPlugin.dll",
+                        @"Cloudless\Cloudless.VlcPlugin\bin\Debug\net8.0-windows\Cloudless.VlcPlugin.dll")
                 };
 
                 IEnumerable<IPlugin> plugins = pluginPaths.SelectMany(pluginPath =>
@@ -74,14 +78,31 @@ namespace Cloudless
                 
         }
 
-        private static string? GetLatestPluginAssemblyPath(string pluginRootDir, string dllName)
+        private static string FindDevelopmentPluginPath(params string[] relativePaths)
+        {
+            string startDirectory = Path.GetDirectoryName(typeof(PluginManager).Assembly.Location) ?? AppContext.BaseDirectory;
+            for (var directory = new DirectoryInfo(startDirectory); directory != null; directory = directory.Parent)
+            {
+                foreach (var relativePath in relativePaths)
+                {
+                    string candidate = Path.GetFullPath(Path.Combine(
+                        directory.FullName,
+                        relativePath.Replace('\\', Path.DirectorySeparatorChar)));
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+            }
+
+            throw new FileNotFoundException(
+                $"Can't find a development plugin assembly. Searched for: {string.Join(", ", relativePaths)}");
+        }
+
+        internal static string? GetLatestPluginAssemblyPath(string pluginRootDir, string dllName)
         {
             if (!Directory.Exists(pluginRootDir))
                 return null;
 
-            var versionDirs = Directory.GetDirectories(pluginRootDir);
-
-            var best = versionDirs
+            return Directory.GetDirectories(pluginRootDir)
                 .Select(dir => new
                 {
                     Path = dir,
@@ -89,13 +110,8 @@ namespace Cloudless
                 })
                 .Where(x => x.Version != null)
                 .OrderByDescending(x => x.Version)
-                .FirstOrDefault();
-
-            if (best == null)
-                return null;
-
-            var dllPath = Path.Combine(best.Path, dllName);
-            return File.Exists(dllPath) ? dllPath : null;
+                .Select(x => Path.Combine(x.Path, dllName))
+                .FirstOrDefault(File.Exists);
         }
 
         private static Version? TryParseVersion(string folderName)
@@ -136,11 +152,18 @@ namespace Cloudless
 
         public static Assembly LoadPlugin(string relativePath)
         {
-            // Navigate up to the solution root
-            string root = Path.GetFullPath(
-                Path.Combine(typeof(MainWindow).Assembly.Location, "..", "..", "..", "..", ".."));
+            string pluginLocation;
+            if (Path.IsPathRooted(relativePath))
+            {
+                pluginLocation = Path.GetFullPath(relativePath);
+            }
+            else
+            {
+                string root = Path.GetFullPath(
+                    Path.Combine(typeof(MainWindow).Assembly.Location, "..", "..", "..", "..", ".."));
+                pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
+            }
 
-            string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
             Console.WriteLine($"Loading commands from: {pluginLocation}");
             PluginLoadContext loadContext = new(pluginLocation);
             //return loadContext.LoadFromAssemblyName(new(Path.GetFileNameWithoutExtension(pluginLocation)));
@@ -163,7 +186,7 @@ namespace Cloudless
 
             foreach (Type type in assembly.GetTypes())
             {
-                if (typeof(IPlugin).IsAssignableFrom(type))
+                if (typeof(IPlugin).IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface && !type.ContainsGenericParameters)
                 {
                     IPlugin result = Activator.CreateInstance(type) as IPlugin;
                     if (result != null)

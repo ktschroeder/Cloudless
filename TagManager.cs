@@ -43,11 +43,17 @@ namespace Cloudless
         }
 
         private TagManager()
-        {
-            _tagsFilePath = Path.Combine(
+            : this(Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Cloudless",
-                "tags.json");
+                "tags.json"))
+        {
+        }
+
+        internal TagManager(string tagsFilePath)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(tagsFilePath);
+            _tagsFilePath = Path.GetFullPath(tagsFilePath);
         }
 
         /// <summary>
@@ -444,7 +450,11 @@ namespace Cloudless
         {
             _tokens = tokens;
             _position = 0;
-            return ParseOr();
+            var result = ParseOr();
+            if (_position != _tokens.Count)
+                throw new ArgumentException($"Unexpected token: {_tokens[_position]}");
+
+            return result;
         }
 
         private HashSet<string> ParseOr()
@@ -476,7 +486,7 @@ namespace Cloudless
             if (_position < _tokens.Count && _tokens[_position].Equals("NOT", StringComparison.OrdinalIgnoreCase))
             {
                 _position++;
-                var operand = ParseAtom();
+                var operand = ParseNot();
 
                 // NOT: complement of operand (all files not in operand)
                 var allFiles = new HashSet<string>();
@@ -493,7 +503,7 @@ namespace Cloudless
         private HashSet<string> ParseAtom()
         {
             if (_position >= _tokens.Count)
-                return new HashSet<string>();
+                throw new ArgumentException("Expected a tag or parenthesized expression.");
 
             string token = _tokens[_position];
 
@@ -501,8 +511,10 @@ namespace Cloudless
             {
                 _position++;
                 var result = ParseOr();
-                if (_position < _tokens.Count && _tokens[_position] == ")")
-                    _position++;
+                if (_position >= _tokens.Count || _tokens[_position] != ")")
+                    throw new ArgumentException("Expected a closing parenthesis.");
+
+                _position++;
                 return result;
             }
 

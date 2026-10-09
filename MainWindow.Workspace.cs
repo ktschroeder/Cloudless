@@ -162,13 +162,7 @@ namespace Cloudless
 
                 workspace.CurrentPageIndex = GetCurrentPageIndex();
 
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-
-                string json = JsonSerializer.Serialize(workspace, options);
-                File.WriteAllText(workspaceFilePath, json);
+                WorkspacePersistence.Save(workspaceFilePath, workspace);
 
                 int distinctPages = workspace.CloudlessWindows.Select(w => w.PageIndex).Distinct().Count();
 
@@ -481,10 +475,7 @@ namespace Cloudless
 
                 string workspaceFilePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
                 // TODO I think this fails if user has the file open for reading in a text editor?
-                string json = File.ReadAllText(workspaceFilePath);
-
-                var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
-                workspace.WorkspaceName = workspaceName;
+                var workspace = WorkspacePersistence.Load(workspaceFilePath);
 
                 if (workspace == null)
                 {
@@ -492,6 +483,8 @@ namespace Cloudless
                     loadingWindow?.Close();
                     return false;
                 }
+
+                workspace.WorkspaceName = workspaceName;
 
                 bool hasVideoFiles = workspace.CloudlessWindows.Any(w =>
                 {
@@ -1398,18 +1391,18 @@ namespace Cloudless
         /// </summary>
         public List<int> GetInactivePages()
         {
-            var activePages = GetNonemptyPages();
-            var inactivePages = new List<int>();
+            return GetInactivePages(GetNonemptyPages());
+        }
 
-            for (int page = 1; page <= 20; page++)
-            {
-                if (!activePages.Contains(page))
-                {
-                    inactivePages.Add(page);
-                }
-            }
+        internal static List<int> GetInactivePages(IEnumerable<int> activePages, int maxPageIndex = 20)
+        {
+            if (maxPageIndex <= 0)
+                return new List<int>();
 
-            return inactivePages;
+            var activePageSet = new HashSet<int>(activePages);
+            return Enumerable.Range(1, maxPageIndex)
+                .Where(page => !activePageSet.Contains(page))
+                .ToList();
         }
 
         public void BringActivePagesTogether()
@@ -1443,41 +1436,28 @@ namespace Cloudless
         public int? ResolveSpecialPageToken(string token)
         {
             int currentPageIndex = GetCurrentPageIndex();
+            IEnumerable<int> pages = token switch
+            {
+                "na" or "pa" => GetNonemptyPages(),
+                "ni" or "pi" => GetInactivePages(),
+                _ => Array.Empty<int>()
+            };
 
-            if (token == "na")
-            {
-                var activePages = GetNonemptyPages();
-                int nextActivePage = activePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;
-                if (nextActivePage == 0)
-                    nextActivePage = activePages?.Order().FirstOrDefault() ?? 0;
-                return nextActivePage != 0 ? nextActivePage : null;
-            }
-            else if (token == "pa")
-            {
-                var activePages = GetNonemptyPages();
-                int prevActivePage = activePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;
-                if (prevActivePage == 0)
-                    prevActivePage = activePages?.Order().LastOrDefault() ?? 0;
-                return prevActivePage != 0 ? prevActivePage : null;
-            }
-            else if (token == "ni")
-            {
-                var inactivePages = GetInactivePages();
-                int nextInactivePage = inactivePages?.Where(p => p > currentPageIndex)?.Order().FirstOrDefault() ?? 0;
-                if (nextInactivePage == 0)
-                    nextInactivePage = inactivePages?.Order().FirstOrDefault() ?? 0;
-                return nextInactivePage != 0 ? nextInactivePage : null;
-            }
-            else if (token == "pi")
-            {
-                var inactivePages = GetInactivePages();
-                int prevInactivePage = inactivePages?.Where(p => p < currentPageIndex)?.Order().LastOrDefault() ?? 0;
-                if (prevInactivePage == 0)
-                    prevInactivePage = inactivePages?.Order().LastOrDefault() ?? 0;
-                return prevInactivePage != 0 ? prevInactivePage : null;
-            }
+            return ResolveSpecialPageToken(token, currentPageIndex, pages);
+        }
 
-            return null;
+        internal static int? ResolveSpecialPageToken(string token, int currentPageIndex, IEnumerable<int> candidatePages)
+        {
+            var pages = candidatePages.Distinct().Order().ToList();
+            if (pages.Count == 0)
+                return null;
+
+            return token switch
+            {
+                "na" or "ni" => pages.Where(page => page > currentPageIndex).Select(page => (int?)page).FirstOrDefault() ?? pages[0],
+                "pa" or "pi" => pages.Where(page => page < currentPageIndex).Select(page => (int?)page).LastOrDefault() ?? pages[^1],
+                _ => null
+            };
         }
 
         public void FlattenPages(int targetPage = 1)

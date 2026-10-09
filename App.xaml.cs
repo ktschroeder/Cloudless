@@ -6,12 +6,20 @@ namespace Cloudless
 {
     public partial class App : Application
     {
+        internal static bool SuppressStartupForUiTests { get; set; }
+
         private const string MutexName = "Cloudless.SingleInstance";
         private Mutex? _mutex;
         private TrayIconService? _trayIconService;
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            if (SuppressStartupForUiTests)
+            {
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                return;
+            }
+
             // Prevent WPF from shutting down when the last window closes so tray/background stays alive
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
 

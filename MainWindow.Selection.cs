@@ -238,59 +238,21 @@ namespace Cloudless
             GeneralTransform transform = ImageDisplay.TransformToAncestor(this);
             Rect imageDisplayBounds = transform.TransformBounds(new Rect(0, 0, ImageDisplay.ActualWidth, ImageDisplay.ActualHeight));
 
-            // Convert window selection to ImageDisplay-relative coordinates (in pixels)
-            double selX = windowRect.X - imageDisplayBounds.Left;
-            double selY = windowRect.Y - imageDisplayBounds.Top;
-            double selWidth = windowRect.Width;
-            double selHeight = windowRect.Height;
-
-            // Clamp selection to ImageDisplay bounds
-            double clampLeft = Math.Max(0, selX);
-            double clampTop = Math.Max(0, selY);
-            double clampRight = Math.Min(imageDisplayBounds.Width, selX + selWidth);
-            double clampBottom = Math.Min(imageDisplayBounds.Height, selY + selHeight);
-
-            if (clampLeft >= clampRight || clampTop >= clampBottom)
-                return false;
-
             // Get current transforms
             double scaleX = imageScaleTransform?.ScaleX ?? 1.0;
             double scaleY = imageScaleTransform?.ScaleY ?? 1.0;
             double panX = imageTranslateTransform?.X ?? 0.0;
             double panY = imageTranslateTransform?.Y ?? 0.0;
-
-            // The transforms are applied as: final_pixel = (source_pixel * scale) + pan
-            // So to reverse: source_pixel = (final_pixel - pan) / scale
-            double imagePixelLeft = (clampLeft - panX) / scaleX;
-            double imagePixelTop = (clampTop - panY) / scaleY;
-            double imagePixelRight = (clampRight - panX) / scaleX;
-            double imagePixelBottom = (clampBottom - panY) / scaleY;
-
-            // Clamp to actual image bounds
-            imagePixelLeft = Math.Max(0, imagePixelLeft);
-            imagePixelTop = Math.Max(0, imagePixelTop);
-            imagePixelRight = Math.Min(bitmap.PixelWidth, imagePixelRight);
-            imagePixelBottom = Math.Min(bitmap.PixelHeight, imagePixelBottom);
-
-            if (imagePixelLeft >= imagePixelRight || imagePixelTop >= imagePixelBottom)
-                return false;
-
-            double cropPixelWidth = imagePixelRight - imagePixelLeft;
-            double cropPixelHeight = imagePixelBottom - imagePixelTop;
-
-            // For crop, we need to set ImageDisplay.Width/Height to the render dimensions
-            // and set pan to show the selected region at the top-left
-            result = new SelectionRectangle
-            {
-                WindowCoordinates = windowRect,
-                ImagePixelCoordinates = new Rect(imagePixelLeft, imagePixelTop, cropPixelWidth, cropPixelHeight),
-                CropRenderWidth = cropPixelWidth,
-                CropRenderHeight = cropPixelHeight,
-                CropPanX = -imagePixelLeft * scaleX,
-                CropPanY = -imagePixelTop * scaleY
-            };
-
-            return result.IsValid;
+            return CropGeometry.TryConvertWindowRectToImageCoordinates(
+                windowRect,
+                imageDisplayBounds,
+                scaleX,
+                scaleY,
+                panX,
+                panY,
+                bitmap.PixelWidth,
+                bitmap.PixelHeight,
+                out result);
         }
 
         /// <summary>

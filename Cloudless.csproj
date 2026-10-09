@@ -16,6 +16,7 @@
 	   with the interfaces known to the main app (Cloudless). -->
 	<ItemGroup>
 		<Compile Remove="Cloudless.PluginBase\**\*.cs" />
+        <Compile Remove="Cloudless.Tests\**\*.cs" />
 
 		<Compile Remove="Cloudless.WebpPlugin\**\*.cs" />
 		<Compile Remove="Cloudless.AnimatedWebpPlugin\**\*.cs" />
@@ -30,7 +31,6 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="AnimatedImage.Wpf" Version="2.1.4" />
     <PackageReference Include="System.ComponentModel.Composition" Version="10.0.12" />
@@ -84,6 +84,10 @@
     <Page Update="SetDimensionsWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include=".github\workflows\" />
   </ItemGroup>
 
 </Project>

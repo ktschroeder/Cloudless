@@ -891,30 +891,36 @@ namespace Cloudless
             return ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == format.Guid);
         }
 
-        private bool IsPngAnimated(string path)
+        internal static bool IsPngAnimated(string path)
         {
-            // Quick check for APNG: look for the "acTL" chunk in the PNG file's chunk stream.
             // PNG layout: 8-byte signature, then repeated chunks of [4-byte length][4-byte type][data][4-byte CRC].
             try
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                // skip PNG signature (8 bytes)
-                if (fs.Length < 12) return false;
-                fs.Seek(8, SeekOrigin.Begin);
+                ReadOnlySpan<byte> pngSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+                Span<byte> signature = stackalloc byte[8];
+                if (fs.Read(signature) != signature.Length || !signature.SequenceEqual(pngSignature))
+                    return false;
 
                 Span<byte> header = stackalloc byte[8];
-                while (fs.Read(header) == header.Length)
+                while (fs.Position < fs.Length)
                 {
+                    if (fs.Length - fs.Position < header.Length || fs.Read(header) != header.Length)
+                        return false;
+
                     // read length (big-endian)
                     uint length = ((uint)header[0] << 24) | ((uint)header[1] << 16) | ((uint)header[2] << 8) | header[3];
                     // read chunk type
                     string chunkType = System.Text.Encoding.ASCII.GetString(header.Slice(4, 4));
                     if (chunkType == "acTL")
-                        return true; // APNG animation control chunk found
+                        return length == 8 && fs.Length - fs.Position >= (long)length + 4;
 
                     // Skip chunk data + CRC (length + 4)
+                    long remaining = fs.Length - fs.Position;
                     long toSkip = (long)length + 4;
-                    if (toSkip < 0) break;
+                    if (toSkip > remaining)
+                        return false;
+
                     fs.Seek(toSkip, SeekOrigin.Current);
                 }
             }

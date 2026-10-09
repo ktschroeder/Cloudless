@@ -629,6 +629,15 @@ namespace Cloudless
                 var vp = VideoHost.Content as IVideoPlayer;
                 if (vp != null)
                 {
+                    if (shift)
+                    {
+                        if (key == Key.Right)
+                            vp.SeekFineForward();
+                        else
+                            vp.SeekFineBackward();
+                        return;
+                    }
+
                     int seconds = alt ? 60 : 5;
                     TimeSpan delta = TimeSpan.FromSeconds(seconds * (key == Key.Right ? 1 : -1));
 

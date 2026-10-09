@@ -1,5 +1,6 @@
 ﻿using AnimatedImage.Wpf;
 using Cloudless.PluginBase;
+using Cloudless.Models;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -185,16 +186,15 @@ namespace Cloudless
                 return;
             }
 
-            double requestedScale = GetWindowResizeScale(previousSize, newSize);
+            double requestedScale = ViewportGeometry.GetWindowResizeScale(previousSize, newSize);
             if (!double.IsFinite(requestedScale) || requestedScale <= 0)
                 return;
 
-            double scale = requestedScale;
-            if (scale > 1 && !Cloudless.Properties.Settings.Default.DisableSmartZoom)
-            {
-                double currentMaxScale = Math.Max(imageScaleTransform.ScaleX, imageScaleTransform.ScaleY);
-                scale = Math.Min(scale, Math.Max(1.0, 10.0 / currentMaxScale));
-            }
+            double scale = ViewportGeometry.ConstrainZoomScale(
+                requestedScale,
+                imageScaleTransform.ScaleX,
+                imageScaleTransform.ScaleY,
+                Cloudless.Properties.Settings.Default.DisableSmartZoom);
 
             imageScaleTransform.ScaleX *= scale;
             imageScaleTransform.ScaleY *= scale;
@@ -204,22 +204,12 @@ namespace Cloudless
 
         private void ScaleVideoPanWithWindow(IVideoPlayer videoPlayer, Size previousSize, Size newSize)
         {
-            double scale = GetWindowResizeScale(previousSize, newSize);
+            double scale = ViewportGeometry.GetWindowResizeScale(previousSize, newSize);
             if (!double.IsFinite(scale) || scale <= 0)
                 return;
 
             var pan = videoPlayer.GetVideoPan();
             videoPlayer.PanVideoBy(pan.Item1 * (scale - 1), pan.Item2 * (scale - 1), constrainToBounds: false);
-        }
-
-        private static double GetWindowResizeScale(Size previousSize, Size newSize)
-        {
-            if (previousSize.Width <= 0 || previousSize.Height <= 0 || newSize.Width <= 0 || newSize.Height <= 0)
-                return double.NaN;
-
-            return Math.Sqrt(
-                (newSize.Width / previousSize.Width) *
-                (newSize.Height / previousSize.Height));
         }
 
         private Point GetVideoHostScreenCenter()
@@ -389,35 +379,11 @@ namespace Cloudless
 
                 }
 
-                // Calculate the window size, ensuring it does not exceed the screen size
-                // double newWidth = Math.Min(imageWidth, screenWidth);
-                // double newHeight = Math.Min(imageHeight, screenHeight);
-                bool widerThanScreen = imageWidth > screenWidth;
-
-                double newWidth = imageWidth;
-                double newHeight = imageHeight;
-
-                if (widerThanScreen)
-                {
-                    newWidth = screenWidth;
-                    newHeight *= screenWidth / imageWidth;
-                }
-
-                // even after adjusting when too wide, it may still be too tall, so check afterward.
-                // for this to be the case, the image must be more portrait-oriented than the screen.
-                bool tallerThanScreen = newHeight > screenHeight;
-                if (tallerThanScreen)
-                {
-                    double tempWidth = newWidth;
-                    double tempHeight = newHeight;
-
-                    newWidth = tempWidth * (screenHeight / tempHeight);
-                    newHeight = screenHeight;
-                }
+                Size newSize = ViewportGeometry.FitWithinBounds(imageWidth, imageHeight, screenWidth, screenHeight);
 
                 // Set the window size
-                this.Width = newWidth;
-                this.Height = newHeight;
+                this.Width = newSize.Width;
+                this.Height = newSize.Height;
             }
             else if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
             {
@@ -457,27 +423,10 @@ namespace Cloudless
                     var workingArea = System.Windows.SystemParameters.WorkArea;
                     double screenWidth = workingArea.Width;
                     double screenHeight = workingArea.Height;
-                    bool widerThanScreen = videoWidth > screenWidth;
-                    double newWidth = videoWidth;
-                    double newHeight = videoHeight;
-                    if (widerThanScreen)
-                    {
-                        newWidth = screenWidth;
-                        newHeight *= screenWidth / videoWidth;
-                    }
-                    // even after adjusting when too wide, it may still be too tall, so check afterward.
-                    // for this to be the case, the image must be more portrait-oriented than the screen.
-                    bool tallerThanScreen = newHeight > screenHeight;
-                    if (tallerThanScreen)
-                    {
-                        double tempWidth = newWidth;
-                        double tempHeight = newHeight;
-                        newWidth = tempWidth * (screenHeight / tempHeight);
-                        newHeight = screenHeight;
-                    }
+                    Size newSize = ViewportGeometry.FitWithinBounds(videoWidth, videoHeight, screenWidth, screenHeight);
                     // Set the window size
-                    this.Width = newWidth;
-                    this.Height = newHeight;
+                    this.Width = newSize.Width;
+                    this.Height = newSize.Height;
                 }
             }
         }
@@ -560,28 +509,19 @@ namespace Cloudless
             double containerWidth = this.ActualWidth;
             double containerHeight = this.ActualHeight;
 
-            // Calculate new translate values. Include translation from delta, if provided.
-            double newTranslateX = imageTranslateTransform.X + (delta?.X ?? 0);
-            double newTranslateY = imageTranslateTransform.Y + (delta?.Y ?? 0);
-            // Without the above parentheses, these get zeros when delta is null, inexplicably.
-            // This is the only time I've doubted you, C#.
-
-            if (!Cloudless.Properties.Settings.Default.DisableSmartZoom)
-            {
-                // Constrain X-axis translation
-                double maxTranslateX = Math.Max(0, (scaledWidth - containerWidth) / 2);
-                double minTranslateX = -maxTranslateX;
-                newTranslateX = Math.Min(Math.Max(newTranslateX, minTranslateX), maxTranslateX);
-
-                // Constrain Y-axis translation
-                double maxTranslateY = Math.Max(0, (scaledHeight - containerHeight) / 2);
-                double minTranslateY = -maxTranslateY;
-                newTranslateY = Math.Min(Math.Max(newTranslateY, minTranslateY), maxTranslateY);
-            }
+            var translation = ViewportGeometry.ClampTranslation(
+                imageTranslateTransform.X,
+                imageTranslateTransform.Y,
+                delta,
+                scaledWidth,
+                scaledHeight,
+                containerWidth,
+                containerHeight,
+                constrainToBounds: !Cloudless.Properties.Settings.Default.DisableSmartZoom);
 
             // Apply constrained translation
-            imageTranslateTransform.X = newTranslateX;
-            imageTranslateTransform.Y = newTranslateY;
+            imageTranslateTransform.X = translation.X;
+            imageTranslateTransform.Y = translation.Y;
 
             UpdateCropModeInfo();
         }

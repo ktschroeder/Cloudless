@@ -258,6 +258,8 @@ namespace Cloudless
         }
         private async Task UpdateContextMenuState(bool isStartUp = false)
         {
+            PrepareZoomMenu();
+
             // Enable/disable "Image Info" based on loaded image
             var imageInfoMenuItem = ImageContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => ((m.Header as string) ?? m.Header?.ToString() ?? "").Equals("Image Info"));
             if (imageInfoMenuItem != null)
@@ -268,7 +270,6 @@ namespace Cloudless
 
             await UpdateRecentFilesMenu(isStartUp);
             await UpdateBookmarksMenuState();
-            PrepareZoomMenu();
         }
 
         private async Task UpdateZoomMenuHeaderAsync()
@@ -387,6 +388,7 @@ namespace Cloudless
 
         private async void ShowContextMenu()
         {
+            PrepareZoomMenu();
             await UpdateZoomMenuHeaderAsync();
             UpdateVideoTrackMenus();
             ContextMenu menu = ImageContextMenu;

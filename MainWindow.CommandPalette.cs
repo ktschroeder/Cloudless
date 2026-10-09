@@ -592,7 +592,7 @@ namespace Cloudless
             }
         }
 
-        private bool TryGetTagAutocompleteContext(string text, out string completionPrefix, out string query)
+        internal static bool TryGetTagAutocompleteContext(string text, out string completionPrefix, out string query)
         {
             completionPrefix = "";
             query = "";
@@ -647,16 +647,16 @@ namespace Cloudless
                 }
 
                 int lastDelimiter = trimmedArgs.LastIndexOfAny(new[] { ' ', '\t', '\r', '\n', '(' });
-                string lastToken = trimmedArgs.Substring(lastDelimiter + 1);
-                bool isOperator = lastToken.Equals("AND", StringComparison.OrdinalIgnoreCase) ||
-                                  lastToken.Equals("OR", StringComparison.OrdinalIgnoreCase) ||
-                                  lastToken.Equals("NOT", StringComparison.OrdinalIgnoreCase);
-
-                if (lastToken == "(")
+                if (trimmedArgs.EndsWith('('))
                 {
                     completionPrefix = text;
                     return true;
                 }
+
+                string lastToken = trimmedArgs.Substring(lastDelimiter + 1);
+                bool isOperator = lastToken.Equals("AND", StringComparison.OrdinalIgnoreCase) ||
+                                  lastToken.Equals("OR", StringComparison.OrdinalIgnoreCase) ||
+                                  lastToken.Equals("NOT", StringComparison.OrdinalIgnoreCase);
 
                 if (isOperator)
                 {
@@ -793,7 +793,7 @@ namespace Cloudless
             return;
         }
 
-        private static bool TryParseVideoDelay(string value, out long delayMicroseconds)
+        internal static bool TryParseVideoDelay(string value, out long delayMicroseconds)
         {
             delayMicroseconds = 0;
             value = value.Trim();
@@ -812,7 +812,16 @@ namespace Cloudless
             if (!decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal amount))
                 return false;
 
-            decimal microseconds = decimal.Round(amount * multiplier, 0, MidpointRounding.AwayFromZero);
+            decimal microseconds;
+            try
+            {
+                microseconds = decimal.Round(amount * multiplier, 0, MidpointRounding.AwayFromZero);
+            }
+            catch (OverflowException)
+            {
+                return false;
+            }
+
             if (microseconds < long.MinValue || microseconds > long.MaxValue)
                 return false;
 
@@ -820,7 +829,7 @@ namespace Cloudless
             return true;
         }
 
-        private static string FormatVideoDelay(long delayMicroseconds)
+        internal static string FormatVideoDelay(long delayMicroseconds)
         {
             double seconds = delayMicroseconds / 1_000_000d;
             double milliseconds = delayMicroseconds / 1_000d;

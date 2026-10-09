@@ -99,8 +99,7 @@ namespace Cloudless
                     if (imageDescriptor.Length != 9)
                         return false;
 
-                    if (++imageCount > 1)
-                        return true;
+                    imageCount++;
 
                     byte imagePacked = imageDescriptor[8];
                     if ((imagePacked & 0x80) != 0)
@@ -112,6 +111,9 @@ namespace Cloudless
 
                     if (!SkipBytes(stream, 1) || !SkipSubBlocks(stream))
                         return false;
+
+                    if (imageCount > 1)
+                        return true;
                 }
                 else
                 {

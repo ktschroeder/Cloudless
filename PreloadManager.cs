@@ -33,6 +33,42 @@ namespace Cloudless
             _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
         }
 
+        internal static List<int> GetPreloadIndices(int currentIndex, int itemCount, int preloadNext = 5, int preloadPrev = 2)
+        {
+            if (itemCount <= 0 || currentIndex < 0 || currentIndex >= itemCount)
+                return new List<int>();
+
+            var indices = new List<int> { currentIndex };
+            for (int i = 1; i <= preloadNext; i++)
+            {
+                int index = currentIndex + i;
+                if (index < itemCount)
+                    indices.Add(index);
+            }
+            for (int i = 1; i <= preloadPrev; i++)
+            {
+                int index = currentIndex - i;
+                if (index >= 0)
+                    indices.Add(index);
+            }
+
+            return indices;
+        }
+
+        internal static List<int> GetCacheRetentionIndices(int currentIndex, int itemCount, int radius = 10)
+        {
+            if (itemCount <= 0 || currentIndex < 0 || currentIndex >= itemCount || radius < 0)
+                return new List<int>();
+
+            int startIndex = Math.Max(0, currentIndex - radius);
+            int endIndex = Math.Min(itemCount - 1, currentIndex + radius);
+            var indices = new List<int>(endIndex - startIndex + 1);
+            for (int index = startIndex; index <= endIndex; index++)
+                indices.Add(index);
+
+            return indices;
+        }
+
         /// <summary>
         /// Try get a cached BitmapImage (frozen) for the given path.
         /// </summary>
@@ -64,19 +100,7 @@ namespace Cloudless
 
             var token = _cts.Token;
 
-            // compute unique indices to preload
-            var indices = new HashSet<int>();
-            indices.Add(currentIndex);
-            for (int i = 1; i <= _preloadNext; i++)
-            {
-                int idx = currentIndex + i;
-                if (idx >= 0 && idx < fileList.Length) indices.Add(idx);
-            }
-            for (int i = 1; i <= _preloadPrev; i++)
-            {
-                int idx = currentIndex - i;
-                if (idx >= 0 && idx < fileList.Length) indices.Add(idx);
-            }
+            var indices = GetPreloadIndices(currentIndex, fileList.Length, _preloadNext, _preloadPrev);
 
             // Launch background workers for each index
             foreach (int idx in indices)
@@ -134,11 +158,8 @@ namespace Cloudless
             _ = Task.Run(() =>
             {
                 var keepPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                int len = fileList.Length;
-                for (int i = currentIndex - 10; i <= currentIndex + 10; i++)
-                {
-                    if (i >= 0 && i < len) keepPaths.Add(fileList[i]);
-                }
+                foreach (int index in GetCacheRetentionIndices(currentIndex, fileList.Length))
+                    keepPaths.Add(fileList[index]);
 
                 // remove keys not in keepPaths
                 foreach (var key in _cache.Keys)

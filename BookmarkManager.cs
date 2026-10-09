@@ -14,11 +14,17 @@ namespace Cloudless
         private int bookmarksHash = -1;
 
         public BookmarkManager()
-        {
-            bookmarksPath = Path.Combine(
+            : this(Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "Cloudless",
-                "bookmarks.json");
+                "bookmarks.json"))
+        {
+        }
+
+        internal BookmarkManager(string bookmarksPath)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(bookmarksPath);
+            this.bookmarksPath = Path.GetFullPath(bookmarksPath);
         }
 
         public List<string> GetBookmarks()
@@ -35,7 +41,7 @@ namespace Cloudless
 
         public void AddBookmark(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrWhiteSpace(filePath))
                 return;
 
             LoadBookmarks();
@@ -49,7 +55,7 @@ namespace Cloudless
 
         public void RemoveBookmark(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrWhiteSpace(filePath))
                 return;
 
             LoadBookmarks();

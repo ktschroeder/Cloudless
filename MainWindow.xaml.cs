@@ -614,8 +614,11 @@ namespace Cloudless
             }
         }
 
+        internal string? LastMessage { get; private set; }
+
         public void Message(string message, TimeSpan? duration = null)
         {
+            LastMessage = message;
             duration ??= TimeSpan.FromSeconds(1.5);
 
             // Ensure overlay window is visible and aligned so it appears above HwndHost-based video players
