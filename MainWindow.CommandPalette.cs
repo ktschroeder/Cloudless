@@ -1,4 +1,5 @@
 ﻿using Cloudless.PluginBase;
+using Cloudless.ReferenceData;
 using System.Linq;
 using System.Text.Json;
 using System.Collections.Specialized;
@@ -507,6 +508,236 @@ namespace Cloudless
         private LinkedList<string> AutocompleteCandidates = new LinkedList<string>();
         private LinkedList<string> AutocompleteCandidatesCtrl = new LinkedList<string>();
         private string PreviousTabScrollText = null;
+        private string _commandSuggestionInput = "";
+        private int _commandSuggestionCaretIndex = -1;
+        private IReadOnlyList<string> _commandSuggestionCandidates = Array.Empty<string>();
+        private int _commandSuggestionIndex;
+        private static readonly string[] WorkspaceAutocompleteCommandBases =
+        {
+            "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p", "fs ws", "fs preview", "fs p", "fs workspace", "filmstrip ws", "filmstrip preview", "filmstrip p", "filmstrip workspace"
+        };
+
+        internal static string? GetCommandCompletion(string text, int caretIndex)
+        {
+            return GetCommandCompletions(text, caretIndex).FirstOrDefault();
+        }
+
+        internal static IReadOnlyList<string> GetCommandCompletions(string text, int caretIndex)
+        {
+            if (caretIndex != text.Length)
+                return Array.Empty<string>();
+
+            int lastSemicolon = text.LastIndexOf(';');
+            if (lastSemicolon >= 0)
+            {
+                string segment = text[(lastSemicolon + 1)..];
+                int leadingWhitespace = segment.Length - segment.TrimStart().Length;
+                string commandPrefix = text[..(lastSemicolon + 1)] + segment[..leadingWhitespace];
+                string command = segment[leadingWhitespace..];
+                if (command.Length > 0)
+                {
+                    return GetCommandCompletions(command, command.Length)
+                        .Select(completion => commandPrefix + completion)
+                        .ToArray();
+                }
+            }
+
+            var customCommandMatch = Regex.Match(text, @"^c(?<index>\d{1,2})\s+set\s+(?<command>.+)$", RegexOptions.IgnoreCase);
+            if (customCommandMatch.Success && int.TryParse(customCommandMatch.Groups["index"].Value, out int index) && index is >= 1 and <= 24)
+            {
+                string prefix = text[..customCommandMatch.Groups["command"].Index];
+                return GetCommandCompletions(customCommandMatch.Groups["command"].Value, customCommandMatch.Groups["command"].Length)
+                    .Select(completion => prefix + completion)
+                    .ToArray();
+            }
+
+            var macroRecordMatch = Regex.Match(text, @"^macro\s+record\s+\S+\s+(?<command>.+)$", RegexOptions.IgnoreCase);
+            if (macroRecordMatch.Success)
+            {
+                string prefix = text[..macroRecordMatch.Groups["command"].Index];
+                return GetCommandCompletions(macroRecordMatch.Groups["command"].Value, macroRecordMatch.Groups["command"].Length)
+                    .Select(completion => prefix + completion)
+                    .ToArray();
+            }
+
+            foreach (string wrapper in new[] { "all", "others" })
+            {
+                string prefix = wrapper + " ";
+                if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && text.Length > prefix.Length)
+                {
+                    return GetCommandCompletions(text[prefix.Length..], text.Length - prefix.Length)
+                        .Select(completion => prefix + completion)
+                        .ToArray();
+                }
+            }
+
+            var pageParts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (pageParts.Length is 2 or 3 &&
+                (pageParts[0].Equals("p", StringComparison.OrdinalIgnoreCase) || pageParts[0].Equals("page", StringComparison.OrdinalIgnoreCase)) &&
+                IsPageTargetToken(pageParts[1]))
+            {
+                string pagePrefix = $"{pageParts[0]} {pageParts[1]} ";
+                string[] pageActions = { "send", "bring", "clear", "swap" };
+                if (pageParts.Length == 2 || pageActions.Any(action => action.StartsWith(pageParts[2], StringComparison.OrdinalIgnoreCase)))
+                {
+                    var pageCompletions = pageActions.Select(action => pagePrefix + action).ToList();
+                    pageCompletions.Add(pagePrefix + "send page");
+                    pageCompletions.Add(pagePrefix + "bring page");
+                    return FilterSingleWordCompletions(text, pageCompletions);
+                }
+            }
+
+            var slideshowAliasContinuation = GetSlideshowAliasContinuation(text);
+            if (slideshowAliasContinuation.Count > 0)
+                return slideshowAliasContinuation;
+
+            if (text.Equals("ss", StringComparison.OrdinalIgnoreCase) || text.StartsWith("ss ", StringComparison.OrdinalIgnoreCase))
+                return GetShortSlideshowCompletions(text);
+
+            var slideshowMatch = Regex.Match(text, @"^(?<command>slideshow|ss)\s+(?<seconds>\d+(?:\.\d+)?)\s*(?<options>.*)$", RegexOptions.IgnoreCase);
+            if (slideshowMatch.Success &&
+                slideshowMatch.Groups["command"].Value.Equals("slideshow", StringComparison.OrdinalIgnoreCase) &&
+                double.TryParse(slideshowMatch.Groups["seconds"].Value, out double slideshowSeconds) && slideshowSeconds > 0)
+            {
+                string prefix = text[..(slideshowMatch.Groups["seconds"].Index + slideshowMatch.Groups["seconds"].Length)];
+                string[] allowedOptions =
+                {
+                    " shuffle", " triggers", " shuffle triggers", " triggers shuffle"
+                };
+                return FilterSingleWordCompletions(text, allowedOptions.Select(option => prefix + option));
+            }
+
+            if (IsTabbableCommandInput(text))
+                return Array.Empty<string>();
+
+            return CommandSuggestionProvider.GetSuggestions(text);
+        }
+
+        private static IReadOnlyList<string> GetShortSlideshowCompletions(string text)
+        {
+            var candidates = new List<string>();
+            var durationMatch = Regex.Match(text, @"^ss\s+(?<seconds>\d+(?:\.\d+)?)\s*(?<options>.*)$", RegexOptions.IgnoreCase);
+            if (durationMatch.Success && double.TryParse(durationMatch.Groups["seconds"].Value, out double seconds) && seconds > 0)
+            {
+                string prefix = text[..(durationMatch.Groups["seconds"].Index + durationMatch.Groups["seconds"].Length)];
+                candidates.AddRange(new[]
+                {
+                    prefix + " shuffle", prefix + " triggers",
+                    prefix + " shuffle triggers", prefix + " triggers shuffle"
+                });
+            }
+            else if (!durationMatch.Success)
+            {
+                candidates.AddRange(new[]
+                {
+                    "ss shuffle", "ss triggers", "ss shuffle triggers", "ss triggers shuffle", "ss next", "ss stop"
+                });
+            }
+
+            return FilterSingleWordCompletions(text, candidates);
+        }
+
+        private static IReadOnlyList<string> FilterSingleWordCompletions(string text, IEnumerable<string> candidates)
+        {
+            int inputWordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+            return candidates
+                .Where(candidate => candidate.Length > text.Length && candidate.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+                .Where(candidate =>
+                {
+                    int candidateWordCount = candidate.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                    return candidateWordCount == inputWordCount ||
+                           candidateWordCount == inputWordCount + 1 &&
+                           (char.IsWhiteSpace(text[^1]) || candidate.StartsWith(text + " ", StringComparison.OrdinalIgnoreCase));
+                })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static IReadOnlyList<string> GetSlideshowAliasContinuation(string text)
+        {
+            string trimmedText = text.TrimEnd();
+            if (trimmedText.Length == text.Length)
+                return Array.Empty<string>();
+
+            string[] tokens = trimmedText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length < 2 || !(tokens[0].Equals("ss", StringComparison.OrdinalIgnoreCase) || tokens[0].Equals("slideshow", StringComparison.OrdinalIgnoreCase)))
+                return Array.Empty<string>();
+
+            int optionStart = 1;
+            if (double.TryParse(tokens[optionStart], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds))
+            {
+                if (seconds <= 0)
+                    return Array.Empty<string>();
+                optionStart++;
+            }
+
+            string[] options = tokens.Skip(optionStart).ToArray();
+            bool hasShuffle = options.Any(option => option.Equals("shuffle", StringComparison.OrdinalIgnoreCase) || option.Equals("s", StringComparison.OrdinalIgnoreCase));
+            bool hasTriggers = options.Any(option => option.Equals("triggers", StringComparison.OrdinalIgnoreCase) || option.Equals("t", StringComparison.OrdinalIgnoreCase));
+
+            if (hasTriggers && !hasShuffle)
+                return new[] { trimmedText + " shuffle" };
+            if (hasShuffle && !hasTriggers)
+                return new[] { trimmedText + " triggers" };
+
+            return Array.Empty<string>();
+        }
+
+        private static bool IsPageTargetToken(string token)
+        {
+            if (new[] { "t", "p", "n", "pa", "na", "pi", "ni" }.Contains(token, StringComparer.OrdinalIgnoreCase))
+                return true;
+
+            return int.TryParse(token, out int page) && page > 0 && page <= 20;
+        }
+
+        private static bool IsTabbableCommandInput(string text)
+        {
+            if (TryGetTagAutocompleteContext(text, out _, out _))
+                return true;
+
+            return WorkspaceAutocompleteCommandBases.Any(commandBase =>
+                text.StartsWith(commandBase + " ", StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal void UpdateCommandSuggestion()
+        {
+            var textBox = GetCommandTextBox();
+            string text = textBox?.Text ?? "";
+            int caretIndex = textBox?.CaretIndex ?? -1;
+            if (_commandSuggestionInput != text || _commandSuggestionCaretIndex != caretIndex)
+            {
+                _commandSuggestionInput = text;
+                _commandSuggestionCaretIndex = caretIndex;
+                _commandSuggestionCandidates = textBox == null
+                    ? Array.Empty<string>()
+                    : GetCommandCompletions(text, textBox.CaretIndex);
+                _commandSuggestionIndex = 0;
+            }
+
+            if (_commandSuggestionCandidates.Count == 0 && textBox != null)
+                _commandSuggestionCandidates = GetCommandCompletions(text, textBox.CaretIndex);
+
+            var suggestion = _commandSuggestionIndex < _commandSuggestionCandidates.Count
+                ? _commandSuggestionCandidates[_commandSuggestionIndex]
+                : null;
+            _commandPaletteWindow?.Control?.SetCommandSuggestion(suggestion);
+            _commandPaletteWindow?.Control?.SetCommandValidity(
+                CommandSyntaxValidator.IsValidCommand(text),
+                Cloudless.Properties.Settings.Default.CommandPaletteValidCommandIndicator);
+        }
+
+        private void CycleCommandSuggestion(bool reverse)
+        {
+            UpdateCommandSuggestion();
+            if (_commandSuggestionCandidates.Count < 2)
+                return;
+
+            _commandSuggestionIndex = (_commandSuggestionIndex + (reverse ? -1 : 1) + _commandSuggestionCandidates.Count)
+                % _commandSuggestionCandidates.Count;
+            _commandPaletteWindow?.Control?.SetCommandSuggestion(_commandSuggestionCandidates[_commandSuggestionIndex]);
+        }
+
         private void TabPressed(bool shiftPressed = false, bool controlPressed = false)
         {
             var _tb_for_prev = GetCommandTextBox();
@@ -539,10 +770,9 @@ namespace Cloudless
             }
 
             string foundCommandBase = null;
-            string[] workspaceCommandBases = { "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p", "fs ws", "fs preview", "fs p", "fs workspace", "filmstrip ws", "filmstrip preview", "filmstrip p", "filmstrip workspace" };
 
             // Check workspace commands first
-            foreach (string tcb in workspaceCommandBases) 
+            foreach (string tcb in WorkspaceAutocompleteCommandBases) 
             { 
                 if (_tbTextPrev.StartsWith($"{tcb} ", StringComparison.OrdinalIgnoreCase))
                 {
@@ -589,6 +819,26 @@ namespace Cloudless
                     TabScrollCtrl = true;
                 }
                 CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed, recency: controlPressed);
+                return;
+            }
+
+            var textBox = GetCommandTextBox();
+            if (textBox != null && controlPressed)
+            {
+                CycleCommandSuggestion(reverse: shiftPressed);
+                return;
+            }
+
+            string? completion = textBox != null && _commandSuggestionInput == _tbTextPrev &&
+                                 _commandSuggestionCaretIndex == textBox.CaretIndex &&
+                                 _commandSuggestionIndex < _commandSuggestionCandidates.Count
+                ? _commandSuggestionCandidates[_commandSuggestionIndex]
+                : textBox == null ? null : GetCommandCompletion(_tbTextPrev, textBox.CaretIndex);
+            if (completion != null)
+            {
+                textBox!.Text = completion;
+                textBox.CaretIndex = completion.Length;
+                UpdateCommandSuggestion();
             }
         }
 
@@ -1114,7 +1364,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("goto flag"))
+            if (cmd.Equals("goto flag") || cmd.Equals("goto f"))
             {
                 var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
                 if (vp == null)
@@ -1176,13 +1426,13 @@ namespace Cloudless
                 return true;  // should be essentially unreachable
             }
 
-            if (cmd.Equals("c"))
+            if (cmd.Equals("c") || cmd.Equals("close"))
             {
                 this.Close();
                 return true;  // should be essentially unreachable
             }
 
-            if (cmd.Equals("c all"))
+            if (cmd.Equals("c all") || cmd.Equals("close all"))
             {
                 CloseAllOtherInstances();
                 this.Close();
@@ -1208,7 +1458,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("c others"))  // close all other instances
+            if (cmd.Equals("c others") || cmd.Equals("close others"))  // close all other instances
             {
                 CloseAllOtherInstances();
                 return true;
@@ -1220,7 +1470,7 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("c empty"))
+            if (cmd.Equals("c empty") || cmd.Equals("close empty"))
             {
                 CloseEmptyInstances();
                 return true;
@@ -1281,7 +1531,7 @@ namespace Cloudless
                     Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedDescending";
                 else
                 {
-                    Message("Invalid sort type");
+                    Message("Usage: sort name|date asc|desc");
                     return false;
                 }
 
@@ -1302,7 +1552,7 @@ namespace Cloudless
                     Cloudless.Properties.Settings.Default.DisplayMode = "BestFitWithoutZooming";
                 else
                 {
-                    Message("Invalid display mode");
+                    Message("Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)");
                     return false;
                 }
 
@@ -1760,9 +2010,8 @@ namespace Cloudless
                     {
                         if (string.IsNullOrWhiteSpace(param))
                         {
-                            // Open gallery preview if no workspace name specified
-                            _ = PreviewWorkspace();
-                            return true;
+                            Message("A workspace name is required for a filmstrip preview.");
+                            return false;
                         }
 
                         string wsName = param.Trim();
@@ -2082,6 +2331,12 @@ namespace Cloudless
 
             if (cmd.StartsWith("seek"))
             {
+                if (cmd.Equals("seek"))
+                {
+                    Message("Usage: seek previous, seek ?, or seek [time] (for example, seek 1:30)");
+                    return true;
+                }
+
                 string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? "";
                 bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
                 if (!isVideo)
@@ -2562,7 +2817,47 @@ namespace Cloudless
                 return await HandleTagGallery(query);
             }
 
+            if (TryGetIncompleteCommandMessage(cmd, out string? usageMessage))
+            {
+                Message(usageMessage);
+                return false;
+            }
+
             Message("Command not recognized");
+            return false;
+        }
+
+        private static bool TryGetIncompleteCommandMessage(string command, out string? message)
+        {
+            message = command switch
+            {
+                "goto" => "Usage: goto start, goto end, or goto flag",
+                "set" => "Usage: set start, set end, set flag, or set trigger [count]",
+                "clear" => "Usage: clear start, clear end, clear flag, or clear trigger",
+                "audio" => "Usage: audio sync [offset]; use 'audio sync' to show the current offset",
+                "subtitle" => "Usage: subtitle sync [offset]; use 'subtitle sync' to show the current offset",
+                "nudge" or "n" => "Usage: nudge left|right|up|down [count] or nudge [x] [y]",
+                "sort" => "Usage: sort name|date asc|desc",
+                "dm" => "Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)",
+                "tag" or "t" => "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
+                "macro" => "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
+                "p" or "page" => "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
+                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle] [triggers], slideshow triggers, slideshow stop, or slideshow next",
+                "ws" => "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
+                "all" or "others" => $"Usage: {command} [command]",
+                _ => null
+            };
+
+            if (message != null)
+                return true;
+
+            var customCommandMatch = Regex.Match(command, @"^c(?<index>\d{1,2})$", RegexOptions.IgnoreCase);
+            if (customCommandMatch.Success && int.TryParse(customCommandMatch.Groups["index"].Value, out int index) && index is >= 1 and <= 24)
+            {
+                message = $"Usage: c{index} set [command], c{index} view, or c{index} run";
+                return true;
+            }
+
             return false;
         }
 

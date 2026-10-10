@@ -20,6 +20,7 @@ namespace Cloudless
         public ImageInfoWindow(string imagePath, MainWindow mainWindow)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             _imagePath = imagePath;
             _originalCopyButtonText = CopyButton.Content.ToString() ?? "";
             _mw = mainWindow;

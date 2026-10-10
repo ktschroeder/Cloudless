@@ -84,7 +84,7 @@ public sealed class ImageNavigationCommandUiTests
                     ExecuteAndAssertPath(window, "first", firstPath);
                     ExecuteAndAssertPath(window, "last", Path.Combine(directory, imageNames[2]));
                     window.ExecuteCommand("sort invalid").GetAwaiter().GetResult();
-                    Assert.Equal("Invalid sort type", window.LastMessage);
+                    Assert.Equal("Usage: sort name|date asc|desc", window.LastMessage);
                 }
                 finally
                 {

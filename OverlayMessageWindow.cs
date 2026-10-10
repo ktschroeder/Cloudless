@@ -14,6 +14,7 @@ namespace Cloudless
 
         public OverlayMessageWindow()
         {
+            SecondaryWindowOpacity.Apply(this);
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
             Background = System.Windows.Media.Brushes.Transparent;

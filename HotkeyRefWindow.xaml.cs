@@ -13,6 +13,7 @@ namespace Cloudless
         public HotkeyRefWindow()
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             LoadReferenceData();
         }
 

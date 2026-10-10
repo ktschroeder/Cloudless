@@ -20,6 +20,7 @@ namespace Cloudless
         public GifWarningWindow(string imagePath, double fileSizeMB)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             _imagePath = imagePath;
             _fileSizeMB = fileSizeMB;
             LoadImageInfo();

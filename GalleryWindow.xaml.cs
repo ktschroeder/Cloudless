@@ -61,6 +61,7 @@ namespace Cloudless
         public GalleryWindow(IEnumerable<string> galleryFiles, string title = "Image Gallery", string? workspaceName = null)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             DataContext = this;
 
             Title = title;

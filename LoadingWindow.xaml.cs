@@ -9,6 +9,7 @@ namespace Cloudless
         public LoadingWindow()
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
         }
 
         private void On_Close(object sender, CancelEventArgs e)

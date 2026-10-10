@@ -29,11 +29,13 @@ namespace Cloudless
         public string SelectedDisplayMode { get; private set; }
         public string SelectedBackground { get; private set; }
         public string SelectedTheme { get; private set; }
+        public string SelectedCommandPaletteValidCommandIndicator { get; private set; }
         public string SelectedSortOrder { get; private set; }
         public bool ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle { get; private set; }
         public int SpaceAroundBounds {  get; private set; }
         public bool ResizeWindowToNewImageWhenOpeningThroughApp {  get; private set; }
         public bool BorderOnMainWindow { get; private set; }
+        public bool SlightlyTransparentSecondaryWindows { get; private set; }
         public bool ComicModeTopRight { get; private set; }
         public bool LoopGifs { get; private set; }
         public bool MuteMessages { get; private set; }
@@ -57,6 +59,7 @@ namespace Cloudless
         public ConfigurationWindow(MainWindow mw)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
 
             _mw = mw;
 
@@ -87,6 +90,10 @@ namespace Cloudless
             var currentBorderOnMainWindow = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
             BorderOnMainWindowCheckbox.IsChecked = currentBorderOnMainWindow;
             BorderOnMainWindow = currentBorderOnMainWindow;
+
+            var currentSlightlyTransparentSecondaryWindows = Cloudless.Properties.Settings.Default.SlightlyTransparentSecondaryWindows;
+            SlightlyTransparentSecondaryWindowsCheckbox.IsChecked = currentSlightlyTransparentSecondaryWindows;
+            SlightlyTransparentSecondaryWindows = currentSlightlyTransparentSecondaryWindows;
 
             var currentComicModeTopRight = Cloudless.Properties.Settings.Default.ComicModeTopRight;
             ComicModeTopRightCheckbox.IsChecked = currentComicModeTopRight;
@@ -180,6 +187,15 @@ namespace Cloudless
             else if (currentTheme == "Dark")
                 ThemeDropdown.SelectedIndex = 1;
             SelectedTheme = currentTheme ?? "Light";
+
+            SelectedCommandPaletteValidCommandIndicator = Cloudless.Properties.Settings.Default.CommandPaletteValidCommandIndicator;
+            CommandPaletteValidCommandIndicatorDropdown.SelectedIndex = SelectedCommandPaletteValidCommandIndicator switch
+            {
+                "TextGreen" => 1,
+                "GreenBorder" => 2,
+                "Checkmark" => 3,
+                _ => 0
+            };
 
             var currentMouseLongHoldMs = Cloudless.Properties.Settings.Default.MouseLongPressMS;
             MouseLongHoldMSTextBox.Text = currentMouseLongHoldMs.ToString();
@@ -351,6 +367,13 @@ namespace Cloudless
         private void Cancel_Click(object sender, RoutedEventArgs e) { WindowHelper.Close_Click(this, e); }
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            ReadSettingsFromControls();
+            DialogResult = true;
+            Close();
+        }
+
+        internal void ReadSettingsFromControls()
+        {
             if (DisplayModeDropdown.SelectedIndex == 0)
                 SelectedDisplayMode = "StretchToFit";
             else if (DisplayModeDropdown.SelectedIndex == 1)
@@ -384,6 +407,7 @@ namespace Cloudless
             ResizeWindowToNewImageWhenOpeningThroughApp = ResizeWindowToNewImageWhenOpeningThroughAppCheckbox.IsChecked ?? false;
 
             BorderOnMainWindow = BorderOnMainWindowCheckbox.IsChecked ?? false;
+            SlightlyTransparentSecondaryWindows = SlightlyTransparentSecondaryWindowsCheckbox.IsChecked ?? false;
 
             ComicModeTopRight = ComicModeTopRightCheckbox.IsChecked ?? false;
 
@@ -415,8 +439,8 @@ namespace Cloudless
             else
                 SelectedTheme = "Light";
 
-            DialogResult = true;
-            Close();
+            SelectedCommandPaletteValidCommandIndicator =
+                (CommandPaletteValidCommandIndicatorDropdown.SelectedItem as ComboBoxItem)?.Tag as string ?? "None";
         }
 
         private void SetDefaultButton_Click(object sender, RoutedEventArgs e)

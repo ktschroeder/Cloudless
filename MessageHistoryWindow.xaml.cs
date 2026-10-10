@@ -15,6 +15,7 @@ namespace Cloudless
         public MessageHistoryWindow(OverlayMessageManager manager)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
 
             // Get the current session's message history
             messageHistory = manager.GetMessageHistoryFromSetting();

@@ -43,34 +43,8 @@ namespace Cloudless
             {
                 // Save the new preference
                 bool zenModeSettingChanged = Cloudless.Properties.Settings.Default.DisableZenMode != configWindow.DisableZenMode;
-                Cloudless.Properties.Settings.Default.DisplayMode = configWindow.SelectedDisplayMode;
-                Cloudless.Properties.Settings.Default.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
-                Cloudless.Properties.Settings.Default.PixelsSpaceAroundBounds = configWindow.SpaceAroundBounds;
-                Cloudless.Properties.Settings.Default.ResizeWindowToNewImageWhenOpeningThroughApp = configWindow.ResizeWindowToNewImageWhenOpeningThroughApp;  //
-                Cloudless.Properties.Settings.Default.BorderOnMainWindow = configWindow.BorderOnMainWindow;
-                Cloudless.Properties.Settings.Default.ComicModeTopRight = configWindow.ComicModeTopRight;
-                Cloudless.Properties.Settings.Default.LoopGifs = configWindow.LoopGifs;
-                Cloudless.Properties.Settings.Default.MuteMessages = configWindow.MuteMessages;
-                Cloudless.Properties.Settings.Default.AlwaysOnTopByDefault = configWindow.AlwaysOnTopByDefault;
-                Cloudless.Properties.Settings.Default.MaxCompressedCopySizeMB = configWindow.MaxCompressedCopySizeMB;
-                Cloudless.Properties.Settings.Default.Background = configWindow.SelectedBackground;
                 var previousSortOrder = Cloudless.Properties.Settings.Default.ImageDirectorySortOrder;
-                Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = configWindow.SelectedSortOrder;
-                Cloudless.Properties.Settings.Default.DisableSmartZoom = configWindow.DisableSmartZoom;
-                Cloudless.Properties.Settings.Default.DisableZenMode = configWindow.DisableZenMode;
-                Cloudless.Properties.Settings.Default.ImgBBKey = configWindow.ImgBBKey;
-                Cloudless.Properties.Settings.Default.StartOnWindowsStart = configWindow.StartOnWindowsStart;
-                Cloudless.Properties.Settings.Default.MouseLongPressMS = configWindow.MouseLongHoldMs;
-                Cloudless.Properties.Settings.Default.PreloadImages = configWindow.PreloadImages;
-                Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll = configWindow.ComicModeMouseControlScroll;
-                Cloudless.Properties.Settings.Default.FilmStripCloseAfterward = configWindow.FilmStripCloseAfterward;             //
-                Cloudless.Properties.Settings.Default.FilmStripOpenImageInNewWindow = configWindow.FilmStripOpenImageInNewWindow; //
-                Cloudless.Properties.Settings.Default.StartVideosMuted = configWindow.StartVideosMuted;
-                Cloudless.Properties.Settings.Default.ResumeVideosFromPreviousPosition = configWindow.ResumeVideosFromPreviousPosition;
-                Cloudless.Properties.Settings.Default.UseManualVideoControls = configWindow.UseManualVideoControls;
-                Cloudless.Properties.Settings.Default["Theme"] = configWindow.SelectedTheme ?? "Light";
-
-                Cloudless.Properties.Settings.Default.Save();
+                PersistConfigurationSettings(configWindow);
 
                 ThemeManager.ApplyTheme(Cloudless.Properties.Settings.Default["Theme"] as string);
 
@@ -101,6 +75,40 @@ namespace Cloudless
                 }
             }
         }
+
+        internal static void PersistConfigurationSettings(ConfigurationWindow configurationWindow)
+        {
+            var settings = Cloudless.Properties.Settings.Default;
+            settings.DisplayMode = configurationWindow.SelectedDisplayMode;
+            settings.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle = configurationWindow.ForAutoWindowSizingLeaveSpaceAroundBoundsIfNearScreenSizeAndToggle;
+            settings.PixelsSpaceAroundBounds = configurationWindow.SpaceAroundBounds;
+            settings.ResizeWindowToNewImageWhenOpeningThroughApp = configurationWindow.ResizeWindowToNewImageWhenOpeningThroughApp;
+            settings.BorderOnMainWindow = configurationWindow.BorderOnMainWindow;
+            settings.SlightlyTransparentSecondaryWindows = configurationWindow.SlightlyTransparentSecondaryWindows;
+            settings.ComicModeTopRight = configurationWindow.ComicModeTopRight;
+            settings.LoopGifs = configurationWindow.LoopGifs;
+            settings.MuteMessages = configurationWindow.MuteMessages;
+            settings.AlwaysOnTopByDefault = configurationWindow.AlwaysOnTopByDefault;
+            settings.MaxCompressedCopySizeMB = configurationWindow.MaxCompressedCopySizeMB;
+            settings.Background = configurationWindow.SelectedBackground;
+            settings.ImageDirectorySortOrder = configurationWindow.SelectedSortOrder;
+            settings.CommandPaletteValidCommandIndicator = configurationWindow.SelectedCommandPaletteValidCommandIndicator;
+            settings.DisableSmartZoom = configurationWindow.DisableSmartZoom;
+            settings.DisableZenMode = configurationWindow.DisableZenMode;
+            settings.ImgBBKey = configurationWindow.ImgBBKey;
+            settings.StartOnWindowsStart = configurationWindow.StartOnWindowsStart;
+            settings.MouseLongPressMS = configurationWindow.MouseLongHoldMs;
+            settings.PreloadImages = configurationWindow.PreloadImages;
+            settings.ComicModeMouseControlScroll = configurationWindow.ComicModeMouseControlScroll;
+            settings.FilmStripCloseAfterward = configurationWindow.FilmStripCloseAfterward;
+            settings.FilmStripOpenImageInNewWindow = configurationWindow.FilmStripOpenImageInNewWindow;
+            settings.StartVideosMuted = configurationWindow.StartVideosMuted;
+            settings.ResumeVideosFromPreviousPosition = configurationWindow.ResumeVideosFromPreviousPosition;
+            settings.UseManualVideoControls = configurationWindow.UseManualVideoControls;
+            settings["Theme"] = configurationWindow.SelectedTheme ?? "Light";
+            settings.Save();
+        }
+
         private void OpenRecentImagesWindow()
         {
             var win = new GalleryWindow(recentFiles.Take(MaxRecentFilesInGallery), title: "Recent Images Gallery");

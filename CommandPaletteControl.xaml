@@ -1,42 +1,72 @@
-<UserControl x:Class="Cloudless.CommandPaletteControl"
+﻿<UserControl x:Class="Cloudless.CommandPaletteControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="48" d:DesignWidth="400">
-    <Border x:Name="Root" Visibility="Visible" Background="{DynamicResource CommandPaletteBackground}" CornerRadius="4" Padding="6" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            
-            <!-- Visual-only colon prefix (not part of the TextBox) -->
-            <TextBlock Grid.Column="0" 
-                       Text=":" 
-                       Foreground="{DynamicResource OverlayForeground}"
-                       FontFamily="Consolas"
-                       FontSize="14"
-                       VerticalAlignment="Center"
-                       Margin="0,0,0,0"
-                       IsHitTestVisible="False"/>
-            
-            <!-- TextBox without the colon character -->
-            <TextBox Grid.Column="1"
-                     x:Name="CommandTextBox"
-                     TextChanged="CommandTextBox_TextChanged"
-                     SelectionChanged="CommandTextBox_SelectionChanged"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     Foreground="{DynamicResource OverlayForeground}"
-                     FontFamily="Consolas"
-                     FontSize="14"
-                     CaretBrush="{DynamicResource PrimaryForeground}"
-                     MinWidth="160"
-                     KeyDown="CommandTextBox_KeyDown"
-                     PreviewKeyDown="CommandTextBox_PreviewKeyDown"
-                     Margin="-2,0,0,0"/>
-        </Grid>
-    </Border>
+    <Grid HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6">
+        <Border x:Name="Root" Visibility="Visible" Background="{DynamicResource CommandPaletteBackground}" CornerRadius="4" Padding="6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text=":"
+                           Foreground="{DynamicResource OverlayForeground}"
+                           FontFamily="Consolas"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"/>
+
+                <TextBlock Grid.Column="1"
+                           x:Name="CommandSuggestionTextBlock"
+                           Foreground="{DynamicResource OverlayForeground}"
+                           Opacity="0.35"
+                           FontFamily="Consolas"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Visibility="Collapsed"
+                           Padding="2,0,2,0"
+                           Margin="-2,0,0,0"/>
+
+                <TextBox Grid.Column="1"
+                         x:Name="CommandTextBox"
+                         TextChanged="CommandTextBox_TextChanged"
+                         SelectionChanged="CommandTextBox_SelectionChanged"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="{DynamicResource OverlayForeground}"
+                         FontFamily="Consolas"
+                         FontSize="14"
+                         CaretBrush="{DynamicResource PrimaryForeground}"
+                         MinWidth="160"
+                         KeyDown="CommandTextBox_KeyDown"
+                         PreviewKeyDown="CommandTextBox_PreviewKeyDown"
+                         Margin="-2,0,0,0"/>
+
+                <TextBlock Grid.Column="2"
+                           x:Name="CommandValidityCheckmark"
+                           Text="✓"
+                           Foreground="#00C853"
+                           FontFamily="Segoe UI"
+                           FontSize="12"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Visibility="Collapsed"
+                           IsHitTestVisible="False"
+                           Margin="6,0,2,0"/>
+            </Grid>
+        </Border>
+        <Border x:Name="CommandValidityBorder"
+                BorderBrush="{DynamicResource CommandPaletteBackground}"
+                BorderThickness="3"
+                CornerRadius="2"
+                Visibility="Collapsed"
+                IsHitTestVisible="False"/>
+    </Grid>
 </UserControl>

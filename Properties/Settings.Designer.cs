@@ -82,6 +82,30 @@ namespace Cloudless.Properties {
                 this["BorderOnMainWindow"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SlightlyTransparentSecondaryWindows {
+            get {
+                return ((bool)(this["SlightlyTransparentSecondaryWindows"]));
+            }
+            set {
+                this["SlightlyTransparentSecondaryWindows"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("None")]
+        public string CommandPaletteValidCommandIndicator {
+            get {
+                return ((string)(this["CommandPaletteValidCommandIndicator"]));
+            }
+            set {
+                this["CommandPaletteValidCommandIndicator"] = value;
+            }
+        }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]

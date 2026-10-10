@@ -39,6 +39,7 @@ namespace Cloudless
         public VideoControlsWindow()
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
 
             // Set initial dimensions
             Width = 800;

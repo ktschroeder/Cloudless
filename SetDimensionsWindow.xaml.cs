@@ -15,6 +15,7 @@ namespace Cloudless
         public SetDimensionsWindow(double w, double h)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             EventManager.RegisterClassHandler(typeof(System.Windows.Controls.TextBox), System.Windows.Controls.TextBox.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler(OnGotKeyboardFocus));
             FillDimensionInfo(w, h);
         }

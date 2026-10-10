@@ -11,6 +11,7 @@ namespace Cloudless
         public AboutWindow(string version)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             VersionText.Text = "Version: " + version;
             MomentOfZen.Text = GetZenText();
         }

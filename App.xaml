@@ -35,6 +35,7 @@
         <SolidColorBrush x:Key="PrimaryButtonPressedBackgroundBrush" Color="{DynamicResource PrimaryButtonPressedBackgroundColor}" />
         <!-- Overlay / accent brushes -->
         <SolidColorBrush x:Key="OverlayBackground" Color="#CC000000" />
+        <SolidColorBrush x:Key="CommandPaletteBackground" Color="#CCFFFFFF" />
         <SolidColorBrush x:Key="OverlayForeground" Color="#EAEAEA" />
         <Color x:Key="AccentBorderColor">#66FFFFFF</Color>
         <SolidColorBrush x:Key="AccentBorderBrush" Color="{DynamicResource AccentBorderColor}" />

@@ -15,6 +15,7 @@ namespace Cloudless
 
         public FilmStripWindow()
         {
+            SecondaryWindowOpacity.Apply(this);
             Width = 800;
             Height = 160;
             WindowStyle = WindowStyle.None;

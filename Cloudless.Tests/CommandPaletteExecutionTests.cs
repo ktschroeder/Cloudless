@@ -48,6 +48,11 @@ public class CommandPaletteExecutionTests
             try
             {
                 window = new MainWindow(string.Empty, 800, 600, workspaceLoad: true);
+                int galleryCountBeforeInvalidPreview = Application.Current.Windows.OfType<GalleryWindow>().Count();
+                window.ExecuteCommand("fs p").GetAwaiter().GetResult();
+                Assert.Equal("A workspace name is required for a filmstrip preview.", window.LastMessage);
+                Assert.Equal(galleryCountBeforeInvalidPreview, Application.Current.Windows.OfType<GalleryWindow>().Count());
+
                 window.ExecuteCommand(" DM 1 ; dm zoom ; dm best ; dm 4 ").GetAwaiter().GetResult();
                 Assert.Equal("BestFitWithoutZooming", Cloudless.Properties.Settings.Default.DisplayMode);
 
@@ -146,6 +151,34 @@ public class CommandPaletteExecutionTests
                     new[] { "gallery t no-such-palette-tag", "tag destroy no-such-palette-tag", "1", "+1", "not-a-command" },
                     window.CommandHistory.TakeLast(5));
                 Assert.Equal("Command not recognized", window.LastMessage);
+
+                var incompleteCommands = new Dictionary<string, string>
+                {
+                    ["goto"] = "Usage: goto start, goto end, or goto flag",
+                    ["set"] = "Usage: set start, set end, set flag, or set trigger [count]",
+                    ["clear"] = "Usage: clear start, clear end, clear flag, or clear trigger",
+                    ["seek"] = "Usage: seek previous, seek ?, or seek [time] (for example, seek 1:30)",
+                    ["audio"] = "Usage: audio sync [offset]; use 'audio sync' to show the current offset",
+                    ["subtitle"] = "Usage: subtitle sync [offset]; use 'subtitle sync' to show the current offset",
+                    ["nudge"] = "Usage: nudge left|right|up|down [count]  OR  nudge <x> <y>",
+                    ["sort"] = "Usage: sort name|date asc|desc",
+                    ["dm"] = "Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)",
+                    ["tag"] = "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
+                    ["macro"] = "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
+                    ["p"] = "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
+                    ["page"] = "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
+                    ["slideshow"] = "Usage: slideshow [seconds] [shuffle] [triggers], slideshow triggers, slideshow stop, or slideshow next",
+                    ["ws"] = "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
+                    ["all"] = "Usage: all [command]",
+                    ["others"] = "Usage: others [command]",
+                    ["c24"] = "Usage: c24 set [command], c24 view, or c24 run"
+                };
+
+                foreach (var (command, expectedMessage) in incompleteCommands)
+                {
+                    window.ExecuteCommand(command).GetAwaiter().GetResult();
+                    Assert.Equal(expectedMessage, window.LastMessage);
+                }
 
                 var workspaceName = "palette-test-" + Guid.NewGuid().ToString("N");
                 workspacePath = Path.Combine(MainWindow.workspaceFilesPath, workspaceName + ".cloudless");
@@ -248,6 +281,9 @@ public class CommandPaletteExecutionTests
 
                 window.ExecuteCommand("set f").GetAwaiter().GetResult();
                 window.ExecuteCommand("seek 10").GetAwaiter().GetResult();
+                window.ExecuteCommand("goto f").GetAwaiter().GetResult();
+                Assert.Equal(TimeSpan.FromSeconds(105), player.Position);
+                window.ExecuteCommand("seek 10").GetAwaiter().GetResult();
                 window.ExecuteCommand("goto flag").GetAwaiter().GetResult();
                 Assert.Equal(TimeSpan.FromSeconds(105), player.Position);
                 window.ExecuteCommand("clear flag").GetAwaiter().GetResult();
@@ -292,7 +328,7 @@ public class CommandPaletteExecutionTests
                 Assert.Equal("Command failed: Expected exactly one key token after any modifiers (ctrl alt shift)", window.LastMessage);
 
                 window.ExecuteCommand("dm invalid").GetAwaiter().GetResult();
-                Assert.Equal("Invalid display mode", window.LastMessage);
+                Assert.Equal("Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)", window.LastMessage);
                 window.ExecuteCommand("volume 101").GetAwaiter().GetResult();
                 Assert.Equal("Volume must be from 0 to 100.", window.LastMessage);
                 window.ExecuteCommand("speed 0").GetAwaiter().GetResult();

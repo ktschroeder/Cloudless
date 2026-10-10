@@ -17,6 +17,12 @@
     <Setting Name="BorderOnMainWindow" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="SlightlyTransparentSecondaryWindows" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="CommandPaletteValidCommandIndicator" Type="System.String" Scope="User">
+      <Value Profile="(Default)">None</Value>
+    </Setting>
     <Setting Name="LoopGifs" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>

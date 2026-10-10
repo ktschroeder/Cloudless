@@ -15,6 +15,7 @@ namespace Cloudless
         public QuickCommandWindow(MainWindow mw)
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
 
             _mw = mw;
             _page = LastQuickCommandPage;

@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using Xunit;
 
@@ -64,6 +65,77 @@ public sealed class CommandPaletteInteractionUiTests
             {
                 CloseTestWindows();
                 settings.CommandHistory = ToStringCollection(originalHistory);
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
+    public void InlineCommandSuggestionIsDisplayedAndAcceptedWithTab()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            MainWindow? window = null;
+            try
+            {
+                settings.CurrentPage = 1;
+                window = new MainWindow(string.Empty, 800, 600, workspaceLoad: true);
+                window.Show();
+                OpenPalette(window);
+                var paletteControl = GetPalette(window).Control!;
+                var textBox = paletteControl.CommandTextBoxControl;
+                var hint = Assert.IsType<TextBlock>(paletteControl.FindName("CommandSuggestionTextBlock"));
+
+                textBox.Text = "cl";
+                textBox.CaretIndex = textBox.Text.Length;
+                Assert.Equal(Visibility.Visible, hint.Visibility);
+                Assert.Equal("ose", ((Run)hint.Inlines.Last()).Text);
+
+                var tab = RaiseKey(textBox, Key.Tab);
+                Assert.True(tab.Handled);
+                Assert.Equal("close", textBox.Text);
+                Assert.Equal(Visibility.Visible, hint.Visibility);
+                Assert.Equal(" all", ((Run)hint.Inlines.Last()).Text);
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("close all", textBox.Text);
+
+                textBox.Text = "asdf";
+                Assert.Equal(Visibility.Collapsed, hint.Visibility);
+
+                textBox.Text = "close ";
+                textBox.CaretIndex = textBox.Text.Length;
+                Assert.Equal("all", ((Run)hint.Inlines.Last()).Text);
+                InvokeTabPressed(window, reverse: false, recency: true);
+                Assert.Equal("others", ((Run)hint.Inlines.Last()).Text);
+                InvokeTabPressed(window, reverse: true, recency: true);
+                Assert.Equal("all", ((Run)hint.Inlines.Last()).Text);
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("close all", textBox.Text);
+
+                textBox.Text = "fil";
+                textBox.CaretIndex = textBox.Text.Length;
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("filmstrip", textBox.Text);
+                Assert.Equal(" directory", ((Run)hint.Inlines.Last()).Text);
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("filmstrip directory", textBox.Text);
+
+                textBox.Text = "go";
+                textBox.CaretIndex = textBox.Text.Length;
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("goto", textBox.Text);
+                Assert.Equal(" start", ((Run)hint.Inlines.Last()).Text);
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("goto start", textBox.Text);
+            }
+            finally
+            {
+                CloseTestWindows();
                 settings.CurrentPage = originalCurrentPage;
                 settings.Save();
                 ShutdownApplication(app);
