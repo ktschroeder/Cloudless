@@ -48,7 +48,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("dim [Int|+/-Int|_] [Int|+/-Int|_]", "Set dimensions with unsigned values, change them by signed offsets, or use _ to leave a dimension unchanged."),
                     new ReferenceItem("filmstrip | fs directory | d", "Open filmstrip and populate it with images in the current image's directory"),
                     new ReferenceItem("filmstrip | fs recent | r", "Open filmstrip and populate it with your recent images"),
-                    new ReferenceItem("filmstrip | fs bookmark | b", "Open filmstrip and populate it with your bookmarked images"),
+                    new ReferenceItem("filmstrip | fs bookmarks | b", "Open filmstrip and populate it with your bookmarked images"),
                     new ReferenceItem("filmstrip | fs preview | p [workspace]", "Open filmstrip and populate it with images from [workspace]"),
                 }),
                 new ReferenceTab("Tags", new List<ReferenceItem>

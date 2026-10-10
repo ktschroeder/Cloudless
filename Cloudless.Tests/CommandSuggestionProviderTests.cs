@@ -82,6 +82,9 @@ public sealed class CommandSuggestionProviderTests
         Assert.Equal(
             new[] { "filmstrip directory", "filmstrip recent", "filmstrip bookmarks", "filmstrip preview" },
             MainWindow.GetCommandCompletions("filmstrip ", "filmstrip ".Length).Take(4));
+        var shortAliasSuggestions = MainWindow.GetCommandCompletions("fs ", "fs ".Length);
+        Assert.Contains("fs bookmarks", shortAliasSuggestions);
+        Assert.DoesNotContain("fs bookmark", shortAliasSuggestions);
     }
 
     [Theory]
