@@ -184,7 +184,12 @@ internal static class CommandSyntaxValidator
 
             string? timeToken = parts.LastOrDefault(part => double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out _));
             if (timeToken != null)
+            {
+                if (hasTriggers)
+                    return false;
+
                 return double.TryParse(timeToken, NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) && seconds > 0;
+            }
 
             return hasTriggers;
         }

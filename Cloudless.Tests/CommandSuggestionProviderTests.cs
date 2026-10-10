@@ -102,16 +102,17 @@ public sealed class CommandSuggestionProviderTests
     [Fact]
     public void SuggestsFullSlideshowSpellingsAfterDuration()
     {
-        Assert.Contains("slideshow 5 triggers", MainWindow.GetCommandCompletions("slideshow 5", "slideshow 5".Length));
+        Assert.Contains("slideshow 5 shuffle", MainWindow.GetCommandCompletions("slideshow 5", "slideshow 5".Length));
+        Assert.DoesNotContain("slideshow 5 triggers", MainWindow.GetCommandCompletions("slideshow 5", "slideshow 5".Length));
         Assert.DoesNotContain("slideshow 5 shuffle triggers", MainWindow.GetCommandCompletions("slideshow 5", "slideshow 5".Length));
-        Assert.Equal("slideshow 5 triggers", MainWindow.GetCommandCompletion("slideshow 5 tri", "slideshow 5 tri".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("slideshow 5 tri", "slideshow 5 tri".Length));
         Assert.Equal("slideshow 5 shuffle", MainWindow.GetCommandCompletion("slideshow 5 sh", "slideshow 5 sh".Length));
         Assert.Equal("ss shuffle", MainWindow.GetCommandCompletion("ss ", "ss ".Length));
         Assert.Equal("ss t shuffle", MainWindow.GetCommandCompletion("ss t ", "ss t ".Length));
         Assert.Equal("slideshow t shuffle", MainWindow.GetCommandCompletion("slideshow t ", "slideshow t ".Length));
-        Assert.Equal("ss 5 s triggers", MainWindow.GetCommandCompletion("ss 5 s ", "ss 5 s ".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("ss 5 s ", "ss 5 s ".Length));
         Assert.Equal("ss shuffle triggers", MainWindow.GetCommandCompletion("ss shuffle ", "ss shuffle ".Length));
-        Assert.Equal("slideshow 5 shuffle triggers", MainWindow.GetCommandCompletion("slideshow 5 shuffle ", "slideshow 5 shuffle ".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("slideshow 5 shuffle ", "slideshow 5 shuffle ".Length));
         Assert.Equal("ss next", MainWindow.GetCommandCompletion("ss n", "ss n".Length));
         Assert.Contains("ss 5 shuffle", MainWindow.GetCommandCompletions("ss 5", "ss 5".Length));
     }
@@ -132,7 +133,6 @@ public sealed class CommandSuggestionProviderTests
     [InlineData("p 2 s", "p 2 send")]
     [InlineData("p 2 send", "p 2 send page")]
     [InlineData("slideshow 5", "slideshow 5 shuffle")]
-    [InlineData("slideshow 5 t", "slideshow 5 triggers")]
     [InlineData("macro record demo cl", "macro record demo close")]
     [InlineData("close; fil", "close; filmstrip")]
     public void OffersTheNextLiteralAfterCommandAndNumericParameters(string input, string expected)

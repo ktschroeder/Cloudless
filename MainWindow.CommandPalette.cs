@@ -602,7 +602,7 @@ namespace Cloudless
                 string prefix = text[..(slideshowMatch.Groups["seconds"].Index + slideshowMatch.Groups["seconds"].Length)];
                 string[] allowedOptions =
                 {
-                    " shuffle", " triggers", " shuffle triggers", " triggers shuffle"
+                    " shuffle"
                 };
                 return FilterSingleWordCompletions(text, allowedOptions.Select(option => prefix + option));
             }
@@ -622,8 +622,7 @@ namespace Cloudless
                 string prefix = text[..(durationMatch.Groups["seconds"].Index + durationMatch.Groups["seconds"].Length)];
                 candidates.AddRange(new[]
                 {
-                    prefix + " shuffle", prefix + " triggers",
-                    prefix + " shuffle triggers", prefix + " triggers shuffle"
+                    prefix + " shuffle"
                 });
             }
             else if (!durationMatch.Success)
@@ -670,14 +669,18 @@ namespace Cloudless
                     return Array.Empty<string>();
                 optionStart++;
             }
+            bool hasTime = optionStart > 1;
 
             string[] options = tokens.Skip(optionStart).ToArray();
             bool hasShuffle = options.Any(option => option.Equals("shuffle", StringComparison.OrdinalIgnoreCase) || option.Equals("s", StringComparison.OrdinalIgnoreCase));
             bool hasTriggers = options.Any(option => option.Equals("triggers", StringComparison.OrdinalIgnoreCase) || option.Equals("t", StringComparison.OrdinalIgnoreCase));
 
+            if (hasTime && hasTriggers)
+                return Array.Empty<string>();
+
             if (hasTriggers && !hasShuffle)
                 return new[] { trimmedText + " shuffle" };
-            if (hasShuffle && !hasTriggers)
+            if (hasShuffle && !hasTriggers && !hasTime)
                 return new[] { trimmedText + " triggers" };
 
             return Array.Empty<string>();
@@ -2672,6 +2675,12 @@ namespace Cloudless
                     else if (double.TryParse(p, out _)) timeToken = p;
                 }
 
+                if (useTriggers && !string.IsNullOrEmpty(timeToken))
+                {
+                    Message("Cannot combine slideshow triggers with a time interval. Use either 'ss triggers' or 'ss [seconds]'.");
+                    return false;
+                }
+
                 // Special-case: trigger-only slideshow when no numeric time is supplied
                 if (useTriggers && string.IsNullOrEmpty(timeToken))
                 {
@@ -2842,7 +2851,7 @@ namespace Cloudless
                 "tag" or "t" => "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
                 "macro" => "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
                 "p" or "page" => "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
-                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle] [triggers], slideshow triggers, slideshow stop, or slideshow next",
+                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow stop, or slideshow next",
                 "ws" => "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
                 "all" or "others" => $"Usage: {command} [command]",
                 _ => null

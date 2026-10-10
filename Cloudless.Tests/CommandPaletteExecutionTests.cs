@@ -167,7 +167,7 @@ public class CommandPaletteExecutionTests
                     ["macro"] = "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
                     ["p"] = "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
                     ["page"] = "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
-                    ["slideshow"] = "Usage: slideshow [seconds] [shuffle] [triggers], slideshow triggers, slideshow stop, or slideshow next",
+                    ["slideshow"] = "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow stop, or slideshow next",
                     ["ws"] = "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
                     ["all"] = "Usage: all [command]",
                     ["others"] = "Usage: others [command]",
