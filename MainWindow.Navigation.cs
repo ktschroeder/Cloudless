@@ -107,6 +107,7 @@ namespace Cloudless
             settings.UseManualVideoControls = configurationWindow.UseManualVideoControls;
             settings["Theme"] = configurationWindow.SelectedTheme ?? "Light";
             settings.Save();
+            SecondaryWindowOpacity.ApplyToOpenWindows();
         }
 
         private void OpenRecentImagesWindow()

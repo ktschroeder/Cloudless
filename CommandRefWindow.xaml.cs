@@ -13,6 +13,7 @@ namespace Cloudless
         public CommandRefWindow()
         {
             InitializeComponent();
+            SecondaryWindowOpacity.Apply(this);
             LoadReferenceData();
         }
 
