@@ -12,6 +12,26 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_APPWINDOW = 0x00040000;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        private void SetAltTabVisibility(bool visible)
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            exStyle = visible
+                ? (exStyle | WS_EX_APPWINDOW) & ~WS_EX_TOOLWINDOW
+                : (exStyle | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW;
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle);
+        }
+
         public string GetVersion()
         {
             return CURRENT_VERSION;
@@ -1048,6 +1068,7 @@ namespace Cloudless
             MinimizeWindow();
             this.Hide();
             this.ShowInTaskbar = false;
+            SetAltTabVisibility(false);
         }
 
         public void RevealWindowForPages(bool fromSlideshow = false)
@@ -1063,6 +1084,7 @@ namespace Cloudless
             }
 
             this.ShowInTaskbar = true;
+            SetAltTabVisibility(true);
 
             this.WindowState = windowWasMinimizedPriorToHidingForPage ? WindowState.Minimized
                 : windowWasMaximizedPriorToHidingForPage ? WindowState.Maximized
