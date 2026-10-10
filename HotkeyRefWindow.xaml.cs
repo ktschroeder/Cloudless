@@ -159,7 +159,7 @@ namespace Cloudless
                     double finalHeight = maxTabContentHeight + headerHeight + verticalMargins + closeButtonHeight;
 
                     this.Width = finalWidth;
-                    this.Height = finalHeight;
+                    this.Height = finalHeight + 30;
                     this.SizeToContent = SizeToContent.Manual; // Lock the size
             }
         }

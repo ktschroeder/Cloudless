@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Threading;
@@ -97,7 +98,14 @@ public class OverlayMessageManager
             Foreground = (Brush)Application.Current.Resources["OverlayForeground"],
             Background = (Brush)Application.Current.Resources["OverlayBackground"],
             Padding = new Thickness(10),
-            Margin = new Thickness(0, 0, 0, 5), // Space between messages
+            Margin = new Thickness(12, 12, 12, 17),
+            Effect = new DropShadowEffect
+            {
+                Color = Colors.Black,
+                BlurRadius = 16,
+                ShadowDepth = 0,
+                Opacity = 0.55
+            },
             Opacity = 0, // Start hidden
         };
 

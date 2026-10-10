@@ -28,7 +28,7 @@ namespace Cloudless
             this.Content = _control;
         }
 
-        public void AlignToOwner(Window owner, double desiredLeftOffset = 10, double desiredTopOffset = 10)
+        public void AlignToOwner(Window owner, double desiredLeftOffset = -2, double desiredTopOffset = -2)
         {
             if (owner == null) return;
 

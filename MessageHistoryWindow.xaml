@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Message History"
-        Height="410"
-        Width="600"
+        Height="442"
+        Width="632"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -11,9 +11,13 @@
         KeyDown="Window_KeyDown"
         AllowsTransparency="True">
 
+    <Grid Margin="16">
     <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
 
 
         <DockPanel>
@@ -65,4 +69,5 @@
 
         </DockPanel>
     </Border>
+    </Grid>
 </Window>

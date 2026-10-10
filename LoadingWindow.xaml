@@ -12,7 +12,13 @@
         WindowStartupLocation="CenterScreen"
         SizeToContent="WidthAndHeight"
         Closing="On_Close">
-    <Grid Background="#1E1E1E" Opacity="0.95">
+    <Grid Margin="16">
+        <Border Background="#1E1E1E" Opacity="0.95">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+            </Border.Effect>
+        </Border>
+        <Grid Background="#1E1E1E" Opacity="0.95">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="60">
             <TextBlock x:Name="TitleTextBlock"
                        Text="Loading..."
@@ -34,5 +40,6 @@
                        TextWrapping="Wrap"
                        Visibility="Collapsed" />
         </StackPanel>
+        </Grid>
     </Grid>
 </Window>

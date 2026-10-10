@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Preferences"
-        Height="440"
-        Width="600"
+        Height="472"
+        Width="632"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -12,9 +12,13 @@
         PreviewMouseWheel="Window_PreviewMouseWheel"
         AllowsTransparency="True">
 
+    <Grid Margin="16">
     <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6"
             Padding="0">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
 
 
         <DockPanel>
@@ -217,4 +221,5 @@ Content="When clicking a thumbnail in the filmstrip, open it in a new window" Ma
 
         </DockPanel>
     </Border>
+    </Grid>
 </Window>

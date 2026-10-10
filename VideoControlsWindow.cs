@@ -42,9 +42,9 @@ namespace Cloudless
             SecondaryWindowOpacity.Apply(this);
 
             // Set initial dimensions
-            Width = 800;
+            Width = 832;
             // Increase height to ensure controls (button and slider thumb) are not clipped at the bottom
-            Height = 64;
+            Height = 96;
             ShowInTaskbar = false;
 
             SourceInitialized += VideoControlsWindow_SourceInitialized;

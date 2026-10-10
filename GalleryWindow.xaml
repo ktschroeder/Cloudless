@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Cloudless"
         Title="Image Gallery"
-        Width="535"
+        Width="567"
         SizeToContent="Height"
-        MaxHeight="600"
+        MaxHeight="632"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -14,8 +14,12 @@
         KeyDown="Window_KeyDown"
         Loaded="Window_Loaded">
 
+    <Grid Margin="16">
     <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="6">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
 
         <DockPanel>
 
@@ -223,4 +227,5 @@
 
         </DockPanel>
     </Border>
+    </Grid>
 </Window>

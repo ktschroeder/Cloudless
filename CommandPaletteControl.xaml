@@ -5,8 +5,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="48" d:DesignWidth="400">
-    <Grid HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6">
+    <Grid HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16">
         <Border x:Name="Root" Visibility="Visible" Background="{DynamicResource CommandPaletteBackground}" CornerRadius="4" Padding="6">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="16" ShadowDepth="0" Opacity="0.55"/>
+            </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>

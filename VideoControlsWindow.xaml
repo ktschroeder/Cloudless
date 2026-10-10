@@ -42,11 +42,15 @@
         </Style>
     </Window.Resources>
 
+    <Grid Margin="16">
     <Border Background="{DynamicResource OverlayBackground}"
             Padding="8" 
             CornerRadius="4,4,0,0"
             BorderBrush="{DynamicResource ControlBorderBrush}"
             BorderThickness="1,1,1,0">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="16" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -134,4 +138,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </Grid>
 </Window>

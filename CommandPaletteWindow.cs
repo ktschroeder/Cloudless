@@ -39,7 +39,7 @@ namespace Cloudless
             }
         }
 
-        public void AlignToOwner(Window owner, double desiredLeftOffset = 7, double desiredBottomOffset = 7, double? contentHeight = null)
+        public void AlignToOwner(Window owner, double desiredLeftOffset = -3, double desiredBottomOffset = -3, double? contentHeight = null)
         {
             if (owner == null) return;
 
@@ -113,7 +113,7 @@ namespace Cloudless
                     desiredHeight = ds.Height;
             }
 
-            AlignToOwner(owner, 7, 7, desiredHeight);
+            AlignToOwner(owner, -3, -3, desiredHeight);
             if (!this.IsVisible)
                 this.Show();
 
