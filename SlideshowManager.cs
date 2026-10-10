@@ -15,6 +15,7 @@ namespace Cloudless
         private static Action? _onSlideshowTick = null;
         private static Action? _onSlideshowStopped = null;
         private static bool _slideshowShuffle = false;
+        public static bool IsPaused { get; private set; }
         public static bool UseTriggers = false;
         private static HashSet<int>? _triggerPages = null;
         // lots per page value for smart randomness (pageValue -> lots)
@@ -73,7 +74,8 @@ namespace Cloudless
 
                 _slideshowTimer.Tick += (sender, e) =>
                 {
-                    OnTimerTick();
+                    if (!IsPaused)
+                        OnTimerTick();
                 };
 
                 _slideshowTimer.Start();
@@ -115,6 +117,7 @@ namespace Cloudless
             _slideshowPages = null;
             _slideshowCurrentPageIndex = 0;
             _onSlideshowTick = null;
+            IsPaused = false;
 
             if (wasRunning)
             {
@@ -151,13 +154,33 @@ namespace Cloudless
                 return;
 
             // Reset timer if it exists (for time-based slideshows)
-            if (_slideshowTimer != null)
+            if (_slideshowTimer != null && !IsPaused)
             {
                 _slideshowTimer.Stop();
                 _slideshowTimer.Start();
             }
 
             OnTimerTick();
+        }
+
+        public static bool Pause()
+        {
+            if (!IsRunning || IsPaused)
+                return false;
+
+            IsPaused = true;
+            _slideshowTimer?.Stop();
+            return true;
+        }
+
+        public static bool Resume()
+        {
+            if (!IsRunning || !IsPaused)
+                return false;
+
+            IsPaused = false;
+            _slideshowTimer?.Start();
+            return true;
         }
 
         /// <summary>
@@ -181,7 +204,7 @@ namespace Cloudless
         /// </summary>
         public static void SignalTriggerFired(int pageIndex)
         {
-            if (!UseTriggers) return;
+            if (IsPaused || !UseTriggers) return;
             if (_triggerPages != null && _triggerPages.Contains(pageIndex))
             {
                 // advance immediately

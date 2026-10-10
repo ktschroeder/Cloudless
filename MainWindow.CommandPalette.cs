@@ -629,7 +629,7 @@ namespace Cloudless
             {
                 candidates.AddRange(new[]
                 {
-                    "ss shuffle", "ss triggers", "ss shuffle triggers", "ss triggers shuffle", "ss next", "ss stop"
+                    "ss shuffle", "ss triggers", "ss shuffle triggers", "ss triggers shuffle", "ss next", "ss pause", "ss resume", "ss stop"
                 });
             }
 
@@ -672,7 +672,7 @@ namespace Cloudless
             bool hasTime = optionStart > 1;
 
             string[] options = tokens.Skip(optionStart).ToArray();
-            bool hasShuffle = options.Any(option => option.Equals("shuffle", StringComparison.OrdinalIgnoreCase) || option.Equals("s", StringComparison.OrdinalIgnoreCase));
+            bool hasShuffle = options.Any(option => option.Equals("shuffle", StringComparison.OrdinalIgnoreCase));
             bool hasTriggers = options.Any(option => option.Equals("triggers", StringComparison.OrdinalIgnoreCase) || option.Equals("t", StringComparison.OrdinalIgnoreCase));
 
             if (hasTime && hasTriggers)
@@ -2648,7 +2648,29 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.Equals("ss stop") || cmd.Equals("slideshow stop"))
+            if (cmd.Equals("ss pause") || cmd.Equals("ss p") || cmd.Equals("slideshow pause"))
+            {
+                if (!SlideshowManager.IsRunning)
+                    Message("No slideshow is running.");
+                else if (SlideshowManager.Pause())
+                    Message("Slideshow paused.");
+                else
+                    Message("Slideshow is already paused.");
+                return true;
+            }
+
+            if (cmd.Equals("ss resume") || cmd.Equals("ss r") || cmd.Equals("slideshow resume"))
+            {
+                if (!SlideshowManager.IsRunning)
+                    Message("No slideshow is running.");
+                else if (SlideshowManager.Resume())
+                    Message("Slideshow resumed.");
+                else
+                    Message("Slideshow is not paused.");
+                return true;
+            }
+
+            if (cmd.Equals("ss stop") || cmd.Equals("ss s") || cmd.Equals("slideshow stop"))
             {
                 StopSlideshow();
                 return true;
@@ -2666,13 +2688,21 @@ namespace Cloudless
                 var parts = args.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
                 bool shuffle = false;
                 bool useTriggers = false;
+                bool invalidOption = false;
                 string timeToken = "";
                 foreach (var p in parts)
                 {
                     var lp = p.ToLower();
-                    if (lp == "shuffle" || lp == "s") shuffle = true;
+                    if (lp == "shuffle") shuffle = true;
                     else if (lp == "triggers" || lp == "t") useTriggers = true;
                     else if (double.TryParse(p, out _)) timeToken = p;
+                    else invalidOption = true;
+                }
+
+                if (invalidOption)
+                {
+                    Message("Invalid slideshow option. Use 'shuffle', 'triggers', or 't'.");
+                    return false;
                 }
 
                 if (useTriggers && !string.IsNullOrEmpty(timeToken))
@@ -2851,7 +2881,7 @@ namespace Cloudless
                 "tag" or "t" => "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
                 "macro" => "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
                 "p" or "page" => "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
-                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow stop, or slideshow next",
+                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow pause (ss p), slideshow resume (ss r), slideshow stop (ss s), or slideshow next",
                 "ws" => "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
                 "all" or "others" => $"Usage: {command} [command]",
                 _ => null

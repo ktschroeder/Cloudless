@@ -36,6 +36,9 @@ internal static class CommandSyntaxValidator
         if (command is "slideshow" or "ss")
             return false;
 
+        if (command is "ss p" or "ss r" or "ss s")
+            return true;
+
         if (command.Equals("tag", StringComparison.OrdinalIgnoreCase) ||
             command.Equals("t", StringComparison.OrdinalIgnoreCase) ||
             command.Equals("l", StringComparison.OrdinalIgnoreCase))
@@ -171,13 +174,13 @@ internal static class CommandSyntaxValidator
         if (slideshowMatch.Success)
         {
             string arguments = slideshowMatch.Groups["arguments"].Value;
-            if (arguments is "stop" or "next" or "n")
+            if (arguments is "stop" or "next" or "n" or "pause" or "resume")
                 return true;
 
             string[] parts = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             bool hasTriggers = parts.Any(part => part is "triggers" or "t");
             bool validParts = parts.All(part =>
-                part is "shuffle" or "s" or "triggers" or "t" ||
+                part is "shuffle" or "triggers" or "t" ||
                 double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out _));
             if (!validParts)
                 return false;

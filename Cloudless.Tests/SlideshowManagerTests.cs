@@ -81,6 +81,43 @@ public sealed class SlideshowManagerTests : IDisposable
     }
 
     [Fact]
+    public void PauseAndResume_PreserveTimedSlideshowState()
+    {
+        var pages = new List<int> { 10, 20, 30 };
+        Start(pages, startingPageIndex: 1, shuffle: true, intervalSeconds: 42);
+
+        Assert.True(SlideshowManager.Pause());
+        Assert.True(SlideshowManager.IsRunning);
+        Assert.True(SlideshowManager.IsPaused);
+        Assert.Equal(42, SlideshowManager.CurrentIntervalSeconds);
+        Assert.Equal(pages, SlideshowManager.CurrentPages);
+
+        Assert.True(SlideshowManager.Resume());
+        Assert.True(SlideshowManager.IsRunning);
+        Assert.False(SlideshowManager.IsPaused);
+        Assert.Equal(42, SlideshowManager.CurrentIntervalSeconds);
+        Assert.Equal(pages, SlideshowManager.CurrentPages);
+    }
+
+    [Fact]
+    public void PausedTriggerSlideshow_IgnoresTriggersUntilResumed()
+    {
+        var tickCount = 0;
+        SlideshowManager.RegisterTriggerPage(20);
+        Start(new List<int> { 10, 20, 30 }, useTriggers: true, intervalSeconds: 0, onTick: () => tickCount++);
+
+        Assert.True(SlideshowManager.Pause());
+        SlideshowManager.SignalTriggerFired(20);
+        Assert.Equal(10, SlideshowManager.SelectedPage);
+        Assert.Equal(0, tickCount);
+
+        Assert.True(SlideshowManager.Resume());
+        SlideshowManager.SignalTriggerFired(20);
+        Assert.Equal(20, SlideshowManager.SelectedPage);
+        Assert.Equal(1, tickCount);
+    }
+
+    [Fact]
     public void SequentialSlideshow_WithOnePageContinuesSelectingThatPage()
     {
         var tickCount = 0;

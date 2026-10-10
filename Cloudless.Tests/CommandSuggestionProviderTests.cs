@@ -117,7 +117,16 @@ public sealed class CommandSuggestionProviderTests
         Assert.Equal("ss shuffle triggers", MainWindow.GetCommandCompletion("ss shuffle ", "ss shuffle ".Length));
         Assert.Null(MainWindow.GetCommandCompletion("slideshow 5 shuffle ", "slideshow 5 shuffle ".Length));
         Assert.Equal("ss next", MainWindow.GetCommandCompletion("ss n", "ss n".Length));
+        Assert.Equal(
+            new[] { "ss shuffle", "ss stop" },
+            MainWindow.GetCommandCompletions("ss s", "ss s".Length));
+        Assert.Equal("ss pause", MainWindow.GetCommandCompletion("ss p", "ss p".Length));
+        Assert.Equal("ss resume", MainWindow.GetCommandCompletion("ss r", "ss r".Length));
         Assert.Contains("ss 5 shuffle", MainWindow.GetCommandCompletions("ss 5", "ss 5".Length));
+        Assert.Contains("ss pause", MainWindow.GetCommandCompletions("ss ", "ss ".Length));
+        Assert.Contains("ss resume", MainWindow.GetCommandCompletions("ss ", "ss ".Length));
+        Assert.Contains("slideshow pause", MainWindow.GetCommandCompletions("slideshow ", "slideshow ".Length));
+        Assert.Contains("slideshow resume", MainWindow.GetCommandCompletions("slideshow ", "slideshow ".Length));
     }
 
     [Theory]
