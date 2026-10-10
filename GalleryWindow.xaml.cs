@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -33,6 +34,34 @@ namespace Cloudless
             }
         }
 
+        private bool _isBookmarked;
+        public bool IsBookmarked
+        {
+            get => _isBookmarked;
+            set
+            {
+                if (_isBookmarked != value)
+                {
+                    _isBookmarked = value;
+                    PropertyChanged?.Invoke(this, new(nameof(IsBookmarked)));
+                }
+            }
+        }
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    PropertyChanged?.Invoke(this, new(nameof(IsSelected)));
+                }
+            }
+        }
+
         private ImageSource? _thumbnail;
         public ImageSource? Thumbnail
         {
@@ -54,6 +83,8 @@ namespace Cloudless
     public partial class GalleryWindow : Window
     {
         private readonly SemaphoreSlim _thumbnailLoadSemaphore = new(2);
+        private int _selectionAnchorIndex = -1;
+        private int _keyboardFocusIndex = -1;
 
         public ObservableCollection<GalleryItem> GalleryImages { get; } = new();
         public string? PreviewWorkspace;
@@ -78,6 +109,7 @@ namespace Cloudless
 
             AddWorkspaceButtons(!string.IsNullOrEmpty(workspaceName));
             PreviewWorkspace = workspaceName;
+            UpdateSelectionUi();
         }
 
         private void AddWorkspaceButtons(bool wsSelected)
@@ -164,6 +196,9 @@ namespace Cloudless
                 TitleText.Text = title;
 
                 GalleryImages.Clear();
+                _selectionAnchorIndex = -1;
+                _keyboardFocusIndex = -1;
+                UpdateSelectionUi();
 
                 foreach (var file in wsFiles)
                 {
@@ -183,11 +218,21 @@ namespace Cloudless
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            RefreshBookmarkIndicators();
             await LoadThumbnailsAsync();
+        }
+
+        internal void RefreshBookmarkIndicators(Func<string?, bool>? isBookmarked = null)
+        {
+            if (isBookmarked == null)
+                isBookmarked = path => Owner is MainWindow mw && mw.IsFileBookmarked(path);
+            foreach (var item in GalleryImages)
+                item.IsBookmarked = isBookmarked(item.FilePath);
         }
 
         private async Task LoadThumbnailsAsync()
         {
+            RefreshBookmarkIndicators();
             var tasks = new List<Task>();
             foreach (var item in GalleryImages)
             {
@@ -337,16 +382,261 @@ namespace Cloudless
             if (sender is FrameworkElement fe &&
                 fe.DataContext is GalleryItem item)
             {
-                Close();
-                if (Owner is MainWindow mw)
+                if (e.ClickCount >= 2)
                 {
-                    await mw.OpenRecentFile(item.FilePath ?? "");
+                    await OpenSelectedItemsAsync(item);
+                    e.Handled = true;
+                    return;
                 }
+
+                SelectGalleryItem(item, Keyboard.Modifiers);
+                e.Handled = true;
             }
         }
 
+        private void SelectGalleryItem(GalleryItem item, ModifierKeys modifiers)
+        {
+            int index = GalleryImages.IndexOf(item);
+            if (index < 0)
+                return;
+
+            _keyboardFocusIndex = index;
+            bool control = modifiers.HasFlag(ModifierKeys.Control);
+            bool shift = modifiers.HasFlag(ModifierKeys.Shift);
+            if (shift && _selectionAnchorIndex >= 0)
+            {
+                if (!control)
+                    foreach (var galleryItem in GalleryImages)
+                        galleryItem.IsSelected = false;
+
+                int start = Math.Min(_selectionAnchorIndex, index);
+                int end = Math.Max(_selectionAnchorIndex, index);
+                for (int i = start; i <= end; i++)
+                    GalleryImages[i].IsSelected = true;
+            }
+            else if (control)
+            {
+                item.IsSelected = !item.IsSelected;
+                _selectionAnchorIndex = index;
+            }
+            else
+            {
+                foreach (var galleryItem in GalleryImages)
+                    galleryItem.IsSelected = false;
+                item.IsSelected = true;
+                _selectionAnchorIndex = index;
+            }
+
+            UpdateSelectionUi();
+        }
+
+        private void UpdateSelectionUi()
+        {
+            int selectedCount = GalleryImages.Count(item => item.IsSelected);
+            SelectionActionsPanel.Visibility = Visibility.Visible;
+            SelectionCountText.Text = $"{selectedCount} selected";
+            EditSelectedTagsButton.IsEnabled = selectedCount > 0;
+            BookmarkSelectedButton.IsEnabled = selectedCount > 0;
+            RemoveBookmarksButton.IsEnabled = selectedCount > 0;
+            ClearSelectionButton.IsEnabled = selectedCount > 0;
+        }
+
+        private void Thumbnail_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.DataContext is not GalleryItem item)
+                return;
+
+            if (!item.IsSelected)
+            {
+                foreach (var galleryItem in GalleryImages)
+                    galleryItem.IsSelected = false;
+                item.IsSelected = true;
+                _selectionAnchorIndex = GalleryImages.IndexOf(item);
+                _keyboardFocusIndex = _selectionAnchorIndex;
+            }
+            UpdateSelectionUi();
+        }
+
+        private void Thumbnail_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element)
+                element.ContextMenu = BulkTagContextMenu.Create(
+                    EditTagsForSelection,
+                    () => EditBookmarksForSelection(add: true),
+                    () => EditBookmarksForSelection(add: false));
+        }
+
+        private void EditSelectedTags_Click(object sender, RoutedEventArgs e) => EditTagsForSelection();
+
+        private void EditTagsForSelection()
+        {
+            if (Owner is MainWindow mw)
+            {
+                string[] selectedFiles = GalleryImages
+                    .Where(item => item.IsSelected && !string.IsNullOrWhiteSpace(item.FilePath))
+                    .Select(item => item.FilePath!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                mw.EditTagsForFiles(selectedFiles);
+            }
+        }
+
+        private void BookmarkSelected_Click(object sender, RoutedEventArgs e) => EditBookmarksForSelection(add: true);
+
+        private void RemoveBookmarks_Click(object sender, RoutedEventArgs e) => EditBookmarksForSelection(add: false);
+
+        private void EditBookmarksForSelection(bool add)
+        {
+            if (Owner is MainWindow mw)
+            {
+                string[] selectedFiles = GalleryImages
+                    .Where(item => item.IsSelected && !string.IsNullOrWhiteSpace(item.FilePath))
+                    .Select(item => item.FilePath!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                mw.EditBookmarksForFiles(selectedFiles, add);
+            }
+        }
+
+        private void ClearSelection_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var item in GalleryImages)
+                item.IsSelected = false;
+            _selectionAnchorIndex = -1;
+            _keyboardFocusIndex = -1;
+            UpdateSelectionUi();
+        }
+
+        private void SelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            SelectAllItems();
+        }
+
+        private void SelectAllItems()
+        {
+            foreach (var item in GalleryImages)
+                item.IsSelected = true;
+            if (GalleryImages.Count > 0)
+                _selectionAnchorIndex = 0;
+            _keyboardFocusIndex = GalleryImages.Count > 0 ? 0 : -1;
+            UpdateSelectionUi();
+        }
+
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
-        private void Window_KeyDown(object sender, KeyEventArgs e) { WindowHelper.HandleKeyDown(this, e); }
+        private async void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+            {
+                MoveGallerySelection(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter)
+            {
+                await OpenSelectedItemsAsync();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                SelectAllItems();
+                e.Handled = true;
+                return;
+            }
+
+            WindowHelper.HandleKeyDown(this, e);
+        }
+
+        private void MoveGallerySelection(Key key, bool extendSelection)
+        {
+            if (GalleryImages.Count == 0)
+                return;
+
+            int currentIndex = _keyboardFocusIndex;
+            if (currentIndex < 0 || currentIndex >= GalleryImages.Count)
+            {
+                currentIndex = GalleryImages
+                    .Select((item, index) => (item, index))
+                    .FirstOrDefault(pair => pair.item.IsSelected, (null!, -1)).index;
+            }
+
+            if (currentIndex < 0)
+            {
+                currentIndex = key is Key.Left or Key.Up ? GalleryImages.Count - 1 : 0;
+                _selectionAnchorIndex = currentIndex;
+                _keyboardFocusIndex = currentIndex;
+                GalleryImages[currentIndex].IsSelected = true;
+                UpdateSelectionUi();
+                BringGalleryItemIntoView(currentIndex);
+                return;
+            }
+
+            int columns = Math.Max(1, (int)Math.Floor((GalleryScrollViewer.ViewportWidth > 0
+                ? GalleryScrollViewer.ViewportWidth
+                : ActualWidth - 24) / 160));
+            int targetIndex = key switch
+            {
+                Key.Left => Math.Max(0, currentIndex - 1),
+                Key.Right => Math.Min(GalleryImages.Count - 1, currentIndex + 1),
+                Key.Up => currentIndex < columns ? currentIndex : currentIndex - columns,
+                Key.Down => Math.Min(GalleryImages.Count - 1, currentIndex + columns),
+                _ => currentIndex
+            };
+
+            if (targetIndex == currentIndex)
+                return;
+
+            if (extendSelection)
+            {
+                if (_selectionAnchorIndex < 0)
+                    _selectionAnchorIndex = currentIndex;
+                foreach (var item in GalleryImages)
+                    item.IsSelected = false;
+                for (int index = Math.Min(_selectionAnchorIndex, targetIndex);
+                     index <= Math.Max(_selectionAnchorIndex, targetIndex);
+                     index++)
+                    GalleryImages[index].IsSelected = true;
+            }
+            else
+            {
+                foreach (var item in GalleryImages)
+                    item.IsSelected = false;
+                GalleryImages[targetIndex].IsSelected = true;
+                _selectionAnchorIndex = targetIndex;
+            }
+
+            _keyboardFocusIndex = targetIndex;
+            UpdateSelectionUi();
+            BringGalleryItemIntoView(targetIndex);
+        }
+
+        private void BringGalleryItemIntoView(int index)
+        {
+            if (GalleryItemsControl.ItemContainerGenerator.ContainerFromIndex(index) is FrameworkElement container)
+                container.BringIntoView();
+        }
+
+        private async Task OpenSelectedItemsAsync(GalleryItem? doubleClickedItem = null)
+        {
+            if (Owner is not MainWindow mainWindow)
+                return;
+
+            string[] selectedFiles = GalleryImages
+                .Where(item => item.IsSelected && !string.IsNullOrWhiteSpace(item.FilePath))
+                .Select(item => item.FilePath!)
+                .ToArray();
+
+            if (doubleClickedItem != null && !string.IsNullOrWhiteSpace(doubleClickedItem.FilePath))
+                selectedFiles = new[] { doubleClickedItem.FilePath };
+
+            if (selectedFiles.Length == 0)
+                return;
+
+            Close();
+            await mainWindow.OpenSelectedFilesAsync(selectedFiles);
+        }
         private void Close_Click(object sender, RoutedEventArgs e) { WindowHelper.Close_Click(this, e); }
     }
 

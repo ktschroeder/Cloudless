@@ -6,17 +6,32 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Path = System.IO.Path;
 
 namespace Cloudless
 {
     public partial class FilmStripControl : UserControl
     {
         public event Action<string, bool>? ThumbnailClicked;
+        public event Action<IReadOnlyList<string>>? BulkTagEditRequested;
+        public event Action<IReadOnlyList<string>, bool>? BulkBookmarkEditRequested;
 
         private CancellationTokenSource? _populateCts;
         private ToolTip? _activeThumbnailToolTip;
+        private readonly HashSet<string> _selectedFiles = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<Border, Border> _selectionIndicators = new();
+        private readonly List<(string FilePath, System.Windows.Shapes.Path Indicator)> _bookmarkIndicators = new();
+        private Func<string, bool>? _isBookmarked;
+        private int _selectionAnchorIndex = -1;
+        internal IReadOnlyList<string> SelectedFilePaths => PART_Panel.Children
+            .OfType<Border>()
+            .Where(border => border.Tag is string path && _selectedFiles.Contains(path))
+            .Select(border => (string)border.Tag!)
+            .ToArray();
+        internal bool OpenSelectedFilesInNewWindows => PART_OpenInNewWindow.IsChecked == true;
 
         // Static retain storage - global in-memory filmstrip contents retained across instances
         private static string[]? _retainedFilmstripContents;
@@ -65,6 +80,135 @@ namespace Cloudless
         private void PART_OpenInNewWindow_Unchecked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
         private void PART_Resize_Checked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
         private void PART_Resize_Unchecked(object sender, RoutedEventArgs e) => UpdateSettingsFromCheckboxes();
+
+        private void PART_EditSelectedTags_Click(object sender, RoutedEventArgs e) => RaiseBulkTagEditRequested();
+        private void PART_BookmarkSelected_Click(object sender, RoutedEventArgs e) => RaiseBulkBookmarkEditRequested(add: true);
+        private void PART_RemoveBookmarks_Click(object sender, RoutedEventArgs e) => RaiseBulkBookmarkEditRequested(add: false);
+        private void PART_ClearSelection_Click(object sender, RoutedEventArgs e) => ClearSelection();
+
+        private void PART_SelectAll_Click(object sender, RoutedEventArgs e) => SelectAllItems();
+
+        internal void SelectAllItems()
+        {
+            _selectedFiles.Clear();
+            foreach (var child in PART_Panel.Children)
+            {
+                if (child is Border { Tag: string path })
+                    _selectedFiles.Add(path);
+            }
+            _selectionAnchorIndex = PART_Panel.Children.Count > 0 ? 0 : -1;
+            UpdateSelectionUi();
+        }
+
+        private void ClearSelection()
+        {
+            _selectedFiles.Clear();
+            _selectionAnchorIndex = -1;
+            UpdateSelectionUi();
+        }
+
+        private void SelectFile(string path, ModifierKeys modifiers)
+        {
+            int index = -1;
+            for (int i = 0; i < PART_Panel.Children.Count; i++)
+            {
+                if (PART_Panel.Children[i] is Border { Tag: string currentPath } &&
+                    string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0)
+                return;
+
+            bool control = modifiers.HasFlag(ModifierKeys.Control);
+            bool shift = modifiers.HasFlag(ModifierKeys.Shift);
+            if (shift && _selectionAnchorIndex >= 0)
+            {
+                if (!control)
+                    _selectedFiles.Clear();
+
+                int start = Math.Min(_selectionAnchorIndex, index);
+                int end = Math.Max(_selectionAnchorIndex, index);
+                for (int i = start; i <= end; i++)
+                {
+                    if (PART_Panel.Children[i] is Border { Tag: string selectedPath })
+                        _selectedFiles.Add(selectedPath);
+                }
+            }
+            else if (control)
+            {
+                if (!_selectedFiles.Add(path))
+                    _selectedFiles.Remove(path);
+                _selectionAnchorIndex = index;
+            }
+            else
+            {
+                _selectedFiles.Clear();
+                _selectedFiles.Add(path);
+                _selectionAnchorIndex = index;
+            }
+
+            UpdateSelectionUi();
+        }
+
+        private void UpdateSelectionUi()
+        {
+            foreach (var (border, indicator) in _selectionIndicators)
+            {
+                bool selected = border.Tag is string path && _selectedFiles.Contains(path);
+                border.SetResourceReference(Border.BorderBrushProperty, selected ? "PrimaryButtonBackgroundBrush" : "AccentBorderBrush");
+                indicator.Visibility = selected ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            PART_SelectionActionsPanel.Visibility = Visibility.Visible;
+            PART_SelectionCount.Text = $"{_selectedFiles.Count} selected";
+            PART_EditSelectedTags.IsEnabled = _selectedFiles.Count > 0;
+            PART_BookmarkSelected.IsEnabled = _selectedFiles.Count > 0;
+            PART_RemoveBookmarks.IsEnabled = _selectedFiles.Count > 0;
+        }
+
+        private void Thumbnail_ContextMenuOpening(object sender, RoutedEventArgs e)
+        {
+            if (sender is Border border && border.Tag is string path)
+            {
+                if (!_selectedFiles.Contains(path))
+                {
+                    _selectedFiles.Clear();
+                    _selectedFiles.Add(path);
+                    for (int i = 0; i < PART_Panel.Children.Count; i++)
+                    {
+                        if (ReferenceEquals(PART_Panel.Children[i], border))
+                        {
+                            _selectionAnchorIndex = i;
+                            break;
+                        }
+                    }
+                }
+                UpdateSelectionUi();
+            }
+        }
+
+        private void RaiseBulkTagEditRequested()
+        {
+            if (_selectedFiles.Count > 0)
+                BulkTagEditRequested?.Invoke(_selectedFiles.ToArray());
+        }
+
+        private void RaiseBulkBookmarkEditRequested(bool add)
+        {
+            if (_selectedFiles.Count > 0)
+                BulkBookmarkEditRequested?.Invoke(_selectedFiles.ToArray(), add);
+        }
+
+        internal void RefreshBookmarkIndicators(Func<string, bool> isBookmarked)
+        {
+            _isBookmarked = isBookmarked;
+            foreach (var (filePath, indicator) in _bookmarkIndicators)
+                indicator.Visibility = isBookmarked(filePath) ? Visibility.Visible : Visibility.Collapsed;
+        }
 
         private void FilmStripControl_Loaded(object? sender, RoutedEventArgs e)
         {
@@ -156,8 +300,11 @@ namespace Cloudless
             this.Visibility = Visibility.Collapsed;
         }
 
-        internal async Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload)
+        internal async Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload, Func<string, bool>? isBookmarked = null)
         {
+            if (isBookmarked != null)
+                _isBookmarked = isBookmarked;
+
             // Cancel any previous population operation
             if (_populateCts != null)
             {
@@ -169,6 +316,10 @@ namespace Cloudless
             var cancellationToken = _populateCts.Token;
 
             PART_Panel.Children.Clear();
+            _selectedFiles.Clear();
+            _selectionIndicators.Clear();
+            _bookmarkIndicators.Clear();
+            UpdateSelectionUi();
             if (files == null || files.Length == 0) return;
 
             // Wait a bit for layout to stabilize so we can measure available height
@@ -182,6 +333,8 @@ namespace Cloudless
             if (availableHeight < 40) availableHeight = 90; // default
             double thumbHeight = Math.Max(48, availableHeight - 12);
             double thumbWidth = Math.Round(thumbHeight * 1.6);
+            double thumbnailContentHeight = Math.Max(1, thumbHeight - 6);
+            double thumbnailContentWidth = Math.Max(1, thumbWidth - 6);
 
             for (int i = 0; i < files.Length; i++)
             {
@@ -203,6 +356,7 @@ namespace Cloudless
                 {
                     Width = thumbWidth,
                     Height = thumbHeight,
+                    BorderThickness = new Thickness(3),
                     Margin = new Thickness(6),
                     Background = new SolidColorBrush(Color.FromArgb(12, 255, 255, 255)),
                     CornerRadius = new CornerRadius(6),
@@ -214,8 +368,8 @@ namespace Cloudless
 
                 var img = new Image
                 {
-                    Width = thumbWidth,
-                    Height = thumbHeight,
+                    Width = thumbnailContentWidth,
+                    Height = thumbnailContentHeight,
                     Stretch = Stretch.UniformToFill,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -224,30 +378,81 @@ namespace Cloudless
 
                 var thumbnailGrid = new Grid
                 {
-                    Width = thumbWidth,
-                    Height = thumbHeight
+                    Width = thumbnailContentWidth,
+                    Height = thumbnailContentHeight
                 };
                 thumbnailGrid.Children.Add(img);
                 thumbnailGrid.Children.Add(new VideoThumbnailOverlay
                 {
-                    IsVideo = VideoThumbnailOverlay.IsVlcVideoPath(path)
+                    IsVideo = VideoThumbnailOverlay.IsVlcVideoPath(path),
+                    Margin = new Thickness(0, 0, 0, 6)
                 });
                 var animatedOverlay = new AnimatedThumbnailOverlay();
                 thumbnailGrid.Children.Add(animatedOverlay);
+                var bookmarkIndicator = new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M 0,0 L 22,0 L 0,22 Z"),
+                    Width = 22,
+                    Height = 22,
+                    Stretch = Stretch.Fill,
+                    Fill = new SolidColorBrush(Color.FromRgb(0x16, 0x8B, 0xFF)),
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Visibility = _isBookmarked?.Invoke(path) == true ? Visibility.Visible : Visibility.Collapsed,
+                    IsHitTestVisible = false
+                };
+                thumbnailGrid.Children.Add(bookmarkIndicator);
+                _bookmarkIndicators.Add((path, bookmarkIndicator));
+                var selectionIndicator = new Border
+                {
+                    Width = 28,
+                    Height = 28,
+                    Background = new SolidColorBrush(Color.FromArgb(0x99, 0, 0, 0)),
+                    CornerRadius = new CornerRadius(3),
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(4, 4, 8, 4),
+                    Visibility = Visibility.Collapsed,
+                    IsHitTestVisible = false
+                };
+                selectionIndicator.Child = new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M 2,9 L 7,14 L 17,3"),
+                    Stroke = Brushes.White,
+                    StrokeThickness = 3,
+                    StrokeStartLineCap = PenLineCap.Round,
+                    StrokeEndLineCap = PenLineCap.Round,
+                    StrokeLineJoin = PenLineJoin.Round,
+                    Margin = new Thickness(4)
+                };
+                thumbnailGrid.Children.Add(selectionIndicator);
                 border.Child = thumbnailGrid;
 
                 if (AnimatedImageDetector.IsSupportedAnimatedImagePath(path))
                     _ = SetAnimatedOverlayAsync(path, animatedOverlay, cancellationToken);
 
-                border.MouseLeftButtonUp += (s, e) =>
+                border.MouseLeftButtonDown += (s, e) =>
                 {
+                    if (e.ClickCount >= 2)
+                    {
                         bool openNew = PART_OpenInNewWindow.IsChecked == true;
                         ThumbnailClicked?.Invoke(path, openNew);
+                        return;
+                    }
+
+                    SelectFile(path, Keyboard.Modifiers);
+                    e.Handled = true;
                 };
+                border.ContextMenu = BulkTagContextMenu.Create(
+                    RaiseBulkTagEditRequested,
+                    () => RaiseBulkBookmarkEditRequested(add: true),
+                    () => RaiseBulkBookmarkEditRequested(add: false));
+                border.ContextMenuOpening += Thumbnail_ContextMenuOpening;
 
                 // hover handled via XAML style/animation; no code-behind transform here
 
                 PART_Panel.Children.Add(border);
+                _selectionIndicators[border] = selectionIndicator;
 
                 // ensure clipping within rounded border
                 border.ClipToBounds = true;

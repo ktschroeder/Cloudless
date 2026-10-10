@@ -193,6 +193,37 @@ namespace Cloudless
             return true;
         }
 
+        internal void EditTagsForFiles(IReadOnlyList<string> filePaths)
+        {
+            string[] selectedFiles = filePaths
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (selectedFiles.Length == 0)
+                return;
+
+            var editor = new BulkTagEditWindow(selectedFiles) { Owner = this };
+            if (editor.ShowDialog() != true)
+                return;
+
+            int changedFiles = 0;
+            foreach (string filePath in selectedFiles)
+            {
+                var results = editor.RemoveFromFiles
+                    ? TagManager.Instance.RemoveTags(filePath, editor.SelectedTags.ToArray())
+                    : TagManager.Instance.AddTags(filePath, editor.SelectedTags.ToArray());
+                if (results.Any(result => result.StartsWith("Removed tag", StringComparison.Ordinal) ||
+                                          result.StartsWith("Added tag", StringComparison.Ordinal)))
+                    changedFiles++;
+            }
+
+            string action = editor.RemoveFromFiles ? "Removed" : "Added";
+            if (changedFiles == 0)
+                Message("No tags changed; the selected items already have the requested tag state.");
+            else
+                Message($"{action} {string.Join(", ", editor.SelectedTags)} on {changedFiles} of {selectedFiles.Length} selected item(s).");
+        }
+
         private bool HandleTagDestroy(string args)
         {
             if (string.IsNullOrWhiteSpace(args))

@@ -1263,6 +1263,7 @@ namespace Cloudless
                     Message("Bookmark added.");
                 }
 
+                RefreshAllBookmarkIndicators();
                 // Rebuild menu to reflect change
                 _ = UpdateBookmarksMenu();
             };

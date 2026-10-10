@@ -24,7 +24,7 @@ namespace Cloudless
             if (_filmStripWindow != null && _filmStripWindow.IsVisible)
             {
                 var files = imageFiles ?? Array.Empty<string>();
-                _ = _filmStripWindow.PopulateAsync(files, currentImageIndex, _preloadManager);
+                _ = _filmStripWindow.PopulateAsync(files, currentImageIndex, _preloadManager, IsFileBookmarked);
             }
         }
 
@@ -34,6 +34,8 @@ namespace Cloudless
             {
                 _filmStripWindow = new FilmStripWindow();
                 _filmStripWindow.ThumbnailClicked += OnFilmStripThumbnailClicked;
+                _filmStripWindow.BulkTagEditRequested += EditTagsForFiles;
+                _filmStripWindow.BulkBookmarkEditRequested += EditBookmarksForFiles;
             }
 
             if (_filmStripWindow.IsVisible)
@@ -76,7 +78,7 @@ namespace Cloudless
                         NonstandardFilmstrip = false;
                     }
 
-                    _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager);
+                    _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager, IsFileBookmarked);
 
                     // If using retained contents, mark the checkbox as checked immediately
                     if (isUsingRetainedContents)
@@ -107,60 +109,14 @@ namespace Cloudless
             _filmStripImages = files;
             // Any nonstandard (explicit) population overrides retained contents in this window
             ClearFilmstripRetainCheckbox();
-            _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager);
+            _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager, IsFileBookmarked);
         }
 
         private async void OnFilmStripThumbnailClicked(string path, bool openInNewWindow)
         {
             if (openInNewWindow)
             {
-                try
-                {
-                    var window = await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        var newWindow = new MainWindow(path, workspaceLoad: true);
-                        newWindow.WorkspaceLoadInProgress = true;
-                        return newWindow;
-                    });
-
-                    var loadTask = await window.Dispatcher.InvokeAsync(() => window.LoadImage(path, true));
-                    await loadTask;
-                    await window.Dispatcher.InvokeAsync(() => window.Show());
-                    await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-
-                    if (window.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
-                    {
-                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                        while (stopwatch.ElapsedMilliseconds < 2000)
-                        {
-                            try
-                            {
-                                var dimensionsTask = await window.Dispatcher.InvokeAsync(() =>
-                                    (window.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer)?.GetDimensions());
-
-                                if (dimensionsTask != null)
-                                {
-                                    var dimensions = await dimensionsTask.WaitAsync(TimeSpan.FromMilliseconds(250));
-                                    if (dimensions != null)
-                                        break;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"Filmstrip video dimension polling error: {ex}");
-                            }
-
-                            await Task.Delay(100);
-                        }
-                    }
-
-                    await window.Dispatcher.InvokeAsync(() => window.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
-                    await window.Dispatcher.InvokeAsync(() => window.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
-                }
-                catch (Exception ex)
-                {
-                    Message($"Failed to open filmstrip media '{path}' in a new window: {ex.Message}");
-                }
+                await OpenMediaInNewWindowAsync(path);
             }
             else
             {
@@ -181,6 +137,70 @@ namespace Cloudless
             if (_filmStripWindow != null && _filmStripWindow.CloseAfterSelect)
             {
                 _filmStripWindow.Hide();
+            }
+        }
+
+        internal async Task OpenSelectedFilesAsync(IReadOnlyList<string> filePaths)
+        {
+            string[] selectedFiles = filePaths
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (selectedFiles.Length == 0)
+                return;
+
+            await OpenRecentFile(selectedFiles[0]);
+            foreach (string filePath in selectedFiles.Skip(1))
+                await OpenMediaInNewWindowAsync(filePath);
+        }
+
+        internal async Task OpenMediaInNewWindowAsync(string path)
+        {
+            try
+            {
+                var window = await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var newWindow = new MainWindow(path, workspaceLoad: true);
+                    newWindow.WorkspaceLoadInProgress = true;
+                    return newWindow;
+                });
+
+                var loadTask = await window.Dispatcher.InvokeAsync(() => window.LoadImage(path, true));
+                await loadTask;
+                await window.Dispatcher.InvokeAsync(() => window.Show());
+                await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                if (window.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                {
+                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                    while (stopwatch.ElapsedMilliseconds < 2000)
+                    {
+                        try
+                        {
+                            var dimensionsTask = await window.Dispatcher.InvokeAsync(() =>
+                                (window.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer)?.GetDimensions());
+                            if (dimensionsTask != null)
+                            {
+                                var dimensions = await dimensionsTask.WaitAsync(TimeSpan.FromMilliseconds(250));
+                                if (dimensions != null)
+                                    break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Video dimension polling error while opening '{path}': {ex}");
+                        }
+
+                        await Task.Delay(100);
+                    }
+                }
+
+                await window.Dispatcher.InvokeAsync(() => window.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
+                await window.Dispatcher.InvokeAsync(() => window.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
+            }
+            catch (Exception ex)
+            {
+                Message($"Failed to open media '{path}' in a new window: {ex.Message}");
             }
         }
 

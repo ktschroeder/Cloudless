@@ -869,6 +869,8 @@ namespace Cloudless
                         Message("Cannot bookmark: Image is already bookmarked.");
                     }
                 }
+                RefreshAllBookmarkIndicators();
+                _ = UpdateBookmarksMenu();
                 return;
             }
 

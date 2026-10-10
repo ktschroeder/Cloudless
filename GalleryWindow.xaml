@@ -33,6 +33,47 @@
             <!-- Content -->
             <DockPanel Margin="12">
 
+                <WrapPanel DockPanel.Dock="Top"
+                           VerticalAlignment="Center"
+                           Margin="0,0,0,8">
+                    <WrapPanel x:Name="SelectionActionsPanel"
+                               VerticalAlignment="Center"
+                               Margin="0">
+                        <TextBlock x:Name="SelectionCountText"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryForeground}"
+                                   Margin="0,0,10,0"/>
+                        <Button Content="Select all"
+                                Style="{StaticResource CloudlessButton}"
+                                Padding="10,4"
+                                Margin="0,0,6,0"
+                                Click="SelectAll_Click"/>
+                        <Button x:Name="EditSelectedTagsButton"
+                                Content="Edit tags"
+                                Style="{StaticResource CloudlessButton}"
+                                Padding="10,4"
+                                Margin="0,0,6,0"
+                                Click="EditSelectedTags_Click"/>
+                        <Button x:Name="BookmarkSelectedButton"
+                                Content="Bookmark"
+                                Style="{StaticResource CloudlessButton}"
+                                Padding="10,4"
+                                Margin="0,0,6,0"
+                                Click="BookmarkSelected_Click"/>
+                        <Button x:Name="RemoveBookmarksButton"
+                                Content="Remove bookmarks"
+                                Style="{StaticResource CloudlessButton}"
+                                Padding="10,4"
+                                Margin="0,0,6,0"
+                                Click="RemoveBookmarks_Click"/>
+                        <Button x:Name="ClearSelectionButton"
+                                Content="Clear selection"
+                                Style="{StaticResource CloudlessButton}"
+                                Padding="10,4"
+                                Click="ClearSelection_Click"/>
+                    </WrapPanel>
+                </WrapPanel>
+
                 <!-- Bottom Close Button -->
                 <StackPanel DockPanel.Dock="Bottom"
                             Orientation="Horizontal"
@@ -77,8 +118,8 @@
                 </StackPanel>
 
                 <!-- Scrollable Thumbnail Grid -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding GalleryImages}">
+                <ScrollViewer x:Name="GalleryScrollViewer" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="GalleryItemsControl" ItemsSource="{Binding GalleryImages}">
 
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -90,14 +131,24 @@
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                    <Border CornerRadius="4"
-                                        Margin="6"
-                                        Background="{DynamicResource ControlBackground}"
-                                        BorderBrush="{DynamicResource ControlBorderBrush}"
-                                        BorderThickness="1"
-                                        Cursor="Hand">
-
-                                    <StackPanel MouseLeftButtonUp="Thumbnail_Click">
+                                    <Border CornerRadius="4"
+                                            Margin="6"
+                                            Cursor="Hand"
+                                            Loaded="Thumbnail_Loaded"
+                                            ContextMenuOpening="Thumbnail_ContextMenuOpening">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+                                                <Setter Property="BorderThickness" Value="3"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryButtonBackgroundBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    <StackPanel MouseLeftButtonDown="Thumbnail_Click">
 
                                         <Grid Width="128" Height="128" Margin="4"
                                               ToolTip="{Binding TooltipFileName}"
@@ -109,6 +160,49 @@
                                                    Stretch="UniformToFill"/>
                                             <local:VideoThumbnailOverlay IsVideo="{Binding IsVlcVideo}"/>
                                             <local:AnimatedThumbnailOverlay IsAnimated="{Binding IsAnimated}"/>
+                                            <Path Data="M 0,0 L 22,0 L 0,22 Z"
+                                                  Width="22"
+                                                  Height="22"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Top"
+                                                  Fill="#168BFF"
+                                                  IsHitTestVisible="False">
+                                                <Path.Style>
+                                                    <Style TargetType="Path">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBookmarked}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Path.Style>
+                                            </Path>
+                                            <Border Width="28"
+                                                    Height="28"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Top"
+                                                    Margin="4"
+                                                    Background="#99000000"
+                                                    CornerRadius="3">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Path Data="M 2,9 L 7,14 L 17,3"
+                                                      Stroke="White"
+                                                      StrokeThickness="3"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Margin="4"/>
+                                            </Border>
                                         </Grid>
 
                                         <TextBlock Text="{Binding FileName}"

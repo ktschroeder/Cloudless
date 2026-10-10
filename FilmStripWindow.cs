@@ -12,6 +12,8 @@ namespace Cloudless
         private FilmStripControl _control;
 
         public event Action<string, bool>? ThumbnailClicked;
+        public event Action<IReadOnlyList<string>>? BulkTagEditRequested;
+        public event Action<IReadOnlyList<string>, bool>? BulkBookmarkEditRequested;
 
         public FilmStripWindow()
         {
@@ -27,6 +29,8 @@ namespace Cloudless
 
             _control = new FilmStripControl();
             _control.ThumbnailClicked += (p, open) => ThumbnailClicked?.Invoke(p, open);
+            _control.BulkTagEditRequested += files => BulkTagEditRequested?.Invoke(files);
+            _control.BulkBookmarkEditRequested += (files, add) => BulkBookmarkEditRequested?.Invoke(files, add);
             Content = _control;
 
             // Basic key handling to allow arrow keys to scroll
@@ -44,8 +48,34 @@ namespace Cloudless
             e.Handled = true;
         }
 
-        private void FilmStripWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void FilmStripWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                _control.SelectAllItems();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter)
+            {
+                IReadOnlyList<string> selectedFiles = _control.SelectedFilePaths;
+                if (Owner is MainWindow mainWindow && selectedFiles.Count > 0)
+                {
+                    if (_control.OpenSelectedFilesInNewWindows)
+                    {
+                        foreach (string filePath in selectedFiles)
+                            await mainWindow.OpenMediaInNewWindowAsync(filePath);
+                    }
+                    else
+                    {
+                        await mainWindow.OpenSelectedFilesAsync(selectedFiles);
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.Left) { _control.ScrollByOffset(-200); e.Handled = true; return; }
             else if (e.Key == Key.Right) { _control.ScrollByOffset(200); e.Handled = true; return; }
             else if (e.Key == Key.F && Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) 
@@ -65,10 +95,12 @@ namespace Cloudless
             }
         }
 
-        public System.Threading.Tasks.Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload)
+        public System.Threading.Tasks.Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload, Func<string, bool>? isBookmarked = null)
         {
-            return _control.PopulateAsync(files, currentIndex, preload);
+            return _control.PopulateAsync(files, currentIndex, preload, isBookmarked);
         }
+
+        public void RefreshBookmarkIndicators(Func<string, bool> isBookmarked) => _control.RefreshBookmarkIndicators(isBookmarked);
 
         public void AlignToOwner(Window owner, double desiredHeight)
         {
