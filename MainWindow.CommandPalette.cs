@@ -2648,6 +2648,12 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("stack"))
+            {
+                StackCurrentPageWindows();
+                return true;
+            }
+
             if (cmd.Equals("ss pause") || cmd.Equals("ss p") || cmd.Equals("slideshow pause"))
             {
                 if (!SlideshowManager.IsRunning)

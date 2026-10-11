@@ -7,6 +7,7 @@ public sealed class CommandSyntaxValidatorTests
     [Theory]
     [InlineData("close")]
     [InlineData("close all")]
+    [InlineData("stack")]
     [InlineData("goto start")]
     [InlineData("sort name asc")]
     [InlineData("sort date desc")]

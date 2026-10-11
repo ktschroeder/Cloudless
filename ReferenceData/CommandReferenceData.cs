@@ -38,6 +38,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("ris [service]", "See above. [service] can be google, bing, yandex, tineye, or saucenao. Their first letters can also be used."),
                     new ReferenceItem("shutdown | sd", "Close all open instances of Cloudless, and shutdown the Cloudless background process"),
                     new ReferenceItem("deflash", "Minimize and unminimize all windows (useful if Windows piles up flashing taskbar icons)"),
+                    new ReferenceItem("stack", "Resize and diagonally stack all unminimized windows on the current page, starting at the top-left of the main display"),
                     new ReferenceItem("nudge | n left/right/up/down [int]", "Move the window in the specified direction, a distance of [int] pixels. First letters for directions can also be used."),
                     new ReferenceItem("nudge | n [int x] [int y]", "Move the window by a vector [int x],[int y]"),
                 }),

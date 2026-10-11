@@ -1050,6 +1050,35 @@ namespace Cloudless
             return true;
         }
 
+        public void StackCurrentPageWindows()
+        {
+            int currentPageIndex = GetCurrentPageIndex();
+            var zOrder = GetZOrderForCurrentProcessWindows();
+            var windowsToStack = Application.Current.Windows
+                .OfType<MainWindow>()
+                .Where(window => window.windowPageIndex == currentPageIndex && window.WindowState != WindowState.Minimized)
+                .OrderBy(window => window.GetWindowZIndexFromOrderMap(zOrder))
+                .ToList();
+
+            if (windowsToStack.Count == 0)
+            {
+                Message("There are no unminimized windows on the current page to stack.");
+                return;
+            }
+
+            for (int i = 0; i < windowsToStack.Count; i++)
+            {
+                var window = windowsToStack[i];
+                window.WindowState = WindowState.Normal;
+                window.Width = 300;
+                window.Height = 300;
+                window.Left = i * 20;
+                window.Top = i * 20;
+            }
+
+            Message($"Stacked {windowsToStack.Count} unminimized window(s) on the current page.");
+        }
+
         private bool windowWasMinimizedPriorToHidingForPage = false;
         private bool windowWasMaximizedPriorToHidingForPage = false;
 
