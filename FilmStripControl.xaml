@@ -87,11 +87,11 @@
                     <CheckBox x:Name="PART_RetainContents" Content="Retain filmstrip contents" Margin="6,4" Checked="PART_RetainContents_Checked" Unchecked="PART_RetainContents_Unchecked" />
                     <StackPanel x:Name="PART_SelectionActionsPanel" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock x:Name="PART_SelectionCount" VerticalAlignment="Center" Margin="6,0" Foreground="{DynamicResource PrimaryForeground}"/>
-                        <Button Content="Select all" Style="{StaticResource CloudlessButton}" Padding="8,3" Margin="3,0" Click="PART_SelectAll_Click"/>
-                        <Button x:Name="PART_EditSelectedTags" Content="Edit tags" Style="{StaticResource CloudlessButton}" Padding="8,3" Margin="3,0" Click="PART_EditSelectedTags_Click" IsEnabled="False"/>
-                        <Button x:Name="PART_BookmarkSelected" Content="Bookmark" Style="{StaticResource CloudlessButton}" Padding="8,3" Margin="3,0" Click="PART_BookmarkSelected_Click" IsEnabled="False"/>
-                        <Button x:Name="PART_RemoveBookmarks" Content="Remove bookmarks" Style="{StaticResource CloudlessButton}" Padding="8,3" Margin="3,0" Click="PART_RemoveBookmarks_Click" IsEnabled="False"/>
-                        <Button Content="Clear selection" Style="{StaticResource CloudlessButton}" Padding="8,3" Margin="3,0" Click="PART_ClearSelection_Click"/>
+                        <Button Content="Select all" Style="{StaticResource CloudlessButton}" Width="70" Padding="8,3" Margin="3,0" Click="PART_SelectAll_Click"/>
+                        <Button x:Name="PART_EditSelectedTags" Content="Edit tags" Style="{StaticResource CloudlessButton}" Width="70" Padding="8,3" Margin="3,0" Click="PART_EditSelectedTags_Click" IsEnabled="False"/>
+                        <Button x:Name="PART_BookmarkSelected" Content="Bookmark" Style="{StaticResource CloudlessButton}" Width="75" Padding="8,3" Margin="3,0" Click="PART_BookmarkSelected_Click" IsEnabled="False"/>
+                        <Button x:Name="PART_RemoveBookmarks" Content="Remove bookmarks" Style="{StaticResource CloudlessButton}" Width="130" Padding="8,3" Margin="3,0" Click="PART_RemoveBookmarks_Click" IsEnabled="False"/>
+                        <Button Content="Clear selection" Style="{StaticResource CloudlessButton}" Width="100" Padding="8,3" Margin="3,0" Click="PART_ClearSelection_Click"/>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
