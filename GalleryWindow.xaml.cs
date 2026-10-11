@@ -459,6 +459,8 @@ namespace Cloudless
                 element.ContextMenu = BulkTagContextMenu.Create(
                     SelectAllItems,
                     ClearSelection,
+                    OpenSelectedInNewWindowsAsync,
+                    OpenSelectedOnPageAsync,
                     EditTagsForSelection,
                     () => EditBookmarksForSelection(add: true),
                     () => EditBookmarksForSelection(add: false));
@@ -467,27 +469,36 @@ namespace Cloudless
         private void EditTagsForSelection()
         {
             if (Owner is MainWindow mw)
-            {
-                string[] selectedFiles = GalleryImages
-                    .Where(item => item.IsSelected && !string.IsNullOrWhiteSpace(item.FilePath))
-                    .Select(item => item.FilePath!)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-                mw.EditTagsForFiles(selectedFiles);
-            }
+                mw.EditTagsForFiles(GetSelectedFilePaths());
         }
 
         private void EditBookmarksForSelection(bool add)
         {
             if (Owner is MainWindow mw)
-            {
-                string[] selectedFiles = GalleryImages
-                    .Where(item => item.IsSelected && !string.IsNullOrWhiteSpace(item.FilePath))
-                    .Select(item => item.FilePath!)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-                mw.EditBookmarksForFiles(selectedFiles, add);
-            }
+                mw.EditBookmarksForFiles(GetSelectedFilePaths(), add);
+        }
+
+        private Task OpenSelectedInNewWindowsAsync()
+        {
+            return Owner is MainWindow mw
+                ? mw.OpenSelectedMediaInNewWindowsAsync(GetSelectedFilePaths())
+                : Task.CompletedTask;
+        }
+
+        private Task OpenSelectedOnPageAsync(string target)
+        {
+            return Owner is MainWindow mw
+                ? mw.OpenSelectedMediaOnPageAsync(GetSelectedFilePaths(), target)
+                : Task.CompletedTask;
+        }
+
+        private string[] GetSelectedFilePaths()
+        {
+            return GalleryImages
+                .Where(item => item.IsSelected && !string.IsNullOrWhiteSpace(item.FilePath))
+                .Select(item => item.FilePath!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
         }
 
         private void ClearSelection()

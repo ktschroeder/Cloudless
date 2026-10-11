@@ -36,6 +36,8 @@ namespace Cloudless
                 _filmStripWindow.ThumbnailClicked += OnFilmStripThumbnailClicked;
                 _filmStripWindow.BulkTagEditRequested += EditTagsForFiles;
                 _filmStripWindow.BulkBookmarkEditRequested += EditBookmarksForFiles;
+                _filmStripWindow.OpenSelectedInNewWindowsRequested += OpenSelectedMediaInNewWindowsAsync;
+                _filmStripWindow.OpenSelectedOnPageRequested += OpenSelectedMediaOnPageAsync;
             }
 
             if (_filmStripWindow.IsVisible)
@@ -154,8 +156,64 @@ namespace Cloudless
                 await OpenMediaInNewWindowAsync(filePath);
         }
 
-        internal async Task OpenMediaInNewWindowAsync(string path)
+        internal Task OpenSelectedMediaInNewWindowsAsync(IReadOnlyList<string> filePaths)
         {
+            return OpenSelectedMediaInNewWindowsAsync(filePaths, targetPageIndex: null);
+        }
+
+        internal async Task OpenSelectedMediaOnPageAsync(IReadOnlyList<string> filePaths, string target)
+        {
+            int? targetPageIndex;
+            if (int.TryParse(target, out int pageIndex))
+            {
+                if (pageIndex < 1 || pageIndex > 20)
+                {
+                    Message($"Invalid page index: {pageIndex}. Must be from 1 to 20.");
+                    return;
+                }
+
+                targetPageIndex = pageIndex;
+            }
+            else
+            {
+                targetPageIndex = ResolveSpecialPageToken(target);
+                if (!targetPageIndex.HasValue)
+                {
+                    string targetName = target switch
+                    {
+                        "pi" => "previous inactive",
+                        "pa" => "previous active",
+                        "na" => "next active",
+                        "ni" => "next inactive",
+                        _ => "target"
+                    };
+                    Message($"There is no {targetName} page available.");
+                    return;
+                }
+            }
+
+            await OpenSelectedMediaInNewWindowsAsync(filePaths, targetPageIndex);
+        }
+
+        private async Task OpenSelectedMediaInNewWindowsAsync(IReadOnlyList<string> filePaths, int? targetPageIndex)
+        {
+            string[] selectedFiles = filePaths
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            foreach (string filePath in selectedFiles)
+                await OpenMediaInNewWindowAsync(filePath, targetPageIndex);
+        }
+
+        internal async Task OpenMediaInNewWindowAsync(string path, int? targetPageIndex = null)
+        {
+            if (targetPageIndex.HasValue && (targetPageIndex.Value < 1 || targetPageIndex.Value > 20))
+            {
+                Message($"Invalid page index: {targetPageIndex.Value}. Must be from 1 to 20.");
+                return;
+            }
+
             try
             {
                 var window = await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -168,6 +226,8 @@ namespace Cloudless
                 var loadTask = await window.Dispatcher.InvokeAsync(() => window.LoadImage(path, true));
                 await loadTask;
                 await window.Dispatcher.InvokeAsync(() => window.Show());
+                if (targetPageIndex.HasValue && targetPageIndex.Value != GetCurrentPageIndex())
+                    await window.Dispatcher.InvokeAsync(() => window.SendWindowToPage(targetPageIndex.Value));
                 await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
                 if (window.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)

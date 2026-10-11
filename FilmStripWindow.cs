@@ -14,6 +14,8 @@ namespace Cloudless
         public event Action<string, bool>? ThumbnailClicked;
         public event Action<IReadOnlyList<string>>? BulkTagEditRequested;
         public event Action<IReadOnlyList<string>, bool>? BulkBookmarkEditRequested;
+        public event Func<IReadOnlyList<string>, Task>? OpenSelectedInNewWindowsRequested;
+        public event Func<IReadOnlyList<string>, string, Task>? OpenSelectedOnPageRequested;
 
         public FilmStripWindow()
         {
@@ -31,6 +33,8 @@ namespace Cloudless
             _control.ThumbnailClicked += (p, open) => ThumbnailClicked?.Invoke(p, open);
             _control.BulkTagEditRequested += files => BulkTagEditRequested?.Invoke(files);
             _control.BulkBookmarkEditRequested += (files, add) => BulkBookmarkEditRequested?.Invoke(files, add);
+            _control.OpenSelectedInNewWindowsRequested += files => OpenSelectedInNewWindowsRequested?.Invoke(files) ?? Task.CompletedTask;
+            _control.OpenSelectedOnPageRequested += (files, target) => OpenSelectedOnPageRequested?.Invoke(files, target) ?? Task.CompletedTask;
             Content = _control;
 
             // Basic key handling to allow arrow keys to scroll

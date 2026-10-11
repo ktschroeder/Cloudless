@@ -18,6 +18,8 @@ namespace Cloudless
         public event Action<string, bool>? ThumbnailClicked;
         public event Action<IReadOnlyList<string>>? BulkTagEditRequested;
         public event Action<IReadOnlyList<string>, bool>? BulkBookmarkEditRequested;
+        public event Func<IReadOnlyList<string>, Task>? OpenSelectedInNewWindowsRequested;
+        public event Func<IReadOnlyList<string>, string, Task>? OpenSelectedOnPageRequested;
 
         private CancellationTokenSource? _populateCts;
         private ToolTip? _activeThumbnailToolTip;
@@ -439,6 +441,8 @@ namespace Cloudless
                 border.ContextMenu = BulkTagContextMenu.Create(
                     SelectAllItems,
                     ClearSelection,
+                    () => OpenSelectedInNewWindowsRequested?.Invoke(SelectedFilePaths) ?? Task.CompletedTask,
+                    target => OpenSelectedOnPageRequested?.Invoke(SelectedFilePaths, target) ?? Task.CompletedTask,
                     RaiseBulkTagEditRequested,
                     () => RaiseBulkBookmarkEditRequested(add: true),
                     () => RaiseBulkBookmarkEditRequested(add: false));
