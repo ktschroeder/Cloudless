@@ -512,9 +512,28 @@ namespace Cloudless
         private void Window_MouseDown(object sender, MouseButtonEventArgs e) { WindowHelper.HandleMouseDown(this, e); }
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
-                MoveGallerySelection(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+                SelectAllItems();
+                e.Handled = true;
+                return;
+            }
+
+            Key? navigationKey = e.Key switch
+            {
+                Key.Left => Key.Left,
+                Key.Right => Key.Right,
+                Key.Up => Key.Up,
+                Key.Down => Key.Down,
+                Key.W when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) => Key.Up,
+                Key.A when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) => Key.Left,
+                Key.S when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) => Key.Down,
+                Key.D when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control) => Key.Right,
+                _ => null
+            };
+            if (navigationKey.HasValue)
+            {
+                MoveGallerySelection(navigationKey.Value, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
                 e.Handled = true;
                 return;
             }
@@ -522,13 +541,6 @@ namespace Cloudless
             if (e.Key == Key.Enter)
             {
                 await OpenSelectedItemsAsync();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            {
-                SelectAllItems();
                 e.Handled = true;
                 return;
             }
