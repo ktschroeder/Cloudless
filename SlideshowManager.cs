@@ -32,6 +32,7 @@ namespace Cloudless
         public static event Action? SlideshowStarted;
         public static event Action? SlideshowStopped;
         public static bool IsRunning => _slideshowPages != null;
+        public static bool IsShuffle => _slideshowShuffle;
         public static double CurrentIntervalSeconds => _slideshowIntervalSeconds;
         public static List<int>? CurrentPages => _slideshowPages;
         // The page selected by the last timer tick (if any). Manager sets this when it chooses the next page.

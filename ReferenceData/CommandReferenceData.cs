@@ -141,6 +141,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("slideshow | ss [optionally 'shuffle'] triggers", "Start slideshow, where pre-configured videos can serve as page-turn triggers. Optional 'shuffle' is explained above"),
                     new ReferenceItem("slideshow | ss pause | p", "Pause the current slideshow without losing its settings or progress"),
                     new ReferenceItem("slideshow | ss resume | r", "Resume a paused slideshow with its existing settings and progress"),
+                    new ReferenceItem("slideshow | ss status", "Show whether a slideshow is running or paused, its interval, shuffle setting, and trigger mode"),
                     new ReferenceItem("slideshow | ss stop | s", "Stop the current slideshow"),
                     new ReferenceItem("slideshow | ss next | n", "Advance to the next slide in the current slideshow without stopping the slideshow"),
                     new ReferenceItem("set/clear trigger", "Set or clear a trigger for current window and video: Triggers fire when a video ends and can be used as a page-turn trigger in slideshows"),

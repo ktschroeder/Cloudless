@@ -174,7 +174,7 @@ internal static class CommandSyntaxValidator
         if (slideshowMatch.Success)
         {
             string arguments = slideshowMatch.Groups["arguments"].Value;
-            if (arguments is "stop" or "next" or "n" or "pause" or "resume")
+            if (arguments is "stop" or "next" or "n" or "pause" or "resume" or "status")
                 return true;
 
             string[] parts = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);

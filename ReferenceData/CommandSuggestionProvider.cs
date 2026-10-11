@@ -17,7 +17,7 @@ public static class CommandSuggestionProvider
         "dm stretch", "dm zoom", "dm best", "dm bestnozoom", "dm 1", "dm 2", "dm 3", "dm 4",
         "ris google", "ris bing", "ris yandex", "ris tineye", "ris saucenao",
         "tag add", "tag remove", "tag destroy", "tag list",
-        "slideshow stop", "slideshow next", "slideshow pause", "slideshow resume", "slideshow triggers",
+        "slideshow stop", "slideshow next", "slideshow pause", "slideshow resume", "slideshow status", "slideshow triggers",
         "slideshow shuffle triggers", "slideshow triggers shuffle"
     };
     private static readonly (string[] Chained, string[] Complete, string[] Parameterized) Candidates = BuildCandidates();

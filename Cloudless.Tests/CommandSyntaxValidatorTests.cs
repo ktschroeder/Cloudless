@@ -34,6 +34,7 @@ public sealed class CommandSyntaxValidatorTests
     [InlineData("ss pause")]
     [InlineData("ss p")]
     [InlineData("slideshow resume")]
+    [InlineData("ss status")]
     [InlineData("ss r")]
     [InlineData("ss s")]
     [InlineData("slideshow n")]

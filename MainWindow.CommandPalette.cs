@@ -615,6 +615,9 @@ namespace Cloudless
 
         private static IReadOnlyList<string> GetShortSlideshowCompletions(string text)
         {
+            if (text.Equals("ss s", StringComparison.OrdinalIgnoreCase))
+                return new[] { "ss shuffle", "ss status", "ss stop" };
+
             var candidates = new List<string>();
             var durationMatch = Regex.Match(text, @"^ss\s+(?<seconds>\d+(?:\.\d+)?)\s*(?<options>.*)$", RegexOptions.IgnoreCase);
             if (durationMatch.Success && double.TryParse(durationMatch.Groups["seconds"].Value, out double seconds) && seconds > 0)
@@ -629,7 +632,7 @@ namespace Cloudless
             {
                 candidates.AddRange(new[]
                 {
-                    "ss shuffle", "ss triggers", "ss shuffle triggers", "ss triggers shuffle", "ss next", "ss pause", "ss resume", "ss stop"
+                    "ss shuffle", "ss triggers", "ss shuffle triggers", "ss triggers shuffle", "ss next", "ss pause", "ss resume", "ss status", "ss stop"
                 });
             }
 
@@ -2688,6 +2691,25 @@ namespace Cloudless
                 return true;
             }
 
+            if (cmd.Equals("ss status") || cmd.Equals("slideshow status"))
+            {
+                if (!SlideshowManager.IsRunning)
+                {
+                    Message("No slideshow is running.");
+                    return true;
+                }
+
+                string state = SlideshowManager.IsPaused ? "paused" : "running";
+                double intervalSeconds = SlideshowManager.CurrentIntervalSeconds;
+                string interval = intervalSeconds > 0
+                    ? $"every {intervalSeconds:0.##} seconds"
+                    : SlideshowManager.UseTriggers ? "trigger-based" : "without an interval";
+                string shuffle = SlideshowManager.IsShuffle ? "on" : "off";
+                string triggers = SlideshowManager.UseTriggers ? "on" : "off";
+                Message($"Slideshow is {state}; interval: {interval}; shuffle: {shuffle}; triggers: {triggers}.");
+                return true;
+            }
+
             if (cmd.StartsWith("ss ") || cmd.StartsWith("slideshow "))
             {
                 string args = cmd.StartsWith("ss ") ? cmd.Substring(3).Trim() : cmd.Substring(10).Trim();
@@ -2887,7 +2909,7 @@ namespace Cloudless
                 "tag" or "t" => "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
                 "macro" => "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
                 "p" or "page" => "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
-                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow pause (ss p), slideshow resume (ss r), slideshow stop (ss s), or slideshow next",
+                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow pause (ss p), slideshow resume (ss r), slideshow status, slideshow stop (ss s), or slideshow next",
                 "ws" => "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
                 "all" or "others" => $"Usage: {command} [command]",
                 _ => null
