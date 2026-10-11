@@ -1069,11 +1069,11 @@ namespace Cloudless
             for (int i = 0; i < windowsToStack.Count; i++)
             {
                 var window = windowsToStack[i];
-                window.WindowState = WindowState.Normal;
-                window.Width = 300;
-                window.Height = 300;
-                window.Left = i * 20;
-                window.Top = i * 20;
+                if (window.WindowState == WindowState.Maximized)
+                    window.WindowState = WindowState.Normal;
+
+                window.ResizeWindow(300, 300);
+                window.RepositionWindow(i * 20, i * 20);
             }
 
             Message($"Stacked {windowsToStack.Count} unminimized window(s) on the current page.");
