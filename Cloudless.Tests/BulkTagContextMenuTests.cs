@@ -10,7 +10,7 @@ namespace Cloudless.Tests;
 public sealed class BulkTagContextMenuTests
 {
     [Fact]
-    public void SelectionActionsAndPageTargets_ArePresentAndDispatchExpectedCallbacks()
+    public void SelectionActionsPageTargetsAndSortOptions_ArePresentAndDispatchExpectedCallbacks()
     {
         RunOnStaThread(() =>
         {
@@ -26,8 +26,12 @@ public sealed class BulkTagContextMenuTests
                 int selectAllCalls = 0;
                 int clearSelectionCalls = 0;
                 int openInNewWindowsCalls = 0;
+                int sendToFilmstripCalls = 0;
+                int selectedCount = 2;
+                int imageDetailsCalls = 0;
                 var pageTargets = new List<string>();
                 var actionCalls = new List<string>();
+                var sortOrders = new List<MediaSortOrder>();
                 var menu = BulkTagContextMenu.Create(
                     () => selectAllCalls++,
                     () => clearSelectionCalls++,
@@ -39,6 +43,18 @@ public sealed class BulkTagContextMenuTests
                     target =>
                     {
                         pageTargets.Add(target);
+                        return Task.CompletedTask;
+                    },
+                    () => selectedCount == 1,
+                    () => imageDetailsCalls++,
+                    () =>
+                    {
+                        sendToFilmstripCalls++;
+                        return Task.CompletedTask;
+                    },
+                    sortOrder =>
+                    {
+                        sortOrders.Add(sortOrder);
                         return Task.CompletedTask;
                     },
                     () => actionCalls.Add("edit tags"),
@@ -71,12 +87,40 @@ public sealed class BulkTagContextMenuTests
 
                 Assert.Equal(new[] { "pi", "pa", "na", "ni" }.Concat(Enumerable.Range(1, 20).Select(i => i.ToString())), pageTargets);
 
+                var imageDetailsItem = Assert.IsType<MenuItem>(menu.Items[5]);
+                Assert.Equal("View image details", imageDetailsItem.Header);
+                Assert.False(imageDetailsItem.IsEnabled);
+                selectedCount = 1;
+                menu.RaiseEvent(new RoutedEventArgs(ContextMenu.OpenedEvent));
+                Assert.True(imageDetailsItem.IsEnabled);
+                imageDetailsItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent, imageDetailsItem));
+                Assert.Equal(1, imageDetailsCalls);
+                selectedCount = 2;
+                menu.RaiseEvent(new RoutedEventArgs(ContextMenu.OpenedEvent));
+                Assert.False(imageDetailsItem.IsEnabled);
+                imageDetailsItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent, imageDetailsItem));
+                Assert.Equal(1, imageDetailsCalls);
+
+                var sendToFilmstrip = Assert.IsType<MenuItem>(menu.Items[6]);
+                Assert.Equal("Send selection to filmstrip", sendToFilmstrip.Header);
+                AssertMenuAction(sendToFilmstrip, () => Assert.Equal(1, sendToFilmstripCalls));
+
+                var sortMenu = Assert.IsType<MenuItem>(menu.Items[7]);
+                Assert.Equal("Sort", sortMenu.Header);
+                var sortItems = sortMenu.Items.OfType<MenuItem>().ToArray();
+                Assert.Equal(
+                    new[] { "Default", "Default (desc)", "Filename", "Filename (desc)", "Filetype", "Filetype (desc)", "CreatedOn", "CreatedOn (desc)", "ModifiedOn", "ModifiedOn (desc)", "Size", "Size (desc)" },
+                    sortItems.Select(item => item.Header?.ToString()));
+                foreach (var sortItem in sortItems)
+                    sortItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent, sortItem));
+                Assert.Equal(Enum.GetValues<MediaSortOrder>(), sortOrders);
+
                 AssertMenuAction(menu.Items[0], () => Assert.Equal(1, selectAllCalls));
                 AssertMenuAction(menu.Items[1], () => Assert.Equal(1, clearSelectionCalls));
                 AssertMenuAction(menu.Items[3], () => Assert.Equal(1, openInNewWindowsCalls));
-                AssertMenuAction(menu.Items[6], () => Assert.Equal("Edit tags for selected", ((MenuItem)menu.Items[6]).Header));
-                AssertMenuAction(menu.Items[8], () => Assert.Equal("Bookmark selected", ((MenuItem)menu.Items[8]).Header));
-                AssertMenuAction(menu.Items[9], () => Assert.Equal("Remove bookmarks from selected", ((MenuItem)menu.Items[9]).Header));
+                AssertMenuAction(menu.Items[9], () => Assert.Equal("Edit tags for selected", ((MenuItem)menu.Items[9]).Header));
+                AssertMenuAction(menu.Items[11], () => Assert.Equal("Bookmark selected", ((MenuItem)menu.Items[11]).Header));
+                AssertMenuAction(menu.Items[12], () => Assert.Equal("Remove bookmarks from selected", ((MenuItem)menu.Items[12]).Header));
                 Assert.Equal(new[] { "edit tags", "add bookmarks", "remove bookmarks" }, actionCalls);
             }
             finally

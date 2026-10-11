@@ -20,6 +20,8 @@ namespace Cloudless
         public event Action<IReadOnlyList<string>, bool>? BulkBookmarkEditRequested;
         public event Func<IReadOnlyList<string>, Task>? OpenSelectedInNewWindowsRequested;
         public event Func<IReadOnlyList<string>, string, Task>? OpenSelectedOnPageRequested;
+        public event Func<IReadOnlyList<string>, Task>? SendSelectedToFilmstripRequested;
+        public event Action<string>? ImageDetailsRequested;
 
         private CancellationTokenSource? _populateCts;
         private ToolTip? _activeThumbnailToolTip;
@@ -27,6 +29,10 @@ namespace Cloudless
         private readonly Dictionary<Border, Border> _selectionIndicators = new();
         private readonly List<(string FilePath, System.Windows.Shapes.Path Indicator)> _bookmarkIndicators = new();
         private Func<string, bool>? _isBookmarked;
+        private string[] _defaultFilePaths = Array.Empty<string>();
+        private PreloadManager? _preloadManager;
+        private int _currentIndex;
+        private MediaSortOrder _sortOrder = MediaSortOrder.Default;
         private int _selectionAnchorIndex = -1;
         internal IReadOnlyList<string> SelectedFilePaths => PART_Panel.Children
             .OfType<Border>()
@@ -103,6 +109,13 @@ namespace Cloudless
             _selectedFiles.Clear();
             _selectionAnchorIndex = -1;
             UpdateSelectionUi();
+        }
+
+        private void ViewImageDetailsForSelection()
+        {
+            IReadOnlyList<string> selectedFiles = SelectedFilePaths;
+            if (selectedFiles.Count == 1)
+                ImageDetailsRequested?.Invoke(selectedFiles[0]);
         }
 
         private void SelectFile(string path, ModifierKeys modifiers)
@@ -295,7 +308,31 @@ namespace Cloudless
             this.Visibility = Visibility.Collapsed;
         }
 
-        internal async Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload, Func<string, bool>? isBookmarked = null)
+        internal Task PopulateAsync(string[] files, int currentIndex, PreloadManager? preload, Func<string, bool>? isBookmarked = null)
+        {
+            _defaultFilePaths = files?.ToArray() ?? Array.Empty<string>();
+            _preloadManager = preload;
+            _currentIndex = currentIndex;
+            return PopulateSortedAsync(
+                MediaFileSorter.Sort(_defaultFilePaths, path => path, _sortOrder),
+                currentIndex,
+                preload,
+                isBookmarked);
+        }
+
+        internal async Task SortItemsAsync(MediaSortOrder sortOrder)
+        {
+            _sortOrder = sortOrder;
+            _selectionAnchorIndex = -1;
+            await PopulateSortedAsync(
+                MediaFileSorter.Sort(_defaultFilePaths, path => path, _sortOrder),
+                _currentIndex,
+                _preloadManager,
+                _isBookmarked,
+                preserveSelection: true);
+        }
+
+        private async Task PopulateSortedAsync(string[] files, int currentIndex, PreloadManager? preload, Func<string, bool>? isBookmarked = null, bool preserveSelection = false)
         {
             if (isBookmarked != null)
                 _isBookmarked = isBookmarked;
@@ -311,7 +348,11 @@ namespace Cloudless
             var cancellationToken = _populateCts.Token;
 
             PART_Panel.Children.Clear();
-            _selectedFiles.Clear();
+            if (!preserveSelection)
+            {
+                _selectedFiles.Clear();
+                _selectionAnchorIndex = -1;
+            }
             _selectionIndicators.Clear();
             _bookmarkIndicators.Clear();
             UpdateSelectionUi();
@@ -443,6 +484,10 @@ namespace Cloudless
                     ClearSelection,
                     () => OpenSelectedInNewWindowsRequested?.Invoke(SelectedFilePaths) ?? Task.CompletedTask,
                     target => OpenSelectedOnPageRequested?.Invoke(SelectedFilePaths, target) ?? Task.CompletedTask,
+                    () => SelectedFilePaths.Count == 1,
+                    ViewImageDetailsForSelection,
+                    () => SendSelectedToFilmstripRequested?.Invoke(SelectedFilePaths) ?? Task.CompletedTask,
+                    SortItemsAsync,
                     RaiseBulkTagEditRequested,
                     () => RaiseBulkBookmarkEditRequested(add: true),
                     () => RaiseBulkBookmarkEditRequested(add: false));
@@ -577,6 +622,7 @@ namespace Cloudless
             {
                 await Dispatcher.InvokeAsync(() => PART_ScrollViewer.ScrollToLeftEnd());
                 UpdateOverflowIndicators();
+                UpdateSelectionUi();
             }
         }
 

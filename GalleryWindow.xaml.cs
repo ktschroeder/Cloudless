@@ -85,6 +85,7 @@ namespace Cloudless
         private readonly SemaphoreSlim _thumbnailLoadSemaphore = new(2);
         private int _selectionAnchorIndex = -1;
         private int _keyboardFocusIndex = -1;
+        private GalleryItem[] _defaultGalleryItems = Array.Empty<GalleryItem>();
 
         public ObservableCollection<GalleryItem> GalleryImages { get; } = new();
         public string? PreviewWorkspace;
@@ -106,6 +107,7 @@ namespace Cloudless
                     Thumbnail = null  // placeholder, pending loading image. Could add an actual placeholder graphic if desired.
                 });
             }
+            _defaultGalleryItems = GalleryImages.ToArray();
 
             AddWorkspaceButtons(!string.IsNullOrEmpty(workspaceName));
             PreviewWorkspace = workspaceName;
@@ -461,6 +463,10 @@ namespace Cloudless
                     ClearSelection,
                     OpenSelectedInNewWindowsAsync,
                     OpenSelectedOnPageAsync,
+                    () => GetSelectedFilePaths().Length == 1,
+                    ViewImageDetailsForSelection,
+                    SendSelectionToFilmstripAsync,
+                    SortGalleryAsync,
                     EditTagsForSelection,
                     () => EditBookmarksForSelection(add: true),
                     () => EditBookmarksForSelection(add: false));
@@ -490,6 +496,33 @@ namespace Cloudless
             return Owner is MainWindow mw
                 ? mw.OpenSelectedMediaOnPageAsync(GetSelectedFilePaths(), target)
                 : Task.CompletedTask;
+        }
+
+        private Task SendSelectionToFilmstripAsync()
+        {
+            return Owner is MainWindow mw
+                ? mw.SendSelectedMediaToFilmStripAsync(GetSelectedFilePaths())
+                : Task.CompletedTask;
+        }
+
+        private void ViewImageDetailsForSelection()
+        {
+            string[] selectedFiles = GetSelectedFilePaths();
+            if (selectedFiles.Length == 1 && Owner is MainWindow mw)
+                mw.ShowImageInfoForPath(selectedFiles[0]);
+        }
+
+        private Task SortGalleryAsync(MediaSortOrder sortOrder)
+        {
+            GalleryItem[] sortedItems = MediaFileSorter.Sort(_defaultGalleryItems, item => item.FilePath, sortOrder);
+            GalleryImages.Clear();
+            foreach (GalleryItem item in sortedItems)
+                GalleryImages.Add(item);
+
+            _selectionAnchorIndex = -1;
+            _keyboardFocusIndex = -1;
+            UpdateSelectionUi();
+            return Task.CompletedTask;
         }
 
         private string[] GetSelectedFilePaths()

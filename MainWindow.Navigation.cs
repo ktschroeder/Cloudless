@@ -255,10 +255,15 @@ namespace Cloudless
         }
         private void ImageInfo()
         {
-            if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+            ShowImageInfoForPath(currentlyDisplayedImagePath);
+        }
+
+        internal void ShowImageInfoForPath(string? imagePath)
+        {
+            if (string.IsNullOrWhiteSpace(imagePath))
                 return;
 
-            var imageInfoWindow = new ImageInfoWindow(currentlyDisplayedImagePath, this)
+            var imageInfoWindow = new ImageInfoWindow(imagePath, this)
             {
                 Owner = this,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner

@@ -38,6 +38,8 @@ namespace Cloudless
                 _filmStripWindow.BulkBookmarkEditRequested += EditBookmarksForFiles;
                 _filmStripWindow.OpenSelectedInNewWindowsRequested += OpenSelectedMediaInNewWindowsAsync;
                 _filmStripWindow.OpenSelectedOnPageRequested += OpenSelectedMediaOnPageAsync;
+                _filmStripWindow.SendSelectedToFilmstripRequested += SendSelectedMediaToFilmStripAsync;
+                _filmStripWindow.ImageDetailsRequested += ShowImageInfoForPath;
             }
 
             if (_filmStripWindow.IsVisible)
@@ -112,6 +114,20 @@ namespace Cloudless
             // Any nonstandard (explicit) population overrides retained contents in this window
             ClearFilmstripRetainCheckbox();
             _ = _filmStripWindow.PopulateAsync(_filmStripImages, currentImageIndex, _preloadManager, IsFileBookmarked);
+        }
+
+        internal Task SendSelectedMediaToFilmStripAsync(IReadOnlyList<string> filePaths)
+        {
+            string[] selectedFiles = filePaths
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (selectedFiles.Length == 0)
+                return Task.CompletedTask;
+
+            OpenFilmStrip();
+            NonstandardPopulateFilmStrip(selectedFiles);
+            return Task.CompletedTask;
         }
 
         private async void OnFilmStripThumbnailClicked(string path, bool openInNewWindow)

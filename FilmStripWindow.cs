@@ -16,6 +16,8 @@ namespace Cloudless
         public event Action<IReadOnlyList<string>, bool>? BulkBookmarkEditRequested;
         public event Func<IReadOnlyList<string>, Task>? OpenSelectedInNewWindowsRequested;
         public event Func<IReadOnlyList<string>, string, Task>? OpenSelectedOnPageRequested;
+        public event Func<IReadOnlyList<string>, Task>? SendSelectedToFilmstripRequested;
+        public event Action<string>? ImageDetailsRequested;
 
         public FilmStripWindow()
         {
@@ -35,6 +37,8 @@ namespace Cloudless
             _control.BulkBookmarkEditRequested += (files, add) => BulkBookmarkEditRequested?.Invoke(files, add);
             _control.OpenSelectedInNewWindowsRequested += files => OpenSelectedInNewWindowsRequested?.Invoke(files) ?? Task.CompletedTask;
             _control.OpenSelectedOnPageRequested += (files, target) => OpenSelectedOnPageRequested?.Invoke(files, target) ?? Task.CompletedTask;
+            _control.SendSelectedToFilmstripRequested += files => SendSelectedToFilmstripRequested?.Invoke(files) ?? Task.CompletedTask;
+            _control.ImageDetailsRequested += path => ImageDetailsRequested?.Invoke(path);
             Content = _control;
 
             // Basic key handling to allow arrow keys to scroll

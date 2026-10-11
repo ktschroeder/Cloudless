@@ -10,6 +10,10 @@ internal static class BulkTagContextMenu
         Action clearSelection,
         Func<Task> openInNewWindows,
         Func<string, Task> openOnPage,
+        Func<bool> canViewImageDetails,
+        Action viewImageDetails,
+        Func<Task> sendSelectionToFilmstrip,
+        Func<MediaSortOrder, Task> sortItems,
         Action editTags,
         Action addBookmarks,
         Action removeBookmarks)
@@ -48,6 +52,34 @@ internal static class BulkTagContextMenu
             pageIndexItem.Items.Add(CreatePageTargetItem(pageIndex.ToString(), pageIndex.ToString(), openOnPage));
         openOnPageItem.Items.Add(pageIndexItem);
         menu.Items.Add(openOnPageItem);
+
+        var imageDetailsItem = new MenuItem { Header = "View image details", IsEnabled = canViewImageDetails() };
+        imageDetailsItem.Click += (_, _) =>
+        {
+            if (canViewImageDetails())
+                viewImageDetails();
+        };
+        menu.Items.Add(imageDetailsItem);
+        menu.Opened += (_, _) => imageDetailsItem.IsEnabled = canViewImageDetails();
+
+        var sendToFilmstripItem = new MenuItem { Header = "Send selection to filmstrip" };
+        sendToFilmstripItem.Click += async (_, _) => await sendSelectionToFilmstrip();
+        menu.Items.Add(sendToFilmstripItem);
+
+        var sortItem = new MenuItem { Header = "Sort" };
+        sortItem.Items.Add(CreateSortItem("Default", MediaSortOrder.Default, sortItems));
+        sortItem.Items.Add(CreateSortItem("Default (desc)", MediaSortOrder.DefaultDescending, sortItems));
+        sortItem.Items.Add(CreateSortItem("Filename", MediaSortOrder.Filename, sortItems));
+        sortItem.Items.Add(CreateSortItem("Filename (desc)", MediaSortOrder.FilenameDescending, sortItems));
+        sortItem.Items.Add(CreateSortItem("Filetype", MediaSortOrder.Filetype, sortItems));
+        sortItem.Items.Add(CreateSortItem("Filetype (desc)", MediaSortOrder.FiletypeDescending, sortItems));
+        sortItem.Items.Add(CreateSortItem("CreatedOn", MediaSortOrder.CreatedOn, sortItems));
+        sortItem.Items.Add(CreateSortItem("CreatedOn (desc)", MediaSortOrder.CreatedOnDescending, sortItems));
+        sortItem.Items.Add(CreateSortItem("ModifiedOn", MediaSortOrder.ModifiedOn, sortItems));
+        sortItem.Items.Add(CreateSortItem("ModifiedOn (desc)", MediaSortOrder.ModifiedOnDescending, sortItems));
+        sortItem.Items.Add(CreateSortItem("Size", MediaSortOrder.Size, sortItems));
+        sortItem.Items.Add(CreateSortItem("Size (desc)", MediaSortOrder.SizeDescending, sortItems));
+        menu.Items.Add(sortItem);
 
         var openActionsSeparator = new MenuItem
         {
@@ -89,6 +121,13 @@ internal static class BulkTagContextMenu
     {
         var item = new MenuItem { Header = header };
         item.Click += async (_, _) => await openOnPage(target);
+        return item;
+    }
+
+    private static MenuItem CreateSortItem(string header, MediaSortOrder sortOrder, Func<MediaSortOrder, Task> sortItems)
+    {
+        var item = new MenuItem { Header = header };
+        item.Click += async (_, _) => await sortItems(sortOrder);
         return item;
     }
 }
