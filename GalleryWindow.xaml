@@ -47,39 +47,6 @@
                                    VerticalAlignment="Center"
                                    Foreground="{DynamicResource SecondaryForeground}"
                                    Margin="0,0,10,0"/>
-                        <Button Content="Select all"
-                                Style="{StaticResource CloudlessButton}"
-                                Padding="10,4"
-                                Margin="0,0,6,0"
-                                Width="65"
-                                Click="SelectAll_Click"/>
-                        <Button x:Name="EditSelectedTagsButton"
-                                Content="Edit tags"
-                                Style="{StaticResource CloudlessButton}"
-                                Padding="10,4"
-                                Margin="0,0,6,0"
-                                Width="65"
-                                Click="EditSelectedTags_Click"/>
-                        <Button x:Name="BookmarkSelectedButton"
-                                Content="Bookmark"
-                                Style="{StaticResource CloudlessButton}"
-                                Padding="10,4"
-                                Margin="0,0,6,0"
-                                Width="75"
-                                Click="BookmarkSelected_Click"/>
-                        <Button x:Name="RemoveBookmarksButton"
-                                Content="Remove bookmarks"
-                                Style="{StaticResource CloudlessButton}"
-                                Padding="10,4"
-                                Margin="0,0,6,0"
-                                Width="130"
-                                Click="RemoveBookmarks_Click"/>
-                        <Button x:Name="ClearSelectionButton"
-                                Content="Clear selection"
-                                Style="{StaticResource CloudlessButton}"
-                                Padding="10,4"
-                                Width="100"
-                                Click="ClearSelection_Click"/>
                     </WrapPanel>
                 </WrapPanel>
 

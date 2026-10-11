@@ -5,12 +5,17 @@ namespace Cloudless;
 
 internal static class BulkTagContextMenu
 {
-    public static ContextMenu Create(Action editTags, Action addBookmarks, Action removeBookmarks)
+    public static ContextMenu Create(Action selectAll, Action clearSelection, Action editTags, Action addBookmarks, Action removeBookmarks)
     {
         var menu = new ContextMenu();
-        var title = new MenuItem { Header = "Cloudless", IsEnabled = false, FontWeight = FontWeights.Bold };
-        title.SetResourceReference(MenuItem.ForegroundProperty, "SecondaryForeground");
-        menu.Items.Add(title);
+
+        var selectAllItem = new MenuItem { Header = "Select all" };
+        selectAllItem.Click += (_, _) => selectAll();
+        menu.Items.Add(selectAllItem);
+
+        var clearSelectionItem = new MenuItem { Header = "Clear selection" };
+        clearSelectionItem.Click += (_, _) => clearSelection();
+        menu.Items.Add(clearSelectionItem);
 
         var separator = new MenuItem
         {

@@ -84,10 +84,6 @@ namespace Cloudless
         private void PART_EditSelectedTags_Click(object sender, RoutedEventArgs e) => RaiseBulkTagEditRequested();
         private void PART_BookmarkSelected_Click(object sender, RoutedEventArgs e) => RaiseBulkBookmarkEditRequested(add: true);
         private void PART_RemoveBookmarks_Click(object sender, RoutedEventArgs e) => RaiseBulkBookmarkEditRequested(add: false);
-        private void PART_ClearSelection_Click(object sender, RoutedEventArgs e) => ClearSelection();
-
-        private void PART_SelectAll_Click(object sender, RoutedEventArgs e) => SelectAllItems();
-
         internal void SelectAllItems()
         {
             _selectedFiles.Clear();
@@ -165,9 +161,6 @@ namespace Cloudless
 
             PART_SelectionActionsPanel.Visibility = Visibility.Visible;
             PART_SelectionCount.Text = $"{_selectedFiles.Count} selected";
-            PART_EditSelectedTags.IsEnabled = _selectedFiles.Count > 0;
-            PART_BookmarkSelected.IsEnabled = _selectedFiles.Count > 0;
-            PART_RemoveBookmarks.IsEnabled = _selectedFiles.Count > 0;
         }
 
         private void Thumbnail_ContextMenuOpening(object sender, RoutedEventArgs e)
@@ -444,6 +437,8 @@ namespace Cloudless
                     e.Handled = true;
                 };
                 border.ContextMenu = BulkTagContextMenu.Create(
+                    SelectAllItems,
+                    ClearSelection,
                     RaiseBulkTagEditRequested,
                     () => RaiseBulkBookmarkEditRequested(add: true),
                     () => RaiseBulkBookmarkEditRequested(add: false));

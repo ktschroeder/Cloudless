@@ -435,10 +435,6 @@ namespace Cloudless
             int selectedCount = GalleryImages.Count(item => item.IsSelected);
             SelectionActionsPanel.Visibility = Visibility.Visible;
             SelectionCountText.Text = $"{selectedCount} selected";
-            EditSelectedTagsButton.IsEnabled = selectedCount > 0;
-            BookmarkSelectedButton.IsEnabled = selectedCount > 0;
-            RemoveBookmarksButton.IsEnabled = selectedCount > 0;
-            ClearSelectionButton.IsEnabled = selectedCount > 0;
         }
 
         private void Thumbnail_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -461,12 +457,12 @@ namespace Cloudless
         {
             if (sender is FrameworkElement element)
                 element.ContextMenu = BulkTagContextMenu.Create(
+                    SelectAllItems,
+                    ClearSelection,
                     EditTagsForSelection,
                     () => EditBookmarksForSelection(add: true),
                     () => EditBookmarksForSelection(add: false));
         }
-
-        private void EditSelectedTags_Click(object sender, RoutedEventArgs e) => EditTagsForSelection();
 
         private void EditTagsForSelection()
         {
@@ -481,10 +477,6 @@ namespace Cloudless
             }
         }
 
-        private void BookmarkSelected_Click(object sender, RoutedEventArgs e) => EditBookmarksForSelection(add: true);
-
-        private void RemoveBookmarks_Click(object sender, RoutedEventArgs e) => EditBookmarksForSelection(add: false);
-
         private void EditBookmarksForSelection(bool add)
         {
             if (Owner is MainWindow mw)
@@ -498,18 +490,13 @@ namespace Cloudless
             }
         }
 
-        private void ClearSelection_Click(object sender, RoutedEventArgs e)
+        private void ClearSelection()
         {
             foreach (var item in GalleryImages)
                 item.IsSelected = false;
             _selectionAnchorIndex = -1;
             _keyboardFocusIndex = -1;
             UpdateSelectionUi();
-        }
-
-        private void SelectAll_Click(object sender, RoutedEventArgs e)
-        {
-            SelectAllItems();
         }
 
         private void SelectAllItems()
