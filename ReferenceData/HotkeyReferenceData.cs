@@ -67,6 +67,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("L", "Zoom image to fill view"),
                     new ReferenceItem("Ctrl E", "Toggle 'Comic Mode': when loading next image in directory, retain zoom, and send pan to upper corner"),
                     new ReferenceItem("Ctrl Alt Shift Left/Right/Up/Down", "Nudge the window 1 pixel in the respective direction"),
+                    new ReferenceItem("Ctrl Alt Shift Mousewheel up/down", "Scale the window and content up or down from its center"),
                 }),
                 new ReferenceTab("Image", new List<ReferenceItem>
                 {
