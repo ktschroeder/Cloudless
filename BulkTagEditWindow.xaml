@@ -81,15 +81,18 @@
                         Style="{StaticResource CloudlessButton}"
                         Padding="12,6"
                         Margin="0,0,8,0"
+                        Width="55"
                         Click="Cancel_Click"/>
                 <Button Content="Remove from selected"
                         Style="{StaticResource CloudlessButton}"
                         Padding="12,6"
                         Margin="0,0,8,0"
+                        Width="145"
                         Click="RemoveTags_Click"/>
                 <Button Content="Add to selected"
                         Style="{StaticResource CloudlessPrimaryButton}"
                         Padding="12,6"
+                        Width="110"
                         Click="AddTags_Click"/>
             </StackPanel>
         </Grid>
