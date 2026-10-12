@@ -1016,7 +1016,7 @@ namespace Cloudless
             }
 
             // navigating in directory
-            if (imageFiles != null && imageFiles.Length != 0 && !control && !alt)
+            if (((imageFiles != null && imageFiles.Length != 0) || ShouldNavigateFilmstripContents) && !control && !alt)
             {
                 // TODO for some reason, these are hit twice per key press, specifically if the image to be loaded is a WEBM. Band-aid fix is to use a flag.
                 if (key == Key.Left || key == Key.A)

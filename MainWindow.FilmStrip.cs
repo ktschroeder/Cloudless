@@ -28,6 +28,40 @@ namespace Cloudless
             }
         }
 
+        internal bool ShouldNavigateFilmstripContents =>
+            NonstandardFilmstrip && _filmStripWindow?.IsVisible == true && _filmStripImages?.Length > 0;
+
+        private async Task<bool> TryNavigateNonstandardFilmstripAsync(int direction)
+        {
+            if (!ShouldNavigateFilmstripContents)
+                return false;
+
+            if (leftOrRightNavInProgress)
+                return true;
+
+            string? nextPath = FilmStripNavigation.GetAdjacentPath(
+                _filmStripImages,
+                currentlyDisplayedImagePath,
+                direction);
+            if (nextPath == null)
+                return false;
+
+            if (string.Equals(nextPath, currentlyDisplayedImagePath, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            try
+            {
+                leftOrRightNavInProgress = true;
+                await LoadImage(nextPath, openedThroughApp: true);
+            }
+            finally
+            {
+                leftOrRightNavInProgress = false;
+            }
+
+            return true;
+        }
+
         public void ToggleFilmStrip(bool skipPopulation = false)
         {
             if (_filmStripWindow == null)

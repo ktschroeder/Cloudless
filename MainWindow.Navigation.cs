@@ -416,6 +416,9 @@ namespace Cloudless
         public bool leftOrRightNavInProgress = false;  // to prevent multiple rapid left/right nav inputs from causing issues like skipping images or going to wrong image
         private async Task GoToPreviousImage()
         {
+            if (await TryNavigateNonstandardFilmstripAsync(-1))
+                return;
+
             if (imageFiles == null || leftOrRightNavInProgress) return;
 
             try
@@ -440,6 +443,9 @@ namespace Cloudless
 
         private async Task GoToNextImage()
         {
+            if (await TryNavigateNonstandardFilmstripAsync(1))
+                return;
+
             if (imageFiles == null || leftOrRightNavInProgress) return;
 
             try

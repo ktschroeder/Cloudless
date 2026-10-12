@@ -84,6 +84,14 @@ namespace Cloudless
                 return;
             }
 
+            if ((e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.A || e.Key == Key.D) &&
+                Owner is MainWindow owner && owner.ShouldNavigateFilmstripContents)
+            {
+                owner.External_KeyDown(sender, e);
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.Left) { _control.ScrollByOffset(-200); e.Handled = true; return; }
             else if (e.Key == Key.Right) { _control.ScrollByOffset(200); e.Handled = true; return; }
             else if (e.Key == Key.F && Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) 
