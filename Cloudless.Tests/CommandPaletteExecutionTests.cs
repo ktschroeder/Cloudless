@@ -81,6 +81,8 @@ public class CommandPaletteExecutionTests
                     "set flag",
                     "clear flag",
                     "goto flag",
+                    "nudge l",
+                    "n 0 0",
                     "/no-match",
                     "r",
                     "r 1",
@@ -147,6 +149,7 @@ public class CommandPaletteExecutionTests
                 foreach (var command in commands)
                     window.ExecuteCommand(command).GetAwaiter().GetResult();
 
+                Assert.Equal("DateModifiedDescending", Cloudless.Properties.Settings.Default.ImageDirectorySortOrder);
                 Assert.Equal(
                     new[] { "gallery t no-such-palette-tag", "tag destroy no-such-palette-tag", "1", "+1", "not-a-command" },
                     window.CommandHistory.TakeLast(5));
@@ -164,6 +167,8 @@ public class CommandPaletteExecutionTests
                     ["sort"] = "Usage: sort name|date asc|desc",
                     ["dm"] = "Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)",
                     ["tag"] = "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
+                    ["hotkey"] = "Usage: hotkey [modifiers] [key] (for example, hotkey ctrl shift c)",
+                    ["hk"] = "Usage: hotkey [modifiers] [key] (for example, hotkey ctrl shift c)",
                     ["macro"] = "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
                     ["p"] = "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
                     ["page"] = "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
@@ -237,8 +242,20 @@ public class CommandPaletteExecutionTests
                 Assert.DoesNotContain(tagForCleanup, TagManager.Instance.GetTagsForFile(@"C:\palette-test.mp4"));
 
                 macroName = "palette-test-" + Guid.NewGuid().ToString("N");
+                var macroRecordParse = CommandSyntaxCatalog.Parse("macro record " + macroName + " echo macro-command-ran");
+                Assert.Equal("macros", macroRecordParse.DefinitionId);
+                Assert.Equal("macro-record", macroRecordParse.Operation);
+                Assert.True(macroRecordParse.IsComplete);
+                Assert.Equal("echo macro-command-ran", macroRecordParse.GetArgument("macroCommand"));
+                Assert.Equal(macroName, macroRecordParse.GetArgument("name"));
+                var macroRunParse = CommandSyntaxCatalog.Parse("macro run " + macroName);
+                Assert.Equal("macros", macroRunParse.DefinitionId);
+                Assert.Equal("macro-run", macroRunParse.Operation);
+                Assert.True(macroRunParse.IsComplete);
                 window.ExecuteCommand("macro record " + macroName + " echo macro-command-ran").GetAwaiter().GetResult();
+                Assert.Equal($"Saved macro '{macroName}'", window.LastMessage);
                 window.ExecuteCommand("macro run " + macroName).GetAwaiter().GetResult();
+                Assert.Contains("macro-command-ran", window.LastMessage);
                 Assert.Contains("echo macro-command-ran", window.CommandHistory.TakeLast(2));
                 window.ExecuteCommand("macro list").GetAwaiter().GetResult();
                 window.ExecuteCommand("macro delete " + macroName).GetAwaiter().GetResult();

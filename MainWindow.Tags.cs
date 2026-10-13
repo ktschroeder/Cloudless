@@ -7,64 +7,6 @@ namespace Cloudless
 {
     public partial class MainWindow : Window
     {
-        /// <summary>
-        /// Handle tag-related commands: tag add, tag remove, tag destroy, tag list
-        /// Note: Filmstrip, open, and gallery commands are now accessed via "fs tag", "open tag", "gallery tag" syntax.
-        /// Returns true if the command was handled, false otherwise.
-        /// </summary>
-        private async System.Threading.Tasks.Task<bool> ExecuteTagCommand(string cmd)
-        {
-            string lowerCmd = cmd.ToLower().Trim();
-
-            // Normalize: support single-letter aliases for "tag", "add", "remove"
-            // "t" -> "tag", "a" -> "add" (when after tag), "r" -> "remove" (when after tag)
-            string processedCmd = lowerCmd;
-            if (lowerCmd.StartsWith("t "))
-                processedCmd = "tag " + lowerCmd.Substring(2);
-
-            if (!processedCmd.StartsWith("tag"))
-                return false;
-
-            string args = processedCmd.Length > 3 ? processedCmd.Substring(3).Trim() : "";
-
-            if (string.IsNullOrEmpty(args))
-            {
-                Message("tag: Missing action. Use 'tag add', 'tag remove', 'tag destroy', or 'tag list'.");
-                return true;
-            }
-
-            var parts = args.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            string action = parts[0].ToLower();
-            string actionArgs = parts.Length > 1 ? parts[1].Trim() : "";
-
-            // Normalize action aliases
-            if (action == "a")
-                action = "add";
-            else if (action == "r")
-                action = "remove";
-            else if (action == "l")
-                action = "list";
-
-            if (action == "add")
-                return HandleTagAdd(actionArgs);
-            else if (action == "remove")
-                return HandleTagRemove(actionArgs);
-            else if (action == "destroy")
-                return HandleTagDestroy(actionArgs);
-            else if (action == "list")
-                return HandleTagList(actionArgs);
-            else if (action == "fs" || action == "open" || action == "open!" || action == "gallery")
-            {
-                Message($"tag: Action '{action}' is no longer supported. Use 'fs tag [query]', 'open tag [query]', 'open! tag [query]', or 'gallery tag [query]' instead.");
-                return true;
-            }
-            else
-            {
-                Message($"tag: Unknown action '{action}'. Use 'add', 'remove', 'destroy', or 'list'.");
-                return true;
-            }
-        }
-
         private bool HandleTagAdd(string args)
         {
             if (string.IsNullOrEmpty(currentlyDisplayedImagePath))

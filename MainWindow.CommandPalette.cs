@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Windows;
@@ -451,51 +450,31 @@ namespace Cloudless
         {
             cmd = cmd.Trim().ToLower();
 
-            // We process "macro record" here instead of the inner method, to guard against unexpected command behavior with recursion
-            if (cmd.StartsWith("macro record "))
+            CommandParseResult macroRecordParse = CommandSyntaxCatalog.Parse(cmd);
+            if (macroRecordParse.DefinitionId == "macros" &&
+                macroRecordParse.Operation == "macro-record" &&
+                macroRecordParse.IsComplete)
             {
-                // split into up to 3 parts: "macro", action, rest
-                var parts = cmd.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 2)
+                SetUserMacro(macroRecordParse.GetArgument("name")!, macroRecordParse.GetArgument("macroCommand")!);
+            }
+            else if (macroRecordParse.DefinitionId == "command-chain")
+            {
+                for (int index = 0; index < macroRecordParse.SequenceCommands.Count; index++)
                 {
-                    Message("Invalid macro command");
-                    CommitCommand(cmd);
-                    return;
+                    CommandParseResult parsedCommand = macroRecordParse.Sequence[index];
+                    if (parsedCommand.IsRecognized)
+                        await ExecuteCatalogCommand(parsedCommand);
+                    else
+                        await ExecuteCommandInner(macroRecordParse.SequenceCommands[index]);
                 }
-                    
-                if (parts.Length < 3)
-                {
-                    Message("Usage: macro record [name] [command]");
-                    CommitCommand(cmd);
-                    return;
-                }
-
-                var rest = parts[2];
-                int idx = rest.IndexOf(' ');
-                if (idx <= 0)
-                {
-                    Message("Usage: macro record [name] [command]");
-                    CommitCommand(cmd);
-                    return;
-                }
-
-                var name = rest.Substring(0, idx);
-                var macroCommand = rest.Substring(idx + 1);
-                SetUserMacro(name, macroCommand);
+            }
+            else if (macroRecordParse.IsRecognized)
+            {
+                await ExecuteCatalogCommand(macroRecordParse);
             }
             else
             {
-                // The user may chain together commands in one line
-                List<string> individualCommands = cmd.Split(";").ToList();
-
-                foreach (string c in individualCommands)
-                {
-                    string trimmedCommand = c.Trim();
-                    if (!string.IsNullOrEmpty(trimmedCommand))
-                    {
-                        bool validCommand = await ExecuteCommandInner(trimmedCommand);  // bool is currently unused
-                    }
-                }
+                await ExecuteCommandInner(cmd);
             }
 
             // Originally it seemed better to only commit valid commands, but I find it more convenient to commit all commands, at least for now.
@@ -527,13 +506,8 @@ namespace Cloudless
             if (caretIndex != text.Length)
                 return Array.Empty<string>();
 
-            int lastSemicolon = text.LastIndexOf(';');
-            if (lastSemicolon >= 0)
+            if (CommandSyntaxCatalog.TryGetCommandSequenceCompletionContext(text, out string commandPrefix, out string command))
             {
-                string segment = text[(lastSemicolon + 1)..];
-                int leadingWhitespace = segment.Length - segment.TrimStart().Length;
-                string commandPrefix = text[..(lastSemicolon + 1)] + segment[..leadingWhitespace];
-                string command = segment[leadingWhitespace..];
                 if (command.Length > 0)
                 {
                     return GetCommandCompletions(command, command.Length)
@@ -542,159 +516,17 @@ namespace Cloudless
                 }
             }
 
-            var customCommandMatch = Regex.Match(text, @"^c(?<index>\d{1,2})\s+set\s+(?<command>.+)$", RegexOptions.IgnoreCase);
-            if (customCommandMatch.Success && int.TryParse(customCommandMatch.Groups["index"].Value, out int index) && index is >= 1 and <= 24)
+            if (CommandSyntaxCatalog.TryGetCommandValueContext(text, out string valuePrefix, out string commandValue))
             {
-                string prefix = text[..customCommandMatch.Groups["command"].Index];
-                return GetCommandCompletions(customCommandMatch.Groups["command"].Value, customCommandMatch.Groups["command"].Length)
-                    .Select(completion => prefix + completion)
+                return GetCommandCompletions(commandValue, commandValue.Length)
+                    .Select(completion => valuePrefix + completion)
                     .ToArray();
-            }
-
-            var macroRecordMatch = Regex.Match(text, @"^macro\s+record\s+\S+\s+(?<command>.+)$", RegexOptions.IgnoreCase);
-            if (macroRecordMatch.Success)
-            {
-                string prefix = text[..macroRecordMatch.Groups["command"].Index];
-                return GetCommandCompletions(macroRecordMatch.Groups["command"].Value, macroRecordMatch.Groups["command"].Length)
-                    .Select(completion => prefix + completion)
-                    .ToArray();
-            }
-
-            foreach (string wrapper in new[] { "all", "others" })
-            {
-                string prefix = wrapper + " ";
-                if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && text.Length > prefix.Length)
-                {
-                    return GetCommandCompletions(text[prefix.Length..], text.Length - prefix.Length)
-                        .Select(completion => prefix + completion)
-                        .ToArray();
-                }
-            }
-
-            var pageParts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (pageParts.Length is 2 or 3 &&
-                (pageParts[0].Equals("p", StringComparison.OrdinalIgnoreCase) || pageParts[0].Equals("page", StringComparison.OrdinalIgnoreCase)) &&
-                IsPageTargetToken(pageParts[1]))
-            {
-                string pagePrefix = $"{pageParts[0]} {pageParts[1]} ";
-                string[] pageActions = { "send", "bring", "clear", "swap" };
-                if (pageParts.Length == 2 || pageActions.Any(action => action.StartsWith(pageParts[2], StringComparison.OrdinalIgnoreCase)))
-                {
-                    var pageCompletions = pageActions.Select(action => pagePrefix + action).ToList();
-                    pageCompletions.Add(pagePrefix + "send page");
-                    pageCompletions.Add(pagePrefix + "bring page");
-                    return FilterSingleWordCompletions(text, pageCompletions);
-                }
-            }
-
-            var slideshowAliasContinuation = GetSlideshowAliasContinuation(text);
-            if (slideshowAliasContinuation.Count > 0)
-                return slideshowAliasContinuation;
-
-            if (text.Equals("ss", StringComparison.OrdinalIgnoreCase) || text.StartsWith("ss ", StringComparison.OrdinalIgnoreCase))
-                return GetShortSlideshowCompletions(text);
-
-            var slideshowMatch = Regex.Match(text, @"^(?<command>slideshow|ss)\s+(?<seconds>\d+(?:\.\d+)?)\s*(?<options>.*)$", RegexOptions.IgnoreCase);
-            if (slideshowMatch.Success &&
-                slideshowMatch.Groups["command"].Value.Equals("slideshow", StringComparison.OrdinalIgnoreCase) &&
-                double.TryParse(slideshowMatch.Groups["seconds"].Value, out double slideshowSeconds) && slideshowSeconds > 0)
-            {
-                string prefix = text[..(slideshowMatch.Groups["seconds"].Index + slideshowMatch.Groups["seconds"].Length)];
-                string[] allowedOptions =
-                {
-                    " shuffle"
-                };
-                return FilterSingleWordCompletions(text, allowedOptions.Select(option => prefix + option));
             }
 
             if (IsTabbableCommandInput(text))
                 return Array.Empty<string>();
 
             return CommandSuggestionProvider.GetSuggestions(text);
-        }
-
-        private static IReadOnlyList<string> GetShortSlideshowCompletions(string text)
-        {
-            if (text.Equals("ss s", StringComparison.OrdinalIgnoreCase))
-                return new[] { "ss shuffle", "ss status", "ss stop" };
-
-            var candidates = new List<string>();
-            var durationMatch = Regex.Match(text, @"^ss\s+(?<seconds>\d+(?:\.\d+)?)\s*(?<options>.*)$", RegexOptions.IgnoreCase);
-            if (durationMatch.Success && double.TryParse(durationMatch.Groups["seconds"].Value, out double seconds) && seconds > 0)
-            {
-                string prefix = text[..(durationMatch.Groups["seconds"].Index + durationMatch.Groups["seconds"].Length)];
-                candidates.AddRange(new[]
-                {
-                    prefix + " shuffle"
-                });
-            }
-            else if (!durationMatch.Success)
-            {
-                candidates.AddRange(new[]
-                {
-                    "ss shuffle", "ss triggers", "ss shuffle triggers", "ss triggers shuffle", "ss next", "ss pause", "ss resume", "ss status", "ss stop"
-                });
-            }
-
-            return FilterSingleWordCompletions(text, candidates);
-        }
-
-        private static IReadOnlyList<string> FilterSingleWordCompletions(string text, IEnumerable<string> candidates)
-        {
-            int inputWordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-            return candidates
-                .Where(candidate => candidate.Length > text.Length && candidate.StartsWith(text, StringComparison.OrdinalIgnoreCase))
-                .Where(candidate =>
-                {
-                    int candidateWordCount = candidate.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                    return candidateWordCount == inputWordCount ||
-                           candidateWordCount == inputWordCount + 1 &&
-                           (char.IsWhiteSpace(text[^1]) || candidate.StartsWith(text + " ", StringComparison.OrdinalIgnoreCase));
-                })
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        private static IReadOnlyList<string> GetSlideshowAliasContinuation(string text)
-        {
-            string trimmedText = text.TrimEnd();
-            if (trimmedText.Length == text.Length)
-                return Array.Empty<string>();
-
-            string[] tokens = trimmedText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (tokens.Length < 2 || !(tokens[0].Equals("ss", StringComparison.OrdinalIgnoreCase) || tokens[0].Equals("slideshow", StringComparison.OrdinalIgnoreCase)))
-                return Array.Empty<string>();
-
-            int optionStart = 1;
-            if (double.TryParse(tokens[optionStart], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds))
-            {
-                if (seconds <= 0)
-                    return Array.Empty<string>();
-                optionStart++;
-            }
-            bool hasTime = optionStart > 1;
-
-            string[] options = tokens.Skip(optionStart).ToArray();
-            bool hasShuffle = options.Any(option => option.Equals("shuffle", StringComparison.OrdinalIgnoreCase));
-            bool hasTriggers = options.Any(option => option.Equals("triggers", StringComparison.OrdinalIgnoreCase) || option.Equals("t", StringComparison.OrdinalIgnoreCase));
-
-            if (hasTime && hasTriggers)
-                return Array.Empty<string>();
-
-            if (hasTriggers && !hasShuffle)
-                return new[] { trimmedText + " shuffle" };
-            if (hasShuffle && !hasTriggers && !hasTime)
-                return new[] { trimmedText + " triggers" };
-
-            return Array.Empty<string>();
-        }
-
-        private static bool IsPageTargetToken(string token)
-        {
-            if (new[] { "t", "p", "n", "pa", "na", "pi", "ni" }.Contains(token, StringComparer.OrdinalIgnoreCase))
-                return true;
-
-            return int.TryParse(token, out int page) && page > 0 && page <= 20;
         }
 
         private static bool IsTabbableCommandInput(string text)
@@ -853,20 +685,7 @@ namespace Cloudless
             completionPrefix = "";
             query = "";
 
-            string[] tagListCommandBases =
-            {
-                "tag add", "tag a", "tag remove", "tag r", "tag destroy",
-                "t add", "t a", "t remove", "t r", "t destroy"
-            };
-            string[] tagQueryCommandBases =
-            {
-                "fs tag", "fs t", "filmstrip tag", "filmstrip t",
-                "open tag", "open t", "o tag", "o t",
-                "open! tag", "open! t", "o! tag", "o! t",
-                "gallery tag", "gallery t"
-            };
-
-            foreach (string commandBase in tagListCommandBases)
+            foreach (string commandBase in CommandSyntaxCatalog.GetTagListAutocompleteCommandBases())
             {
                 string prefix = commandBase + " ";
                 if (!text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
@@ -887,7 +706,7 @@ namespace Cloudless
                 return true;
             }
 
-            foreach (string commandBase in tagQueryCommandBases)
+            foreach (string commandBase in CommandSyntaxCatalog.GetTagQueryAutocompleteCommandBases())
             {
                 string prefix = commandBase + " ";
                 if (!text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
@@ -1097,306 +916,9 @@ namespace Cloudless
         {
             cmd = cmd.Trim().ToLower();
 
-            if (cmd.StartsWith("all ") && cmd.Length > 4)
-            {
-                string innerCommand = cmd.Substring(4);
-
-                await SendCommandToOthers(innerCommand);
-                await ExecuteCommand(innerCommand);
-                return true;
-            }
-
-            // macro commands: record/run/delete/list
-            if (cmd.StartsWith("macro "))
-            {
-                // split into up to 3 parts: "macro", action, rest
-                var parts = cmd.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 2)
-                {
-                    Message("Invalid macro command");
-                    return false;
-                }
-
-                var action = parts[1];
-                if (action == "record")
-                {
-                    Message("'macro record' commands are not valid inside macros or nested commands. To record a macro, use the command palette directly.");
-                    return true;
-                }
-                else if (action == "run")
-                {
-                    if (parts.Length < 3)
-                    {
-                        Message("Usage: macro run [name]");
-                        return false;
-                    }
-
-                    var name = parts[2].Trim();
-                    await RunUserMacro(name);
-                    return true;
-                }
-                else if (action == "delete")
-                {
-                    if (parts.Length < 3)
-                    {
-                        Message("Usage: macro delete [name]");
-                        return false;
-                    }
-
-                    var name = parts[2].Trim();
-                    var macros = LoadUserMacros();
-                    if (macros.Remove(name))
-                    {
-                        SaveUserMacros(macros);
-                        Message($"Deleted macro '{name}'");
-                    }
-                    else
-                    {
-                        Message($"Macro not found: {name}");
-                    }
-                    return true;
-                }
-                else if (action == "list")
-                {
-                    var macros = LoadUserMacros();
-                    if (macros.Count == 0)
-                        Message("No macros defined");
-                    else
-                    {
-                        foreach (var kv in macros)
-                        {
-                            Message($"{kv.Key}: {kv.Value}");
-                        }
-                    }
-                    return true;
-                }
-                else
-                {
-                    Message("Unknown macro action: " + action);
-                    return false;
-                }
-            }
-
-            if (cmd.StartsWith("others ") && cmd.Length > 7)
-            {
-                string innerCommand = cmd.Substring(7);
-
-                await SendCommandToOthers(innerCommand);
-                return true;
-            }
-
-            if (cmd.Equals("set start") || cmd.Equals("set s"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                var pos = vp.GetPosition();
-                _videoLoopStart = pos;
-                // update plugin
-                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
-                // refresh video controls UI markers
-                UpdateVideoControls();
-                Message($"Set loop start to {pos}");
-                return true;
-            }
-
-            if (cmd.Equals("clear start") || cmd.Equals("clear s"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                _videoLoopStart = null;
-                // update plugin
-                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
-                UpdateVideoControls();
-                Message($"Reset loop start");
-                return true;
-            }
-
-            if (cmd.Equals("set end") || cmd.Equals("set e"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                var pos = vp.GetPosition();
-                _videoLoopEnd = pos;
-                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
-                UpdateVideoControls();
-                Message($"Set loop end to {pos}");
-                return true;
-            }
-
-            if (cmd.Equals("clear end") || cmd.Equals("clear e"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                _videoLoopEnd = null;
-                // update plugin
-                vp.SetLoopRange(_videoLoopStart, _videoLoopEnd);
-                UpdateVideoControls();
-                Message($"Reset loop end");
-                return true;
-            }
-
-            // Handle "set trigger" with optional count parameter
-            if (cmd.Equals("set ss trigger") || cmd.Equals("set slideshow trigger") || cmd.Equals("set trigger") ||
-                cmd.StartsWith("set ss trigger ") || cmd.StartsWith("set slideshow trigger ") || cmd.StartsWith("set trigger "))
-            {
-                int triggerCount = 1; // default to 1 if no count specified
-
-                // Extract count if present
-                if (cmd.StartsWith("set ss trigger "))
-                {
-                    string countStr = cmd.Substring("set ss trigger ".Length).Trim();
-                    if (!int.TryParse(countStr, out triggerCount) || triggerCount <= 0)
-                    {
-                        Message("Trigger count must be a positive integer");
-                        return false;
-                    }
-                }
-                else if (cmd.StartsWith("set slideshow trigger "))
-                {
-                    string countStr = cmd.Substring("set slideshow trigger ".Length).Trim();
-                    if (!int.TryParse(countStr, out triggerCount) || triggerCount <= 0)
-                    {
-                        Message("Trigger count must be a positive integer");
-                        return false;
-                    }
-                }
-                else if (cmd.StartsWith("set trigger "))
-                {
-                    string countStr = cmd.Substring("set trigger ".Length).Trim();
-                    if (!int.TryParse(countStr, out triggerCount) || triggerCount <= 0)
-                    {
-                        Message("Trigger count must be a positive integer");
-                        return false;
-                    }
-                }
-
-                SetSlideshowTrigger(triggerCount);
-                Message($"Marked this window as a slideshow trigger (requires {triggerCount} hit{(triggerCount > 1 ? "s" : "")})");
-                return true;
-            }
-
-            if (cmd.Equals("clear ss trigger") || cmd.Equals("clear slideshow trigger") || cmd.Equals("clear trigger"))
-            {
-                SetSlideshowTrigger(0);
-                Message("Cleared slideshow trigger for this window");
-                return true;
-            }
-
-            if (cmd.Equals("audio sync"))
-            {
-                HandleVideoTrackDelayCommand("audio", "", isSubtitle: false);
-                return true;
-            }
-            if (cmd.Equals("subtitle sync"))
-            {
-                HandleVideoTrackDelayCommand("subtitle", "", isSubtitle: true);
-                return true;
-            }
-            if (cmd.StartsWith("audio sync "))
-            {
-                string audioSyncArguments = cmd.Substring("audio sync ".Length).Trim();
-                HandleVideoTrackDelayCommand("audio", audioSyncArguments, isSubtitle: false);
-                return true;
-            }
-            if (cmd.StartsWith("subtitle sync "))
-            {
-                string subtitleSyncArguments = cmd.Substring("subtitle sync ".Length).Trim();
-                HandleVideoTrackDelayCommand("subtitle", subtitleSyncArguments, isSubtitle: true);
-                return true;
-            }
-
-            if (cmd.Equals("sync"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                SetSync(true);
-                Message("Added this window to the page sync group");
-                return true;
-            }
-
-            if (cmd.Equals("unsync"))
-            {
-                SetSync(false);
-                Message("Removed this window from the page sync group");
-                return true;
-            }
-
-            if (cmd.Equals("set flag") || cmd.Equals("set f"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                var pos = vp.GetPosition();
-                _videoFlag = pos;
-                UpdateVideoControls();
-                Message($"Set flag to {pos}");
-                return true;
-            }
-
-            if (cmd.Equals("clear flag") || cmd.Equals("clear f"))
-            {
-                _videoFlag = null;
-                UpdateVideoControls();
-                Message("Cleared flag");
-                return true;
-            }
-
-            if (cmd.Equals("goto flag") || cmd.Equals("goto f"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return false;
-                }
-
-                if (!_videoFlag.HasValue)
-                {
-                    Message("No flag is set for this window");
-                    return false;
-                }
-
-                try
-                {
-                    vp.SeekTo(_videoFlag.Value);
-                    Message($"Seeked to flag: {_videoFlag.Value}");
-                }
-                catch (Exception ex)
-                {
-                    Message("Failed to seek to flag: " + ex.Message);
-                }
-
-                return true;
-            }
+            CommandParseResult catalogParse = CommandSyntaxCatalog.Parse(cmd);
+            if (catalogParse.IsRecognized)
+                return await ExecuteCatalogCommand(catalogParse);
 
             if (cmd.Equals("meteor shower"))
             {
@@ -1410,1368 +932,6 @@ namespace Cloudless
                 return true;
             }
 
-            if (cmd.StartsWith("/"))
-            {
-                await ExecuteFilenameSearch(cmd.Substring(1));
-                return true;
-            }
-
-            if (cmd.Equals("r"))  // load most recently opened image
-            {
-                string? path = recentFiles?.FirstOrDefault();
-                if (path != null)
-                {
-                    await OpenRecentFile(path);
-                }
-                return true;
-            }
-
-            if (cmd.Equals("shutdown") || cmd.Equals("sd"))  // close all instances and shutdown background process
-            {
-                Shutdown();
-                return true;  // should be essentially unreachable
-            }
-
-            if (cmd.Equals("c") || cmd.Equals("close"))
-            {
-                this.Close();
-                return true;  // should be essentially unreachable
-            }
-
-            if (cmd.Equals("c all") || cmd.Equals("close all"))
-            {
-                CloseAllOtherInstances();
-                this.Close();
-                return true;  // should be essentially unreachable
-            }
-
-            if (cmd.Equals("m all"))
-            {
-                MinimizeAllOtherInstances();
-                MinimizeWindow();
-                return true;
-            }
-
-            if (cmd.Equals("um all"))
-            {
-                UnminimizeAllOtherInstances();
-                return true;
-            }
-
-            if (cmd.Equals("um origin"))
-            {
-                UnminimizeWorkspaceOriginInstances();
-                return true;
-            }
-
-            if (cmd.Equals("c others") || cmd.Equals("close others"))  // close all other instances
-            {
-                CloseAllOtherInstances();
-                return true;
-            }
-
-            if (cmd.Equals("c origin"))  // close all instances showing an image from this window's workspace
-            {
-                CloseWorkspaceOriginInstances();
-                return true;
-            }
-
-            if (cmd.Equals("c empty") || cmd.Equals("close empty"))
-            {
-                CloseEmptyInstances();
-                return true;
-            }
-
-            if (cmd.Equals("m others"))
-            {
-                MinimizeAllOtherInstances();
-                return true;
-            }
-
-            if (cmd.Equals("m origin"))
-            {
-                MinimizeWorkspaceOriginInstances();
-                return true;
-            }
-
-            if (cmd.Equals("help") || cmd.Equals("h"))
-            {
-                var window = CommandPaletteRef();
-                window.Activate(); // TODO bug
-                window.Focus();  // without this, focus stays on main window. If user uses 'c' hotkey, main window closes.
-                                // also, this makes the window properly tabbable.
-
-                // focus still gets taken by main window. maybe happens after here in flow? but weirdly, main window stays behind.
-                // other way to see this idea: "help" and then immediately hotkey Ctrl A, vs being in main screen and doing Ctrl H then Ctrl A.
-
-                return true;
-            }
-
-            if (cmd.Equals("first"))
-            {
-                if (imageFiles == null)
-                    return true;
-
-                await JumpToIndex(0);
-                return true;
-            }
-
-            if (cmd.Equals("last"))
-            {
-                if (imageFiles == null)
-                    return true;
-
-                await JumpToIndex(imageFiles.Length - 1);
-                return true;
-            }
-
-            if (cmd.StartsWith("sort"))
-            {
-                if (cmd.ToLower().Equals("sort name asc"))
-                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "FileNameAscending";
-                else if (cmd.ToLower().Equals("sort name desc"))
-                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "FileNameDescending";
-                else if (cmd.ToLower().Equals("sort date asc"))
-                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedAscending";
-                else if (cmd.ToLower().Equals("sort date desc"))
-                    Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = "DateModifiedDescending";
-                else
-                {
-                    Message("Usage: sort name|date asc|desc");
-                    return false;
-                }
-
-                Cloudless.Properties.Settings.Default.Save();
-                SortImageFilesArray();
-                return true;
-            }
-
-            if (cmd.StartsWith("dm"))
-            {
-                if (cmd.Equals("dm stretch") || cmd.Equals("dm 1"))
-                    Cloudless.Properties.Settings.Default.DisplayMode = "StretchToFit";
-                else if (cmd.Equals("dm zoom") || cmd.Equals("dm 2"))
-                    Cloudless.Properties.Settings.Default.DisplayMode = "ZoomToFill";
-                else if (cmd.Equals("dm best") || cmd.Equals("dm 3"))
-                    Cloudless.Properties.Settings.Default.DisplayMode = "BestFit";
-                else if (cmd.Equals("dm bestnozoom") || cmd.Equals("dm 4"))
-                    Cloudless.Properties.Settings.Default.DisplayMode = "BestFitWithoutZooming";
-                else
-                {
-                    Message("Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)");
-                    return false;
-                }
-
-                Cloudless.Properties.Settings.Default.Save();
-                ApplyDisplayMode();
-                return true;
-            }
-
-            if (cmd.Equals("qs"))
-            {
-                Quicksave();
-                return true;
-            }
-            if (cmd.Equals("qs c"))
-            {
-                bool success = Quicksave();
-                if (success)
-                {
-                    CloseAllOtherInstances();
-                    this.Close();
-                }
-                return true;
-            }
-            if (cmd.Equals("ql"))
-            {
-                await Quickload();
-                return true;
-            }
-            if (cmd.Equals("qm"))
-            {
-                await Quickmerge();
-                return true;
-            }
-
-            if (cmd.StartsWith("ws "))
-            {
-                if (cmd.StartsWith("ws save ") && cmd.Length > 8)
-                {
-                    string name = cmd.Substring(8);
-                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name);
-                    if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error: " + error);
-                    else if (windowCount == -2)
-                        Message("A workspace by that name already exists. To overwrite it, use command 'ws save! [name]'");
-                    else if (windowCount == -3)
-                        Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
-                    else
-                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
-                }
-                else if (cmd.StartsWith("ws s ") && cmd.Length > 5)
-                {
-                    string name = cmd.Substring(5);
-                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name);
-                    if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error: " + error);
-                    else if (windowCount == -2)
-                        Message("A workspace by that name already exists. To overwrite it, use command 'ws s! [name]'");
-                    else if (windowCount == -3)
-                        Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
-                    else
-                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
-                }
-                else if (cmd.StartsWith("ws save! ") && cmd.Length > 9)
-                {
-                    string name = cmd.Substring(9);
-                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name, true);
-                    if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error: " + error);
-                    else if (windowCount == -3)
-                        Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
-                    else
-                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
-                }
-                else if (cmd.StartsWith("ws s! ") && cmd.Length > 6)
-                {
-                    string name = cmd.Substring(6);
-                    (int windowCount, int pageCount, string? error) = SaveWorkspace(name, true);
-                    if (windowCount == -1)
-                        Message("Failed to save workspace due to unexpected error: " + error);
-                    else if (windowCount == -3)
-                        Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
-                    else
-                        Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
-                }
-                else if (cmd.StartsWith("ws load ") && cmd.Length > 8)
-                {
-                    string name = cmd.Substring(8);
-                    bool success = await LoadWorkspace(name);
-                }
-                else if (cmd.StartsWith("ws l ") && cmd.Length > 5)
-                {
-                    string name = cmd.Substring(5);
-                    bool success = await LoadWorkspace(name);
-                }
-                else if (cmd.StartsWith("ws delete ") && cmd.Length > 10)
-                {
-                    string name = cmd.Substring(10);
-                    bool success = DeleteWorkspace(name);
-                    if (success)
-                        Message("Deleted workspace: " + name);
-                }
-                else if (cmd.Equals("ws origin"))
-                {
-                    RevealWorkspaceName();
-                }
-                else if (cmd.Equals("ws origin s") || cmd.Equals("ws origin s!") || cmd.Equals("ws origin save") || cmd.Equals("ws origin save!"))
-                {
-                    if (imageOriginalWorkspaceName != null)
-                    {
-                        if (IsReservedWorkspaceName(imageOriginalWorkspaceName))
-                        {
-                            Message($"Cannot save to origin: workspace origin is a system workspace: {imageOriginalWorkspaceName}");
-                        }
-                        else
-                        {
-                            (int windowCount, int pageCount, string? error) = SaveWorkspace(imageOriginalWorkspaceName, true);
-                            if (windowCount == -1)
-                                Message("Failed to save workspace due to unexpected error: " + error);
-                            else
-                                Message($"Saved workspace {imageOriginalWorkspaceName} with {windowCount} windows and {pageCount} pages");
-                        }
-                    }
-                    else
-                        Message("This window does not belong to a workspace");
-                }
-                else if (cmd.Equals("ws origin l") || cmd.Equals("ws origin load"))
-                {
-                    if (imageOriginalWorkspaceName != null)
-                    {
-                        await LoadWorkspace(imageOriginalWorkspaceName);
-                    }
-                    else
-                        Message("This window does not belong to a workspace");
-                }
-                else if (cmd.StartsWith("ws rename ") && cmd.Length > 10)
-                {
-                    string renameParams = cmd.Substring(10);
-                    bool success = RenameWorkspace(renameParams.Split(' '));
-                }
-                else if (cmd.StartsWith("ws r ") && cmd.Length > 5)
-                {
-                    string renameParams = cmd.Substring(5);
-                    bool success = RenameWorkspace(renameParams.Split(' '));
-                }
-                else if (cmd.StartsWith("ws merge ") && cmd.Length > 9)
-                {
-                    string name = cmd.Substring(9);
-                    bool success = await LoadWorkspace(name, true);
-                    if (success)
-                        Message("Merged workspace: " + name);
-                }
-                else if (cmd.StartsWith("ws m ") && cmd.Length > 5)
-                {
-                    string name = cmd.Substring(5);
-                    bool success = await LoadWorkspace(name, true);
-                    if (success)
-                        Message("Merged workspace: " + name);
-                }
-                else if (cmd.StartsWith("ws preview ") && cmd.Length > 9)
-                {
-                    string name = cmd.Substring(11);
-                    bool success = await PreviewWorkspace(name.Trim());
-                }
-                else if (cmd.StartsWith("ws p ") && cmd.Length > 5)
-                {
-                    string name = cmd.Substring(5);
-                    bool success = await PreviewWorkspace(name.Trim());
-                }
-                else if (cmd.Equals("ws rev"))
-                {
-                    RevealDirectoryInExplorer(workspaceFilesPath);
-                }
-                else if (cmd.Equals("ws list"))
-                {
-                    if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
-                    {
-                        Message("No media is loaded.");
-                        return true;
-                    }
-
-                    ListWorkspacesContainingPath(currentlyDisplayedImagePath);
-                    return true;
-                }
-                else if (cmd.StartsWith("ws list ") && cmd.Length > 8)
-                {
-                    string param = cmd.Substring(8).Trim();
-                    string resolvedPath = param;
-                    if (!Path.IsPathRooted(resolvedPath) && currentDirectory != null)
-                        resolvedPath = Path.GetFullPath(param, currentDirectory);
-
-                    ListWorkspacesContainingPath(resolvedPath);
-                    return true;
-                }
-                else
-                {
-                    Message("Could not parse your ws command: " + cmd);
-                    return false;
-                }
-
-                 return true;
-             }
-
-            
-
-            // Seek to start or end of the video (respects custom loop start/end when present)
-            if (cmd.Equals("goto start"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return true;
-                }
-
-                TimeSpan target = _videoLoopStart ?? TimeSpan.Zero;
-                try
-                {
-                    vp.SeekTo(target);
-                    Message($"Seeked to start: {FormatTimeSpan(target)}");
-                }
-                catch (Exception ex)
-                {
-                    Message($"Failed to seek to start: {ex.Message}");
-                }
-
-                return true;
-            }
-
-            if (cmd.Equals("goto end"))
-            {
-                var vp = VideoHost.Content as Cloudless.PluginBase.IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video is loaded");
-                    return true;
-                }
-
-                TimeSpan? targetTs = _videoLoopEnd;
-                if (!targetTs.HasValue)
-                {
-                    try
-                    {
-                        var dur = vp.GetDuration();
-                        if (dur <= TimeSpan.Zero)
-                        {
-                            Message("Cannot determine video duration to seek to end");
-                            return true;
-                        }
-                        targetTs = dur;
-                    }
-                    catch (Exception ex)
-                    {
-                        Message($"Failed to determine video duration: {ex.Message}");
-                        return true;
-                    }
-                }
-
-                try
-                {
-                    vp.SeekTo(targetTs.Value);
-                    Message($"Seeked to end: {FormatTimeSpan(targetTs.Value)}");
-                }
-                catch (Exception ex)
-                {
-                    Message($"Failed to seek to end: {ex.Message}");
-                }
-
-                return true;
-            }
-
-            if (cmd.StartsWith("c") && cmd.Length > 1)
-            {
-                // parse one- or two-digit command index after the 'c'
-                int pos = 1;
-                while (pos < cmd.Length && char.IsDigit(cmd[pos])) pos++;
-                if (pos == 1)
-                {
-                    // no digits following 'c'
-                }
-                else
-                {
-                    string numStr = cmd.Substring(1, pos - 1);
-                    if (int.TryParse(numStr, out int cIndex))
-                    {
-                        string param = pos < cmd.Length ? cmd.Substring(pos).Trim() : "";
-                        if (param.StartsWith("set ") && param.Length > 4)
-                        {
-                            SetUserCommand(cIndex - 1, param.Substring(4));
-                            return true;
-                        }
-                        else if (param.Equals("view"))
-                        {
-                            ViewUserCommand(cIndex - 1);
-                            return true;
-                        }
-                        else if (param.Equals("run"))
-                        {
-                            await RunUserCommand(cIndex - 1);
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            if (cmd.StartsWith("o ") && !cmd.StartsWith("o tag ") && !cmd.StartsWith("o t "))
-            {
-                // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
-                string relativeOrAbsolutePath = cmd.Substring(2);
-                string resolvedPath = relativeOrAbsolutePath;
-                if (currentDirectory != null)
-                    resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
-
-                if (Directory.Exists(resolvedPath))
-                {
-                    await LoadImagesInDirectory(resolvedPath);
-                }
-                else if (File.Exists(resolvedPath)) 
-                {
-                    await LoadImage(resolvedPath, true);
-                }
-                return true;
-            }
-            if (cmd.StartsWith("o! ") && !cmd.StartsWith("o! tag ") && !cmd.StartsWith("o! t "))
-            {
-                // open image at relative or absolute path. "o C:\images\foo.png". "o ../otherfolder"
-                string relativeOrAbsolutePath = cmd.Substring(3);
-                string resolvedPath = relativeOrAbsolutePath;
-                if (currentDirectory != null)
-                    resolvedPath = Path.GetFullPath(relativeOrAbsolutePath, currentDirectory);
-
-                if (Directory.Exists(resolvedPath))
-                {
-                    await LoadImagesInDirectory(resolvedPath, true);
-                }
-                else if (File.Exists(resolvedPath))
-                {
-                    await LoadImage(resolvedPath, true);
-                }
-                return true;
-            }
-
-            if (cmd.StartsWith("r ") && cmd.Length > 2)
-            {
-                string countStr = cmd.Substring(2).Trim();
-                if (int.TryParse(countStr, out int count) && count > 0)
-                {
-                    var paths = recentFiles?.Take(count).ToArray() ?? Array.Empty<string>();
-                    foreach (var path in paths)
-                    {
-                        if (!File.Exists(path))
-                            continue;
-
-                        try
-                        {
-                            var newWindow = await Application.Current.Dispatcher.InvokeAsync(() =>
-                            {
-                                var window = new MainWindow(path, workspaceLoad: true);
-                                window.WorkspaceLoadInProgress = true;
-                                return window;
-                            });
-
-                            var loadTask = await Application.Current.Dispatcher.InvokeAsync(() => newWindow.LoadImage(path, true));
-                            await loadTask;
-                            await Application.Current.Dispatcher.InvokeAsync(() => newWindow.Show());
-                            await newWindow.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-
-                            if (newWindow.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
-                            {
-                                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                                while (stopwatch.ElapsedMilliseconds < 2000)
-                                {
-                                    try
-                                    {
-                                        var dimensionsTask = await newWindow.Dispatcher.InvokeAsync(() =>
-                                            (newWindow.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer)?.GetDimensions());
-
-                                        if (dimensionsTask != null)
-                                        {
-                                            var dimensions = await dimensionsTask.WaitAsync(TimeSpan.FromMilliseconds(250)).ConfigureAwait(false);
-                                            if (dimensions != null)
-                                                break;
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"Recent-media video dimension polling error: {ex}");
-                                    }
-
-                                    await Task.Delay(100).ConfigureAwait(false);
-                                }
-                            }
-
-                            await newWindow.Dispatcher.InvokeAsync(() => newWindow.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
-                            await newWindow.Dispatcher.InvokeAsync(() => newWindow.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
-                        }
-                        catch (Exception ex)
-                        {
-                            Message($"Failed to open recent media '{path}' in a new window: {ex.Message}");
-                        }
-                    }
-                    return true;
-                }
-
-                return false;
-            }
-
-            // filmstrip command: fs / filmstrip
-            // NOTE: Tag commands like "fs tag" are handled separately below, so check and skip those here
-            if ((cmd.StartsWith("fs") || cmd.StartsWith("filmstrip")) && !cmd.StartsWith("fs tag ") && !cmd.StartsWith("fs t ") && !cmd.StartsWith("filmstrip tag ") && !cmd.StartsWith("filmstrip t "))
-            {
-                // parse tokens
-                var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                string source = "directory"; // default
-                string param = "";
-                if (tokens.Length >= 2)
-                {
-                    source = tokens[1];
-                    if (tokens.Length >= 3)
-                        param = string.Join(' ', tokens.Skip(2));
-                }
-
-                // Determine if this is an explicit target (not basic "fs" or implied directory)
-                bool isExplicitTarget = tokens.Length >= 2 && source != "fs" && source != "filmstrip";
-
-                string[] filesToShow = Array.Empty<string>();
-
-                if (source == "fs" || source == "filmstrip")
-                {
-                    source = "directory";
-                }
-
-                try
-                {
-                    if (source == "d" || source == "directory")
-                    {
-                        // For directory source, only use retained contents if NOT an explicit target and retain is checked
-                        if (!isExplicitTarget && FilmStripControl.HasRetainedContents)
-                        {
-                            filesToShow = FilmStripControl.GetRetainedContents ?? Array.Empty<string>();
-                        }
-                        else
-                        {
-                            filesToShow = imageFiles ?? Array.Empty<string>();
-                        }
-                    }
-                    else if (source == "r" || source == "recent")
-                    {
-                        filesToShow = (recentFiles ?? new List<string>()).ToArray();
-                    }
-                    else if (source == "b" || source == "bookmarks")
-                    {
-                        filesToShow = bookmarkManager?.GetBookmarks().ToArray() ?? Array.Empty<string>();
-                    }
-                    else if (source == "ws" || source == "p" || source == "preview" || source == "workspace")
-                    {
-                        if (string.IsNullOrWhiteSpace(param))
-                        {
-                            Message("A workspace name is required for a filmstrip preview.");
-                            return false;
-                        }
-
-                        string wsName = param.Trim();
-                        string workspaceFilePath = Path.Combine(workspaceFilesPath, wsName + ".cloudless");
-                        if (!File.Exists(workspaceFilePath))
-                        {
-                            Message("Workspace file not found: " + wsName);
-                            return false;
-                        }
-
-                        string json = File.ReadAllText(workspaceFilePath);
-                        var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
-                        if (workspace == null)
-                        {
-                            Message("Invalid workspace file: " + wsName);
-                            return false;
-                        }
-
-                        filesToShow = workspace.CloudlessWindows.Select(cw => cw.ImagePath).ToArray();
-                    }
-                    else
-                    {
-                        Message("Unknown filmstrip source: " + source);
-                        return false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Message("Error preparing filmstrip: " + ex.Message);
-                    return false;
-                }
-
-                if (_filmStripWindow == null || !_filmStripWindow.IsVisible)
-                {
-                    ToggleFilmStrip(skipPopulation: true);
-                }
-
-                if (_filmStripWindow != null)
-                {
-                    NonstandardPopulateFilmStrip(filesToShow);
-                }
-                else
-                {
-                    Message("Failed to open filmstrip window.");
-                    return false;
-                }
-
-                return true;
-            }
-
-            if (cmd.Equals("dim", StringComparison.OrdinalIgnoreCase))
-            {
-                Message($"Current window dimensions: {this.Width:0.##} x {this.Height:0.##}");
-                return true;
-            }
-
-            if (cmd.StartsWith("dim ", StringComparison.OrdinalIgnoreCase))
-            {
-                if (cmd.Length < 5)
-                    return false;
-
-                string dim = cmd.Substring(4);
-                var dims = dim.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                double width = this.Width;
-                double height = this.Height;
-
-                if (dims.Length != 2 ||
-                    (dims[0] == "_" && dims[1] == "_") ||
-                    !TryApplyDimension(dims[0], ref width) ||
-                    !TryApplyDimension(dims[1], ref height))
-                {
-                    Message("Unexpected format. Usage: dim [int|+/-int|_] [int|+/-int|_]. Unsigned values set a dimension; signed values change it.");
-                    return false;
-                }
-
-                if (width <= 0 || height <= 0)
-                {
-                    Message("Window dimensions must be greater than zero.");
-                    return false;
-                }
-
-                ResizeWindow(width, height);
-                CenterWindowOnCurrentScreen();
-
-                return true;
-            }
-
-            static bool TryApplyDimension(string value, ref double dimension)
-            {
-                if (value == "_")
-                    return true;
-
-                if (!int.TryParse(value, out int amount))
-                    return false;
-
-                if (value.StartsWith('+') || value.StartsWith('-'))
-                    dimension += amount;
-                else
-                    dimension = amount;
-
-                return true;
-            }
-
-            if (cmd.Equals("cip"))  // copy image path
-            {
-                if (currentlyDisplayedImagePath == null)
-                {
-                    Message("Cannot copy image path to clipboard because no image is loaded");
-                    return true;
-                }
-
-                Clipboard.SetText(currentlyDisplayedImagePath);
-                Message("Copied image path to clipboard");
-                return true;
-            }
-
-            if (cmd.Equals("deflash") || cmd.Equals("df"))
-            {
-                Deflash();
-                return true;
-            }
-
-            if (cmd.Equals("mute"))
-            {
-                ToggleMute(setTo: true);
-                return true;
-            }
-
-            if (cmd.Equals("unmute"))
-            {
-                ToggleMute(setTo: false);
-                return true;
-            }
-
-            if (cmd.Equals("speed") || cmd.StartsWith("speed "))
-            {
-                if (VideoHost.Content is not IVideoPlayer videoPlayer)
-                {
-                    Message("No video is loaded");
-                    return true;
-                }
-
-                if (cmd.Equals("speed"))
-                {
-                    double currentSpeed = videoPlayer.GetPlaybackSpeed();
-                    Message($"Current playback speed: {currentSpeed.ToString("0.##", CultureInfo.InvariantCulture)}×");
-                    return true;
-                }
-
-                string speedText = cmd.Substring("speed ".Length).Trim();
-                if (!double.TryParse(speedText, NumberStyles.Float, CultureInfo.InvariantCulture, out double speed) ||
-                    !double.IsFinite(speed) || speed <= 0)
-                {
-                    Message("Invalid playback speed. Provide a positive multiplier, e.g. 'speed 2.5'.");
-                    return true;
-                }
-
-                if (!videoPlayer.SetPlaybackSpeed(speed))
-                {
-                    Message("The video player could not set that playback speed.");
-                    return true;
-                }
-
-                Message($"Set playback speed to {speed.ToString("0.##", CultureInfo.InvariantCulture)}×");
-                return true;
-            }
-
-            if (cmd.Equals("unmute"))
-            {
-                ToggleMute(setTo: false);
-                return true;
-            }
-
-            if (cmd.Equals("volume"))
-            {
-                var videoPlayer = VideoHost.Content as IVideoPlayer;
-                if (videoPlayer != null)
-                {
-                    double volume = videoPlayer.GetVolume();
-                    Message($"Current volume: {(int)Math.Round(volume)}/100");
-                }
-                return true;
-            }
-
-            if (cmd.StartsWith("volume "))
-            {
-                string volumeStr = cmd.Substring(7).Trim();
-                if (!double.TryParse(volumeStr, out _))
-                {
-                    Message("Invalid volume value. Provide a number between 0 and 100.");
-                    return true;
-                }
-
-                int volume = (int)Math.Round(double.Parse(volumeStr));
-                if (volume < 0 || volume > 100)
-                {
-                    Message("Volume must be from 0 to 100.");
-                    return true;
-                }
-
-                var videoPlayer = VideoHost.Content as IVideoPlayer;
-                if (videoPlayer != null)
-                {
-                    videoPlayer.SetVolume(volume);
-                    this._windowVideoVolume = volume;
-                    Message($"Set volume to: {volume}/100");
-                    return true;
-                }
-            }
-
-            if (cmd.Equals("ris"))  // reverse image search
-            {
-                await ReverseImageSearch(currentlyDisplayedImagePath, "g");
-                return true;
-            }
-
-            if (cmd.StartsWith("ris ") && cmd.Length > 4)  // reverse image search
-            {
-                await ReverseImageSearch(currentlyDisplayedImagePath, cmd.Split(' ')[1].Trim().ToLower());
-                return true;
-            }
-
-            if (cmd.Equals("rev"))  // reveal current image in file explorer
-            {
-                string? path = currentlyDisplayedImagePath;
-                if (path == null)
-                {
-                    Message("Cannot reveal image in Explorer because no image is loaded");
-                }
-                else
-                {
-                    RevealImageInExplorer(path);
-                }
-                return true;
-            }
-
-            if (cmd.StartsWith("hotkey ") || cmd.StartsWith("hk "))
-            {
-                string args = cmd.StartsWith("hotkey ") ? cmd.Substring(6) : cmd.Substring(3);
-                await SimulateHotkey(args.Trim());
-                return true;
-            }
-
-            if (cmd.Equals("play"))
-            {
-                string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? "";
-                bool isVideo = FileTypeManager.IsVideoFile(ext);
-                if (!isVideo)
-                {
-                    Message("The 'play' command only works when a video is loaded");
-                    return true;
-                }
-
-                var vp = VideoHost.Content as IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video player available");
-                    return true;
-                }
-
-                try
-                {
-                    if (vp.IsPaused())
-                    {
-                        vp.TogglePause();
-                        Message("Resumed video playback");
-                    }
-                    else
-                    {
-                        Message("Video is already playing");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Message("Failed to play video: " + ex.Message);
-                }
-
-                return true;
-            }
-
-            if (cmd.Equals("pause"))
-            {
-                string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? "";
-                bool isVideo = FileTypeManager.IsVideoFile(ext);
-                if (!isVideo)
-                {
-                    Message("The 'pause' command only works when a video is loaded");
-                    return true;
-                }
-
-                var vp = VideoHost.Content as IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video player available");
-                    return true;
-                }
-
-                try
-                {
-                    if (!vp.IsPaused())
-                    {
-                        vp.TogglePause();
-                        Message("Paused video playback");
-                    }
-                    else
-                    {
-                        Message("Video is already paused");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Message("Failed to pause video: " + ex.Message);
-                }
-
-                return true;
-            }
-
-            if (cmd.StartsWith("seek"))
-            {
-                if (cmd.Equals("seek"))
-                {
-                    Message("Usage: seek previous, seek ?, or seek [time] (for example, seek 1:30)");
-                    return true;
-                }
-
-                string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? "";
-                bool isVideo = ext == ".webm" || ext == ".mkv" || ext == ".mp4" || ext == ".avi" || ext == ".mov";
-                if (!isVideo)
-                {
-                    Message("The 'seek' command only works when a video is loaded");
-                    return true;
-                }   
-
-                var vp = VideoHost.Content as IVideoPlayer;
-                if (vp == null)
-                {
-                    Message("No video player available");
-                    return true;
-                }
-
-                if (cmd.Equals("seek p") || cmd.Equals("seek previous"))
-                {
-                    TimeSpan? previousPosition = VideoPlaybackPositionStore.GetPosition(currentlyDisplayedImagePath);
-                    if (!previousPosition.HasValue)
-                    {
-                        Message("No previous closed position is saved for this video.");
-                        return true;
-                    }
-
-                    TimeSpan target = previousPosition.Value;
-                    TimeSpan duration = vp.GetDuration();
-                    if (duration > TimeSpan.Zero && target > duration)
-                        target = duration;
-
-                    vp.SeekTo(target);
-                    Message($"Seeking to previous closed position: {FormatTimeSpan(target)}");
-                    return true;
-                }
-
-                if (cmd.Equals("seek ?"))
-                {
-                    TimeSpan position = vp.GetPosition();
-                    TimeSpan duration = vp.GetDuration();
-                    Message($"Current position: {position}, Duration: {duration}");
-                    return true;
-                }
-
-                // If "seek [time]", parse and seek to that time
-                if (cmd.StartsWith("seek ") && cmd.Length > 5)
-                {
-                    string timeStr = cmd.Substring(5).Trim();
-
-                    // Support relative seeks: leading '+' or '-' indicates offset from current position
-                    if (timeStr.Length > 0 && (timeStr[0] == '+' || timeStr[0] == '-'))
-                    {
-                        char sign = timeStr[0];
-                        string deltaStr = timeStr.Substring(1).Trim();
-                        TimeSpan? delta = TryParseTimeString(deltaStr);
-                        if (!delta.HasValue)
-                        {
-                            Message($"Could not parse relative time '{timeStr}'. Use formats like: '+90' (seconds), '+1:30' (m:s), '-30s'");
-                            return true;
-                        }
-
-                        TimeSpan current = vp.GetPosition();
-                        TimeSpan target = sign == '+' ? current + delta.Value : current - delta.Value;
-                        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
-
-                        TimeSpan duration = vp.GetDuration();
-                        if (duration > TimeSpan.Zero && target > duration) target = duration;
-
-                        vp.SeekTo(target);
-                        string dir = sign == '+' ? "forward" : "backward";
-                        Message($"Seeking {dir} by {FormatTimeSpan(delta.Value)} to {FormatTimeSpan(target)} (was {FormatTimeSpan(current)})");
-                        return true;
-                    }
-
-                    // Otherwise treat as absolute seek
-                    // Try to parse the time string
-                    TimeSpan? targetTime = TryParseTimeString(timeStr);
-                    if (!targetTime.HasValue)
-                    {
-                        Message($"Could not parse time '{timeStr}'. Use formats like: '90' (seconds), '1:30' (m:s), '1:30:45' (h:m:s), or '1h30m45s'");
-                        return true;
-                    }
-
-                    // Check if time is negative
-                    if (targetTime.Value < TimeSpan.Zero)
-                    {
-                        Message("Time cannot be negative");
-                        return true;
-                    }
-
-                    // Check if time exceeds video duration
-                    TimeSpan durationAbs = vp.GetDuration();
-                    if (durationAbs > TimeSpan.Zero && targetTime.Value > durationAbs)
-                    {
-                        Message($"Seek time {FormatTimeSpan(targetTime.Value)} exceeds video duration of {FormatTimeSpan(durationAbs)}");
-                        return true;
-                    }
-
-                    // Perform the seek
-                    vp.SeekTo(targetTime.Value);
-                    Message($"Seeking to {FormatTimeSpan(targetTime.Value)}");
-                    return true;
-                }
-
-                Message("Failed to parse seek command.");
-                return true;
-            }
-
-            // Short form: allow 'n' as alias for 'nudge'
-            if (cmd.StartsWith("n ") || cmd.StartsWith("nudge ") || cmd.Equals("n") || cmd.Equals("nudge"))
-            {
-                var parts = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                // normalize: if first token is 'n', treat as 'nudge'
-                int idx = 1;
-                if (parts.Length == 1)
-                {
-                    Message("Usage: nudge left|right|up|down [count]  OR  nudge <x> <y>");
-                    return true;
-                }
-
-                string dirOrX = parts[idx];
-                // map single-letter direction aliases
-                if (dirOrX.Length == 1)
-                {
-                    switch (dirOrX)
-                    {
-                        case "u": dirOrX = "up"; break;
-                        case "d": dirOrX = "down"; break;
-                        case "l": dirOrX = "left"; break;
-                        case "r": dirOrX = "right"; break;
-                    }
-                }
-
-                if (parts.Length == 2)
-                {
-                    // nudge <direction>
-                    int step = 1;
-                    int dx = 0, dy = 0;
-                    switch (dirOrX)
-                    {
-                        case "left": dx = -step; break;
-                        case "right": dx = step; break;
-                        case "up": dy = -step; break;
-                        case "down": dy = step; break;
-                        default:
-                            Message("Invalid nudge direction. Use left/right/up/down or numeric x y.");
-                            return true;
-                    }
-
-                    NudgeWindow(dx, dy);
-                    return true;
-                }
-
-                if (parts.Length == 3)
-                {
-                    // Could be: nudge <direction> <count> OR nudge <x> <y>
-                    if (int.TryParse(parts[1], out int x) && int.TryParse(parts[2], out int y))
-                    {
-                        NudgeWindow(x, y);
-                        return true;
-                    }
-
-                    // direction + count
-                    string dir = dirOrX;
-                    if (!int.TryParse(parts[2], out int count))
-                    {
-                        Message("Invalid numeric value for nudge.");
-                        return true;
-                    }
-
-                    int dx = 0, dy = 0;
-                    switch (dir)
-                    {
-                        case "left": dx = -count; break;
-                        case "right": dx = count; break;
-                        case "up": dy = -count; break;
-                        case "down": dy = count; break;
-                        default:
-                            Message("Invalid nudge direction. Use left/right/up/down or numeric x y.");
-                            return true;
-                    }
-
-                    NudgeWindow(dx, dy);
-                    return true;
-                }
-
-                Message("Usage: nudge left|right|up|down [count]  OR  nudge <x> <y>");
-                return true;
-            }
-
-            if (cmd.StartsWith("p ") || cmd.StartsWith("page "))
-            {
-                // convert e.g. "page 2 send" to "p 2 send" for easier parsing
-                if (cmd.StartsWith("page "))
-                    cmd = "p " + cmd.Substring(5).Trim();
-
-                // Tokenize and support single-letter aliases for flexible command forms
-                var tokens = cmd.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
-                // tokens[0] == "p"
-                if (tokens.Count >= 2)
-                {
-                    string targetToken = tokens[1];
-
-                    if (targetToken == "?")
-                    {
-                        var pages = GetNonemptyPages();
-                        Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", pages));
-
-                        return true;
-                    }
-
-                    if (targetToken == "arrange")
-                    {
-                        BringActivePagesTogether();
-                        return true;
-                    }
-
-                    // Handle next-active / previous-active / next-inactive / previous-inactive when used for navigation only
-                    if ((targetToken == "na" || targetToken == "pa" || targetToken == "ni" || targetToken == "pi") && tokens.Count == 2)
-                    {
-                        var resolvedPage = GetPageIndexFromTargetToken(targetToken);
-                        if (resolvedPage.HasValue)
-                        {
-                            SwapViewToPage(resolvedPage.Value);
-                        }
-                        else
-                        {
-                            if (targetToken == "na" || targetToken == "pa")
-                                Message("There are no other active pages.");
-                            else
-                                Message("There are no other inactive pages.");
-                        }
-                        return true;
-                    }
-
-                    // Resolve numeric or relative target
-                    int? resolvedTarget = GetPageIndexFromTargetToken(targetToken);
-
-                    // If target resolved, interpret action tokens
-                    if (resolvedTarget.HasValue)
-                    {
-                        int target = resolvedTarget.Value;
-                        if (tokens.Count == 2)
-                        {
-                            // Just swap view to target
-                            SwapViewToPage(target);
-                            return true;
-                        }
-
-                        string action = tokens[2];
-                        string action2 = tokens.Count >= 4 ? tokens[3] : "";
-
-                        bool isSend = action == "send" || action == "s";
-                        bool isBring = action == "bring" || action == "b";
-                        bool qualifierPage = action2 == "page" || action2 == "p";
-
-                        if (isSend && !qualifierPage)
-                        {
-                            SendWindowToPage(target);
-                            return true;
-                        }
-                        if (isBring && !qualifierPage)
-                        {
-                            SendWindowToPage(target);
-                            SwapViewToPage(target);
-                            return true;
-                        }
-                        if (isSend && qualifierPage)
-                        {
-                            SendPageToPage(target);
-                            return true;
-                        }
-                        if (isBring && qualifierPage)
-                        {
-                            SendPageToPage(target);
-                            SwapViewToPage(target);
-                            return true;
-                        }
-                        if (action == "clear" || action == "c")
-                        {
-                            ClearPage(target);
-                            return true;
-                        }
-                        if (action == "swap" || action == "x")
-                        {
-                            int? secondTarget = GetPageIndexFromTargetToken(action2);
-                            if (secondTarget.HasValue)
-                            {
-                                SwapPageWithPage(target, secondTarget.Value);
-                                return true;
-                            }
-                            else
-                            {
-                                Message("Swap command requires a valid second page target. Usage: p <page1> swap <page2>");
-                                return true;
-                            }
-                        }
-                    }
-
-                    Message("Could not parse page command. See command palette reference.");
-                    return true;
-                }
-            }
-
-            if (cmd.Equals("flatten"))
-            {
-                FlattenPages();
-                return true;
-            }
-
-            if (cmd.Equals("stack"))
-            {
-                StackCurrentPageWindows();
-                return true;
-            }
-
-            if (cmd.Equals("ss pause") || cmd.Equals("ss p") || cmd.Equals("slideshow pause"))
-            {
-                if (!SlideshowManager.IsRunning)
-                    Message("No slideshow is running.");
-                else if (SlideshowManager.Pause())
-                    Message("Slideshow paused.");
-                else
-                    Message("Slideshow is already paused.");
-                return true;
-            }
-
-            if (cmd.Equals("ss resume") || cmd.Equals("ss r") || cmd.Equals("slideshow resume"))
-            {
-                if (!SlideshowManager.IsRunning)
-                    Message("No slideshow is running.");
-                else if (SlideshowManager.Resume())
-                    Message("Slideshow resumed.");
-                else
-                    Message("Slideshow is not paused.");
-                return true;
-            }
-
-            if (cmd.Equals("ss stop") || cmd.Equals("ss s") || cmd.Equals("slideshow stop"))
-            {
-                StopSlideshow();
-                return true;
-            }
-
-            if (cmd.Equals("ss next") || cmd.Equals("slideshow next") || cmd.Equals("slideshow n") || cmd.Equals("ss n"))
-            {
-                SlideshowManager.NextSlideshowPage();
-                return true;
-            }
-
-            if (cmd.Equals("ss status") || cmd.Equals("slideshow status"))
-            {
-                if (!SlideshowManager.IsRunning)
-                {
-                    Message("No slideshow is running.");
-                    return true;
-                }
-
-                string state = SlideshowManager.IsPaused ? "paused" : "running";
-                double intervalSeconds = SlideshowManager.CurrentIntervalSeconds;
-                string interval = intervalSeconds > 0
-                    ? $"every {intervalSeconds:0.##} seconds"
-                    : SlideshowManager.UseTriggers ? "trigger-based" : "without an interval";
-                string shuffle = SlideshowManager.IsShuffle ? "on" : "off";
-                string triggers = SlideshowManager.UseTriggers ? "on" : "off";
-                Message($"Slideshow is {state}; interval: {interval}; shuffle: {shuffle}; triggers: {triggers}.");
-                return true;
-            }
-
-            if (cmd.StartsWith("ss ") || cmd.StartsWith("slideshow "))
-            {
-                string args = cmd.StartsWith("ss ") ? cmd.Substring(3).Trim() : cmd.Substring(10).Trim();
-                var parts = args.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
-                bool shuffle = false;
-                bool useTriggers = false;
-                bool invalidOption = false;
-                string timeToken = "";
-                foreach (var p in parts)
-                {
-                    var lp = p.ToLower();
-                    if (lp == "shuffle") shuffle = true;
-                    else if (lp == "triggers" || lp == "t") useTriggers = true;
-                    else if (double.TryParse(p, out _)) timeToken = p;
-                    else invalidOption = true;
-                }
-
-                if (invalidOption)
-                {
-                    Message("Invalid slideshow option. Use 'shuffle', 'triggers', or 't'.");
-                    return false;
-                }
-
-                if (useTriggers && !string.IsNullOrEmpty(timeToken))
-                {
-                    Message("Cannot combine slideshow triggers with a time interval. Use either 'ss triggers' or 'ss [seconds]'.");
-                    return false;
-                }
-
-                // Special-case: trigger-only slideshow when no numeric time is supplied
-                if (useTriggers && string.IsNullOrEmpty(timeToken))
-                {
-                    var activePages = GetNonemptyPages();
-                    if (activePages.Count == 0)
-                    {
-                        Message("Cannot start slideshow: no active pages");
-                        return true;
-                    }
-
-                    if (!SlideshowManager.AllPagesHaveTriggers(activePages))
-                    {
-                        Message("Cannot start trigger-only slideshow: not all active pages have a configured trigger");
-                        return false;
-                    }
-
-                    // start trigger-only slideshow (interval 0 indicates trigger-only mode)
-                    StartSlideshow(0, shuffle, useTriggers);
-                    return true;
-                }
-
-                if (double.TryParse(timeToken, out double seconds) && seconds > 0)
-                {
-                    StartSlideshow(seconds, shuffle, useTriggers);
-                    return true;
-                }
-                else
-                {
-                    Message("Invalid time format. Use a positive number (e.g., 'ss 5' for 5 seconds).");
-                    return false;
-                }
-            }
-
             if (cmd.StartsWith("echo ") && cmd.Length > 5)
             {
                 string echo = cmd.Substring(5).Trim();
@@ -2779,152 +939,7 @@ namespace Cloudless
                 return true;
             }
 
-            int targetIndex;
-            if (cmd.StartsWith("+") || cmd.StartsWith("-"))
-            {
-                if (imageFiles == null)
-                    return true;
-
-                // Relative jump
-                if (int.TryParse(cmd, out int offset))
-                {
-                    targetIndex = currentImageIndex + offset;
-                }
-                else
-                {
-                    Message("Invalid relative index");
-                    return true;
-                }
-
-                // Clamp to valid range
-                var clampedIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
-                if (clampedIndex != targetIndex)
-                {
-                    if (clampedIndex == 0)
-                        Message("Relative jump was clamped to first image in directory");
-                    else
-                        Message("Relative jump was clamped to final image in directory");
-                }
-
-                await JumpToIndex(clampedIndex);
-                return true;
-            }
-            else if (int.TryParse(cmd, out targetIndex))  // Absolute jump
-            {
-                if (imageFiles == null)
-                    return true;
-
-                // Convert from 1-based user input to 0-based internal index
-                targetIndex -= 1;
-
-                if (targetIndex == -1)  // user input "0"
-                {
-                    Message("You are in 1-indexing mode, so the first image has index 1, not 0.");
-                }
-
-                // Clamp to valid range
-                targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Count() - 1));
-                await JumpToIndex(targetIndex);
-                return true;
-            }
-
-            // Tag commands: support both "tag add" and new syntax like "fs tag" or "open tag"
-            if (cmd.StartsWith("tag ") || cmd.StartsWith("t "))
-            {
-                return await ExecuteTagCommand(cmd);
-            }
-
-            // New syntax: "fs tag" or "open tag" or "gallery tag" 
-            // e.g., "fs tag landscape AND processed" or "open tag portrait"
-            if (cmd.StartsWith("fs tag ") || cmd.StartsWith("fs t ") || cmd.StartsWith("filmstrip tag ") || cmd.StartsWith("filmstrip t "))
-            {
-                string query;
-                if (cmd.StartsWith("fs tag "))
-                    query = cmd.Substring(7);
-                else if (cmd.StartsWith("fs t "))
-                    query = cmd.Substring(5);
-                else if (cmd.StartsWith("filmstrip tag "))
-                    query = cmd.Substring(14);
-                else
-                    query = cmd.Substring(12);
-                return await HandleTagFilmstrip(query);
-            }
-
-            if (cmd.StartsWith("open tag ") || cmd.StartsWith("o tag ") || cmd.StartsWith("open t ") || cmd.StartsWith("o t "))
-            {
-                string query;
-                if (cmd.StartsWith("open tag "))
-                    query = cmd.Substring(9);
-                else if (cmd.StartsWith("o tag "))
-                    query = cmd.Substring(6);
-                else if (cmd.StartsWith("open t "))
-                    query = cmd.Substring(7);
-                else
-                    query = cmd.Substring(4);
-                return await HandleTagOpen(query, maxFiles: 10);
-            }
-
-            if (cmd.StartsWith("open! tag ") || cmd.StartsWith("o! tag ") || cmd.StartsWith("open! t ") || cmd.StartsWith("o! t "))
-            {
-                string query;
-                if (cmd.StartsWith("open! tag "))
-                    query = cmd.Substring(10);
-                else if (cmd.StartsWith("o! tag "))
-                    query = cmd.Substring(7);
-                else if (cmd.StartsWith("open! t "))
-                    query = cmd.Substring(8);
-                else
-                    query = cmd.Substring(5);
-                return await HandleTagOpen(query, maxFiles: int.MaxValue);
-            }
-
-            if (cmd.StartsWith("gallery tag ") || cmd.StartsWith("gallery t "))
-            {
-                string query = cmd.StartsWith("gallery tag ") ? cmd.Substring(12) : cmd.Substring(10);
-                return await HandleTagGallery(query);
-            }
-
-            if (TryGetIncompleteCommandMessage(cmd, out string? usageMessage))
-            {
-                Message(usageMessage);
-                return false;
-            }
-
             Message("Command not recognized");
-            return false;
-        }
-
-        private static bool TryGetIncompleteCommandMessage(string command, out string? message)
-        {
-            message = command switch
-            {
-                "goto" => "Usage: goto start, goto end, or goto flag",
-                "set" => "Usage: set start, set end, set flag, or set trigger [count]",
-                "clear" => "Usage: clear start, clear end, clear flag, or clear trigger",
-                "audio" => "Usage: audio sync [offset]; use 'audio sync' to show the current offset",
-                "subtitle" => "Usage: subtitle sync [offset]; use 'subtitle sync' to show the current offset",
-                "nudge" or "n" => "Usage: nudge left|right|up|down [count] or nudge [x] [y]",
-                "sort" => "Usage: sort name|date asc|desc",
-                "dm" => "Usage: dm stretch|zoom|best|bestnozoom (or dm 1-4)",
-                "tag" or "t" => "Usage: tag add [tags], tag remove [tags], tag destroy [tag], or tag list",
-                "macro" => "Usage: macro list, macro run [name], macro delete [name], or macro record [name] [command]",
-                "p" or "page" => "Usage: p [target], p arrange, or p [target] send|bring|clear|swap ...",
-                "slideshow" or "ss" => "Usage: slideshow [seconds] [shuffle], slideshow triggers [shuffle], slideshow pause (ss p), slideshow resume (ss r), slideshow status, slideshow stop (ss s), or slideshow next",
-                "ws" => "Usage: ws save|save!|load|merge|preview|rename|delete|origin|list ...",
-                "all" or "others" => $"Usage: {command} [command]",
-                _ => null
-            };
-
-            if (message != null)
-                return true;
-
-            var customCommandMatch = Regex.Match(command, @"^c(?<index>\d{1,2})$", RegexOptions.IgnoreCase);
-            if (customCommandMatch.Success && int.TryParse(customCommandMatch.Groups["index"].Value, out int index) && index is >= 1 and <= 24)
-            {
-                message = $"Usage: c{index} set [command], c{index} view, or c{index} run";
-                return true;
-            }
-
             return false;
         }
 
@@ -2977,104 +992,1149 @@ namespace Cloudless
             return null;
         }
 
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern short VkKeyScan(char ch);
-        private async Task SimulateHotkey(string argsString)
+        private async Task<bool> ExecuteCatalogCommand(CommandParseResult parsed)
         {
-            // split tokens and ignore extra spaces
-            string[] args = argsString.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            bool ctrl = args.Any(a => a.Equals("ctrl", StringComparison.OrdinalIgnoreCase) || a.Equals("control", StringComparison.OrdinalIgnoreCase));
-            bool alt = args.Any(a => a.Equals("alt", StringComparison.OrdinalIgnoreCase));
-            bool shift = args.Any(a => a.Equals("shift", StringComparison.OrdinalIgnoreCase));
-
-            List<string> coreHotkey = args.Where(a => !string.IsNullOrWhiteSpace(a)
-                                                     && !a.Equals("ctrl", StringComparison.OrdinalIgnoreCase)
-                                                     && !a.Equals("control", StringComparison.OrdinalIgnoreCase)
-                                                     && !a.Equals("alt", StringComparison.OrdinalIgnoreCase)
-                                                     && !a.Equals("shift", StringComparison.OrdinalIgnoreCase)).ToList();
-
-            if (coreHotkey.Count != 1)
+            if (!parsed.IsComplete)
             {
-                Message("Command failed: Expected exactly one key token after any modifiers (ctrl alt shift)");
-                return;
+                Message(parsed.ErrorMessage ?? "Incomplete or invalid command. See command palette reference.");
+                return false;
             }
 
-            string keyToken = coreHotkey.First();
-            Key finalHotkey;
+            if (parsed.DefinitionId == "video-position")
+                return ExecuteVideoPositionCommand(parsed);
 
-            // If single character like 'h' or '1', use VkKeyScan to map to virtual key
-            if (keyToken.Length == 1)
+            if (parsed.DefinitionId == "sort")
             {
+                string? sortType = parsed.GetArgument("type");
+                string? sortOrder = parsed.GetArgument("order");
+                Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = (sortType, sortOrder) switch
+                {
+                    ("name", "asc") => "FileNameAscending",
+                    ("name", "desc") => "FileNameDescending",
+                    ("date", "asc") => "DateModifiedAscending",
+                    ("date", "desc") => "DateModifiedDescending",
+                    _ => throw new InvalidOperationException("The catalog produced an invalid sort command.")
+                };
+                Cloudless.Properties.Settings.Default.Save();
+                SortImageFilesArray();
+                return true;
+            }
+
+            if (parsed.DefinitionId == "display-mode")
+            {
+                Cloudless.Properties.Settings.Default.DisplayMode = parsed.GetArgument("mode") switch
+                {
+                    "stretch" => "StretchToFit",
+                    "zoom" => "ZoomToFill",
+                    "best" => "BestFit",
+                    "bestnozoom" => "BestFitWithoutZooming",
+                    _ => throw new InvalidOperationException("The catalog produced an invalid display-mode command.")
+                };
+                Cloudless.Properties.Settings.Default.Save();
+                ApplyDisplayMode();
+                return true;
+            }
+
+            if (parsed.DefinitionId == "reverse-image-search")
+            {
+                await ReverseImageSearch(currentlyDisplayedImagePath, parsed.GetArgument("service") ?? "g");
+                return true;
+            }
+
+            if (parsed.DefinitionId == "window-nudge")
+            {
+                if (parsed.Operation == "nudge-vector")
+                {
+                    NudgeWindow(int.Parse(parsed.GetArgument("x")!), int.Parse(parsed.GetArgument("y")!));
+                    return true;
+                }
+
+                int count = int.TryParse(parsed.GetArgument("count"), out int parsedCount) ? parsedCount : 1;
+                int dx = parsed.GetArgument("direction") switch
+                {
+                    "left" => -count,
+                    "right" => count,
+                    _ => 0
+                };
+                int dy = parsed.GetArgument("direction") switch
+                {
+                    "up" => -count,
+                    "down" => count,
+                    _ => 0
+                };
+                NudgeWindow(dx, dy);
+                return true;
+            }
+
+            if (parsed.DefinitionId == "video-transport")
+                return ExecuteVideoTransportCommand(parsed);
+
+            if (parsed.DefinitionId == "filmstrip")
+            {
+                if (parsed.Operation == "filmstrip-tag-query")
+                    return await HandleTagFilmstrip(parsed.GetArgument("query")!);
+                return ExecuteFilmstripCommand(parsed);
+            }
+
+            if (parsed.DefinitionId == "gallery-tag-query")
+                return await HandleTagGallery(parsed.GetArgument("query")!);
+
+            if (parsed.DefinitionId == "window-dimensions")
+                return ExecuteWindowDimensionsCommand(parsed);
+
+            if (parsed.DefinitionId == "workspace")
+                return await ExecuteWorkspaceCommand(parsed);
+
+            if (parsed.DefinitionId == "hotkey")
+            {
+                string? keyToken = parsed.GetArgument("key");
+                if (keyToken == null || !CommandSyntaxCatalog.TryResolveHotkeyKey(keyToken, out Key key))
+                {
+                    Message("Failed to parse hotkey name. Try names like 'left', 'space', 'f1' or a single character.");
+                    return false;
+                }
+
+                IReadOnlyList<string> modifiers = parsed.GetArguments("modifier");
+                bool control = modifiers.Contains("ctrl", StringComparer.OrdinalIgnoreCase);
+                bool alt = modifiers.Contains("alt", StringComparer.OrdinalIgnoreCase);
+                bool shift = modifiers.Contains("shift", StringComparer.OrdinalIgnoreCase);
+                await SimulateKeyEvent(key, shift, control, alt);
+                return true;
+            }
+
+            if (parsed.DefinitionId == "general-actions")
+                return ExecuteGeneralAction(parsed.Operation);
+
+            if (parsed.DefinitionId == "slideshow")
+                return ExecuteSlideshowCommand(parsed);
+
+            if (parsed.DefinitionId == "tags")
+                return ExecuteTagCatalogCommand(parsed);
+
+            if (parsed.DefinitionId == "image-navigation")
+                return await ExecuteImageNavigationCommand(parsed);
+
+            if (parsed.DefinitionId == "macros")
+                return await ExecuteMacroCommand(parsed);
+
+            if (parsed.DefinitionId == "custom-commands")
+                return await ExecuteCustomCommand(parsed);
+
+            if (parsed.DefinitionId == "command-wrappers")
+                return await ExecuteCommandWrapper(parsed);
+
+            if (parsed.DefinitionId == "open-path")
+            {
+                if (parsed.Operation == "open-tag-query")
+                    return await HandleTagOpen(parsed.GetArgument("query")!, maxFiles: 10);
+                if (parsed.Operation == "open-all-tag-query")
+                    return await HandleTagOpen(parsed.GetArgument("query")!, maxFiles: int.MaxValue);
+
+                string path = parsed.GetArgument("path")!;
+                string resolvedPath = currentDirectory == null ? path : Path.GetFullPath(path, currentDirectory);
+                if (Directory.Exists(resolvedPath))
+                    await LoadImagesInDirectory(resolvedPath, parsed.Operation == "open-all-path");
+                else if (File.Exists(resolvedPath))
+                    await LoadImage(resolvedPath, true);
+                return true;
+            }
+
+            return ExecutePageCommand(parsed);
+        }
+
+        private async Task<bool> ExecuteMacroCommand(CommandParseResult parsed)
+        {
+            switch (parsed.Operation)
+            {
+                case "macro-record":
+                    Message("'macro record' commands are not valid inside macros or nested commands. To record a macro, use the command palette directly.");
+                    return true;
+                case "macro-run":
+                    await RunUserMacro(parsed.GetArgument("name")!.Trim());
+                    return true;
+                case "macro-delete":
+                    string name = parsed.GetArgument("name")!.Trim();
+                    var macros = LoadUserMacros();
+                    if (macros.Remove(name))
+                    {
+                        SaveUserMacros(macros);
+                        Message($"Deleted macro '{name}'");
+                    }
+                    else
+                        Message($"Macro not found: {name}");
+                    return true;
+                case "macro-list":
+                    var savedMacros = LoadUserMacros();
+                    if (savedMacros.Count == 0)
+                        Message("No macros defined");
+                    else
+                    {
+                        foreach (var macro in savedMacros)
+                            Message($"{macro.Key}: {macro.Value}");
+                    }
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private async Task<bool> ExecuteCustomCommand(CommandParseResult parsed)
+        {
+            int index = int.Parse(parsed.GetArgument("customIndex")![1..]) - 1;
+            switch (parsed.Operation)
+            {
+                case "custom-command-set":
+                    SetUserCommand(index, parsed.GetArgument("commandText")!);
+                    return true;
+                case "custom-command-view":
+                    ViewUserCommand(index);
+                    return true;
+                case "custom-command-run":
+                    await RunUserCommand(index);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private async Task<bool> ExecuteCommandWrapper(CommandParseResult parsed)
+        {
+            string command = parsed.GetArgument("wrappedCommand")!;
+            await SendCommandToOthers(command);
+            if (parsed.Operation == "command-wrapper-all")
+                await ExecuteCommand(command);
+            return true;
+        }
+
+        private async Task<bool> ExecuteImageNavigationCommand(CommandParseResult parsed)
+        {
+            switch (parsed.Operation)
+            {
+                case "image-first":
+                    if (imageFiles != null)
+                        await JumpToIndex(0);
+                    return true;
+                case "image-last":
+                    if (imageFiles != null)
+                        await JumpToIndex(imageFiles.Length - 1);
+                    return true;
+                case "image-recent":
+                    string? recentPath = recentFiles?.FirstOrDefault();
+                    if (recentPath != null)
+                        await OpenRecentFile(recentPath);
+                    return true;
+                case "image-recent-count":
+                    return await OpenRecentImagesInNewWindows(int.Parse(parsed.GetArgument("count")!));
+                case "image-index":
+                    if (imageFiles == null)
+                        return true;
+
+                    int targetIndex = int.Parse(parsed.GetArgument("index")!) - 1;
+                    if (targetIndex == -1)
+                        Message("You are in 1-indexing mode, so the first image has index 1, not 0.");
+                    targetIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Length - 1));
+                    await JumpToIndex(targetIndex);
+                    return true;
+                case "image-forward-offset":
+                case "image-backward-offset":
+                    if (imageFiles == null)
+                        return true;
+
+                    int offset = int.Parse(parsed.GetArgument("offset")!);
+                    targetIndex = currentImageIndex + offset;
+                    int clampedIndex = Math.Max(0, Math.Min(targetIndex, imageFiles.Length - 1));
+                    if (clampedIndex != targetIndex)
+                        Message(clampedIndex == 0
+                            ? "Relative jump was clamped to first image in directory"
+                            : "Relative jump was clamped to final image in directory");
+                    await JumpToIndex(clampedIndex);
+                    return true;
+                case "image-filename-search":
+                    string query = parsed.GetArgument("query") ?? string.Empty;
+                    await ExecuteFilenameSearch(query[1..]);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private async Task<bool> OpenRecentImagesInNewWindows(int count)
+        {
+            var paths = recentFiles?.Take(count).ToArray() ?? Array.Empty<string>();
+            foreach (var path in paths)
+            {
+                if (!File.Exists(path))
+                    continue;
+
                 try
                 {
-                    char finalHotkeyChar = keyToken[0];
-                    var vkey = VkKeyScan(finalHotkeyChar);
-                    byte virtualKeyCode = (byte)(vkey & 0xFF);
-                    finalHotkey = KeyInterop.KeyFromVirtualKey(virtualKeyCode);
+                    var newWindow = await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var window = new MainWindow(path, workspaceLoad: true);
+                        window.WorkspaceLoadInProgress = true;
+                        return window;
+                    });
+
+                    var loadTask = await Application.Current.Dispatcher.InvokeAsync(() => newWindow.LoadImage(path, true));
+                    await loadTask;
+                    await Application.Current.Dispatcher.InvokeAsync(() => newWindow.Show());
+                    await newWindow.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                    if (newWindow.VideoHost.Content is Cloudless.PluginBase.IVideoPlayer)
+                    {
+                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                        while (stopwatch.ElapsedMilliseconds < 2000)
+                        {
+                            try
+                            {
+                                var dimensionsTask = await newWindow.Dispatcher.InvokeAsync(() =>
+                                    (newWindow.VideoHost.Content as Cloudless.PluginBase.IVideoPlayer)?.GetDimensions());
+
+                                if (dimensionsTask != null)
+                                {
+                                    var dimensions = await dimensionsTask.WaitAsync(TimeSpan.FromMilliseconds(250)).ConfigureAwait(false);
+                                    if (dimensions != null)
+                                        break;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Recent-media video dimension polling error: {ex}");
+                            }
+
+                            await Task.Delay(100).ConfigureAwait(false);
+                        }
+                    }
+
+                    await newWindow.Dispatcher.InvokeAsync(() => newWindow.ResizeWindowToImage(), System.Windows.Threading.DispatcherPriority.Render);
+                    await newWindow.Dispatcher.InvokeAsync(() => newWindow.CenterWindowOnCurrentScreen(), System.Windows.Threading.DispatcherPriority.Render);
                 }
                 catch (Exception ex)
                 {
-                    Message("Failed to parse hotkey character: " + ex.ToString());
-                    return;
+                    Message($"Failed to open recent media '{path}' in a new window: {ex.Message}");
                 }
             }
-            else
+
+            return true;
+        }
+
+        private bool ExecuteTagCatalogCommand(CommandParseResult parsed)
+        {
+            string tags = parsed.GetArgument("tags") ?? string.Empty;
+            return parsed.Operation switch
             {
-                // Try parse common key names directly to Key enum (case-insensitive)
-                string normalized = keyToken.Trim().ToLower();
+                "tag-add" => HandleTagAdd(tags),
+                "tag-remove" => HandleTagRemove(tags),
+                "tag-destroy" => HandleTagDestroy(tags),
+                "tag-list" => HandleTagList(string.Empty),
+                _ => false
+            };
+        }
 
-                // map some common aliases
-                var aliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        private bool ExecuteSlideshowCommand(CommandParseResult parsed)
+        {
+            switch (parsed.Operation)
+            {
+                case "slideshow-next":
+                    SlideshowManager.NextSlideshowPage();
+                    return true;
+                case "slideshow-pause":
+                    if (!SlideshowManager.IsRunning)
+                        Message("No slideshow is running.");
+                    else if (SlideshowManager.Pause())
+                        Message("Slideshow paused.");
+                    else
+                        Message("Slideshow is already paused.");
+                    return true;
+                case "slideshow-resume":
+                    if (!SlideshowManager.IsRunning)
+                        Message("No slideshow is running.");
+                    else if (SlideshowManager.Resume())
+                        Message("Slideshow resumed.");
+                    else
+                        Message("Slideshow is not paused.");
+                    return true;
+                case "slideshow-status":
+                    if (!SlideshowManager.IsRunning)
+                    {
+                        Message("No slideshow is running.");
+                        return true;
+                    }
+
+                    string state = SlideshowManager.IsPaused ? "paused" : "running";
+                    double intervalSeconds = SlideshowManager.CurrentIntervalSeconds;
+                    string interval = intervalSeconds > 0
+                        ? $"every {intervalSeconds:0.##} seconds"
+                        : SlideshowManager.UseTriggers ? "trigger-based" : "without an interval";
+                    string shuffle = SlideshowManager.IsShuffle ? "on" : "off";
+                    string triggers = SlideshowManager.UseTriggers ? "on" : "off";
+                    Message($"Slideshow is {state}; interval: {interval}; shuffle: {shuffle}; triggers: {triggers}.");
+                    return true;
+                case "slideshow-stop":
+                    StopSlideshow();
+                    return true;
+                case "slideshow-start-triggers":
+                case "slideshow-start-triggers-shuffle":
+                    var activePages = GetNonemptyPages();
+                    if (activePages.Count == 0)
+                    {
+                        Message("Cannot start slideshow: no active pages");
+                        return true;
+                    }
+
+                    if (!SlideshowManager.AllPagesHaveTriggers(activePages))
+                    {
+                        Message("Cannot start trigger-only slideshow: not all active pages have a configured trigger");
+                        return false;
+                    }
+
+                    StartSlideshow(0, parsed.Operation == "slideshow-start-triggers-shuffle", useTriggers: true);
+                    return true;
+                case "slideshow-start-interval":
+                case "slideshow-start-interval-shuffle":
+                    if (!double.TryParse(parsed.GetArgument("seconds"), NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) || seconds <= 0)
+                    {
+                        Message("Invalid time format. Use a positive number (e.g., 'ss 5' for 5 seconds).");
+                        return false;
+                    }
+
+                    StartSlideshow(seconds, parsed.Operation == "slideshow-start-interval-shuffle", useTriggers: false);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool ExecuteGeneralAction(string? operation)
+        {
+            switch (operation)
+            {
+                case "close-window":
+                    Close();
+                    return true;
+                case "close-all":
+                    CloseAllOtherInstances();
+                    Close();
+                    return true;
+                case "close-others":
+                    CloseAllOtherInstances();
+                    return true;
+                case "close-empty":
+                    CloseEmptyInstances();
+                    return true;
+                case "close-origin":
+                    CloseWorkspaceOriginInstances();
+                    return true;
+                case "minimize-all":
+                    MinimizeAllOtherInstances();
+                    MinimizeWindow();
+                    return true;
+                case "minimize-others":
+                    MinimizeAllOtherInstances();
+                    return true;
+                case "minimize-origin":
+                    MinimizeWorkspaceOriginInstances();
+                    return true;
+                case "unminimize-all":
+                    UnminimizeAllOtherInstances();
+                    return true;
+                case "unminimize-origin":
+                    UnminimizeWorkspaceOriginInstances();
+                    return true;
+                case "shutdown":
+                    Shutdown();
+                    return true;
+                case "deflash":
+                    Deflash();
+                    return true;
+                case "stack":
+                    StackCurrentPageWindows();
+                    return true;
+                case "flatten":
+                    FlattenPages();
+                    return true;
+                case "copy-image-path":
+                    if (currentlyDisplayedImagePath == null)
+                    {
+                        Message("Cannot copy image path to clipboard because no image is loaded");
+                        return true;
+                    }
+
+                    Clipboard.SetText(currentlyDisplayedImagePath);
+                    Message("Copied image path to clipboard");
+                    return true;
+                case "reveal-image":
+                    if (currentlyDisplayedImagePath == null)
+                        Message("Cannot reveal image in Explorer because no image is loaded");
+                    else
+                        RevealImageInExplorer(currentlyDisplayedImagePath);
+                    return true;
+                case "help":
+                    var window = CommandPaletteRef();
+                    window.Activate();
+                    window.Focus();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private async Task<bool> ExecuteWorkspaceCommand(CommandParseResult parsed)
+        {
+            string workspaceName = parsed.GetArgument("workspace") ?? string.Empty;
+            switch (parsed.Operation)
+            {
+                case "workspace-save":
+                    SaveWorkspaceFromCommand(workspaceName, allowOverwrite: false);
+                    return true;
+                case "workspace-save-force":
+                    SaveWorkspaceFromCommand(workspaceName, allowOverwrite: true);
+                    return true;
+                case "workspace-load":
+                    await LoadWorkspace(workspaceName);
+                    return true;
+                case "workspace-merge":
+                    if (await LoadWorkspace(workspaceName, true))
+                        Message("Merged workspace: " + workspaceName);
+                    return true;
+                case "workspace-delete":
+                    if (DeleteWorkspace(workspaceName))
+                        Message("Deleted workspace: " + workspaceName);
+                    return true;
+                case "workspace-rename":
+                    RenameWorkspace(new[] { parsed.GetArgument("oldName") ?? string.Empty, parsed.GetArgument("newName") ?? string.Empty });
+                    return true;
+                case "workspace-preview":
+                    await PreviewWorkspace(workspaceName.Trim());
+                    return true;
+                case "workspace-origin":
+                    RevealWorkspaceName();
+                    return true;
+                case "workspace-origin-save":
+                    if (imageOriginalWorkspaceName == null)
+                    {
+                        Message("This window does not belong to a workspace");
+                        return true;
+                    }
+                    if (IsReservedWorkspaceName(imageOriginalWorkspaceName))
+                    {
+                        Message($"Cannot save to origin: workspace origin is a system workspace: {imageOriginalWorkspaceName}");
+                        return true;
+                    }
+                    SaveWorkspaceFromCommand(imageOriginalWorkspaceName, allowOverwrite: true);
+                    return true;
+                case "workspace-origin-load":
+                    if (imageOriginalWorkspaceName == null)
+                        Message("This window does not belong to a workspace");
+                    else
+                        await LoadWorkspace(imageOriginalWorkspaceName);
+                    return true;
+                case "workspace-list-current":
+                    if (string.IsNullOrEmpty(currentlyDisplayedImagePath))
+                    {
+                        Message("No media is loaded.");
+                        return true;
+                    }
+                    ListWorkspacesContainingPath(currentlyDisplayedImagePath);
+                    return true;
+                case "workspace-list-path":
+                    string path = parsed.GetArgument("path")!.Trim();
+                    if (!Path.IsPathRooted(path) && currentDirectory != null)
+                        path = Path.GetFullPath(path, currentDirectory);
+                    ListWorkspacesContainingPath(path);
+                    return true;
+                case "workspace-reveal":
+                    RevealDirectoryInExplorer(workspaceFilesPath);
+                    return true;
+                case "workspace-undoload":
+                    await UndoLoad();
+                    return true;
+                case "workspace-quicksave":
+                    Quicksave();
+                    return true;
+                case "workspace-quicksave-close":
+                    if (Quicksave())
+                    {
+                        CloseAllOtherInstances();
+                        Close();
+                    }
+                    return true;
+                case "workspace-quickload":
+                    await Quickload();
+                    return true;
+                case "workspace-quickmerge":
+                    await Quickmerge();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void SaveWorkspaceFromCommand(string name, bool allowOverwrite)
+        {
+            (int windowCount, int pageCount, string? error) = SaveWorkspace(name, allowOverwrite);
+            if (windowCount == -1)
+                Message("Failed to save workspace due to unexpected error: " + error);
+            else if (windowCount == -2)
+                Message("A workspace by that name already exists. To overwrite it, use command 'ws s! [name]'");
+            else if (windowCount == -3)
+                Message("You're trying to save a workspace using a reserved name, which is not allowed. Did you mean to use a different command?");
+            else
+                Message($"Saved workspace {name} with {windowCount} windows and {pageCount} pages");
+        }
+
+        private bool ExecuteFilmstripCommand(CommandParseResult parsed)
+        {
+            string[] filesToShow;
+            try
+            {
+                switch (parsed.Operation)
                 {
-                    { "space", "Space" },
-                    { "enter", "Enter" },
-                    { "return", "Enter" },
-                    { "esc", "Escape" },
-                    { "escape", "Escape" },
-                    { "pgup", "PageUp" },
-                    { "pageup", "PageUp" },
-                    { "pgdn", "PageDown" },
-                    { "pagedown", "PageDown" },
-                    { "left", "Left" },
-                    { "right", "Right" },
-                    { "up", "Up" },
-                    { "down", "Down" },
-                    { "tab", "Tab" },
-                    { "backspace", "Back" },
-                    { "bksp", "Back" },
-                    { "del", "Delete" },
-                    { "delete", "Delete" },
-                    { "home", "Home" },
-                    { "end", "End" }
-                };
+                    case "filmstrip-current-directory":
+                        filesToShow = FilmStripControl.HasRetainedContents
+                            ? FilmStripControl.GetRetainedContents ?? Array.Empty<string>()
+                            : imageFiles ?? Array.Empty<string>();
+                        break;
+                    case "filmstrip-directory":
+                        filesToShow = imageFiles ?? Array.Empty<string>();
+                        break;
+                    case "filmstrip-recent":
+                        filesToShow = (recentFiles ?? new List<string>()).ToArray();
+                        break;
+                    case "filmstrip-bookmarks":
+                        filesToShow = bookmarkManager?.GetBookmarks().ToArray() ?? Array.Empty<string>();
+                        break;
+                    case "filmstrip-preview":
+                        string workspaceName = parsed.GetArgument("workspace")!.Trim();
+                        string workspacePath = Path.Combine(workspaceFilesPath, workspaceName + ".cloudless");
+                        if (!File.Exists(workspacePath))
+                        {
+                            Message("Workspace file not found: " + workspaceName);
+                            return false;
+                        }
 
-                string tryName = normalized;
-                if (aliasMap.ContainsKey(normalized))
-                    tryName = aliasMap[normalized];
+                        string json = File.ReadAllText(workspacePath);
+                        var workspace = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
+                        if (workspace == null)
+                        {
+                            Message("Invalid workspace file: " + workspaceName);
+                            return false;
+                        }
+                        filesToShow = workspace.CloudlessWindows.Select(window => window.ImagePath).ToArray();
+                        break;
+                    default:
+                        return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Message("Error preparing filmstrip: " + ex.Message);
+                return false;
+            }
+
+            if (_filmStripWindow == null || !_filmStripWindow.IsVisible)
+                ToggleFilmStrip(skipPopulation: true);
+
+            if (_filmStripWindow == null)
+            {
+                Message("Failed to open filmstrip window.");
+                return false;
+            }
+
+            NonstandardPopulateFilmStrip(filesToShow);
+            return true;
+        }
+
+        private bool ExecuteWindowDimensionsCommand(CommandParseResult parsed)
+        {
+            if (parsed.Operation == "window-dimensions-query")
+            {
+                Message($"Current window dimensions: {Width:0.##} x {Height:0.##}");
+                return true;
+            }
+
+            double width = Width;
+            double height = Height;
+            if (!TryApplyDimension(parsed.GetArgument("width")!, ref width) ||
+                !TryApplyDimension(parsed.GetArgument("height")!, ref height))
+            {
+                Message(CommandSyntaxCatalog.GetDimensionUsageMessage());
+                return false;
+            }
+
+            if (width <= 0 || height <= 0)
+            {
+                Message("Window dimensions must be greater than zero.");
+                return false;
+            }
+
+            ResizeWindow(width, height);
+            CenterWindowOnCurrentScreen();
+            return true;
+        }
+
+        private static bool TryApplyDimension(string value, ref double dimension)
+        {
+            if (value == "_")
+                return true;
+
+            if (!int.TryParse(value, out int amount))
+                return false;
+
+            if (value.StartsWith('+') || value.StartsWith('-'))
+                dimension += amount;
+            else
+                dimension = amount;
+
+            return true;
+        }
+
+        private bool ExecuteVideoTransportCommand(CommandParseResult parsed)
+        {
+            switch (parsed.Operation)
+            {
+                case "video-mute":
+                    ToggleMute(setTo: true);
+                    return true;
+                case "video-unmute":
+                    ToggleMute(setTo: false);
+                    return true;
+                case "video-volume-query":
+                    if (VideoHost.Content is IVideoPlayer volumePlayer)
+                        Message($"Current volume: {(int)Math.Round(volumePlayer.GetVolume())}/100");
+                    return true;
+                case "video-volume-set":
+                    if (!double.TryParse(parsed.GetArgument("number"), out double requestedVolume))
+                    {
+                        Message("Invalid volume value. Provide a number between 0 and 100.");
+                        return true;
+                    }
+                    int volume = (int)Math.Round(requestedVolume);
+                    if (volume < 0 || volume > 100)
+                    {
+                        Message("Volume must be from 0 to 100.");
+                        return true;
+                    }
+                    if (VideoHost.Content is not IVideoPlayer volumeTarget)
+                    {
+                        Message("Command not recognized");
+                        return false;
+                    }
+                    volumeTarget.SetVolume(volume);
+                    _windowVideoVolume = volume;
+                    Message($"Set volume to: {volume}/100");
+                    return true;
+                case "video-speed-query":
+                case "video-speed-set":
+                    if (VideoHost.Content is not IVideoPlayer speedPlayer)
+                    {
+                        Message("No video is loaded");
+                        return true;
+                    }
+                    if (parsed.Operation == "video-speed-query")
+                    {
+                        double currentSpeed = speedPlayer.GetPlaybackSpeed();
+                        Message($"Current playback speed: {currentSpeed.ToString("0.##", CultureInfo.InvariantCulture)}×");
+                        return true;
+                    }
+                    double speed = double.Parse(parsed.GetArgument("multiplier")!, NumberStyles.Float, CultureInfo.InvariantCulture);
+                    if (!speedPlayer.SetPlaybackSpeed(speed))
+                    {
+                        Message("The video player could not set that playback speed.");
+                        return true;
+                    }
+                    Message($"Set playback speed to {speed.ToString("0.##", CultureInfo.InvariantCulture)}×");
+                    return true;
+                case "video-audio-sync-query":
+                case "video-audio-sync-set":
+                    HandleVideoTrackDelayCommand("audio", parsed.GetArgument("offset") ?? string.Empty, isSubtitle: false);
+                    return true;
+                case "video-subtitle-sync-query":
+                case "video-subtitle-sync-set":
+                    HandleVideoTrackDelayCommand("subtitle", parsed.GetArgument("offset") ?? string.Empty, isSubtitle: true);
+                    return true;
+                case "video-play":
+                    return ExecuteVideoPlaybackToggle(pause: false);
+                case "video-pause":
+                    return ExecuteVideoPlaybackToggle(pause: true);
+                case "video-sync":
+                    if (VideoHost.Content is not IVideoPlayer)
+                    {
+                        Message("No video is loaded");
+                        return false;
+                    }
+                    SetSync(true);
+                    Message("Added this window to the page sync group");
+                    return true;
+                case "video-unsync":
+                    SetSync(false);
+                    Message("Removed this window from the page sync group");
+                    return true;
+                case "video-seek-status":
+                case "video-seek-previous":
+                case "video-seek-absolute":
+                case "video-seek-forward":
+                case "video-seek-backward":
+                    return ExecuteSeekCommand(parsed);
+                default:
+                    return false;
+            }
+        }
+
+        private bool ExecuteVideoPlaybackToggle(bool pause)
+        {
+            string commandName = pause ? "pause" : "play";
+            string ext = Path.GetExtension(currentlyDisplayedImagePath) ?? string.Empty;
+            if (!FileTypeManager.IsVideoFile(ext))
+            {
+                Message($"The '{commandName}' command only works when a video is loaded");
+                return true;
+            }
+
+            if (VideoHost.Content is not IVideoPlayer videoPlayer)
+            {
+                Message("No video player available");
+                return true;
+            }
+
+            try
+            {
+                bool isPaused = videoPlayer.IsPaused();
+                if (pause && !isPaused)
+                {
+                    videoPlayer.TogglePause();
+                    Message("Paused video playback");
+                }
+                else if (!pause && isPaused)
+                {
+                    videoPlayer.TogglePause();
+                    Message("Resumed video playback");
+                }
                 else
                 {
-                    // handle f1..f12, numpad keys like 'num1'
-                    if (Regex.IsMatch(normalized, "^f\\d{1,2}$"))
-                        tryName = normalized.ToUpper(); // F1 etc.
-                    else if (Regex.IsMatch(normalized, "^num\\d$"))
-                        tryName = normalized.Substring(3).Insert(0, "NumPad");
-                }
-
-                bool parsed = Enum.TryParse<Key>(tryName, ignoreCase: true, out finalHotkey);
-                if (!parsed)
-                {
-                    // try uppercase token directly
-                    parsed = Enum.TryParse<Key>(keyToken, ignoreCase: true, out finalHotkey);
-                }
-
-                if (!parsed)
-                {
-                    Message($"Failed to parse hotkey name: '{keyToken}'. Try names like 'left', 'space', 'f1' or a single character.");
-                    return;
+                    Message(pause ? "Video is already paused" : "Video is already playing");
                 }
             }
+            catch (Exception ex)
+            {
+                Message($"Failed to {commandName} video: {ex.Message}");
+            }
 
-            await SimulateKeyEvent(finalHotkey, shift, ctrl, alt);
+            return true;
+        }
+
+        private bool ExecuteSeekCommand(CommandParseResult parsed)
+        {
+            string ext = Path.GetExtension(currentlyDisplayedImagePath)?.ToLowerInvariant() ?? string.Empty;
+            bool isVideo = ext is ".webm" or ".mkv" or ".mp4" or ".avi" or ".mov";
+            if (!isVideo)
+            {
+                Message("The 'seek' command only works when a video is loaded");
+                return true;
+            }
+
+            if (VideoHost.Content is not IVideoPlayer videoPlayer)
+            {
+                Message("No video player available");
+                return true;
+            }
+
+            if (parsed.Operation == "video-seek-previous")
+            {
+                TimeSpan? previousPosition = VideoPlaybackPositionStore.GetPosition(currentlyDisplayedImagePath);
+                if (!previousPosition.HasValue)
+                {
+                    Message("No previous closed position is saved for this video.");
+                    return true;
+                }
+
+                TimeSpan target = previousPosition.Value;
+                TimeSpan duration = videoPlayer.GetDuration();
+                if (duration > TimeSpan.Zero && target > duration)
+                    target = duration;
+
+                videoPlayer.SeekTo(target);
+                Message($"Seeking to previous closed position: {FormatTimeSpan(target)}");
+                return true;
+            }
+
+            if (parsed.Operation == "video-seek-status")
+            {
+                TimeSpan position = videoPlayer.GetPosition();
+                TimeSpan duration = videoPlayer.GetDuration();
+                Message($"Current position: {position}, Duration: {duration}");
+                return true;
+            }
+
+            string timeText = parsed.GetArgument("time") ?? string.Empty;
+            if (parsed.Operation is "video-seek-forward" or "video-seek-backward")
+            {
+                char sign = parsed.Operation == "video-seek-forward" ? '+' : '-';
+                TimeSpan? delta = TryParseTimeString(timeText[1..].Trim());
+                if (!delta.HasValue)
+                {
+                    Message($"Could not parse relative time '{timeText}'. Use formats like: '+90' (seconds), '+1:30' (m:s), '-30s'");
+                    return true;
+                }
+
+                TimeSpan current = videoPlayer.GetPosition();
+                TimeSpan target = sign == '+' ? current + delta.Value : current - delta.Value;
+                if (target < TimeSpan.Zero)
+                    target = TimeSpan.Zero;
+                TimeSpan duration = videoPlayer.GetDuration();
+                if (duration > TimeSpan.Zero && target > duration)
+                    target = duration;
+                videoPlayer.SeekTo(target);
+                string direction = sign == '+' ? "forward" : "backward";
+                Message($"Seeking {direction} by {FormatTimeSpan(delta.Value)} to {FormatTimeSpan(target)} (was {FormatTimeSpan(current)})");
+                return true;
+            }
+
+            TimeSpan? targetTime = TryParseTimeString(timeText);
+            if (!targetTime.HasValue)
+            {
+                Message($"Could not parse time '{timeText}'. Use formats like: '90' (seconds), '1:30' (m:s), '1:30:45' (h:m:s), or '1h30m45s'");
+                return true;
+            }
+            if (targetTime.Value < TimeSpan.Zero)
+            {
+                Message("Time cannot be negative");
+                return true;
+            }
+
+            TimeSpan durationAbs = videoPlayer.GetDuration();
+            if (durationAbs > TimeSpan.Zero && targetTime.Value > durationAbs)
+            {
+                Message($"Seek time {FormatTimeSpan(targetTime.Value)} exceeds video duration of {FormatTimeSpan(durationAbs)}");
+                return true;
+            }
+            videoPlayer.SeekTo(targetTime.Value);
+            Message($"Seeking to {FormatTimeSpan(targetTime.Value)}");
+            return true;
+        }
+
+        private bool ExecuteVideoPositionCommand(CommandParseResult parsed)
+        {
+            var videoPlayer = VideoHost.Content as IVideoPlayer;
+            switch (parsed.Operation)
+            {
+                case "video-set-start":
+                case "video-set-end":
+                case "video-set-flag":
+                    if (videoPlayer == null)
+                    {
+                        Message("No video is loaded");
+                        return false;
+                    }
+
+                    TimeSpan position = videoPlayer.GetPosition();
+                    if (parsed.Operation == "video-set-start")
+                    {
+                        _videoLoopStart = position;
+                        videoPlayer.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                        UpdateVideoControls();
+                        Message($"Set loop start to {position}");
+                    }
+                    else if (parsed.Operation == "video-set-end")
+                    {
+                        _videoLoopEnd = position;
+                        videoPlayer.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                        UpdateVideoControls();
+                        Message($"Set loop end to {position}");
+                    }
+                    else
+                    {
+                        _videoFlag = position;
+                        UpdateVideoControls();
+                        Message($"Set flag to {position}");
+                    }
+                    return true;
+
+                case "video-clear-start":
+                case "video-clear-end":
+                    if (videoPlayer == null)
+                    {
+                        Message("No video is loaded");
+                        return false;
+                    }
+
+                    if (parsed.Operation == "video-clear-start")
+                    {
+                        _videoLoopStart = null;
+                        videoPlayer.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                        Message("Reset loop start");
+                    }
+                    else
+                    {
+                        _videoLoopEnd = null;
+                        videoPlayer.SetLoopRange(_videoLoopStart, _videoLoopEnd);
+                        Message("Reset loop end");
+                    }
+                    UpdateVideoControls();
+                    return true;
+
+                case "video-clear-flag":
+                    _videoFlag = null;
+                    UpdateVideoControls();
+                    Message("Cleared flag");
+                    return true;
+
+                case "video-goto-start":
+                    if (videoPlayer == null)
+                    {
+                        Message("No video is loaded");
+                        return true;
+                    }
+                    SeekToVideoPosition(videoPlayer, _videoLoopStart ?? TimeSpan.Zero, "start");
+                    return true;
+
+                case "video-goto-end":
+                    if (videoPlayer == null)
+                    {
+                        Message("No video is loaded");
+                        return true;
+                    }
+
+                    TimeSpan? endTarget = _videoLoopEnd;
+                    if (!endTarget.HasValue)
+                    {
+                        try
+                        {
+                            TimeSpan duration = videoPlayer.GetDuration();
+                            if (duration <= TimeSpan.Zero)
+                            {
+                                Message("Cannot determine video duration to seek to end");
+                                return true;
+                            }
+                            endTarget = duration;
+                        }
+                        catch (Exception ex)
+                        {
+                            Message($"Failed to determine video duration: {ex.Message}");
+                            return true;
+                        }
+                    }
+                    SeekToVideoPosition(videoPlayer, endTarget.Value, "end");
+                    return true;
+
+                case "video-goto-flag":
+                    if (videoPlayer == null)
+                    {
+                        Message("No video is loaded");
+                        return false;
+                    }
+                    if (!_videoFlag.HasValue)
+                    {
+                        Message("No flag is set for this window");
+                        return false;
+                    }
+                    try
+                    {
+                        videoPlayer.SeekTo(_videoFlag.Value);
+                        Message($"Seeked to flag: {_videoFlag.Value}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Message("Failed to seek to flag: " + ex.Message);
+                    }
+                    return true;
+
+                case "video-set-trigger":
+                    int triggerCount = int.TryParse(parsed.GetArgument("count"), out int parsedCount) ? parsedCount : 1;
+                    SetSlideshowTrigger(triggerCount);
+                    Message($"Marked this window as a slideshow trigger (requires {triggerCount} hit{(triggerCount > 1 ? "s" : "")})");
+                    return true;
+
+                case "video-clear-trigger":
+                    SetSlideshowTrigger(0);
+                    Message("Cleared slideshow trigger for this window");
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private void SeekToVideoPosition(IVideoPlayer videoPlayer, TimeSpan target, string positionName)
+        {
+            try
+            {
+                videoPlayer.SeekTo(target);
+                Message($"Seeked to {positionName}: {FormatTimeSpan(target)}");
+            }
+            catch (Exception ex)
+            {
+                Message($"Failed to seek to {positionName}: {ex.Message}");
+            }
+        }
+
+        private bool ExecutePageCommand(CommandParseResult parsed)
+        {
+            switch (parsed.Operation)
+            {
+                case "page-status":
+                    Message($"On page {windowPageIndex}. Non-empty pages: " + string.Join(", ", GetNonemptyPages()));
+                    return true;
+                case "page-arrange":
+                    BringActivePagesTogether();
+                    return true;
+            }
+
+            string targetToken = parsed.GetArgument("target") ?? string.Empty;
+            if (parsed.Operation == "page-view" && targetToken is "na" or "pa" or "ni" or "pi")
+            {
+                int? activePage = GetPageIndexFromTargetToken(targetToken);
+                if (activePage.HasValue)
+                    SwapViewToPage(activePage.Value);
+                else if (targetToken is "na" or "pa")
+                    Message("There are no other active pages.");
+                else
+                    Message("There are no other inactive pages.");
+                return true;
+            }
+
+            int? resolvedTarget = GetPageIndexFromTargetToken(targetToken);
+            if (!resolvedTarget.HasValue)
+            {
+                Message("Could not resolve the page target. See command palette reference.");
+                return false;
+            }
+
+            int target = resolvedTarget.Value;
+            switch (parsed.Operation)
+            {
+                case "page-view":
+                    SwapViewToPage(target);
+                    return true;
+                case "page-send-window":
+                    SendWindowToPage(target);
+                    return true;
+                case "page-bring-window":
+                    SendWindowToPage(target);
+                    SwapViewToPage(target);
+                    return true;
+                case "page-send-page":
+                    SendPageToPage(target);
+                    return true;
+                case "page-bring-page":
+                    SendPageToPage(target);
+                    SwapViewToPage(target);
+                    return true;
+                case "page-clear":
+                    ClearPage(target);
+                    return true;
+                case "page-swap":
+                    int? secondTarget = GetPageIndexFromTargetToken(parsed.GetArgument("secondTarget") ?? string.Empty);
+                    if (!secondTarget.HasValue)
+                    {
+                        Message("Swap command requires a valid second page target. Usage: p <page1> swap <page2>");
+                        return false;
+                    }
+                    SwapPageWithPage(target, secondTarget.Value);
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private async Task ReverseImageSearch(string filePath, string serviceArg) {
@@ -3452,7 +2512,7 @@ namespace Cloudless
         /// - "30m45s" (without hours)
         /// Returns null if parsing fails.
         /// </summary>
-        private TimeSpan? TryParseTimeString(string timeStr)
+        internal static TimeSpan? TryParseTimeString(string timeStr)
         {
             if (string.IsNullOrWhiteSpace(timeStr))
                 return null;
@@ -3480,7 +2540,7 @@ namespace Cloudless
             return null;
         }
 
-        private TimeSpan? TryParseLabeled(string timeStr)
+        private static TimeSpan? TryParseLabeled(string timeStr)
         {
             double hours = 0, minutes = 0, seconds = 0;
             string remaining = timeStr;
@@ -3515,7 +2575,7 @@ namespace Cloudless
             return null;
         }
 
-        private TimeSpan? TryParseColonSeparated(string timeStr)
+        private static TimeSpan? TryParseColonSeparated(string timeStr)
         {
             var parts = timeStr.Split(':');
 

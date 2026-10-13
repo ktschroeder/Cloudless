@@ -26,6 +26,83 @@ public sealed class CommandSuggestionProviderTests
     }
 
     [Fact]
+    public void PrefersHotkeyOverItsShortAliasAndDoesNotSuggestMalformedPageCommands()
+    {
+        var suggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("h");
+        Assert.Equal("hotkey", suggestions.First());
+        Assert.DoesNotContain("hk", suggestions);
+
+        Assert.Contains("page", Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("p"));
+        Assert.Equal("fs workspace", MainWindow.GetCommandCompletion("fs w", "fs w".Length));
+
+        var slideshowSuggestions = MainWindow.GetCommandCompletions("s", 1);
+        Assert.Contains("slideshow", slideshowSuggestions);
+        Assert.DoesNotContain("ss", slideshowSuggestions);
+
+        var videoSlideshowSuggestions = MainWindow.GetCommandCompletions("set s", "set s".Length);
+        Assert.Contains("set slideshow", videoSlideshowSuggestions);
+        Assert.DoesNotContain("set ss", videoSlideshowSuggestions);
+
+        var bSuggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("b");
+        Assert.DoesNotContain("b page", bSuggestions);
+    }
+
+    [Fact]
+    public void DoesNotSuggestNumericPageTargetsButStillAcceptsThem()
+    {
+        var suggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("p ");
+
+        Assert.DoesNotContain(suggestions, suggestion =>
+            int.TryParse(suggestion.Split(' ', StringSplitOptions.RemoveEmptyEntries).Last(), out _));
+        Assert.Contains("p this", suggestions);
+        Assert.DoesNotContain("p t", suggestions);
+        Assert.Contains("p previous", suggestions);
+        Assert.DoesNotContain("p prev", suggestions);
+        Assert.Contains("p next", suggestions);
+        Assert.DoesNotContain("p n", suggestions);
+        Assert.True(CommandSyntaxValidator.IsValidCommand("p 2"));
+    }
+
+    [Fact]
+    public void ReferenceRowsRemainCuratedAndIndependentOfCatalogForms()
+    {
+        var tabs = Cloudless.ReferenceData.CommandReferenceData.GetTabs();
+        var tagItems = tabs.Single(tab => tab.Header == "Tags").Items;
+        var advancedItems = tabs.Single(tab => tab.Header == "Advanced").Items;
+
+        Assert.Contains(tagItems, item => item.Key == "filmstrip | fs tag | t [query]");
+        Assert.Contains(tagItems, item => item.Key == "open | o tag | t [query]");
+        Assert.Contains(advancedItems, item => item.Key == "hotkey | hk [modifiers] [key]");
+    }
+
+    [Fact]
+    public void CompletesVideoPositionCommandsFromTheirCatalogGrammar()
+    {
+        Assert.Equal("set start", MainWindow.GetCommandCompletion("set s", "set s".Length));
+        Assert.Equal("clear flag", MainWindow.GetCommandCompletion("clear f", "clear f".Length));
+        Assert.Equal("goto start", MainWindow.GetCommandCompletion("goto ", "goto ".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("set trigger ", "set trigger ".Length));
+    }
+
+    [Fact]
+    public void SuggestsReverseSearchServicesFromTheCatalogGrammar()
+    {
+        Assert.Equal("ris google", MainWindow.GetCommandCompletion("ris g", "ris g".Length));
+        Assert.Equal("ris google", MainWindow.GetCommandCompletion("ris ", "ris ".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("ris invalid", "ris invalid".Length));
+    }
+
+    [Fact]
+    public void SuggestsTheNextVideoCommandLiteralWithoutInventingNumericValues()
+    {
+        Assert.Equal("audio sync", MainWindow.GetCommandCompletion("audio", "audio".Length));
+        Assert.Equal("subtitle sync", MainWindow.GetCommandCompletion("subtitle ", "subtitle ".Length));
+        Assert.Equal("seek ?", MainWindow.GetCommandCompletion("seek ", "seek ".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("volume ", "volume ".Length));
+        Assert.Null(MainWindow.GetCommandCompletion("audio sync ", "audio sync ".Length));
+    }
+
+    [Fact]
     public void OffersLiteralOptionsButDoesNotInventParameterValues()
     {
         Assert.Equal("seek ?", Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestion("seek "));
@@ -54,6 +131,8 @@ public sealed class CommandSuggestionProviderTests
     [InlineData("all cl", "all close")]
     [InlineData("others cl", "others close")]
     [InlineData("c3 set cl", "c3 set close")]
+    [InlineData("macro record demo cl", "macro record demo close")]
+    [InlineData("close; cl", "close; close")]
     public void SuggestsCommandsForCommandValuedParameters(string input, string expected)
     {
         Assert.Equal(expected, MainWindow.GetCommandCompletion(input, input.Length));
@@ -80,7 +159,7 @@ public sealed class CommandSuggestionProviderTests
         Assert.Equal("filmstrip", MainWindow.GetCommandCompletion("fil", 3));
         Assert.Equal("filmstrip directory", MainWindow.GetCommandCompletion("filmstrip", "filmstrip".Length));
         Assert.Equal(
-            new[] { "filmstrip directory", "filmstrip recent", "filmstrip bookmarks", "filmstrip preview" },
+            new[] { "filmstrip directory", "filmstrip recent", "filmstrip bookmarks", "filmstrip workspace" },
             MainWindow.GetCommandCompletions("filmstrip ", "filmstrip ".Length).Take(4));
         var shortAliasSuggestions = MainWindow.GetCommandCompletions("fs ", "fs ".Length);
         Assert.Contains("fs bookmarks", shortAliasSuggestions);
