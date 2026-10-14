@@ -624,9 +624,11 @@ namespace Cloudless
                 top = _ownerWindow.Top + _ownerWindow.ActualHeight - this.ActualHeight - margin;
             }
 
-            this.Width = targetWidth;
-            this.Left = left;
-            this.Top = top;
+            const int DROPSHADOW_OFFSET = 13;
+
+            this.Width = targetWidth + 2 * DROPSHADOW_OFFSET;
+            this.Left = left - DROPSHADOW_OFFSET;
+            this.Top = top + DROPSHADOW_OFFSET;
         }
 
         private void Owner_LocationOrSizeChanged(object? sender, EventArgs e)
