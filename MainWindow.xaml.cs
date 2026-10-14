@@ -2,6 +2,7 @@
 using Cloudless.Properties;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -135,6 +136,7 @@ namespace Cloudless
         private CloudlessWindowState? stateUponMinimizing = null;
 
         private PreloadManager? _preloadManager;
+        private SelectionOverlayWindow? _selectionOverlayWindow;
 
         private int windowPageIndex = 0;  // "0" as not-yet-assigned. Valid indices here are 1-8.
 
@@ -317,6 +319,8 @@ namespace Cloudless
             _preloadManager = new PreloadManager(Dispatcher);
 
             Closing += (sender, e) => OnClose();
+            Closed += (sender, e) => GlobalMouseModeManager.Unregister(this);
+            GlobalMouseModeManager.Register(this);
 
             // Subscribe to global slideshow events to message this window when slideshow state changes
             SlideshowManager.SlideshowStarted += OnSlideshowStarted;
@@ -726,7 +730,6 @@ namespace Cloudless
 
         private DispatcherTimer _rightClickHoldTimer;
         private DispatcherTimer _middleClickHoldTimer;
-        public bool SkipNextContextMenu = false;
 
         private void Window_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -737,8 +740,11 @@ namespace Cloudless
             _rightClickHoldTimer.Tick += (s, args) =>
             {
                 _rightClickHoldTimer.Stop();
+                if (Mouse.RightButton != MouseButtonState.Pressed)
+                    return;
+
                 ToggleMouseControlMode();
-                SkipNextContextMenu = true;
+                GlobalMouseModeManager.SuppressNextContextMenu();
                 e.Handled = true;
             };
             _rightClickHoldTimer.Start();
@@ -751,10 +757,8 @@ namespace Cloudless
 
         private void Window_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            if (SkipNextContextMenu)
+            if (GlobalMouseModeManager.ConsumeContextMenuSuppression())
                 e.Handled = true;
-
-            SkipNextContextMenu = false;
         }
 
         // Toggle play/pause when space is pressed while focus is on the video control
@@ -777,38 +781,74 @@ namespace Cloudless
             }
         }
 
-        public bool MouseControlMode = false;
-        public bool MouseCommandMode = false;
+        public bool MouseControlMode => GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Control;
+        public bool MouseCommandMode => GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection;
+        private Cursor? _mouseCommandCursor;
+
         private void ToggleMouseControlMode()
         {
-            if (MouseControlMode)
-            {
-                this.Cursor = Cursors.Arrow;
-                MouseControlMode = false;
-            }
-            else if (!MouseControlMode) 
-            {
-                this.Cursor = Cursors.ScrollAll;
-                MouseControlMode = true;
-                MouseCommandMode = false;
-            }
+            GlobalMouseModeManager.SetMode(MouseControlMode
+                ? CloudlessMouseMode.Normal
+                : CloudlessMouseMode.Control);
         }
+
         private void ToggleMouseCommandMode()
         {
-            if (MouseCommandMode)
-            {
-                this.Cursor = Cursors.Arrow;
-                MouseCommandMode = false;
-            }
-            else if (!MouseCommandMode)
-            {
-                var streamInfo = Application.GetResourceStream(new Uri("custom_cursor.cur", UriKind.Relative));
-                this.Cursor = new Cursor(streamInfo.Stream);
+            GlobalMouseModeManager.SetMode(MouseCommandMode
+                ? CloudlessMouseMode.Normal
+                : CloudlessMouseMode.Selection);
+        }
 
-                //this.Cursor = Cursors.Cross;
-                MouseControlMode = false;
-                MouseCommandMode = true;
+        internal void ApplyGlobalMouseModeCursor(CloudlessMouseMode mode)
+        {
+            if (mode == CloudlessMouseMode.Normal)
+            {
+                Cursor = Cursors.Arrow;
+                _cursorIsHidden = false;
+                return;
             }
+
+            _cursorIdleTimer?.Stop();
+            _cursorIsHidden = false;
+            Cursor = mode == CloudlessMouseMode.Control ? Cursors.ScrollAll : GetMouseCommandCursor();
+        }
+
+        internal void RefreshGlobalMouseModeCursor()
+        {
+            if (GlobalMouseModeManager.CurrentMode != CloudlessMouseMode.Normal)
+                ApplyGlobalMouseModeCursor(GlobalMouseModeManager.CurrentMode);
+        }
+
+        internal void SetWindowSelected(bool isSelected)
+        {
+            if (isSelected)
+                _selectionOverlayWindow ??= new SelectionOverlayWindow(this);
+
+            _selectionOverlayWindow?.SetSelected(isSelected);
+        }
+
+        private Cursor GetMouseCommandCursor()
+        {
+            if (_mouseCommandCursor != null)
+                return _mouseCommandCursor;
+
+            try
+            {
+                var streamInfo = Application.GetResourceStream(
+                    // use if issue (TODO): var streamInfo = Application.GetResourceStream(new Uri("custom_cursor.cur", UriKind.Relative));
+                    new Uri("pack://application:,,,/Cloudless;component/custom_cursor.cur", UriKind.Absolute));
+                if (streamInfo?.Stream == null)
+                    return Cursors.Cross;
+
+                using (streamInfo.Stream)
+                    _mouseCommandCursor = new Cursor(streamInfo.Stream);
+            }
+            catch (IOException)
+            {
+                _mouseCommandCursor = Cursors.Cross;
+            }
+
+            return _mouseCommandCursor;
         }
 
         private MenuItem CreateFullWidthSeparator()

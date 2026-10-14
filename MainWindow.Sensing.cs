@@ -31,6 +31,21 @@ namespace Cloudless
         public Point TargetCenterForQuickCommandDisplay;
         private bool isPanningVideo = false;
         private Point videoPanLastMousePos;
+
+        private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection && e.ChangedButton == MouseButton.Left)
+            {
+                GlobalMouseModeManager.ToggleSelection(this);
+                e.Handled = true;
+            }
+        }
+
+        private void Window_MouseEnter(object sender, MouseEventArgs e)
+        {
+            RefreshGlobalMouseModeCursor();
+        }
+
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             // Ensure video controls window stays on top if it's currently visible
@@ -115,6 +130,7 @@ namespace Cloudless
         private async void Window_MouseMove(object sender, MouseEventArgs e)
         {
             ShowCursorIfHidden();
+            RefreshGlobalMouseModeCursor();
 
             // Route to selection mode if active
             if (isDrawingSelection)
@@ -1314,7 +1330,7 @@ namespace Cloudless
         }
         private async void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (!SkipNextContextMenu)
+            if (!GlobalMouseModeManager.ShouldSuppressNextContextMenu)
             {
                 await UpdateZoomMenuHeaderAsync();
                 UpdateVideoTrackMenus();
@@ -1342,6 +1358,9 @@ namespace Cloudless
             _middleClickHoldTimer.Tick += (s, args) =>
             {
                 _middleClickHoldTimer.Stop();
+                if (Mouse.MiddleButton != MouseButtonState.Pressed)
+                    return;
+
                 ToggleMouseCommandMode();
                 //e.Handled = true;
             };

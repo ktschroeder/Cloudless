@@ -1338,6 +1338,9 @@ namespace Cloudless
 
         private void HideCursorIfVideoPlaying()
         {
+            if (GlobalMouseModeManager.CurrentMode != CloudlessMouseMode.Normal)  //TODO revisit, maybe lose this
+                return;
+
             // Only hide cursor if:
             // 1. A video is currently playing
             // 2. The cursor is over the main window (not the controls)
@@ -1369,8 +1372,11 @@ namespace Cloudless
         {
             if (_cursorIsHidden)
             {
-                this.Cursor = Cursors.Arrow;
                 _cursorIsHidden = false;
+                if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Normal)
+                    Cursor = Cursors.Arrow;
+                else
+                    ApplyGlobalMouseModeCursor(GlobalMouseModeManager.CurrentMode);
             }
 
             // Reset the idle timer when there's activity during video playback

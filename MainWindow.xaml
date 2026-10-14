@@ -10,6 +10,7 @@
         ResizeMode="CanResize"
         MouseDown="Window_MouseDown" 
         MouseMove="Window_MouseMove"
+        MouseEnter="Window_MouseEnter"
         MouseUp="Window_MouseUp"
         MouseRightButtonUp="Window_MouseRightButtonUp"
         MouseDoubleClick="Window_MouseDoubleClick"
@@ -21,6 +22,7 @@
         DragOver="Window_DragOver"
         Drop="Window_Drop"
         Loaded="Window_Loaded"
+        PreviewMouseDown="Window_PreviewMouseDown"
         PreviewMouseRightButtonDown="Window_PreviewMouseRightButtonDown"
         PreviewMouseRightButtonUp="Window_PreviewMouseRightButtonUp"
         ContextMenuOpening="Window_ContextMenuOpening">
@@ -87,7 +89,6 @@ VerticalAlignment="Center">
                         IsHitTestVisible="False"
                         Panel.ZIndex="99999998">
             </StackPanel>
-
 
             <!-- Context Menu -->
             <Grid.ContextMenu>

@@ -135,6 +135,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken QuickSaveClose = CommandToken.Literal("action", "c");
     private static readonly CommandToken QuickLoadRoot = CommandToken.Literal("command", "ql");
     private static readonly CommandToken QuickMergeRoot = CommandToken.Literal("command", "qm");
+    private static readonly CommandToken SelectionCountRoot = CommandToken.Literal("command", "sel");
     private static readonly CommandToken CloseRoot = CommandToken.Literal("command", "close", "c");
     private static readonly CommandToken CloseOriginRoot = CommandToken.Literal("command", "c");
     private static readonly CommandToken MinimizeRoot = CommandToken.Literal("command", "m");
@@ -661,6 +662,7 @@ internal static class CommandSyntaxCatalog
             new CommandForm("close-others", "Close all other windows.", CloseRoot, OthersAction),
             new CommandForm("close-empty", "Close all empty windows.", CloseRoot, EmptyAction),
             new CommandForm("close-origin", "Close windows from this window's workspace origin.", CloseOriginRoot, OriginAction),
+            new CommandForm("selection-count", "Show the number of selected windows.", SelectionCountRoot),
             new CommandForm("minimize-all", "Minimize all windows.", MinimizeRoot, AllAction),
             new CommandForm("minimize-others", "Minimize all other windows.", MinimizeRoot, OthersAction),
             new CommandForm("minimize-origin", "Minimize windows from this window's workspace origin.", MinimizeRoot, OriginAction),

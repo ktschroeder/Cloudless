@@ -45,6 +45,8 @@ public class CommandPaletteExecutionTests
             var originalRecentFiles = File.Exists(recentFilesPath) ? File.ReadAllBytes(recentFilesPath) : null;
             var videoPositionsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Cloudless", "video_positions.json");
             var originalVideoPositions = File.Exists(videoPositionsPath) ? File.ReadAllBytes(videoPositionsPath) : null;
+            MainWindow? modeInitiator = null;
+            MainWindow? lateModeWindow = null;
 
             try
             {
@@ -53,6 +55,53 @@ public class CommandPaletteExecutionTests
                 window.ExecuteCommand("fs p").GetAwaiter().GetResult();
                 Assert.Equal("A workspace name is required for a filmstrip preview.", window.LastMessage);
                 Assert.Equal(galleryCountBeforeInvalidPreview, Application.Current.Windows.OfType<GalleryWindow>().Count());
+
+                modeInitiator = new MainWindow("global-mouse-mode-probe", 400, 300, workspaceLoad: true);
+                typeof(MainWindow).GetMethod("ToggleMouseCommandMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(modeInitiator, null);
+                Assert.True(modeInitiator.MouseCommandMode);
+                Assert.True(window.MouseCommandMode);
+                Assert.NotSame(System.Windows.Input.Cursors.Cross, window.Cursor);
+                lateModeWindow = new MainWindow("global-mouse-mode-late-probe", 400, 300, workspaceLoad: true);
+                Assert.True(lateModeWindow.MouseCommandMode);
+                modeInitiator.Close();
+                modeInitiator = null;
+                Assert.Equal(CloudlessMouseMode.Selection, GlobalMouseModeManager.CurrentMode);
+                Assert.True(lateModeWindow.MouseCommandMode);
+                lateModeWindow.Close();
+                lateModeWindow = null;
+
+                var previewMouseDown = typeof(MainWindow).GetMethod(
+                    "Window_PreviewMouseDown",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var leftMouseDown = new System.Windows.Input.MouseButtonEventArgs(
+                    System.Windows.Input.Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    System.Windows.Input.MouseButton.Left)
+                {
+                    RoutedEvent = UIElement.PreviewMouseDownEvent
+                };
+                previewMouseDown!.Invoke(window, new object[] { window, leftMouseDown });
+                Assert.True(GlobalMouseModeManager.IsSelected(window));
+                var selectionOverlay = (Window)typeof(MainWindow)
+                    .GetField("_selectionOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetValue(window)!;
+                Assert.False(selectionOverlay.IsVisible);
+                Assert.False(selectionOverlay.ShowInTaskbar);
+                Assert.False(selectionOverlay.ShowActivated);
+                Assert.True(window.MouseCommandMode);
+                window.ExecuteCommand("sel").GetAwaiter().GetResult();
+                Assert.Equal("Selected windows: 1", window.LastMessage);
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Control);
+                Assert.True(window.MouseControlMode);
+                Assert.False(window.MouseCommandMode);
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Selection);
+                previewMouseDown.Invoke(window, new object[] { window, leftMouseDown });
+                Assert.False(GlobalMouseModeManager.IsSelected(window));
+                Assert.False(selectionOverlay.IsVisible);
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Normal);
+                window.ExecuteCommand("sel").GetAwaiter().GetResult();
+                Assert.Equal("Selected windows: 0", window.LastMessage);
 
                 window.ExecuteCommand(" DM 1 ; dm zoom ; dm best ; dm 4 ").GetAwaiter().GetResult();
                 Assert.Equal("BestFitWithoutZooming", Cloudless.Properties.Settings.Default.DisplayMode);
@@ -513,6 +562,11 @@ public class CommandPaletteExecutionTests
             }
             finally
             {
+                if (window != null && GlobalMouseModeManager.IsSelected(window))
+                    GlobalMouseModeManager.ToggleSelection(window);
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Normal);
+                modeInitiator?.Close();
+                lateModeWindow?.Close();
                 Cloudless.Properties.Settings.Default.DisplayMode = originalDisplayMode;
                 Cloudless.Properties.Settings.Default.ImageDirectorySortOrder = originalSortOrder;
                 Cloudless.Properties.Settings.Default.DisableSmartZoom = originalDisableSmartZoom;

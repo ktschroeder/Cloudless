@@ -1432,6 +1432,9 @@ namespace Cloudless
                 case "close-origin":
                     CloseWorkspaceOriginInstances();
                     return true;
+                case "selection-count":
+                    Message($"Selected windows: {GlobalMouseModeManager.SelectedWindowCount}");
+                    return true;
                 case "minimize-all":
                     MinimizeAllOtherInstances();
                     MinimizeWindow();
