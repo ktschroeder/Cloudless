@@ -1076,8 +1076,15 @@ namespace Cloudless
                 return ExecuteFilmstripCommand(parsed);
             }
 
-            if (parsed.DefinitionId == "gallery-tag-query")
-                return await HandleTagGallery(parsed.GetArgument("query")!);
+            if (parsed.DefinitionId == "gallery")
+            {
+                if (parsed.Operation == "gallery-tag-query")
+                    return await HandleTagGallery(parsed.GetArgument("query")!);
+                if (parsed.Operation == "gallery-directory")
+                    return HandleGalleryDirectory(null);
+                if (parsed.Operation == "gallery-directory-path")
+                    return HandleGalleryDirectory(parsed.GetArgument("path")!);
+            }
 
             if (parsed.DefinitionId == "window-dimensions")
                 return ExecuteWindowDimensionsCommand(parsed);
@@ -1599,31 +1606,10 @@ namespace Cloudless
                         filesToShow = imageFiles ?? Array.Empty<string>();
                         break;
                     case "filmstrip-directory-path":
-                        string targetPath = parsed.GetArgument("path")!.Trim();
-                        if (targetPath.Length >= 2 && targetPath[0] == '"' && targetPath[^1] == '"')
-                            targetPath = targetPath[1..^1];
-                        targetPath = Path.IsPathRooted(targetPath)
-                            ? Path.GetFullPath(targetPath)
-                            : Path.GetFullPath(targetPath, currentDirectory ?? Environment.CurrentDirectory);
-
                         string targetDirectory;
-                        if (Directory.Exists(targetPath))
-                        {
-                            targetDirectory = targetPath;
-                        }
-                        else if (File.Exists(targetPath))
-                        {
-                            targetDirectory = Path.GetDirectoryName(targetPath)!;
-                        }
-                        else
-                        {
-                            Message("Filmstrip path not found: " + targetPath);
+                        if (!TryResolveExplicitDirectoryPath(parsed.GetArgument("path")!, "Filmstrip", out targetDirectory))
                             return false;
-                        }
-
-                        filesToShow = Directory.GetFiles(targetDirectory)
-                            .Where(IsSupportedImageFile)
-                            .ToArray();
+                        filesToShow = GetSupportedMediaFilesInDirectory(targetDirectory);
                         break;
                     case "filmstrip-recent":
                         filesToShow = (recentFiles ?? new List<string>()).ToArray();

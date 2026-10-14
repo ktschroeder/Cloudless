@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows;
@@ -139,6 +140,35 @@ namespace Cloudless
             if (_filmStripWindow == null || !_filmStripWindow.IsVisible)
                 ToggleFilmStrip(skipPopulation: true);
         }
+
+        private bool TryResolveExplicitDirectoryPath(string inputPath, string targetName, out string directoryPath)
+        {
+            string targetPath = inputPath.Trim();
+            if (targetPath.Length >= 2 && targetPath[0] == '"' && targetPath[^1] == '"')
+                targetPath = targetPath[1..^1];
+            targetPath = Path.IsPathRooted(targetPath)
+                ? Path.GetFullPath(targetPath)
+                : Path.GetFullPath(targetPath, currentDirectory ?? Environment.CurrentDirectory);
+
+            if (Directory.Exists(targetPath))
+            {
+                directoryPath = targetPath;
+                return true;
+            }
+
+            if (File.Exists(targetPath))
+            {
+                directoryPath = Path.GetDirectoryName(targetPath)!;
+                return true;
+            }
+
+            directoryPath = string.Empty;
+            Message($"{targetName} path not found: {targetPath}");
+            return false;
+        }
+
+        private string[] GetSupportedMediaFilesInDirectory(string directoryPath) =>
+            Directory.GetFiles(directoryPath).Where(IsSupportedImageFile).ToArray();
 
         // use when populating film strip in a way other than image's directory's files.
         public void NonstandardPopulateFilmStrip(string[] files)

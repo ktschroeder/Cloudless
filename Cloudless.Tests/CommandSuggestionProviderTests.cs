@@ -181,6 +181,18 @@ public sealed class CommandSuggestionProviderTests
         Assert.Equal(expected, MainWindow.GetCommandCompletion(input, input.Length));
     }
 
+    [Theory]
+    [InlineData(@"gallery d C:\Users\Admin\Downloads\delete me\oct 12")]
+    [InlineData(@"gallery directory C:\Users\Admin\Downloads\delete me\oct 12\image.jpg")]
+    [InlineData("gallery d")]
+    [InlineData(@"g d C:\Users\Admin\Downloads\delete me\oct 12")]
+    [InlineData("g d")]
+    [InlineData(@"g tag sample")]
+    public void AcceptsGalleryAliasesAndPathsContainingSpaces(string command)
+    {
+        Assert.True(CommandSyntaxValidator.IsValidCommand(command));
+    }
+
     [Fact]
     public void SuggestsFullSlideshowSpellingsAfterDuration()
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows;
 
@@ -400,6 +401,54 @@ namespace Cloudless
                 win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 win.Show();
                 Message($"Gallery opened with {matchingFiles.Count} file(s) matching query '{args}'.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Message($"Failed to open gallery: {ex.Message}");
+                return false;
+            }
+        }
+
+        private bool HandleGalleryDirectory(string? path)
+        {
+            try
+            {
+                string directoryPath;
+                string[] matchingFiles;
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    directoryPath = currentDirectory ?? string.Empty;
+                    matchingFiles = imageFiles ?? Array.Empty<string>();
+                    if (matchingFiles.Length == 0)
+                    {
+                        Message("Gallery: No media is loaded from a directory.");
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (!TryResolveExplicitDirectoryPath(path, "Gallery", out directoryPath))
+                        return false;
+
+                    matchingFiles = GetSupportedMediaFilesInDirectory(directoryPath);
+                }
+
+                if (matchingFiles.Length == 0)
+                {
+                    Message($"Gallery: No supported media found in '{directoryPath}'.");
+                    return true;
+                }
+
+                string directoryName = Path.GetFileName(directoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                if (string.IsNullOrEmpty(directoryName))
+                    directoryName = string.IsNullOrEmpty(directoryPath) ? "Current Directory" : directoryPath;
+
+                var win = new GalleryWindow(matchingFiles, title: $"Gallery: {directoryName}", workspaceName: "");
+                win.Owner = this;
+                win.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                win.Show();
+                Message($"Gallery opened with {matchingFiles.Length} file(s) from '{directoryPath}'.");
                 return true;
             }
             catch (Exception ex)

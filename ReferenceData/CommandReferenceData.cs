@@ -47,7 +47,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("dm [mode]", "Set display mode: stretch/zoom/best/bestnozoom. Numbers 1-4 can also be used."),
                     new ReferenceItem("dim", "Show the current window dimensions."),
                     new ReferenceItem("dim [Int|+/-Int|_] [Int|+/-Int|_]", "Set dimensions with unsigned values, change them by signed offsets, or use _ to leave a dimension unchanged."),
-                    new ReferenceItem("filmstrip | fs directory | d", "Open filmstrip and populate it with images in the current image's directory"),
+                    new ReferenceItem("filmstrip | fs directory | d [optional path]", "Open filmstrip and populate it with images from the current image's directory or the specified directory/file's directory"),
                     new ReferenceItem("filmstrip | fs recent | r", "Open filmstrip and populate it with your recent images"),
                     new ReferenceItem("filmstrip | fs bookmarks | b", "Open filmstrip and populate it with your bookmarked images"),
                     new ReferenceItem("filmstrip | fs preview | p [workspace]", "Open filmstrip and populate it with images from [workspace]"),
@@ -61,7 +61,8 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("filmstrip | fs tag | t [query]", "Open filmstrip and populate it with images matching the tag query. Supports Boolean operators like 'tag1 AND tag2', 'tag1 OR tag2', 'NOT tag1', etc. Parentheses for logical grouping. Use tab autocomplete to search/cycle through tag names."),
                     new ReferenceItem("open | o tag | t [query]", "Open images matching the tag query (max 10). Supports same Boolean operators as above. Use tab autocomplete for tag search."),
                     new ReferenceItem("open! | o! tag | t [query]", "Open all images matching the tag query (ignore max). See above for more notes."),
-                    new ReferenceItem("gallery tag | t [query]", "Open gallery view of images matching the tag query. Supports same Boolean operators as above."),
+                    new ReferenceItem("gallery | g tag | t [query]", "Open gallery view of images matching the tag query. Supports same Boolean operators as above."),
+                    new ReferenceItem("gallery | g d [optional path]", "Open gallery view of the current directory's media, or supported media from the specified directory/file's directory."),
                 }, "Tags are logic-ready, searchable labels you can apply to individual media. Use tab autocomplete when entering tag queries to search and cycle through available tags."),
                 new ReferenceTab("Image", new List<ReferenceItem>
                 {

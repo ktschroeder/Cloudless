@@ -107,7 +107,9 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken FilmstripWorkspace = CommandToken.ArgumentRest("workspace", value => !string.IsNullOrWhiteSpace(value));
     private static readonly CommandToken TagQueryRoot = CommandToken.Literal("action", "tag", "t");
     private static readonly CommandToken TagQuery = CommandToken.ArgumentRest("query", value => !string.IsNullOrWhiteSpace(value));
-    private static readonly CommandToken GalleryRoot = CommandToken.Literal("command", "gallery");
+    private static readonly CommandToken GalleryRoot = CommandToken.Literal("command", "gallery", "g");
+    private static readonly CommandToken GalleryDirectory = CommandToken.Literal("source", "directory", "d");
+    private static readonly CommandToken GalleryDirectoryPath = CommandToken.ArgumentRest("path", value => !string.IsNullOrWhiteSpace(value));
     private static readonly CommandToken DimensionsRoot = CommandToken.Literal("command", "dim");
     private static readonly CommandToken DimensionWidth = CommandToken.Argument("width", IsDimensionValue);
     private static readonly CommandToken DimensionHeight = CommandToken.Argument("height", IsDimensionValue);
@@ -832,9 +834,11 @@ internal static class CommandSyntaxCatalog
             new CommandForm("open-all-path", "Open the image at a relative or absolute path, or open all images in a directory.", OpenAllPathRoot, OpenPath)
         };
 
-        var galleryTagForms = new[]
+        var galleryForms = new[]
         {
-            new CommandForm("gallery-tag-query", "Open a gallery of files matching the tag query.", GalleryRoot, TagQueryRoot, TagQuery)
+            new CommandForm("gallery-tag-query", "Open a gallery of files matching the tag query.", GalleryRoot, TagQueryRoot, TagQuery),
+            new CommandForm("gallery-directory", "Open a gallery of media from the current directory.", GalleryRoot, GalleryDirectory),
+            new CommandForm("gallery-directory-path", "Open a gallery of supported media from the specified file's directory or directory path.", GalleryRoot, GalleryDirectory, GalleryDirectoryPath)
         };
 
         var macroForms = new[]
@@ -917,9 +921,9 @@ internal static class CommandSyntaxCatalog
                 "Usage: filmstrip [directory|recent|bookmarks|preview [workspace]]",
                 filmstripForms),
             new CommandDefinition(
-                "gallery-tag-query",
-                "Usage: gallery tag|t [query]",
-                galleryTagForms),
+                "gallery",
+                "Usage: gallery tag|t [query] or gallery directory|d [path]",
+                galleryForms),
             new CommandDefinition(
                 "window-dimensions",
                 GetDimensionUsageMessage(),
