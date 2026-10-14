@@ -37,6 +37,7 @@ public class CommandPaletteExecutionTests
             string? unsupportedMediaPath = null;
             string? oversizedImageDirectory = null;
             string? navigationImagesDirectory = null;
+            string? explicitFilmstripDirectory = null;
             var macroPath = Path.Combine(MainWindow.workspaceFilesPath, "user_macros.txt");
             var originalMacros = File.Exists(macroPath) ? File.ReadAllBytes(macroPath) : null;
             string? macroName = null;
@@ -406,6 +407,33 @@ public class CommandPaletteExecutionTests
                     "Your command would open more than 10 images (11) and was stopped. To override this, use: 'o! [directory]'",
                     window.LastMessage);
 
+                explicitFilmstripDirectory = Path.Combine(Path.GetTempPath(), "cloudless filmstrip target " + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(explicitFilmstripDirectory);
+                var explicitFilmstripFirst = Path.Combine(explicitFilmstripDirectory, "01.jpg");
+                var explicitFilmstripSecond = Path.Combine(explicitFilmstripDirectory, "02.jpg");
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "TestAssets", "img1-landscape.jpg"), explicitFilmstripFirst);
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "TestAssets", "img2-portrait.jpg"), explicitFilmstripSecond);
+                File.WriteAllText(Path.Combine(explicitFilmstripDirectory, "ignored.txt"), "not media");
+
+                window.ExecuteCommand("fs d " + explicitFilmstripDirectory).GetAwaiter().GetResult();
+                var filmstripImagesField = typeof(MainWindow).GetField("_filmStripImages", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                Assert.NotNull(filmstripImagesField);
+                var directoryFilmstripImages = (string[]?)filmstripImagesField!.GetValue(window);
+                Assert.NotNull(directoryFilmstripImages);
+                Assert.Equal(
+                    new[] { explicitFilmstripFirst, explicitFilmstripSecond }.OrderBy(path => path, StringComparer.OrdinalIgnoreCase),
+                    directoryFilmstripImages!.OrderBy(path => path, StringComparer.OrdinalIgnoreCase),
+                    StringComparer.OrdinalIgnoreCase);
+
+                window.ExecuteCommand("filmstrip directory " + explicitFilmstripFirst).GetAwaiter().GetResult();
+                var fileFilmstripImages = (string[]?)filmstripImagesField.GetValue(window);
+                Assert.NotNull(fileFilmstripImages);
+                Assert.Equal(
+                    new[] { explicitFilmstripFirst, explicitFilmstripSecond }.OrderBy(path => path, StringComparer.OrdinalIgnoreCase),
+                    fileFilmstripImages!.OrderBy(path => path, StringComparer.OrdinalIgnoreCase),
+                    StringComparer.OrdinalIgnoreCase);
+                window.ToggleFilmStrip();
+
                 window.Show();
                 window.UpdateLayout();
                 imageDisplay!.UpdateLayout();
@@ -513,6 +541,8 @@ public class CommandPaletteExecutionTests
                 window?.Close();
                 if (navigationImagesDirectory != null && Directory.Exists(navigationImagesDirectory))
                     Directory.Delete(navigationImagesDirectory, recursive: true);
+                if (explicitFilmstripDirectory != null && Directory.Exists(explicitFilmstripDirectory))
+                    Directory.Delete(explicitFilmstripDirectory, recursive: true);
                 app.Shutdown();
                 RestoreFile(recentFilesPath, originalRecentFiles);
                 RestoreFile(videoPositionsPath, originalVideoPositions);

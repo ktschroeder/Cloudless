@@ -99,6 +99,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken SeekBackwardTime = CommandToken.Argument("time", IsValidBackwardSeekTime, displayText: "-[relative time]");
     private static readonly CommandToken FilmstripRoot = CommandToken.Literal("command", "filmstrip", "fs");
     private static readonly CommandToken FilmstripDirectory = CommandToken.Literal("source", "directory", "d");
+    private static readonly CommandToken FilmstripDirectoryPath = CommandToken.ArgumentRest("path", value => !string.IsNullOrWhiteSpace(value));
     private static readonly CommandToken FilmstripRecent = CommandToken.Literal("source", "recent", "r");
     private static readonly CommandToken FilmstripBookmarks = CommandToken.Literal("source", "bookmarks", "b");
     private static readonly CommandToken FilmstripPreview = CommandToken.Literal("source", "preview", "p", "workspace", "ws");
@@ -750,6 +751,7 @@ internal static class CommandSyntaxCatalog
         {
             new CommandForm("filmstrip-current-directory", "Open the filmstrip using its retained or current directory contents.", FilmstripRoot),
             new CommandForm("filmstrip-directory", "Open the filmstrip with the current directory contents.", FilmstripRoot, FilmstripDirectory),
+            new CommandForm("filmstrip-directory-path", "Open the filmstrip with media from the specified file's directory or directory path.", FilmstripRoot, FilmstripDirectory, FilmstripDirectoryPath),
             new CommandForm("filmstrip-recent", "Open the filmstrip with recently viewed media.", FilmstripRoot, FilmstripRecent),
             new CommandForm("filmstrip-bookmarks", "Open the filmstrip with bookmarked media.", FilmstripRoot, FilmstripBookmarks),
             new CommandForm("filmstrip-preview", "Open the filmstrip with media from the named workspace.", FilmstripRoot, FilmstripPreview, FilmstripWorkspace),

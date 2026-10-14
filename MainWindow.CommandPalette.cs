@@ -1598,6 +1598,33 @@ namespace Cloudless
                     case "filmstrip-directory":
                         filesToShow = imageFiles ?? Array.Empty<string>();
                         break;
+                    case "filmstrip-directory-path":
+                        string targetPath = parsed.GetArgument("path")!.Trim();
+                        if (targetPath.Length >= 2 && targetPath[0] == '"' && targetPath[^1] == '"')
+                            targetPath = targetPath[1..^1];
+                        targetPath = Path.IsPathRooted(targetPath)
+                            ? Path.GetFullPath(targetPath)
+                            : Path.GetFullPath(targetPath, currentDirectory ?? Environment.CurrentDirectory);
+
+                        string targetDirectory;
+                        if (Directory.Exists(targetPath))
+                        {
+                            targetDirectory = targetPath;
+                        }
+                        else if (File.Exists(targetPath))
+                        {
+                            targetDirectory = Path.GetDirectoryName(targetPath)!;
+                        }
+                        else
+                        {
+                            Message("Filmstrip path not found: " + targetPath);
+                            return false;
+                        }
+
+                        filesToShow = Directory.GetFiles(targetDirectory)
+                            .Where(IsSupportedImageFile)
+                            .ToArray();
+                        break;
                     case "filmstrip-recent":
                         filesToShow = (recentFiles ?? new List<string>()).ToArray();
                         break;
