@@ -25,8 +25,12 @@ internal sealed class MultifunctionalOverlayWindow : Window
     private readonly DispatcherTimer _zOrderTimer;
     private readonly Border _selectionVisual;
     private readonly Rectangle _cropBorderVisual;
+    private readonly Grid _contentRoot;
+    private Canvas? _cropSelectionCanvas;
+    private Rectangle? _cropSelectionVisual;
     private bool _isSelected;
     private bool _isCropMode;
+    private bool _hasCropSelection;
     private bool _isClosed;
 
     internal MultifunctionalOverlayWindow(MainWindow owner)
@@ -42,7 +46,8 @@ internal sealed class MultifunctionalOverlayWindow : Window
         Focusable = false;
         IsHitTestVisible = false;
         WindowStartupLocation = WindowStartupLocation.Manual;
-        (_selectionVisual, _cropBorderVisual, Content) = CreateOverlayContent();
+        (_selectionVisual, _cropBorderVisual, _contentRoot) = CreateOverlayContent();
+        Content = _contentRoot;
 
         _zOrderTimer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher)
         {
@@ -72,18 +77,50 @@ internal sealed class MultifunctionalOverlayWindow : Window
         RefreshVisibility();
     }
 
+    internal void SetCropSelectionRectangle(Rect? rectangle)
+    {
+        if (_isClosed)
+            return;
+
+        if (rectangle is Rect selection)
+        {
+            _cropSelectionCanvas ??= CreateCropSelectionCanvas();
+            if (!_contentRoot.Children.Contains(_cropSelectionCanvas))
+                _contentRoot.Children.Add(_cropSelectionCanvas);
+
+            _cropSelectionVisual ??= CreateCropSelectionVisual();
+            if (!_cropSelectionCanvas.Children.Contains(_cropSelectionVisual))
+                _cropSelectionCanvas.Children.Add(_cropSelectionVisual);
+
+            Canvas.SetLeft(_cropSelectionVisual, selection.Left);
+            Canvas.SetTop(_cropSelectionVisual, selection.Top);
+            _cropSelectionVisual.Width = selection.Width;
+            _cropSelectionVisual.Height = selection.Height;
+            _cropSelectionVisual.Visibility = Visibility.Visible;
+            _hasCropSelection = true;
+        }
+        else
+        {
+            ClearCropSelectionVisual();
+        }
+        RefreshVisibility();
+    }
+
     internal void SetCropMode(bool isCropMode)
     {
         if (_isClosed)
             return;
 
         _isCropMode = isCropMode;
+        if (!isCropMode)
+            ClearCropSelectionVisual();
+
         RefreshVisibility();
     }
 
     internal void EnsureZOrderAboveOwner()
     {
-        if ((_isSelected || _isCropMode) && IsVisible)
+        if ((_isSelected || _isCropMode || _hasCropSelection) && IsVisible)
             _zOrderTimer.Start();
     }
 
@@ -129,6 +166,31 @@ internal sealed class MultifunctionalOverlayWindow : Window
         return (selectionVisual, cropBorderVisual, content);
     }
 
+    private static Canvas CreateCropSelectionCanvas() => new() { IsHitTestVisible = false };
+
+    private static Rectangle CreateCropSelectionVisual() => new()
+    {
+        Fill = Brushes.Transparent,
+        Stroke = Brushes.Red,
+        StrokeThickness = 1,
+        IsHitTestVisible = false
+    };
+
+    private void ClearCropSelectionVisual()
+    {
+        _hasCropSelection = false;
+        if (_cropSelectionVisual != null)
+            _cropSelectionVisual.Visibility = Visibility.Collapsed;
+        _cropSelectionVisual = null;
+
+        if (_cropSelectionCanvas != null)
+        {
+            _cropSelectionCanvas.Children.Clear();
+            _contentRoot.Children.Remove(_cropSelectionCanvas);
+            _cropSelectionCanvas = null;
+        }
+    }
+
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
@@ -139,7 +201,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
 
     private void OnOwnerLocationOrSizeChanged(object? sender, EventArgs e)
     {
-        if ((_isSelected || _isCropMode) && _owner.IsVisible && _owner.WindowState != WindowState.Minimized)
+        if ((_isSelected || _isCropMode || _hasCropSelection) && _owner.IsVisible && _owner.WindowState != WindowState.Minimized)
             AlignToOwner();
     }
 
@@ -167,6 +229,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         _isClosed = true;
+        ClearCropSelectionVisual();
         _zOrderTimer.Stop();
         _owner.LocationChanged -= OnOwnerLocationOrSizeChanged;
         _owner.SizeChanged -= OnOwnerLocationOrSizeChanged;
@@ -188,7 +251,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
         _selectionVisual.Visibility = _isSelected ? Visibility.Visible : Visibility.Collapsed;
         _cropBorderVisual.Visibility = _isCropMode ? Visibility.Visible : Visibility.Collapsed;
 
-        if ((!_isSelected && !_isCropMode) || !_owner.IsVisible || _owner.WindowState == WindowState.Minimized)
+        if ((!_isSelected && !_isCropMode && !_hasCropSelection) || !_owner.IsVisible || _owner.WindowState == WindowState.Minimized)
         {
             Hide();
             return;
@@ -205,7 +268,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
 
     private void RestoreZOrder()
     {
-        if ((!_isSelected && !_isCropMode) || !IsVisible)
+        if ((!_isSelected && !_isCropMode && !_hasCropSelection) || !IsVisible)
             return;
 
         IntPtr overlayHwnd = new WindowInteropHelper(this).Handle;

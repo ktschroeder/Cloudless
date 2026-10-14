@@ -84,11 +84,19 @@ public class CommandPaletteExecutionTests
                 previewMouseDown!.Invoke(window, new object[] { window, leftMouseDown });
                 Assert.True(GlobalMouseModeManager.IsSelected(window));
                 var selectionOverlay = (Window)typeof(MainWindow)
-                    .GetField("_mainWindowOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetField("_multifunctionalOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .GetValue(window)!;
                 Assert.False(selectionOverlay.IsVisible);
                 Assert.False(selectionOverlay.ShowInTaskbar);
                 Assert.False(selectionOverlay.ShowActivated);
+                typeof(MainWindow).GetMethod("RecreateMultifunctionalOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, null);
+                var previousOverlay = selectionOverlay;
+                selectionOverlay = (Window)typeof(MainWindow)
+                    .GetField("_multifunctionalOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetValue(window)!;
+                Assert.NotSame(previousOverlay, selectionOverlay);
+                Assert.True(GlobalMouseModeManager.IsSelected(window));
                 typeof(MainWindow).GetMethod("SetWindowCropMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(window, new object[] { true });
                 var cropBorder = (FrameworkElement)selectionOverlay.GetType()
@@ -98,6 +106,38 @@ public class CommandPaletteExecutionTests
                 typeof(MainWindow).GetMethod("SetWindowCropMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(window, new object[] { false });
                 Assert.Equal(Visibility.Collapsed, cropBorder.Visibility);
+                typeof(MainWindow).GetMethod("SetCropSelectionRectangle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { new Rect(10, 20, 30, 40) });
+                var cropSelectionField = selectionOverlay.GetType()
+                    .GetField("_cropSelectionVisual", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                var cropSelectionCanvasField = selectionOverlay.GetType()
+                    .GetField("_cropSelectionCanvas", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                var cropSelection = (FrameworkElement)cropSelectionField.GetValue(selectionOverlay)!;
+                Assert.Equal(Visibility.Visible, cropSelection.Visibility);
+                Assert.Equal(30, cropSelection.Width);
+                Assert.Equal(40, cropSelection.Height);
+                typeof(MainWindow).GetMethod("SetCropSelectionRectangle", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object?[] { null });
+                Assert.Equal(Visibility.Collapsed, cropSelection.Visibility);
+                Assert.Null(cropSelectionField.GetValue(selectionOverlay));
+                Assert.Null(cropSelectionCanvasField.GetValue(selectionOverlay));
+                typeof(MainWindow).GetField("isDrawingSelection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .SetValue(window, true);
+                typeof(MainWindow).GetMethod("SelectionMode_MouseMove", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { new System.Windows.Point(100, 100) });
+                Assert.Null(cropSelectionField.GetValue(selectionOverlay));
+                Assert.Null(cropSelectionCanvasField.GetValue(selectionOverlay));
+                typeof(MainWindow).GetMethod("SelectionMode_MouseDown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { new System.Windows.Point(100, 100) });
+                typeof(MainWindow).GetMethod("SelectionMode_MouseMove", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { new System.Windows.Point(120, 130) });
+                cropSelection = (FrameworkElement)cropSelectionField.GetValue(selectionOverlay)!;
+                Assert.Equal(20, cropSelection.Width);
+                Assert.Equal(30, cropSelection.Height);
+                ((Task)typeof(MainWindow).GetMethod("SelectionMode_MouseUp", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { new System.Windows.Point(100, 100) })!).GetAwaiter().GetResult();
+                Assert.Null(cropSelectionField.GetValue(selectionOverlay));
+                Assert.Equal("Selection must have a non-zero width and height", window.LastMessage);
                 Assert.True(window.MouseCommandMode);
                 window.ExecuteCommand("sel").GetAwaiter().GetResult();
                 Assert.Equal("Selected windows: 1", window.LastMessage);

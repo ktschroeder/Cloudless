@@ -882,6 +882,9 @@ namespace Cloudless
             else
                 isCropMode = !isCropMode;
 
+            if (!isCropMode && isDrawingSelection)
+                ExitSelectionMode(silent: true);
+
             SetWindowCropMode(isCropMode);
 
             if (isCropMode)

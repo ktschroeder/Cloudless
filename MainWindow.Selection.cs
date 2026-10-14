@@ -1,8 +1,6 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Cloudless.Models;
 using Point = System.Windows.Point;
 
@@ -14,11 +12,10 @@ namespace Cloudless
     public partial class MainWindow
     {
         private bool isDrawingSelection = false;
+        private bool isDraggingSelection = false;
         private bool _hasCroppedViewport;
         private Point selectionStart = new Point();
         private Point selectionCurrent = new Point();
-        private Rectangle? selectionRectangleVisual = null;
-        private Canvas? selectionCanvas = null;
 
         /// <summary>
         /// Enters selection mode for crop-to-selection. Called when user presses Ctrl+Q.
@@ -49,6 +46,12 @@ namespace Cloudless
                 EnterExplorationMode(silent: true);
             }
 
+            isDraggingSelection = false;
+            selectionStart = default;
+            selectionCurrent = default;
+            SetCropSelectionRectangle(null);
+            RecreateMultifunctionalOverlayWindow();
+
             // Enter crop mode if not already
             if (!isCropMode)
             {
@@ -56,31 +59,7 @@ namespace Cloudless
             }
 
             isDrawingSelection = true;
-            CreateSelectionCanvas();
             Message("Selection mode active - click and drag to select crop area");
-        }
-
-        /// <summary>
-        /// Creates the canvas overlay for drawing the selection rectangle.
-        /// </summary>
-        private void CreateSelectionCanvas()
-        {
-            // Find or create canvas in the visual tree
-            if (selectionCanvas == null)
-            {
-                selectionCanvas = new Canvas
-                {
-                    Background = Brushes.Transparent,
-                    IsHitTestVisible = true
-                };
-                Grid.SetColumn(selectionCanvas, 0);
-                Grid.SetRow(selectionCanvas, 0);
-                MyGrid.Children.Add(selectionCanvas);
-            }
-            else
-            {
-                selectionCanvas.Children.Clear();
-            }
         }
 
         /// <summary>
@@ -91,25 +70,10 @@ namespace Cloudless
             if (!isDrawingSelection)
                 return;
 
+            isDraggingSelection = true;
             selectionStart = windowPoint;
             selectionCurrent = windowPoint;
             CaptureMouse();
-
-            // Create the visual rectangle
-            if (selectionRectangleVisual != null)
-            {
-                selectionCanvas?.Children.Remove(selectionRectangleVisual);
-            }
-
-            selectionRectangleVisual = new Rectangle
-            {
-                Fill = Brushes.Transparent,
-                Stroke = new SolidColorBrush(Colors.Red),
-                StrokeThickness = 1,
-                IsHitTestVisible = false
-            };
-
-            selectionCanvas?.Children.Add(selectionRectangleVisual);
             UpdateSelectionRectangleVisual();
         }
 
@@ -118,7 +82,7 @@ namespace Cloudless
         /// </summary>
         internal void SelectionMode_MouseMove(Point windowPoint)
         {
-            if (!isDrawingSelection || selectionRectangleVisual == null)
+            if (!isDrawingSelection || !isDraggingSelection)
                 return;
 
             selectionCurrent = windowPoint;
@@ -130,22 +94,26 @@ namespace Cloudless
         /// </summary>
         internal async Task SelectionMode_MouseUp(Point windowPoint)
         {
-            if (!isDrawingSelection)
+            if (!isDrawingSelection || !isDraggingSelection)
                 return;
 
             selectionCurrent = windowPoint;
             isDrawingSelection = false;
+            isDraggingSelection = false;
             ReleaseMouseCapture();
 
             // Get the final selection rectangle in window coordinates
             Rect windowSelectionRect = GetNormalizedRectangle(selectionStart, selectionCurrent);
             windowSelectionRect.Intersect(new Rect(0, 0, ActualWidth, ActualHeight));
 
-            // Clear visual
-            if (selectionRectangleVisual != null)
+            SetCropSelectionRectangle(null);
+            selectionStart = default;
+            selectionCurrent = default;
+
+            if (windowSelectionRect.Width <= 0 || windowSelectionRect.Height <= 0)
             {
-                selectionCanvas?.Children.Remove(selectionRectangleVisual);
-                selectionRectangleVisual = null;
+                Message("Selection must have a non-zero width and height");
+                return;
             }
 
             bool selectionOverContent;
@@ -193,21 +161,12 @@ namespace Cloudless
         }
 
         /// <summary>
-        /// Updates the visual representation of the selection rectangle.
-        /// The stroke is positioned to project outward (external to the selection).
+        /// Updates the selection rectangle displayed by the multifunctional overlay.
         /// </summary>
         private void UpdateSelectionRectangleVisual()
         {
-            if (selectionRectangleVisual == null)
-                return;
-
             Rect rect = GetNormalizedRectangle(selectionStart, selectionCurrent);
-
-            // Position the rectangle, accounting for the 4px stroke that projects outward
-            Canvas.SetLeft(selectionRectangleVisual, rect.Left);
-            Canvas.SetTop(selectionRectangleVisual, rect.Top);
-            selectionRectangleVisual.Width = rect.Width;
-            selectionRectangleVisual.Height = rect.Height;
+            SetCropSelectionRectangle(rect);
         }
 
         /// <summary>
@@ -322,21 +281,21 @@ namespace Cloudless
         /// <summary>
         /// Exits selection mode without applying a crop.
         /// </summary>
-        public void ExitSelectionMode()
+        public void ExitSelectionMode(bool silent = false)
         {
             if (!isDrawingSelection)
                 return;
 
             isDrawingSelection = false;
+            isDraggingSelection = false;
             ReleaseMouseCapture();
 
-            if (selectionRectangleVisual != null)
-            {
-                selectionCanvas?.Children.Remove(selectionRectangleVisual);
-                selectionRectangleVisual = null;
-            }
+            SetCropSelectionRectangle(null);
+            selectionStart = default;
+            selectionCurrent = default;
 
-            Message("Selection mode cancelled");
+            if (!silent)
+                Message("Selection mode cancelled");
         }
     }
 }

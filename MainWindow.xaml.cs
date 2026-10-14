@@ -835,6 +835,27 @@ namespace Cloudless
             _multifunctionalOverlayWindow?.SetCropMode(isCropMode);
         }
 
+        internal void SetCropSelectionRectangle(Rect? rectangle)
+        {
+            if (rectangle.HasValue)
+                _multifunctionalOverlayWindow ??= new MultifunctionalOverlayWindow(this);
+
+            _multifunctionalOverlayWindow?.SetCropSelectionRectangle(rectangle);
+        }
+
+        // We recreate this each time because otherwise WPF shows one frame of the old version of the window in some situations.
+        internal void RecreateMultifunctionalOverlayWindow()
+        {
+            bool isSelected = GlobalMouseModeManager.IsSelected(this);
+            MultifunctionalOverlayWindow? previousOverlay = _multifunctionalOverlayWindow;
+            _multifunctionalOverlayWindow = null;
+            previousOverlay?.Close();
+
+            _multifunctionalOverlayWindow = new MultifunctionalOverlayWindow(this);
+            _multifunctionalOverlayWindow.SetSelected(isSelected);
+            _multifunctionalOverlayWindow.SetCropMode(isCropMode);
+        }
+
         private Cursor GetMouseCommandCursor()
         {
             if (_mouseCommandCursor != null)
