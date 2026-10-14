@@ -882,6 +882,8 @@ namespace Cloudless
             else
                 isCropMode = !isCropMode;
 
+            SetWindowCropMode(isCropMode);
+
             if (isCropMode)
             {
                 _hasCroppedViewport = false;
@@ -919,20 +921,10 @@ namespace Cloudless
 
         private void UpdateBorderColor()
         {
-            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
-            if (isCropMode && VideoHost.Content is not Cloudless.PluginBase.IVideoPlayer)
-            {
-                this.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
-                this.BorderThickness = new Thickness(2);
-                // TODO for this to have the most ideal effect (red border always visible despite zoom/pan), there needs to be
-                // a new window layer that is the image itself being resized etc. but not the top-level window which will have the red border.
-                // This could result in some hairy bugs, and is low-priority. Return to this later.
-            }
-            else
-            {
-                this.BorderThickness = new Thickness(0);
-            }
+            BorderBrush = null;
+            BorderThickness = new Thickness(0);
 
+            bool useBorder = Cloudless.Properties.Settings.Default.BorderOnMainWindow;
             if (useBorder)
             {
                 MainBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);

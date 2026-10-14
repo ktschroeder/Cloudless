@@ -1,14 +1,14 @@
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Controls;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Cloudless;
 
-internal sealed class SelectionOverlayWindow : Window
+internal sealed class MultifunctionalOverlayWindow : Window
 {
     private const int GwlExStyle = -20;
     private const int WsExTransparent = 0x00000020;
@@ -23,10 +23,13 @@ internal sealed class SelectionOverlayWindow : Window
 
     private readonly MainWindow _owner;
     private readonly DispatcherTimer _zOrderTimer;
+    private readonly Border _selectionVisual;
+    private readonly Rectangle _cropBorderVisual;
     private bool _isSelected;
+    private bool _isCropMode;
     private bool _isClosed;
 
-    internal SelectionOverlayWindow(MainWindow owner)
+    internal MultifunctionalOverlayWindow(MainWindow owner)
     {
         _owner = owner;
         WindowStyle = WindowStyle.None;
@@ -39,7 +42,7 @@ internal sealed class SelectionOverlayWindow : Window
         Focusable = false;
         IsHitTestVisible = false;
         WindowStartupLocation = WindowStartupLocation.Manual;
-        Content = CreateOverlayContent();
+        (_selectionVisual, _cropBorderVisual, Content) = CreateOverlayContent();
 
         _zOrderTimer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher)
         {
@@ -66,28 +69,25 @@ internal sealed class SelectionOverlayWindow : Window
             return;
 
         _isSelected = isSelected;
-        if (!isSelected || !_owner.IsVisible || _owner.WindowState == WindowState.Minimized)
-        {
-            Hide();
+        RefreshVisibility();
+    }
+
+    internal void SetCropMode(bool isCropMode)
+    {
+        if (_isClosed)
             return;
-        }
 
-        if (Owner != _owner)
-            Owner = _owner;
-
-        AlignToOwner();
-        if (!IsVisible)
-            Show();
-        EnsureZOrderAboveOwner();
+        _isCropMode = isCropMode;
+        RefreshVisibility();
     }
 
     internal void EnsureZOrderAboveOwner()
     {
-        if (_isSelected && IsVisible)
+        if ((_isSelected || _isCropMode) && IsVisible)
             _zOrderTimer.Start();
     }
 
-    private static Border CreateOverlayContent()
+    private static (Border SelectionVisual, Rectangle CropBorderVisual, Grid Content) CreateOverlayContent()
     {
         var checkerboard = new DrawingGroup();
         var blueBrush = new SolidColorBrush(Color.FromArgb(0x80, 0x34, 0x7F, 0xFF));
@@ -107,11 +107,26 @@ internal sealed class SelectionOverlayWindow : Window
         };
         brush.Freeze();
 
-        return new Border
+        var selectionVisual = new Border
         {
             Background = brush,
+            Visibility = Visibility.Collapsed,
             IsHitTestVisible = false
         };
+
+        var cropBorderVisual = new Rectangle
+        {
+            Stroke = Brushes.Red,
+            StrokeThickness = 2,
+            Margin = new Thickness(0),
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false
+        };
+
+        var content = new Grid { IsHitTestVisible = false };
+        content.Children.Add(selectionVisual);
+        content.Children.Add(cropBorderVisual);
+        return (selectionVisual, cropBorderVisual, content);
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -124,7 +139,7 @@ internal sealed class SelectionOverlayWindow : Window
 
     private void OnOwnerLocationOrSizeChanged(object? sender, EventArgs e)
     {
-        if (_isSelected && _owner.IsVisible && _owner.WindowState != WindowState.Minimized)
+        if ((_isSelected || _isCropMode) && _owner.IsVisible && _owner.WindowState != WindowState.Minimized)
             AlignToOwner();
     }
 
@@ -136,16 +151,15 @@ internal sealed class SelectionOverlayWindow : Window
             return;
         }
 
-        if (_isSelected && _owner.IsVisible)
-            SetSelected(true);
+        RefreshVisibility();
     }
 
     private void OnOwnerIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (!_owner.IsVisible)
             Hide();
-        else if (_isSelected)
-            SetSelected(true);
+        else
+            RefreshVisibility();
     }
 
     private void OnOwnerActivated(object? sender, EventArgs e) => EnsureZOrderAboveOwner();
@@ -169,9 +183,29 @@ internal sealed class SelectionOverlayWindow : Window
         Height = Math.Max(1, _owner.ActualHeight);
     }
 
+    private void RefreshVisibility()
+    {
+        _selectionVisual.Visibility = _isSelected ? Visibility.Visible : Visibility.Collapsed;
+        _cropBorderVisual.Visibility = _isCropMode ? Visibility.Visible : Visibility.Collapsed;
+
+        if ((!_isSelected && !_isCropMode) || !_owner.IsVisible || _owner.WindowState == WindowState.Minimized)
+        {
+            Hide();
+            return;
+        }
+
+        if (Owner != _owner)
+            Owner = _owner;
+
+        AlignToOwner();
+        if (!IsVisible)
+            Show();
+        EnsureZOrderAboveOwner();
+    }
+
     private void RestoreZOrder()
     {
-        if (!_isSelected || !IsVisible)
+        if ((!_isSelected && !_isCropMode) || !IsVisible)
             return;
 
         IntPtr overlayHwnd = new WindowInteropHelper(this).Handle;

@@ -84,11 +84,20 @@ public class CommandPaletteExecutionTests
                 previewMouseDown!.Invoke(window, new object[] { window, leftMouseDown });
                 Assert.True(GlobalMouseModeManager.IsSelected(window));
                 var selectionOverlay = (Window)typeof(MainWindow)
-                    .GetField("_selectionOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetField("_mainWindowOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .GetValue(window)!;
                 Assert.False(selectionOverlay.IsVisible);
                 Assert.False(selectionOverlay.ShowInTaskbar);
                 Assert.False(selectionOverlay.ShowActivated);
+                typeof(MainWindow).GetMethod("SetWindowCropMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { true });
+                var cropBorder = (FrameworkElement)selectionOverlay.GetType()
+                    .GetField("_cropBorderVisual", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetValue(selectionOverlay)!;
+                Assert.Equal(Visibility.Visible, cropBorder.Visibility);
+                typeof(MainWindow).GetMethod("SetWindowCropMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .Invoke(window, new object[] { false });
+                Assert.Equal(Visibility.Collapsed, cropBorder.Visibility);
                 Assert.True(window.MouseCommandMode);
                 window.ExecuteCommand("sel").GetAwaiter().GetResult();
                 Assert.Equal("Selected windows: 1", window.LastMessage);

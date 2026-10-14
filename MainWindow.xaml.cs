@@ -136,7 +136,7 @@ namespace Cloudless
         private CloudlessWindowState? stateUponMinimizing = null;
 
         private PreloadManager? _preloadManager;
-        private SelectionOverlayWindow? _selectionOverlayWindow;
+        private MultifunctionalOverlayWindow? _multifunctionalOverlayWindow;
 
         private int windowPageIndex = 0;  // "0" as not-yet-assigned. Valid indices here are 1-8.
 
@@ -822,9 +822,17 @@ namespace Cloudless
         internal void SetWindowSelected(bool isSelected)
         {
             if (isSelected)
-                _selectionOverlayWindow ??= new SelectionOverlayWindow(this);
+                _multifunctionalOverlayWindow ??= new MultifunctionalOverlayWindow(this);
 
-            _selectionOverlayWindow?.SetSelected(isSelected);
+            _multifunctionalOverlayWindow?.SetSelected(isSelected);
+        }
+
+        internal void SetWindowCropMode(bool isCropMode)
+        {
+            if (isCropMode)
+                _multifunctionalOverlayWindow ??= new MultifunctionalOverlayWindow(this);
+
+            _multifunctionalOverlayWindow?.SetCropMode(isCropMode);
         }
 
         private Cursor GetMouseCommandCursor()
