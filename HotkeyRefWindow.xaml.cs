@@ -150,7 +150,7 @@ namespace Cloudless
                     ContentArea.Height = maxTabContentHeight;
                 }
 
-                const double horizontalPadding = 24; // 12px left + 12px right
+                const double horizontalPadding = 80; // Includes the scroll viewer, content, and outer grid margins
                 const double headerHeight = 40;
                 const double verticalMargins = 20; // margins between elements
                 const double closeButtonHeight = 30;
