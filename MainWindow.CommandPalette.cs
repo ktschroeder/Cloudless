@@ -491,6 +491,10 @@ namespace Cloudless
         private int _commandSuggestionCaretIndex = -1;
         private IReadOnlyList<string> _commandSuggestionCandidates = Array.Empty<string>();
         private int _commandSuggestionIndex;
+        private static readonly string[] MacroAutocompleteCommandBases =
+        {
+            "macro run", "macro delete"
+        };
         private static readonly string[] WorkspaceAutocompleteCommandBases =
         {
             "ws l", "ws load", "ws s", "ws save", "ws s!", "ws save!", "ws delete", "ws rename", "ws r", "ws merge", "ws m", "ws preview", "ws p", "fs ws", "fs preview", "fs p", "fs workspace", "filmstrip ws", "filmstrip preview", "filmstrip p", "filmstrip workspace"
@@ -532,6 +536,10 @@ namespace Cloudless
         private static bool IsTabbableCommandInput(string text)
         {
             if (TryGetTagAutocompleteContext(text, out _, out _))
+                return true;
+
+            if (MacroAutocompleteCommandBases.Any(commandBase =>
+                text.StartsWith(commandBase + " ", StringComparison.OrdinalIgnoreCase)))
                 return true;
 
             return WorkspaceAutocompleteCommandBases.Any(commandBase =>
@@ -604,6 +612,42 @@ namespace Cloudless
 
                 // Ctrl+Tab has no recency behavior for tags; it cycles the same tag list.
                 CycleToNextAutocompleteCandidate(tagPrefix, reverse: shiftPressed);
+                return;
+            }
+
+            string? macroCommandBase = MacroAutocompleteCommandBases.FirstOrDefault(commandBase =>
+                _tbTextPrev.StartsWith(commandBase + " ", StringComparison.OrdinalIgnoreCase));
+            if (macroCommandBase != null)
+            {
+                string commandBase = macroCommandBase + " ";
+                var macros = LoadUserMacros();
+                if (!TabScroll && !controlPressed)
+                {
+                    string query = _tbTextPrev.Length == commandBase.Length
+                        ? ""
+                        : _tbTextPrev[commandBase.Length..];
+                    var matchingNames = macros.Keys
+                        .Where(name => name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(name => name, StringComparer.OrdinalIgnoreCase);
+
+                    AutocompleteCandidates.Clear();
+                    foreach (string name in matchingNames)
+                        AutocompleteCandidates.AddLast(name);
+                    TabScroll = true;
+                }
+                else if (!TabScrollCtrl && controlPressed)
+                {
+                    var macroNames = new HashSet<string>(macros.Keys, StringComparer.OrdinalIgnoreCase);
+                    var recentNames = GetRecentlyUsedMacroNames()
+                        .Where(name => macroNames.Contains(name));
+
+                    AutocompleteCandidatesCtrl.Clear();
+                    foreach (string name in recentNames)
+                        AutocompleteCandidatesCtrl.AddFirst(name);
+                    TabScrollCtrl = true;
+                }
+
+                CycleToNextAutocompleteCandidate(commandBase, reverse: shiftPressed, recency: controlPressed);
                 return;
             }
 
@@ -2536,6 +2580,7 @@ namespace Cloudless
                 return false;
             }
 
+            UpdateRecentlyUsedMacroNames(name);
             MacrosInProgress.Add(name);
             string command = macros[name];
             if (!string.IsNullOrEmpty(command))
@@ -2544,6 +2589,28 @@ namespace Cloudless
             }
             MacrosInProgress.Remove(name);
             return true;
+        }
+
+        private static List<string> GetRecentlyUsedMacroNames()
+        {
+            var stringCollection = Cloudless.Properties.Settings.Default.RecentMacros;
+            return stringCollection?.Cast<string>().ToList() ?? new List<string>();
+        }
+
+        private static void UpdateRecentlyUsedMacroNames(string macroName)
+        {
+            if (string.IsNullOrWhiteSpace(macroName))
+                return;
+
+            var current = GetRecentlyUsedMacroNames();
+            current.RemoveAll(name => name.Equals(macroName, StringComparison.OrdinalIgnoreCase));
+            current.Add(macroName);
+
+            const int historyMaxSize = 100;
+            StringCollection collection = new StringCollection();
+            collection.AddRange(current.TakeLast(historyMaxSize).ToArray());
+            Cloudless.Properties.Settings.Default.RecentMacros = collection;
+            Cloudless.Properties.Settings.Default.Save();
         }
 
         private void SaveUserCommands()

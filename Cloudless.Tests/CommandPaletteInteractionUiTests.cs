@@ -73,6 +73,72 @@ public sealed class CommandPaletteInteractionUiTests
     }
 
     [Fact]
+    public void MacroAutocompleteCyclesSubstringMatchesAndRecencyInBothDirections()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            var originalRecentMacros = settings.RecentMacros?.Cast<string>().ToArray() ?? Array.Empty<string>();
+            var prefix = "coverage-macro-autocomplete-" + Guid.NewGuid().ToString("N");
+            var firstName = prefix + "-a";
+            var secondName = prefix + "-b";
+            var macrosPath = Path.Combine(MainWindow.workspaceFilesPath, "user_macros.txt");
+            string? originalMacros = File.Exists(macrosPath) ? File.ReadAllText(macrosPath) : null;
+            MainWindow? window = null;
+            try
+            {
+                settings.CurrentPage = 1;
+                Directory.CreateDirectory(MainWindow.workspaceFilesPath);
+                File.WriteAllText(macrosPath, System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+                {
+                    [firstName] = "echo first",
+                    [secondName] = "echo second"
+                }));
+                settings.RecentMacros = ToStringCollection(firstName, secondName);
+                window = new MainWindow(string.Empty, 800, 600, workspaceLoad: true);
+                window.Show();
+                OpenPalette(window);
+                var textBox = GetCommandTextBox(window);
+                textBox.Text = "macro run " + prefix;
+
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("macro run " + firstName, textBox.Text);
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("macro run " + secondName, textBox.Text);
+                InvokeTabPressed(window, reverse: true, recency: false);
+                Assert.Equal("macro run " + firstName, textBox.Text);
+
+                textBox.Text = "macro delete " + prefix;
+                RaiseKey(textBox, Key.Tab);
+                Assert.Equal("macro delete " + firstName, textBox.Text);
+
+                textBox.Text = "macro run " + prefix;
+                InvokeTabPressed(window, reverse: false, recency: true);
+                Assert.Equal("macro run " + secondName, textBox.Text);
+                InvokeTabPressed(window, reverse: true, recency: true);
+                Assert.Equal("macro run " + firstName, textBox.Text);
+
+                window.ExecuteCommand("macro run " + secondName).GetAwaiter().GetResult();
+                Assert.Equal(secondName, settings.RecentMacros!.Cast<string>().Last());
+            }
+            finally
+            {
+                CloseTestWindows();
+                if (originalMacros == null)
+                    File.Delete(macrosPath);
+                else
+                    File.WriteAllText(macrosPath, originalMacros);
+                settings.RecentMacros = ToStringCollection(originalRecentMacros);
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
     public void InlineCommandSuggestionIsDisplayedAndAcceptedWithTab()
     {
         RunOnStaThread(() =>

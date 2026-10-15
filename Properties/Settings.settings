@@ -68,6 +68,9 @@
     <Setting Name="RecentWorkspaces" Type="System.Collections.Specialized.StringCollection" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="RecentMacros" Type="System.Collections.Specialized.StringCollection" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
     <Setting Name="MouseLongPressMS" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">300</Value>
     </Setting>

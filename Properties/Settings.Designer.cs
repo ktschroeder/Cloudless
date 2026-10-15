@@ -281,6 +281,17 @@ namespace Cloudless.Properties {
                 this["RecentWorkspaces"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection RecentMacros {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["RecentMacros"]));
+            }
+            set {
+                this["RecentMacros"] = value;
+            }
+        }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
