@@ -1513,6 +1513,12 @@ namespace Cloudless
                 case "deselect-window":
                     GlobalMouseModeManager.DeselectWindow(this);
                     return true;
+                case "prevent-overlap":
+                    SetAvoidOverlap(true);
+                    return true;
+                case "allow-overlap":
+                    SetAvoidOverlap(false);
+                    return true;
                 case "minimize-all":
                     MinimizeAllOtherInstances();
                     MinimizeWindow();

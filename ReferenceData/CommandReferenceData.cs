@@ -28,6 +28,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("close | c", "Close window"),
                     new ReferenceItem("close | c all / others", "Close all windows, or all other windows"),
                     new ReferenceItem("close | c empty", "Close all windows that are empty (i.e. windows with no media loaded)"),
+                    new ReferenceItem("prevent overlap / allow overlap", "Opt this window into or out of collision avoidance with other opted-in windows, and bounds of display."),
                     new ReferenceItem("help | h", "Open command palette reference window"),
                     new ReferenceItem("m all / others", "Minimize all windows, or all other windows"),
                     new ReferenceItem("um all", "Unminimize all windows"),

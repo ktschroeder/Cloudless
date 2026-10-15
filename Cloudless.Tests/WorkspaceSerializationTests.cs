@@ -32,6 +32,7 @@ public class WorkspaceSerializationTests
         var json = JsonSerializer.Serialize(workspace);
         var restored = JsonSerializer.Deserialize<CloudlessWorkspace>(json);
 
+        Assert.DoesNotContain("AvoidOverlap", json);
         Assert.NotNull(restored);
         Assert.Equal(workspace.SchemaVersion, restored.SchemaVersion);
         Assert.Equal(workspace.WorkspaceName, restored.WorkspaceName);

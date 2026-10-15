@@ -137,6 +137,9 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken SelectedAction = CommandToken.Literal("scope", "sel");
     private static readonly CommandToken SelectRoot = CommandToken.Literal("command", "select");
     private static readonly CommandToken DeselectRoot = CommandToken.Literal("command", "deselect");
+    private static readonly CommandToken PreventOverlapRoot = CommandToken.Literal("command", "prevent");
+    private static readonly CommandToken AllowOverlapRoot = CommandToken.Literal("command", "allow");
+    private static readonly CommandToken OverlapWord = CommandToken.Literal("option", "overlap");
     private static readonly CommandToken ClearSelectionRoot = CommandToken.Literal("command", "clear");
     private static readonly CommandToken ClearSelectionAliasRoot = CommandToken.Literal("command", "cs");
     private static readonly CommandToken InvertSelectionRoot = CommandToken.Literal("command", "invert");
@@ -673,6 +676,8 @@ internal static class CommandSyntaxCatalog
             new CommandForm("selected-wrapper", "Execute the command on every selected window.", SelectedWrapperRoot, WrappedCommand),
             new CommandForm("select-window", "Select this window.", SelectRoot),
             new CommandForm("deselect-window", "Deselect this window.", DeselectRoot),
+            new CommandForm("prevent-overlap", "Prevent this window from overlapping opted-in windows.", PreventOverlapRoot, OverlapWord),
+            new CommandForm("allow-overlap", "Allow this window to overlap other windows.", AllowOverlapRoot, OverlapWord),
             new CommandForm("minimize-all", "Minimize all windows.", MinimizeRoot, AllAction),
             new CommandForm("minimize-others", "Minimize all other windows.", MinimizeRoot, OthersAction),
             new CommandForm("minimize-origin", "Minimize windows from this window's workspace origin.", MinimizeRoot, OriginAction),

@@ -22,10 +22,13 @@ namespace Cloudless
         private bool isDraggingSelectionGroup;
         private bool isMarqueeSelectionPending;
         private bool isDraggingMarqueeSelection;
+        internal bool AvoidOverlap { get; private set; }
         private Point selectionDragStartScreenPosition;
         private MainWindow[] selectionDragWindows = Array.Empty<MainWindow>();
         private Point[] selectionDragInitialPositions = Array.Empty<Point>();
         public bool Bottommost = false;
+
+        internal void SetAvoidOverlap(bool avoidOverlap) => AvoidOverlap = avoidOverlap;
 
         //Window snapping preference:
         // TODO make this a configurable setting (an advanced setting)
@@ -72,6 +75,7 @@ namespace Cloudless
             selectionDragInitialPositions = selectionDragWindows
                 .Select(window => new Point(window.Left, window.Top))
                 .ToArray();
+            WindowCollisionManager.BeginGroupMove(selectionDragWindows);
             isDraggingSelectionGroup = true;
         }
 
@@ -358,7 +362,10 @@ namespace Cloudless
                     SelectWindowsIntersecting(selectionRectangle);
                 }
                 else if (!isMarqueeSelectionPending && isDraggingSelectionGroup)
+                {
                     SnapSelectionGroupToDisplayTop();
+                    WindowCollisionManager.EndGroupMove();
+                }
                 else if (!isMarqueeSelectionPending)
                     GlobalMouseModeManager.ToggleSelection(this);
 
@@ -1716,31 +1723,80 @@ namespace Cloudless
                 return (IntPtr)HTCLIENT;
             }
 
-            if (msg == WM_WINDOWPOSCHANGING && Bottommost && !SendWindowToBackInProgress)
+            if ((msg == WM_MOVING || msg == WM_SIZING) && AvoidOverlap &&
+                !MainWindow.LayoutLocked && WindowState == WindowState.Normal &&
+                WindowCollisionManager.TryGetBounds(this, out Rect currentBounds))
             {
-                // Marshal the native pointer to our structure to see what Windows is doing
+                RECT proposedNativeBounds = Marshal.PtrToStructure<RECT>(lParam);
+                Rect proposedBounds = new(
+                    proposedNativeBounds.Left,
+                    proposedNativeBounds.Top,
+                    proposedNativeBounds.Right - proposedNativeBounds.Left,
+                    proposedNativeBounds.Bottom - proposedNativeBounds.Top);
+                Rect constrainedBounds = WindowCollisionManager.Constrain(
+                    this,
+                    currentBounds,
+                    proposedBounds,
+                    isResizing: msg == WM_SIZING);
+
+                proposedNativeBounds.Left = (int)Math.Round(constrainedBounds.Left);
+                proposedNativeBounds.Top = (int)Math.Round(constrainedBounds.Top);
+                proposedNativeBounds.Right = (int)Math.Round(constrainedBounds.Right);
+                proposedNativeBounds.Bottom = (int)Math.Round(constrainedBounds.Bottom);
+                Marshal.StructureToPtr(proposedNativeBounds, lParam, true);
+                handled = true;
+                return new IntPtr(1);
+            }
+
+            if (msg == WM_WINDOWPOSCHANGING)
+            {
                 WINDOWPOS wp = (WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(WINDOWPOS));
+                bool needsWriteBack = false;
 
-                // If something (like a click or text focus) is trying to change the Z-order,
-                // inject the SWP_NOZORDER flag to block it from moving to the front.
-                wp.flags |= SWP_NOZORDER;
-
-                // If layout lock is enabled, also prevent move/size changes from the OS
-                const uint SWP_NOSIZE = 0x0001;
-                const uint SWP_NOMOVE = 0x0002;
-                if (MainWindow.LayoutLocked)
+                if (Bottommost && !SendWindowToBackInProgress)
                 {
-                    wp.flags |= SWP_NOSIZE | SWP_NOMOVE;
+                    wp.flags |= SWP_NOZORDER;
+                    if (MainWindow.LayoutLocked)
+                        wp.flags |= SWP_NOSIZE | SWP_NOMOVE;
+                    needsWriteBack = true;
                 }
 
-                // Write the modified flags back to the OS memory block
-                Marshal.StructureToPtr(wp, lParam, true);
+                if ((AvoidOverlap || WindowCollisionManager.IsInGroupMove(this)) && !MainWindow.LayoutLocked && WindowState == WindowState.Normal &&
+                    WindowCollisionManager.TryGetBounds(this, out Rect movingWindowBounds))
+                {
+                    bool noMove = (wp.flags & SWP_NOMOVE) != 0;
+                    bool noSize = (wp.flags & SWP_NOSIZE) != 0;
+                    Rect proposedBounds = new(
+                        noMove ? movingWindowBounds.Left : wp.x,
+                        noMove ? movingWindowBounds.Top : wp.y,
+                        noSize ? movingWindowBounds.Width : Math.Max(1, wp.cx),
+                        noSize ? movingWindowBounds.Height : Math.Max(1, wp.cy));
+                    Rect constrainedBounds = WindowCollisionManager.Constrain(this, movingWindowBounds, proposedBounds, !noSize);
+
+                    if (!noMove)
+                    {
+                        wp.x = (int)Math.Round(constrainedBounds.Left);
+                        wp.y = (int)Math.Round(constrainedBounds.Top);
+                    }
+                    if (!noSize)
+                    {
+                        wp.cx = (int)Math.Round(constrainedBounds.Width);
+                        wp.cy = (int)Math.Round(constrainedBounds.Height);
+                    }
+
+                    needsWriteBack = true;
+                }
+
+                if (needsWriteBack)
+                    Marshal.StructureToPtr(wp, lParam, true);
             }
 
             return IntPtr.Zero;
         }
 
         // Win32 Constants
+        private const int WM_SIZING = 0x0214;
+        private const int WM_MOVING = 0x0216;
         private const int WM_WINDOWPOSCHANGING = 0x0046;
         private const uint SWP_NOZORDER = 0x0004;
         private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);

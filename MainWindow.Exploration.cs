@@ -813,8 +813,8 @@ namespace Cloudless
         private void MaximizeVerticalDimension()
         {
             var wa = SystemParameters.WorkArea;
-            ResizeWindow(this.Width, wa.Height);
             RepositionWindow(this.Left, wa.Top);
+            ResizeWindow(this.Width, wa.Height);
         }
 
         public void NextBackground()

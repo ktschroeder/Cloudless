@@ -22,6 +22,7 @@ internal static class GlobalMouseModeManager
     internal static bool ShouldSuppressNextContextMenu => _suppressNextContextMenu;
     internal static bool IsSelected(MainWindow window) => SelectedWindows.Contains(window);
     internal static MainWindow[] GetSelectedWindows() => SelectedWindows.ToArray();
+    internal static MainWindow[] GetWindows() => Windows.ToArray();
 
     internal static void SetMarqueeSelectionRectangle(MainWindow owner, Rect? rectangle)
     {
