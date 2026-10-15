@@ -47,9 +47,6 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken PositionEnd = CommandToken.Literal("position", "end", "e");
     private static readonly CommandToken PositionFlag = CommandToken.Literal("position", "flag", "f");
     private static readonly CommandToken TriggerRoot = CommandToken.Literal("trigger", "trigger");
-    private static readonly CommandToken TriggerShortRoot = CommandToken.LiteralWithSuggestionAlias(
-        "trigger", "ss", new LiteralValue("slideshow", "ss"));
-    private static readonly CommandToken TriggerLongRoot = CommandToken.Literal("trigger", "slideshow");
     private static readonly CommandToken TriggerCount = CommandToken.Argument("count", IsPositiveInteger);
     private static readonly CommandToken SortRoot = CommandToken.Literal("command", "sort");
     private static readonly CommandToken SortName = CommandToken.Literal("type", "name");
@@ -707,13 +704,7 @@ internal static class CommandSyntaxCatalog
             new CommandForm("video-goto-flag", "Seek to the custom video flag.", PositionGotoRoot, PositionFlag),
             new CommandForm("video-set-trigger", "Mark this video as a slideshow trigger.", PositionSetRoot, TriggerRoot),
             new CommandForm("video-set-trigger", "Mark this video as a slideshow trigger after the specified number of hits.", PositionSetRoot, TriggerRoot, TriggerCount),
-            new CommandForm("video-set-trigger", "Mark this video as a slideshow trigger.", PositionSetRoot, TriggerShortRoot, TriggerRoot),
-            new CommandForm("video-set-trigger", "Mark this video as a slideshow trigger after the specified number of hits.", PositionSetRoot, TriggerShortRoot, TriggerRoot, TriggerCount),
-            new CommandForm("video-set-trigger", "Mark this video as a slideshow trigger.", PositionSetRoot, TriggerLongRoot, TriggerRoot),
-            new CommandForm("video-set-trigger", "Mark this video as a slideshow trigger after the specified number of hits.", PositionSetRoot, TriggerLongRoot, TriggerRoot, TriggerCount),
             new CommandForm("video-clear-trigger", "Clear the slideshow trigger for this video.", PositionClearRoot, TriggerRoot),
-            new CommandForm("video-clear-trigger", "Clear the slideshow trigger for this video.", PositionClearRoot, TriggerShortRoot, TriggerRoot),
-            new CommandForm("video-clear-trigger", "Clear the slideshow trigger for this video.", PositionClearRoot, TriggerLongRoot, TriggerRoot)
         };
 
         var sortForms = new[]

@@ -39,9 +39,10 @@ public sealed class CommandSuggestionProviderTests
         Assert.Contains("slideshow", slideshowSuggestions);
         Assert.DoesNotContain("ss", slideshowSuggestions);
 
-        var videoSlideshowSuggestions = MainWindow.GetCommandCompletions("set s", "set s".Length);
-        Assert.Contains("set slideshow", videoSlideshowSuggestions);
-        Assert.DoesNotContain("set ss", videoSlideshowSuggestions);
+        var videoTriggerSuggestions = MainWindow.GetCommandCompletions("set ", "set ".Length);
+        Assert.Contains("set trigger", videoTriggerSuggestions);
+        Assert.DoesNotContain("set slideshow", videoTriggerSuggestions);
+        Assert.DoesNotContain("set ss", videoTriggerSuggestions);
 
         var bSuggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("b");
         Assert.DoesNotContain("b page", bSuggestions);
@@ -81,6 +82,7 @@ public sealed class CommandSuggestionProviderTests
         Assert.Equal("set start", MainWindow.GetCommandCompletion("set s", "set s".Length));
         Assert.Equal("clear flag", MainWindow.GetCommandCompletion("clear f", "clear f".Length));
         Assert.Equal("goto start", MainWindow.GetCommandCompletion("goto ", "goto ".Length));
+        Assert.Equal("set trigger", MainWindow.GetCommandCompletion("set tr", "set tr".Length));
         Assert.Null(MainWindow.GetCommandCompletion("set trigger ", "set trigger ".Length));
     }
 
