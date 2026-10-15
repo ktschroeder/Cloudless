@@ -369,8 +369,6 @@ namespace Cloudless
             if (availableHeight < 40) availableHeight = 90; // default
             double thumbHeight = Math.Max(48, availableHeight - 12);
             double thumbWidth = Math.Round(thumbHeight * 1.6);
-            double thumbnailContentHeight = Math.Max(1, thumbHeight - 6);
-            double thumbnailContentWidth = Math.Max(1, thumbWidth - 6);
 
             for (int i = 0; i < files.Length; i++)
             {
@@ -404,8 +402,8 @@ namespace Cloudless
 
                 var img = new Image
                 {
-                    Width = thumbnailContentWidth,
-                    Height = thumbnailContentHeight,
+                    Width = thumbWidth,
+                    Height = thumbHeight,
                     Stretch = Stretch.UniformToFill,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -414,8 +412,8 @@ namespace Cloudless
 
                 var thumbnailGrid = new Grid
                 {
-                    Width = thumbnailContentWidth,
-                    Height = thumbnailContentHeight
+                    Width = thumbWidth,
+                    Height = thumbHeight
                 };
                 thumbnailGrid.Children.Add(img);
                 thumbnailGrid.Children.Add(new VideoThumbnailOverlay
