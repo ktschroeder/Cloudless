@@ -127,6 +127,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken WorkspaceList = CommandToken.Literal("action", "list");
     private static readonly CommandToken WorkspaceRev = CommandToken.Literal("action", "rev");
     private static readonly CommandToken WorkspaceUndoload = CommandToken.Literal("action", "undoload");
+    private static readonly CommandToken WorkspaceUndocloseall = CommandToken.Literal("action", "undocloseall");
     private static readonly CommandToken WorkspaceName = CommandToken.ArgumentRest("workspace", value => !string.IsNullOrWhiteSpace(value));
     private static readonly CommandToken WorkspacePath = CommandToken.ArgumentRest("path", value => !string.IsNullOrWhiteSpace(value));
     private static readonly CommandToken WorkspaceOldName = CommandToken.Argument("oldName", value => !string.IsNullOrWhiteSpace(value));
@@ -801,6 +802,7 @@ internal static class CommandSyntaxCatalog
             new CommandForm("workspace-list-path", "List saved workspaces containing the specified media path.", WorkspaceRoot, WorkspaceList, WorkspacePath),
             new CommandForm("workspace-reveal", "Reveal the workspace files directory in File Explorer.", WorkspaceRoot, WorkspaceRev),
             new CommandForm("workspace-undoload", "Load the workspace state saved before the most recent workspace load.", WorkspaceRoot, WorkspaceUndoload),
+            new CommandForm("workspace-undocloseall", "Restore the workspace saved before the most recent close-all or shutdown.", WorkspaceRoot, WorkspaceUndocloseall),
             new CommandForm("workspace-quicksave", "Save the current workspace to the quicksave slot.", QuickSaveRoot),
             new CommandForm("workspace-quicksave-close", "Quicksave, then close all windows if saving succeeds.", QuickSaveRoot, QuickSaveClose),
             new CommandForm("workspace-quickload", "Load the quicksave workspace.", QuickLoadRoot),

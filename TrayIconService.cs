@@ -158,6 +158,9 @@ namespace Cloudless
             var app = Application.Current;
             if (app == null) return;
 
+            if (!MainWindow.SaveWorkspaceBeforeCloseAll())
+                return;
+
             CloseAllCloudlessWindows();
 
             // Trigger normal shutdown (OnExit will run and cleanup)

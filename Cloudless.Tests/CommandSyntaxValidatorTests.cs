@@ -69,6 +69,7 @@ public sealed class CommandSyntaxValidatorTests
     [InlineData("fs bookmarks")]
     [InlineData("ws load sample")]
     [InlineData("ws origin")]
+    [InlineData("ws undocloseall")]
     [InlineData("set e")]
     [InlineData("set start")]
     [InlineData("clear s")]

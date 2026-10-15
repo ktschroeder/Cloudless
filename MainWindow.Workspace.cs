@@ -196,6 +196,9 @@ namespace Cloudless
 
         private void Shutdown()
         {
+            if (!SaveWorkspaceBeforeCloseAll())
+                return;
+
             try
             {
                 var loading = new LoadingWindow();
@@ -214,6 +217,20 @@ namespace Cloudless
             var app = Application.Current;
             // Trigger normal shutdown (OnExit will run and cleanup)
             app.Shutdown();
+        }
+
+        internal static bool SaveWorkspaceBeforeCloseAll()
+        {
+            MainWindow? mainWindow = Application.Current?.Windows.OfType<MainWindow>().FirstOrDefault();
+            if (mainWindow == null)
+                return true;
+
+            (int windowCount, _, string? error) = mainWindow.SaveWorkspace(UNDOCLOSEALL_NAME, allowOverwrite: true, isSystem: true);
+            if (windowCount >= 0)
+                return true;
+
+            mainWindow.Message("Failed to save workspace before closing all windows: " + (error ?? "Unexpected error."));
+            return false;
         }
 
         private void CloseAllOtherInstances()
@@ -482,7 +499,13 @@ namespace Cloudless
             // if loading undoload, we want to save to undoload_slot, load undoload, then delete undoload and replace it with renamed undoload_slot.
             try
             {
-                SaveWorkspace(workspaceName.Equals(UNDOLOAD_NAME) ? UNDOLOAD_SLOT_NAME : UNDOLOAD_NAME, allowOverwrite: true, isSystem: true);
+                string snapshotName = workspaceName switch
+                {
+                    UNDOLOAD_NAME => UNDOLOAD_SLOT_NAME,
+                    UNDOCLOSEALL_NAME => UNDOCLOSEALL_SLOT_NAME,
+                    _ => UNDOLOAD_NAME
+                };
+                SaveWorkspace(snapshotName, allowOverwrite: true, isSystem: true);
             }
             catch (Exception e)
             {
@@ -945,6 +968,8 @@ namespace Cloudless
         const string QUICKSAVE_NAME = "_system_quicksave";
         const string UNDOLOAD_NAME = "_system_undoload";
         const string UNDOLOAD_SLOT_NAME = "_system_undoload_slot";
+        const string UNDOCLOSEALL_NAME = "_system_undocloseall";
+        const string UNDOCLOSEALL_SLOT_NAME = "_system_undocloseall_slot";
         private bool Quicksave()  // returns whether successful
         {
             (int windowCount, int pageCount, string? error) = SaveWorkspace(QUICKSAVE_NAME, allowOverwrite: true, isSystem: true);
@@ -957,6 +982,33 @@ namespace Cloudless
             {
                 Message($"Quicksave done with {windowCount} windows and {pageCount} pages");
                 return true;
+            }
+        }
+
+        private async Task UndoCloseAll()
+        {
+            string path = Path.Combine(workspaceFilesPath, UNDOCLOSEALL_NAME + ".cloudless");
+            if (!File.Exists(path))
+            {
+                Message("No workspace snapshot is available to undo the last close-all or shutdown.");
+                return;
+            }
+
+            if (!await LoadWorkspace(UNDOCLOSEALL_NAME))
+                return;
+
+            string slotPath = Path.Combine(workspaceFilesPath, UNDOCLOSEALL_SLOT_NAME + ".cloudless");
+            try
+            {
+                if (!File.Exists(slotPath))
+                    throw new FileNotFoundException("The temporary undocloseall workspace was not saved.", slotPath);
+
+                File.Delete(path);
+                File.Move(slotPath, path);
+            }
+            catch (Exception e)
+            {
+                Message("Error while managing system undocloseall files: " + e.Message);
             }
         }
         private async Task Quickload()
@@ -1013,7 +1065,7 @@ namespace Cloudless
             name = name.ToLower().Trim();
             List<string> reservedNames = new List<string>()
             {
-                "origin", "undoload", "quicksave"
+                "origin", "undoload", "undocloseall", "quicksave"
             };
 
             if (reservedNames.Contains(name))

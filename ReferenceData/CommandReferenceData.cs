@@ -123,6 +123,7 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("ws origin load", "Load the workspace associated with the current image."),
                     new ReferenceItem("c | m | um origin", "Close, minimize, or unminimize all windows that share a workspace origin with the current window"),
                     new ReferenceItem("ws undoload", "Load the open workspace version that was present prior to the most recent 'ws load' or 'ws undoload' command."),
+                    new ReferenceItem("ws undocloseall", "Restore the workspace saved before the last 'close all', 'shutdown', or tray-menu 'Shutdown Cloudless' action."),
                     new ReferenceItem("ws list [optional: media path]", "List all saved workspaces containing the specified media path, or if not given, the current media"),
                 }, "A \"workspace\" is the collective arrangement of all open Cloudless windows. When you save a workspace, you can later load it to quickly open all its media, with their identical position, zoom, pan, crop, and Z-order. Also, any custom video start/end points are saved/applied.", "With \"ws l\", \"ws s\", etc., press tab to search name (press repeatedly to traverse matches. Hold Shift to reverse direction)"),
                 new ReferenceTab("Pages", new List<ReferenceItem>

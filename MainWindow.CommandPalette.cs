@@ -1442,6 +1442,8 @@ namespace Cloudless
                     Close();
                     return true;
                 case "close-all":
+                    if (!SaveWorkspaceBeforeCloseAll())
+                        return true;
                     CloseAllOtherInstances();
                     Close();
                     return true;
@@ -1590,6 +1592,9 @@ namespace Cloudless
                     return true;
                 case "workspace-undoload":
                     await UndoLoad();
+                    return true;
+                case "workspace-undocloseall":
+                    await UndoCloseAll();
                     return true;
                 case "workspace-quicksave":
                     Quicksave();
