@@ -136,6 +136,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken QuickLoadRoot = CommandToken.Literal("command", "ql");
     private static readonly CommandToken QuickMergeRoot = CommandToken.Literal("command", "qm");
     private static readonly CommandToken SelectionCountRoot = CommandToken.Literal("command", "sel");
+    private static readonly CommandToken SelectedAction = CommandToken.Literal("scope", "sel");
     private static readonly CommandToken CloseRoot = CommandToken.Literal("command", "close", "c");
     private static readonly CommandToken CloseOriginRoot = CommandToken.Literal("command", "c");
     private static readonly CommandToken MinimizeRoot = CommandToken.Literal("command", "m");
@@ -200,6 +201,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken CustomCommandText = CommandToken.ArgumentRest("commandText", value => !string.IsNullOrWhiteSpace(value), displayText: "[command]");
     private static readonly CommandToken AllWrapperRoot = CommandToken.Literal("wrapper", "all");
     private static readonly CommandToken OthersWrapperRoot = CommandToken.Literal("wrapper", "others");
+    private static readonly CommandToken SelectedWrapperRoot = CommandToken.Literal("wrapper", "sel");
     private static readonly CommandToken WrappedCommand = CommandToken.ArgumentRest("wrappedCommand", value => !string.IsNullOrWhiteSpace(value), displayText: "[command]");
     private static readonly CommandDefinition[] Definitions = CreateDefinitions();
 
@@ -272,7 +274,7 @@ internal static class CommandSyntaxCatalog
             return false;
 
         int consumedTokens;
-        if (AllWrapperRoot.TryMatch(tokens[0], out _) || OthersWrapperRoot.TryMatch(tokens[0], out _))
+        if (AllWrapperRoot.TryMatch(tokens[0], out _) || OthersWrapperRoot.TryMatch(tokens[0], out _) || SelectedWrapperRoot.TryMatch(tokens[0], out _))
             consumedTokens = 1;
         else if (MacroRoot.TryMatch(tokens[0], out _) && tokens.Length >= 4 && MacroRecord.TryMatch(tokens[1], out _))
             consumedTokens = 3;
@@ -660,9 +662,11 @@ internal static class CommandSyntaxCatalog
             new CommandForm("close-window", "Close this window.", CloseRoot),
             new CommandForm("close-all", "Close all windows.", CloseRoot, AllAction),
             new CommandForm("close-others", "Close all other windows.", CloseRoot, OthersAction),
+            new CommandForm("close-selected", "Close all selected windows.", CloseRoot, SelectedAction),
             new CommandForm("close-empty", "Close all empty windows.", CloseRoot, EmptyAction),
             new CommandForm("close-origin", "Close windows from this window's workspace origin.", CloseOriginRoot, OriginAction),
             new CommandForm("selection-count", "Show the number of selected windows.", SelectionCountRoot),
+            new CommandForm("selected-wrapper", "Execute the command on every selected window.", SelectedWrapperRoot, WrappedCommand),
             new CommandForm("minimize-all", "Minimize all windows.", MinimizeRoot, AllAction),
             new CommandForm("minimize-others", "Minimize all other windows.", MinimizeRoot, OthersAction),
             new CommandForm("minimize-origin", "Minimize windows from this window's workspace origin.", MinimizeRoot, OriginAction),
@@ -944,7 +948,7 @@ internal static class CommandSyntaxCatalog
                 customCommandForms),
             new CommandDefinition(
                 "command-wrappers",
-                "Usage: all [command] or others [command]",
+                "Usage: all [command], others [command], or sel [command]",
                 commandWrapperForms)
         };
     }

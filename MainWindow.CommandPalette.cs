@@ -1109,6 +1109,9 @@ namespace Cloudless
                 return true;
             }
 
+            if (parsed.DefinitionId == "general-actions" && parsed.Operation == "selected-wrapper")
+                return await ExecuteSelectedCommand(parsed.GetArgument("wrappedCommand")!);
+
             if (parsed.DefinitionId == "general-actions")
                 return ExecuteGeneralAction(parsed.Operation);
 
@@ -1210,6 +1213,13 @@ namespace Cloudless
             await SendCommandToOthers(command);
             if (parsed.Operation == "command-wrapper-all")
                 await ExecuteCommand(command);
+            return true;
+        }
+
+        private async Task<bool> ExecuteSelectedCommand(string command)
+        {
+            foreach (MainWindow window in GlobalMouseModeManager.GetSelectedWindows())
+                await window.ExecuteCommand(command);
             return true;
         }
 
@@ -1425,6 +1435,10 @@ namespace Cloudless
                     return true;
                 case "close-others":
                     CloseAllOtherInstances();
+                    return true;
+                case "close-selected":
+                    foreach (MainWindow selectedWindow in GlobalMouseModeManager.GetSelectedWindows())
+                        selectedWindow.Close();
                     return true;
                 case "close-empty":
                     CloseEmptyInstances();

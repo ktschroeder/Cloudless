@@ -150,11 +150,12 @@ namespace Cloudless.ReferenceData
                 }, "A \"page\" is similar to a simple workspace, but all pages' windows are kept in memory simultaneously. A workspace can contain up to 20 pages. The benefit of this is that you can swap full arrangements (pages) almost immediately, whereas loading a different workspace could take longer. It also enables more complex and organized workspaces with manageable layers, and enables slideshows. Beware of performance losses if you have lots of media in active memory. For commands with a [target], the target can be a page index, or any of: t (this), p (prev), n (next), pa/na (prev/next active), or pi/ni (prev/next inactive). Pages are considered active if they have any windows with loaded media."),
                 new ReferenceTab("Advanced", new List<ReferenceItem>
                 {
-                    new ReferenceItem("sel", "Show the number of selected windows"),
+                    new ReferenceItem("sel", "Show the number of selected windows; use 'sel [command]' to run a command on every selected window"),
                     new ReferenceItem("hotkey | hk [modifiers] [key]", "Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."),
                     new ReferenceItem("[command 1]; [command 2]; ...", "Chain multiple commands together using semicolons. Each command will be executed in sequence."),
                     new ReferenceItem("all [command]", "Execute [command] on each other window, and finally this window. (Use with caution.)"),
                     new ReferenceItem("others [command]", "Execute [command] on each other window. (Use with caution.)"),
+                    new ReferenceItem("sel [command]", "Execute [command] on every selected window. (Use with caution.)"),
                     new ReferenceItem("macro record [name] [command]", "Record custom command [command] that is saved and can be invoked with name [name]"),
                     new ReferenceItem("macro run [name]", "Run the custom command saved with name [name]"),
                     new ReferenceItem("macro delete [name]", "Delete the custom command saved with name [name]"),

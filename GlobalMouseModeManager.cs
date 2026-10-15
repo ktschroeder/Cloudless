@@ -19,6 +19,7 @@ internal static class GlobalMouseModeManager
     internal static int SelectedWindowCount => SelectedWindows.Count;
     internal static bool ShouldSuppressNextContextMenu => _suppressNextContextMenu;
     internal static bool IsSelected(MainWindow window) => SelectedWindows.Contains(window);
+    internal static MainWindow[] GetSelectedWindows() => SelectedWindows.ToArray();
 
     internal static void Register(MainWindow window)
     {
