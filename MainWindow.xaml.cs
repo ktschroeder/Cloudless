@@ -822,9 +822,16 @@ namespace Cloudless
         internal void SetWindowSelected(bool isSelected)
         {
             if (isSelected)
-                _multifunctionalOverlayWindow ??= new MultifunctionalOverlayWindow(this);
+                RecreateMultifunctionalOverlayWindow();
+            else
+                _multifunctionalOverlayWindow?.SetSelected(false);
+        }
 
-            _multifunctionalOverlayWindow?.SetSelected(isSelected);
+        internal void EnsureAuxiliaryWindowsAboveOwner()
+        {
+            _multifunctionalOverlayWindow?.EnsureZOrderAboveOwner();
+            if (_videoControlsVisible)
+                _videoControlsWindow?.EnsureZOrderAboveOwner();
         }
 
         internal void SetWindowCropMode(bool isCropMode)
@@ -848,12 +855,14 @@ namespace Cloudless
         {
             bool isSelected = GlobalMouseModeManager.IsSelected(this);
             MultifunctionalOverlayWindow? previousOverlay = _multifunctionalOverlayWindow;
+            Rect? cropSelectionRectangle = previousOverlay?.CropSelectionRectangle;
             _multifunctionalOverlayWindow = null;
             previousOverlay?.Close();
 
             _multifunctionalOverlayWindow = new MultifunctionalOverlayWindow(this);
             _multifunctionalOverlayWindow.SetSelected(isSelected);
             _multifunctionalOverlayWindow.SetCropMode(isCropMode);
+            _multifunctionalOverlayWindow.SetCropSelectionRectangle(cropSelectionRectangle);
         }
 
         private Cursor GetMouseCommandCursor()

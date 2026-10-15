@@ -46,6 +46,7 @@ namespace Cloudless
         {
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection && e.ChangedButton == MouseButton.Left)
             {
+                GlobalMouseModeManager.ResetOverlapWindowCycle();
                 if (PresentationSource.FromVisual(this) == null)
                 {
                     GlobalMouseModeManager.ToggleSelection(this);
@@ -1426,6 +1427,13 @@ namespace Cloudless
                 return;
             }
 
+            Point screenPosition = PointToScreen(e.GetPosition(this));
+            if (await HandleSelectionModeMouseWheel(e.Delta, modifiers, screenPosition))
+            {
+                e.Handled = true;
+                return;
+            }
+
             bool comicScrollMode = Cloudless.Properties.Settings.Default.ComicModeMouseControlScroll;
 
             if (MouseControlMode && comicScrollMode && isComicMode && imageTranslateTransform != null)
@@ -1439,6 +1447,7 @@ namespace Cloudless
                     ClampTransformToIntuitiveBounds();
                 }
             }
+
             else if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) || MouseControlMode)
             {
                 // If a video player is active, delegate zooming to it so it can handle airspace appropriately
@@ -1498,6 +1507,22 @@ namespace Cloudless
                     await GoToNextImage();
                 }
             }
+        }
+
+        internal async Task<bool> HandleSelectionModeMouseWheel(int delta, ModifierKeys modifiers, Point screenPosition)
+        {
+            if (!MouseCommandMode)
+                return false;
+
+            if (modifiers == ModifierKeys.Control)
+            {
+                GlobalMouseModeManager.ResetOverlapWindowCycle();
+                await ExecuteCommand(delta > 0 ? "p previous" : "p next");
+                return true;
+            }
+
+            return modifiers == ModifierKeys.None &&
+                GlobalMouseModeManager.CycleOverlappingWindows(this, screenPosition, delta);
         }
 
         private double GetCurrentDisplayHeight()

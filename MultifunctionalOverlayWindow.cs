@@ -28,10 +28,13 @@ internal sealed class MultifunctionalOverlayWindow : Window
     private readonly Grid _contentRoot;
     private Canvas? _cropSelectionCanvas;
     private Rectangle? _cropSelectionVisual;
+    private Rect? _cropSelectionRectangle;
     private bool _isSelected;
     private bool _isCropMode;
     private bool _hasCropSelection;
     private bool _isClosed;
+
+    internal Rect? CropSelectionRectangle => _cropSelectionRectangle;
 
     internal MultifunctionalOverlayWindow(MainWindow owner)
     {
@@ -84,6 +87,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
 
         if (rectangle is Rect selection)
         {
+            _cropSelectionRectangle = selection;
             _cropSelectionCanvas ??= CreateCropSelectionCanvas();
             if (!_contentRoot.Children.Contains(_cropSelectionCanvas))
                 _contentRoot.Children.Add(_cropSelectionCanvas);
@@ -101,6 +105,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
         }
         else
         {
+            _cropSelectionRectangle = null;
             ClearCropSelectionVisual();
         }
         RefreshVisibility();
@@ -179,6 +184,7 @@ internal sealed class MultifunctionalOverlayWindow : Window
     private void ClearCropSelectionVisual()
     {
         _hasCropSelection = false;
+        _cropSelectionRectangle = null;
         if (_cropSelectionVisual != null)
             _cropSelectionVisual.Visibility = Visibility.Collapsed;
         _cropSelectionVisual = null;

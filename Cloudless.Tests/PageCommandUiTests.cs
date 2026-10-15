@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Windows;
+using System.Windows.Input;
 using Xunit;
 
 namespace Cloudless.Tests;
@@ -40,6 +41,83 @@ public sealed class PageCommandUiTests
                 ShutdownApplication(app);
             }
         });
+    }
+
+    [Fact]
+    public void SelectionModeWheelCyclesOverlappingWindowsAndCtrlWheelChangesPages()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            var originalMouseMode = GlobalMouseModeManager.CurrentMode;
+            try
+            {
+                settings.CurrentPage = 1;
+                var first = new MainWindow(string.Empty, 800, 600, workspaceLoad: true)
+                {
+                    Left = 120,
+                    Top = 120
+                };
+                var second = new MainWindow(string.Empty, 800, 600, workspaceLoad: true)
+                {
+                    Left = 120,
+                    Top = 120
+                };
+                first.Show();
+                second.Show();
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Selection);
+                first.SetWindowCropMode(true);
+                first.SetWindowCropMode(false);
+                var previousOverlay = GetField<MultifunctionalOverlayWindow>(first, "_multifunctionalOverlayWindow");
+                GlobalMouseModeManager.SelectWindow(first);
+                var selectedOverlay = GetField<MultifunctionalOverlayWindow>(first, "_multifunctionalOverlayWindow");
+                Assert.NotSame(previousOverlay, selectedOverlay);
+                Assert.Equal(Visibility.Collapsed, GetField<System.Windows.Shapes.Rectangle>(selectedOverlay, "_cropBorderVisual").Visibility);
+
+                MainWindow topmost = GetTopmostWindow(first, second);
+                Point cursorPosition = topmost.PointToScreen(new Point(100, 100));
+                Assert.True(first.HandleSelectionModeMouseWheel(-120, ModifierKeys.None, cursorPosition).GetAwaiter().GetResult());
+                Assert.Same(first, Assert.Single(GlobalMouseModeManager.GetSelectedWindows()));
+                Assert.NotSame(topmost, GetTopmostWindow(first, second));
+                Assert.True(first.HandleSelectionModeMouseWheel(-120, ModifierKeys.None, cursorPosition).GetAwaiter().GetResult());
+                Assert.Same(first, Assert.Single(GlobalMouseModeManager.GetSelectedWindows()));
+                Assert.Same(topmost, GetTopmostWindow(first, second));
+
+                second.Hide();
+                GlobalMouseModeManager.ResetOverlapWindowCycle();
+                Assert.True(first.HandleSelectionModeMouseWheel(-120, ModifierKeys.None, cursorPosition).GetAwaiter().GetResult());
+                Assert.Same(first, Assert.Single(GlobalMouseModeManager.GetSelectedWindows()));
+
+                Assert.True(first.HandleSelectionModeMouseWheel(-120, ModifierKeys.Control, cursorPosition).GetAwaiter().GetResult());
+                Assert.Equal(2, settings.CurrentPage);
+                Assert.True(first.HandleSelectionModeMouseWheel(120, ModifierKeys.Control, cursorPosition).GetAwaiter().GetResult());
+                Assert.Equal(1, settings.CurrentPage);
+            }
+            finally
+            {
+                CloseTestWindows();
+                GlobalMouseModeManager.SetMode(originalMouseMode);
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    private static MainWindow GetTopmostWindow(params MainWindow[] windows)
+    {
+        var byHandle = windows.ToDictionary(window => new System.Windows.Interop.WindowInteropHelper(window).Handle);
+        IntPtr handle = NativeMethods.GetTopWindow(IntPtr.Zero);
+        while (handle != IntPtr.Zero)
+        {
+            if (byHandle.TryGetValue(handle, out MainWindow? window))
+                return window;
+            handle = NativeMethods.GetWindow(handle, NativeMethods.GW_HWNDNEXT);
+        }
+
+        throw new InvalidOperationException("The test windows were not found in the native z-order.");
     }
 
     [Fact]
