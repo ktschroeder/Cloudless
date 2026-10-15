@@ -139,6 +139,10 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken DeselectRoot = CommandToken.Literal("command", "deselect");
     private static readonly CommandToken PreventOverlapRoot = CommandToken.Literal("command", "prevent");
     private static readonly CommandToken AllowOverlapRoot = CommandToken.Literal("command", "allow");
+    private static readonly CommandToken PreventOverlapAliasRoot = CommandToken.LiteralWithSuggestionAlias(
+        "command", "po", new LiteralValue("prevent"));
+    private static readonly CommandToken AllowOverlapAliasRoot = CommandToken.LiteralWithSuggestionAlias(
+        "command", "ao", new LiteralValue("allow"));
     private static readonly CommandToken OverlapWord = CommandToken.Literal("option", "overlap");
     private static readonly CommandToken ClearSelectionRoot = CommandToken.Literal("command", "clear");
     private static readonly CommandToken ClearSelectionAliasRoot = CommandToken.Literal("command", "cs");
@@ -677,7 +681,9 @@ internal static class CommandSyntaxCatalog
             new CommandForm("select-window", "Select this window.", SelectRoot),
             new CommandForm("deselect-window", "Deselect this window.", DeselectRoot),
             new CommandForm("prevent-overlap", "Prevent this window from overlapping opted-in windows.", PreventOverlapRoot, OverlapWord),
+            new CommandForm("prevent-overlap", "Prevent this window from overlapping opted-in windows.", PreventOverlapAliasRoot),
             new CommandForm("allow-overlap", "Allow this window to overlap other windows.", AllowOverlapRoot, OverlapWord),
+            new CommandForm("allow-overlap", "Allow this window to overlap other windows.", AllowOverlapAliasRoot),
             new CommandForm("minimize-all", "Minimize all windows.", MinimizeRoot, AllAction),
             new CommandForm("minimize-others", "Minimize all other windows.", MinimizeRoot, OthersAction),
             new CommandForm("minimize-origin", "Minimize windows from this window's workspace origin.", MinimizeRoot, OriginAction),
@@ -886,7 +892,7 @@ internal static class CommandSyntaxCatalog
                 hotkeyForms),
             new CommandDefinition(
                 "general-actions",
-                "Window and application actions",
+                "Improper usage, consult command palette reference",
                 generalActionForms),
             new CommandDefinition(
                 "page",
@@ -1212,6 +1218,9 @@ internal static class CommandSyntaxCatalog
 
         public static CommandToken LiteralWithSuggestionAlias(string name, string canonical, LiteralValue suggestion) =>
             new(name, string.Join('/', suggestion.AllValues), new[] { new LiteralValue(canonical) }, null, new[] { suggestion }, false);
+
+        public static CommandToken LiteralWithHiddenAlias(string name, string canonical, string alias) =>
+            new(name, canonical, new[] { new LiteralValue(canonical, alias) }, null, new[] { new LiteralValue(canonical) }, false);
 
         public static CommandToken Literal(string name, string displayText, LiteralValue first, LiteralValue second, LiteralValue third, bool repeatable = false) =>
             new(name, displayText, new[] { first, second, third }, null, Array.Empty<LiteralValue>(), repeatable);

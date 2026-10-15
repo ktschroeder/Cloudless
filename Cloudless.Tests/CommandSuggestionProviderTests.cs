@@ -26,6 +26,22 @@ public sealed class CommandSuggestionProviderTests
     }
 
     [Fact]
+    public void AcceptsOverlapAliasesWithoutSuggestingThem()
+    {
+        Assert.True(CommandSyntaxValidator.IsValidCommand("po"));
+        Assert.True(CommandSyntaxValidator.IsValidCommand("ao"));
+        Assert.False(CommandSyntaxValidator.IsValidCommand("po overlap"));
+        Assert.False(CommandSyntaxValidator.IsValidCommand("ao overlap"));
+        var pSuggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("p");
+        Assert.Contains("prevent", pSuggestions);
+        Assert.DoesNotContain(pSuggestions, suggestion => suggestion.StartsWith("po", StringComparison.OrdinalIgnoreCase));
+
+        var aSuggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("a");
+        Assert.Contains("allow", aSuggestions);
+        Assert.DoesNotContain(aSuggestions, suggestion => suggestion.StartsWith("ao", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void PrefersHotkeyOverItsShortAliasAndDoesNotSuggestMalformedPageCommands()
     {
         var suggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("h");

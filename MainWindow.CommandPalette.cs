@@ -1515,9 +1515,11 @@ namespace Cloudless
                     return true;
                 case "prevent-overlap":
                     SetAvoidOverlap(true);
+                    Message("Enabled collision prevention");
                     return true;
                 case "allow-overlap":
                     SetAvoidOverlap(false);
+                    Message("Disabled collision prevention");
                     return true;
                 case "minimize-all":
                     MinimizeAllOtherInstances();
