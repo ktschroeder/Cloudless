@@ -20,6 +20,8 @@ namespace Cloudless
         private Point initialWindowPosition;
         private bool isSelectionDragPending;
         private bool isDraggingSelectionGroup;
+        private bool isMarqueeSelectionPending;
+        private bool isDraggingMarqueeSelection;
         private Point selectionDragStartScreenPosition;
         private MainWindow[] selectionDragWindows = Array.Empty<MainWindow>();
         private Point[] selectionDragInitialPositions = Array.Empty<Point>();
@@ -50,9 +52,12 @@ namespace Cloudless
 
                 isSelectionDragPending = true;
                 isDraggingSelectionGroup = false;
+                isMarqueeSelectionPending = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+                isDraggingMarqueeSelection = false;
                 selectionDragStartScreenPosition = PointToScreen(e.GetPosition(this));
                 selectionDragWindows = Array.Empty<MainWindow>();
                 selectionDragInitialPositions = Array.Empty<Point>();
+                LostMouseCapture += Window_LostMouseCapture;
                 Mouse.Capture(this);
                 e.Handled = true;
             }
@@ -211,6 +216,19 @@ namespace Cloudless
             {
                 Point currentScreenPosition = PointToScreen(e.GetPosition(this));
                 Vector mouseDelta = currentScreenPosition - selectionDragStartScreenPosition;
+                if (isMarqueeSelectionPending)
+                {
+                    if (!isDraggingMarqueeSelection &&
+                        (Math.Abs(mouseDelta.X) >= SystemParameters.MinimumHorizontalDragDistance ||
+                         Math.Abs(mouseDelta.Y) >= SystemParameters.MinimumVerticalDragDistance))
+                        isDraggingMarqueeSelection = true;
+
+                    if (isDraggingMarqueeSelection)
+                        GlobalMouseModeManager.SetMarqueeSelectionRectangle(this, CreateScreenRectangle(selectionDragStartScreenPosition, currentScreenPosition));
+
+                    return;
+                }
+
                 if (!isDraggingSelectionGroup)
                 {
                     if (MainWindow.LayoutLocked || WindowState != WindowState.Normal ||
@@ -332,15 +350,25 @@ namespace Cloudless
         {
             if (isSelectionDragPending && e.ChangedButton == MouseButton.Left)
             {
-                if (isDraggingSelectionGroup)
+                if (isDraggingMarqueeSelection)
+                {
+                    Point endScreenPosition = PointToScreen(e.GetPosition(this));
+                    Rect selectionRectangle = CreateScreenRectangle(selectionDragStartScreenPosition, endScreenPosition);
+                    GlobalMouseModeManager.SetMarqueeSelectionRectangle(this, null);
+                    SelectWindowsIntersecting(selectionRectangle);
+                }
+                else if (!isMarqueeSelectionPending && isDraggingSelectionGroup)
                     SnapSelectionGroupToDisplayTop();
-                else
+                else if (!isMarqueeSelectionPending)
                     GlobalMouseModeManager.ToggleSelection(this);
 
                 isSelectionDragPending = false;
                 isDraggingSelectionGroup = false;
+                isMarqueeSelectionPending = false;
+                isDraggingMarqueeSelection = false;
                 selectionDragWindows = Array.Empty<MainWindow>();
                 selectionDragInitialPositions = Array.Empty<Point>();
+                LostMouseCapture -= Window_LostMouseCapture;
                 Mouse.Capture(null);
                 e.Handled = true;
                 return;
@@ -380,6 +408,49 @@ namespace Cloudless
             isDraggingWindow = false;
             isDraggingWindowFromFullscreen = false;
             await UpdateContextMenuState();  // for zoom amount, which may change when window is resized
+        }
+
+        private static Rect CreateScreenRectangle(Point start, Point end) => new(
+            Math.Min(start.X, end.X),
+            Math.Min(start.Y, end.Y),
+            Math.Abs(end.X - start.X),
+            Math.Abs(end.Y - start.Y));
+
+        private static void SelectWindowsIntersecting(Rect selectionRectangle)
+        {
+            if (selectionRectangle.IsEmpty || selectionRectangle.Width <= 0 || selectionRectangle.Height <= 0)
+                return;
+
+            foreach (MainWindow window in Application.Current.Windows.OfType<MainWindow>())
+            {
+                if (!window.IsVisible || window.WindowState == WindowState.Minimized || PresentationSource.FromVisual(window) == null)
+                    continue;
+
+                if (!GetWindowRect(window.WindowHandle, out MarqueeWindowRectangle nativeBounds))
+                    continue;
+
+                Rect windowBounds = new(
+                    nativeBounds.Left,
+                    nativeBounds.Top,
+                    nativeBounds.Right - nativeBounds.Left,
+                    nativeBounds.Bottom - nativeBounds.Top);
+                if (selectionRectangle.IntersectsWith(windowBounds))
+                    GlobalMouseModeManager.SelectWindow(window);
+            }
+        }
+
+        private void Window_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            LostMouseCapture -= Window_LostMouseCapture;
+            if (isMarqueeSelectionPending)
+                GlobalMouseModeManager.SetMarqueeSelectionRectangle(this, null);
+
+            isSelectionDragPending = false;
+            isDraggingSelectionGroup = false;
+            isMarqueeSelectionPending = false;
+            isDraggingMarqueeSelection = false;
+            selectionDragWindows = Array.Empty<MainWindow>();
+            selectionDragInitialPositions = Array.Empty<Point>();
         }
 
         public async Task SimulateKeyEvent(Key key, bool shift, bool control, bool alt)
@@ -1674,6 +1745,10 @@ namespace Cloudless
         private const uint SWP_NOZORDER = 0x0004;
         private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetWindowRect(IntPtr hwnd, out MarqueeWindowRectangle rectangle);
+
 
         // Struct required to parse the WM_WINDOWPOSCHANGING message payload
         [StructLayout(LayoutKind.Sequential)]
@@ -1686,6 +1761,15 @@ namespace Cloudless
             public int cx;
             public int cy;
             public uint flags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MarqueeWindowRectangle
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
         }
     }
 }

@@ -867,7 +867,7 @@ namespace Cloudless
         bool _currentImageEverCropped = false;
         private async Task ToggleCropMode(bool? setTo = null, bool silent = false)
         {
-            if ((setTo == true || (setTo == null && isCropMode == false)) && !_currentImageEverCropped)
+            if ((setTo == true || (setTo == null && isCropMode == false)) && !_currentImageEverCropped && !isExplorationMode)
             {
                 EnterExplorationMode(silent: true, simulateZoomlessBestFit: true);  // without this, we get an odd bug where the image display changes weirdly, if cropping prior to pan/zoom, permanently until loading new image.
                 _currentImageEverCropped = true;

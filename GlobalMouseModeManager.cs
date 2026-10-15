@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Windows;
 
 namespace Cloudless;
 
@@ -13,6 +14,7 @@ internal static class GlobalMouseModeManager
 {
     private static readonly HashSet<MainWindow> Windows = new();
     private static readonly HashSet<MainWindow> SelectedWindows = new();
+    private static MarqueeSelectionOverlayWindow? _marqueeOverlay;
     private static bool _suppressNextContextMenu;
 
     internal static CloudlessMouseMode CurrentMode { get; private set; }
@@ -20,6 +22,31 @@ internal static class GlobalMouseModeManager
     internal static bool ShouldSuppressNextContextMenu => _suppressNextContextMenu;
     internal static bool IsSelected(MainWindow window) => SelectedWindows.Contains(window);
     internal static MainWindow[] GetSelectedWindows() => SelectedWindows.ToArray();
+
+    internal static void SetMarqueeSelectionRectangle(MainWindow owner, Rect? rectangle)
+    {
+        if (rectangle is Rect selectionRectangle)
+        {
+            if (_marqueeOverlay == null)
+            {
+                _marqueeOverlay = new MarqueeSelectionOverlayWindow(owner);
+                MarqueeSelectionOverlayWindow overlay = _marqueeOverlay;
+                overlay.Closed += (_, _) =>
+                {
+                    if (ReferenceEquals(_marqueeOverlay, overlay))
+                        _marqueeOverlay = null;
+                };
+            }
+
+            _marqueeOverlay.SetRectangle(selectionRectangle);
+        }
+        else
+        {
+            MarqueeSelectionOverlayWindow? overlay = _marqueeOverlay;
+            _marqueeOverlay = null;
+            overlay?.Close();
+        }
+    }
 
     internal static void Register(MainWindow window)
     {
