@@ -149,7 +149,7 @@ public sealed class CommandSuggestionProviderTests
     public void ReturnsMultipleCommandSuggestionsInPreferredOrder()
     {
         Assert.Equal(
-            new[] { "close all", "close others", "close empty" },
+            new[] { "close all", "close others", "close sel", "close empty" },
             MainWindow.GetCommandCompletions("close ", "close ".Length));
     }
 

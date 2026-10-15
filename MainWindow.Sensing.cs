@@ -18,6 +18,11 @@ namespace Cloudless
         private bool isDraggingWindow = false;
         private Point initialMouseScreenPosition;
         private Point initialWindowPosition;
+        private bool isSelectionDragPending;
+        private bool isDraggingSelectionGroup;
+        private Point selectionDragStartScreenPosition;
+        private MainWindow[] selectionDragWindows = Array.Empty<MainWindow>();
+        private Point[] selectionDragInitialPositions = Array.Empty<Point>();
         public bool Bottommost = false;
 
         //Window snapping preference:
@@ -36,9 +41,79 @@ namespace Cloudless
         {
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection && e.ChangedButton == MouseButton.Left)
             {
-                GlobalMouseModeManager.ToggleSelection(this);
+                if (PresentationSource.FromVisual(this) == null)
+                {
+                    GlobalMouseModeManager.ToggleSelection(this);
+                    e.Handled = true;
+                    return;
+                }
+
+                isSelectionDragPending = true;
+                isDraggingSelectionGroup = false;
+                selectionDragStartScreenPosition = PointToScreen(e.GetPosition(this));
+                selectionDragWindows = Array.Empty<MainWindow>();
+                selectionDragInitialPositions = Array.Empty<Point>();
+                Mouse.Capture(this);
                 e.Handled = true;
             }
+        }
+
+        private void BeginSelectionGroupDrag()
+        {
+            if (!GlobalMouseModeManager.IsSelected(this))
+                GlobalMouseModeManager.SelectWindow(this);
+
+            selectionDragWindows = GlobalMouseModeManager.GetSelectedWindows();
+            selectionDragInitialPositions = selectionDragWindows
+                .Select(window => new Point(window.Left, window.Top))
+                .ToArray();
+            isDraggingSelectionGroup = true;
+        }
+
+        private void MoveSelectionGroup(Vector mouseDelta)
+        {
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+            {
+                if (Math.Abs(mouseDelta.X) > Math.Abs(mouseDelta.Y))
+                    mouseDelta.Y = 0;
+                else
+                    mouseDelta.X = 0;
+            }
+
+            for (int index = 0; index < selectionDragWindows.Length; index++)
+            {
+                MainWindow window = selectionDragWindows[index];
+                Point start = selectionDragInitialPositions[index];
+                window.RepositionWindow(start.X + mouseDelta.X, start.Y + mouseDelta.Y);
+            }
+        }
+
+        private void SnapSelectionGroupToDisplayTop()
+        {
+            double downwardAdjustment = 0;
+            foreach (MainWindow window in selectionDragWindows)
+                downwardAdjustment = Math.Max(downwardAdjustment, GetMonitorTopInDips(window) - window.Top);
+
+            if (downwardAdjustment <= 0)
+                return;
+
+            // we do this proactively to get ahead of Windows's native snap behavior for windows 
+            // above the top of the display, which might otherwise impact individual windows
+            // in the selection, causing inconsistency/drift
+            foreach (MainWindow window in selectionDragWindows)
+                window.Top += downwardAdjustment;
+        }
+
+        private static double GetMonitorTopInDips(MainWindow window)
+        {
+            IntPtr handle = new WindowInteropHelper(window).Handle;
+            IntPtr monitor = MonitorFromWindow(handle, 2);
+            MONITORINFO monitorInfo = new() { cbSize = Marshal.SizeOf<MONITORINFO>() };
+            if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref monitorInfo))
+                return SystemParameters.VirtualScreenTop;
+
+            double dpiScale = PresentationSource.FromVisual(window)?.CompositionTarget?.TransformToDevice.M22 ?? 1.0;
+            return monitorInfo.rcMonitor.Top / dpiScale;
         }
 
         private void Window_MouseEnter(object sender, MouseEventArgs e)
@@ -131,6 +206,24 @@ namespace Cloudless
         {
             ShowCursorIfHidden();
             RefreshGlobalMouseModeCursor();
+
+            if (isSelectionDragPending && e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point currentScreenPosition = PointToScreen(e.GetPosition(this));
+                Vector mouseDelta = currentScreenPosition - selectionDragStartScreenPosition;
+                if (!isDraggingSelectionGroup)
+                {
+                    if (MainWindow.LayoutLocked || WindowState != WindowState.Normal ||
+                        (Math.Abs(mouseDelta.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                         Math.Abs(mouseDelta.Y) < SystemParameters.MinimumVerticalDragDistance))
+                        return;
+
+                    BeginSelectionGroupDrag();
+                }
+
+                MoveSelectionGroup(mouseDelta);
+                return;
+            }
 
             // Route to selection mode if active
             if (isDrawingSelection)
@@ -237,6 +330,22 @@ namespace Cloudless
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (isSelectionDragPending && e.ChangedButton == MouseButton.Left)
+            {
+                if (isDraggingSelectionGroup)
+                    SnapSelectionGroupToDisplayTop();
+                else
+                    GlobalMouseModeManager.ToggleSelection(this);
+
+                isSelectionDragPending = false;
+                isDraggingSelectionGroup = false;
+                selectionDragWindows = Array.Empty<MainWindow>();
+                selectionDragInitialPositions = Array.Empty<Point>();
+                Mouse.Capture(null);
+                e.Handled = true;
+                return;
+            }
+
             // Route to selection mode if active
             if (isDrawingSelection && e.LeftButton == MouseButtonState.Released)
             {
