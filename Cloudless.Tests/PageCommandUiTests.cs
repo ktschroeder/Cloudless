@@ -76,6 +76,11 @@ public sealed class PageCommandUiTests
                 Assert.NotSame(previousOverlay, selectedOverlay);
                 Assert.Equal(Visibility.Collapsed, GetField<System.Windows.Shapes.Rectangle>(selectedOverlay, "_cropBorderVisual").Visibility);
 
+                first.SetWindowCropMode(true);
+                var cropOverlay = GetField<MultifunctionalOverlayWindow>(first, "_multifunctionalOverlayWindow");
+                Assert.NotSame(selectedOverlay, cropOverlay);
+                Assert.Equal(Visibility.Visible, GetField<System.Windows.Shapes.Rectangle>(cropOverlay, "_cropBorderVisual").Visibility);
+
                 MainWindow topmost = GetTopmostWindow(first, second);
                 Point cursorPosition = topmost.PointToScreen(new Point(100, 100));
                 Assert.True(first.HandleSelectionModeMouseWheel(-120, ModifierKeys.None, cursorPosition).GetAwaiter().GetResult());
