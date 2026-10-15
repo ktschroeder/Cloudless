@@ -786,6 +786,12 @@ namespace Cloudless
                 return;
             }
 
+            if (key == Key.I && control && !alt && !shift)
+            {
+                GlobalMouseModeManager.InvertSelection();
+                return;
+            }
+
             if (key == Key.I)
             {
                 ImageInfo();

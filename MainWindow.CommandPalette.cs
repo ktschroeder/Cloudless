@@ -1000,6 +1000,18 @@ namespace Cloudless
                 return false;
             }
 
+            if (parsed.Operation == "clear-selection")
+            {
+                GlobalMouseModeManager.ClearSelection();
+                return true;
+            }
+
+            if (parsed.Operation == "invert-selection")
+            {
+                GlobalMouseModeManager.InvertSelection();
+                return true;
+            }
+
             if (parsed.DefinitionId == "video-position")
                 return ExecuteVideoPositionCommand(parsed);
 
@@ -1448,6 +1460,12 @@ namespace Cloudless
                     return true;
                 case "selection-count":
                     Message($"Selected windows: {GlobalMouseModeManager.SelectedWindowCount}");
+                    return true;
+                case "select-window":
+                    GlobalMouseModeManager.SelectWindow(this);
+                    return true;
+                case "deselect-window":
+                    GlobalMouseModeManager.DeselectWindow(this);
                     return true;
                 case "minimize-all":
                     MinimizeAllOtherInstances();

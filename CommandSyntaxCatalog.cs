@@ -137,6 +137,12 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken QuickMergeRoot = CommandToken.Literal("command", "qm");
     private static readonly CommandToken SelectionCountRoot = CommandToken.Literal("command", "sel");
     private static readonly CommandToken SelectedAction = CommandToken.Literal("scope", "sel");
+    private static readonly CommandToken SelectRoot = CommandToken.Literal("command", "select");
+    private static readonly CommandToken DeselectRoot = CommandToken.Literal("command", "deselect");
+    private static readonly CommandToken ClearSelectionRoot = CommandToken.Literal("command", "clear");
+    private static readonly CommandToken ClearSelectionAliasRoot = CommandToken.Literal("command", "cs");
+    private static readonly CommandToken InvertSelectionRoot = CommandToken.Literal("command", "invert");
+    private static readonly CommandToken InvertSelectionAliasRoot = CommandToken.Literal("command", "is");
     private static readonly CommandToken CloseRoot = CommandToken.Literal("command", "close", "c");
     private static readonly CommandToken CloseOriginRoot = CommandToken.Literal("command", "c");
     private static readonly CommandToken MinimizeRoot = CommandToken.Literal("command", "m");
@@ -667,6 +673,8 @@ internal static class CommandSyntaxCatalog
             new CommandForm("close-origin", "Close windows from this window's workspace origin.", CloseOriginRoot, OriginAction),
             new CommandForm("selection-count", "Show the number of selected windows.", SelectionCountRoot),
             new CommandForm("selected-wrapper", "Execute the command on every selected window.", SelectedWrapperRoot, WrappedCommand),
+            new CommandForm("select-window", "Select this window.", SelectRoot),
+            new CommandForm("deselect-window", "Deselect this window.", DeselectRoot),
             new CommandForm("minimize-all", "Minimize all windows.", MinimizeRoot, AllAction),
             new CommandForm("minimize-others", "Minimize all other windows.", MinimizeRoot, OthersAction),
             new CommandForm("minimize-origin", "Minimize windows from this window's workspace origin.", MinimizeRoot, OriginAction),
@@ -683,6 +691,10 @@ internal static class CommandSyntaxCatalog
 
         var videoPositionForms = new[]
         {
+            new CommandForm("clear-selection", "Clear the selection from all windows.", ClearSelectionRoot, SelectedAction),
+            new CommandForm("clear-selection", "Clear the selection from all windows.", ClearSelectionAliasRoot),
+            new CommandForm("invert-selection", "Invert the selection across all windows.", InvertSelectionRoot, SelectedAction),
+            new CommandForm("invert-selection", "Invert the selection across all windows.", InvertSelectionAliasRoot),
             new CommandForm("video-set-start", "Set the custom video loop start to the current position.", PositionSetRoot, PositionStart),
             new CommandForm("video-set-end", "Set the custom video loop end to the current position.", PositionSetRoot, PositionEnd),
             new CommandForm("video-set-flag", "Set a custom video flag to the current position.", PositionSetRoot, PositionFlag),

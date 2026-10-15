@@ -151,6 +151,10 @@ namespace Cloudless.ReferenceData
                 new ReferenceTab("Advanced", new List<ReferenceItem>
                 {
                     new ReferenceItem("sel", "Show the number of selected windows; use 'sel [command]' to run a command on every selected window"),
+                    new ReferenceItem("select", "Select the window"),
+                    new ReferenceItem("deselect", "Deselect the window"),
+                    new ReferenceItem("'clear sel' | 'cs'", "Clear selection (deselect all windows)"),
+                    new ReferenceItem("'invert sel' | 'is'", "Invert selection (flip the selection state of all windows)"),
                     new ReferenceItem("hotkey | hk [modifiers] [key]", "Simulate a hotkey press, e.g. 'hotkey ctrl shift c'. Useful if you want a command for a hotkey-only feature."),
                     new ReferenceItem("[command 1]; [command 2]; ...", "Chain multiple commands together using semicolons. Each command will be executed in sequence."),
                     new ReferenceItem("all [command]", "Execute [command] on each other window, and finally this window. (Use with caution.)"),

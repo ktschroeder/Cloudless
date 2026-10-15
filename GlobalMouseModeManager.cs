@@ -50,6 +50,40 @@ internal static class GlobalMouseModeManager
         window.SetWindowSelected(isSelected);
     }
 
+    internal static void SelectWindow(MainWindow window)
+    {
+        SelectedWindows.Add(window);
+        window.SetWindowSelected(true);
+    }
+
+    internal static void DeselectWindow(MainWindow window)
+    {
+        SelectedWindows.Remove(window);
+        window.SetWindowSelected(false);
+    }
+
+    internal static void InvertSelection()
+    {
+        foreach (MainWindow window in Windows)
+        {
+            bool isSelected = !SelectedWindows.Contains(window);
+            if (isSelected)
+                SelectedWindows.Add(window);
+            else
+                SelectedWindows.Remove(window);
+            window.SetWindowSelected(isSelected);
+        }
+    }
+
+    internal static void ClearSelection()
+    {
+        foreach (MainWindow window in SelectedWindows.ToArray())
+        {
+            SelectedWindows.Remove(window);
+            window.SetWindowSelected(false);
+        }
+    }
+
     internal static void SuppressNextContextMenu() => _suppressNextContextMenu = true;
 
     internal static bool ConsumeContextMenuSuppression()
