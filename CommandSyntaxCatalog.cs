@@ -46,7 +46,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken PositionStart = CommandToken.Literal("position", "start", "s");
     private static readonly CommandToken PositionEnd = CommandToken.Literal("position", "end", "e");
     private static readonly CommandToken PositionFlag = CommandToken.Literal("position", "flag", "f");
-    private static readonly CommandToken TriggerRoot = CommandToken.Literal("trigger", "trigger");
+    private static readonly CommandToken TriggerRoot = CommandToken.Literal("trigger", "trigger", "t");
     private static readonly CommandToken TriggerCount = CommandToken.Argument("count", IsPositiveInteger);
     private static readonly CommandToken SortRoot = CommandToken.Literal("command", "sort");
     private static readonly CommandToken SortName = CommandToken.Literal("type", "name");

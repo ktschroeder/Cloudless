@@ -83,6 +83,8 @@ public sealed class CommandSuggestionProviderTests
         Assert.Equal("clear flag", MainWindow.GetCommandCompletion("clear f", "clear f".Length));
         Assert.Equal("goto start", MainWindow.GetCommandCompletion("goto ", "goto ".Length));
         Assert.Equal("set trigger", MainWindow.GetCommandCompletion("set tr", "set tr".Length));
+        Assert.Equal("set trigger", MainWindow.GetCommandCompletion("set t", "set t".Length));
+        Assert.Equal("clear trigger", MainWindow.GetCommandCompletion("clear t", "clear t".Length));
         Assert.Null(MainWindow.GetCommandCompletion("set trigger ", "set trigger ".Length));
     }
 
