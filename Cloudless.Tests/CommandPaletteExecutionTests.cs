@@ -99,6 +99,11 @@ public class CommandPaletteExecutionTests
                 Assert.True(GlobalMouseModeManager.IsSelected(window));
                 typeof(MainWindow).GetMethod("SetWindowCropMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .Invoke(window, new object[] { true });
+                var selectionOverlayBeforeCropMode = selectionOverlay;
+                selectionOverlay = (Window)typeof(MainWindow)
+                    .GetField("_multifunctionalOverlayWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                    .GetValue(window)!;
+                Assert.NotSame(selectionOverlayBeforeCropMode, selectionOverlay);
                 var cropBorder = (FrameworkElement)selectionOverlay.GetType()
                     .GetField("_cropBorderVisual", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                     .GetValue(selectionOverlay)!;
