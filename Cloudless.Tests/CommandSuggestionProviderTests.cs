@@ -42,6 +42,18 @@ public sealed class CommandSuggestionProviderTests
     }
 
     [Fact]
+    public void SuggestsSelectedScopeForMinimizeAndUnminimizeCommands()
+    {
+        Assert.Equal("m sel", MainWindow.GetCommandCompletion("m s", "m s".Length));
+        Assert.Equal("um sel", MainWindow.GetCommandCompletion("um s", "um s".Length));
+        Assert.Equal("origin close", MainWindow.GetCommandCompletion("origin clo", "origin clo".Length));
+        Assert.Equal("minimize", MainWindow.GetCommandCompletion("mini", "mini".Length));
+        Assert.Equal("unminimize", MainWindow.GetCommandCompletion("unmi", "unmi".Length));
+        Assert.DoesNotContain("m", Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("m"));
+        Assert.DoesNotContain("um", Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("um"));
+    }
+
+    [Fact]
     public void PrefersHotkeyOverItsShortAliasAndDoesNotSuggestMalformedPageCommands()
     {
         var suggestions = Cloudless.ReferenceData.CommandSuggestionProvider.GetSuggestions("h");

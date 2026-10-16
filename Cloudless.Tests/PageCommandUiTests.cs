@@ -44,6 +44,119 @@ public sealed class PageCommandUiTests
     }
 
     [Fact]
+    public void StandaloneMinimizeCommandsOnlyAffectTheCurrentWindow()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            try
+            {
+                settings.CurrentPage = 1;
+                var current = CreateMediaWindow(1, "current.jpg");
+                var other = CreateMediaWindow(1, "other.jpg");
+
+                current.ExecuteCommand("m").GetAwaiter().GetResult();
+
+                Assert.Equal(WindowState.Minimized, current.WindowState);
+                Assert.Equal(WindowState.Normal, other.WindowState);
+
+                current.ExecuteCommand("um").GetAwaiter().GetResult();
+
+                Assert.Equal(WindowState.Normal, current.WindowState);
+                Assert.Equal(WindowState.Normal, other.WindowState);
+            }
+            finally
+            {
+                CloseTestWindows();
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
+    public void SelectedScopeMinimizesAndUnminimizesOnlySelectedWindows()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            try
+            {
+                settings.CurrentPage = 1;
+                var selectedWindow = CreateMediaWindow(1, "selected.jpg");
+                var otherWindow = CreateMediaWindow(1, "other.jpg");
+                GlobalMouseModeManager.ClearSelection();
+                GlobalMouseModeManager.SelectWindow(selectedWindow);
+
+                otherWindow.ExecuteCommand("m sel").GetAwaiter().GetResult();
+
+                Assert.Equal(WindowState.Minimized, selectedWindow.WindowState);
+                Assert.Equal(WindowState.Normal, otherWindow.WindowState);
+
+                otherWindow.ExecuteCommand("um sel").GetAwaiter().GetResult();
+
+                Assert.Equal(WindowState.Normal, selectedWindow.WindowState);
+                Assert.Equal(WindowState.Normal, otherWindow.WindowState);
+
+                selectedWindow.WindowState = WindowState.Minimized;
+                otherWindow.WindowState = WindowState.Minimized;
+                selectedWindow.ExecuteCommand("um others").GetAwaiter().GetResult();
+
+                Assert.Equal(WindowState.Minimized, selectedWindow.WindowState);
+                Assert.Equal(WindowState.Normal, otherWindow.WindowState);
+            }
+            finally
+            {
+                CloseTestWindows();
+                GlobalMouseModeManager.ClearSelection();
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
+    public void OriginWrapperExecutesCommandsOnlyForWindowsWithTheSameOrigin()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            try
+            {
+                settings.CurrentPage = 1;
+                var first = CreateMediaWindow(1, "origin-first.jpg");
+                var second = CreateMediaWindow(1, "origin-second.jpg");
+                var unrelated = CreateMediaWindow(1, "origin-unrelated.jpg");
+                SetField(first, "imageOriginalWorkspaceName", "shared-origin");
+                SetField(second, "imageOriginalWorkspaceName", "shared-origin");
+                SetField(unrelated, "imageOriginalWorkspaceName", "different-origin");
+                string? unrelatedInitialMessage = unrelated.LastMessage;
+
+                first.ExecuteCommand("origin echo origin-wrapper-test").GetAwaiter().GetResult();
+
+                Assert.Equal("echo: origin-wrapper-test", first.LastMessage);
+                Assert.Equal("echo: origin-wrapper-test", second.LastMessage);
+                Assert.Equal(unrelatedInitialMessage, unrelated.LastMessage);
+            }
+            finally
+            {
+                CloseTestWindows();
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
     public void SelectionModeWheelCyclesOverlappingWindowsAndCtrlWheelChangesPages()
     {
         RunOnStaThread(() =>

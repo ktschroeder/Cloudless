@@ -150,8 +150,8 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken InvertSelectionAliasRoot = CommandToken.Literal("command", "is");
     private static readonly CommandToken CloseRoot = CommandToken.Literal("command", "close", "c");
     private static readonly CommandToken CloseOriginRoot = CommandToken.Literal("command", "c");
-    private static readonly CommandToken MinimizeRoot = CommandToken.Literal("command", "m");
-    private static readonly CommandToken UnminimizeRoot = CommandToken.Literal("command", "um");
+    private static readonly CommandToken MinimizeRoot = CommandToken.LiteralWithHiddenAlias("command", "minimize", "m");
+    private static readonly CommandToken UnminimizeRoot = CommandToken.LiteralWithHiddenAlias("command", "unminimize", "um");
     private static readonly CommandToken AllAction = CommandToken.Literal("scope", "all");
     private static readonly CommandToken OthersAction = CommandToken.Literal("scope", "others");
     private static readonly CommandToken EmptyAction = CommandToken.Literal("scope", "empty");
@@ -213,6 +213,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken AllWrapperRoot = CommandToken.Literal("wrapper", "all");
     private static readonly CommandToken OthersWrapperRoot = CommandToken.Literal("wrapper", "others");
     private static readonly CommandToken SelectedWrapperRoot = CommandToken.Literal("wrapper", "sel");
+    private static readonly CommandToken OriginWrapperRoot = CommandToken.Literal("wrapper", "origin");
     private static readonly CommandToken WrappedCommand = CommandToken.ArgumentRest("wrappedCommand", value => !string.IsNullOrWhiteSpace(value), displayText: "[command]");
     private static readonly CommandDefinition[] Definitions = CreateDefinitions();
 
@@ -285,7 +286,8 @@ internal static class CommandSyntaxCatalog
             return false;
 
         int consumedTokens;
-        if (AllWrapperRoot.TryMatch(tokens[0], out _) || OthersWrapperRoot.TryMatch(tokens[0], out _) || SelectedWrapperRoot.TryMatch(tokens[0], out _))
+        if (AllWrapperRoot.TryMatch(tokens[0], out _) || OthersWrapperRoot.TryMatch(tokens[0], out _) ||
+            SelectedWrapperRoot.TryMatch(tokens[0], out _) || OriginWrapperRoot.TryMatch(tokens[0], out _))
             consumedTokens = 1;
         else if (MacroRoot.TryMatch(tokens[0], out _) && tokens.Length >= 4 && MacroRecord.TryMatch(tokens[1], out _))
             consumedTokens = 3;
@@ -685,10 +687,15 @@ internal static class CommandSyntaxCatalog
             new CommandForm("allow-overlap", "Allow this window to overlap other windows.", AllowOverlapRoot, OverlapWord),
             new CommandForm("allow-overlap", "Allow this window to overlap other windows.", AllowOverlapAliasRoot),
             new CommandForm("minimize-all", "Minimize all windows.", MinimizeRoot, AllAction),
+            new CommandForm("minimize-window", "Minimize this window.", MinimizeRoot),
             new CommandForm("minimize-others", "Minimize all other windows.", MinimizeRoot, OthersAction),
             new CommandForm("minimize-origin", "Minimize windows from this window's workspace origin.", MinimizeRoot, OriginAction),
+            new CommandForm("minimize-selected", "Minimize all selected windows.", MinimizeRoot, SelectedAction),
             new CommandForm("unminimize-all", "Unminimize all windows.", UnminimizeRoot, AllAction),
+            new CommandForm("unminimize-window", "Unminimize this window.", UnminimizeRoot),
+            new CommandForm("unminimize-others", "Unminimize all other windows.", UnminimizeRoot, OthersAction),
             new CommandForm("unminimize-origin", "Unminimize windows from this window's workspace origin.", UnminimizeRoot, OriginAction),
+            new CommandForm("unminimize-selected", "Unminimize all selected windows.", UnminimizeRoot, SelectedAction),
             new CommandForm("shutdown", "Close all Cloudless instances and shut down the background process.", ShutdownRoot),
             new CommandForm("deflash", "Minimize and unminimize all windows.", DeflashRoot),
             new CommandForm("stack", "Resize and diagonally stack windows on the current page.", StackRoot),
@@ -881,7 +888,8 @@ internal static class CommandSyntaxCatalog
         var commandWrapperForms = new[]
         {
             new CommandForm("command-wrapper-all", "Execute the command on each other window and then this window.", AllWrapperRoot, WrappedCommand),
-            new CommandForm("command-wrapper-others", "Execute the command on each other window.", OthersWrapperRoot, WrappedCommand)
+            new CommandForm("command-wrapper-others", "Execute the command on each other window.", OthersWrapperRoot, WrappedCommand),
+            new CommandForm("command-wrapper-origin", "Execute the command on windows from this window's workspace origin.", OriginWrapperRoot, WrappedCommand)
         };
 
         return new[]

@@ -1266,6 +1266,24 @@ namespace Cloudless
         private async Task<bool> ExecuteCommandWrapper(CommandParseResult parsed)
         {
             string command = parsed.GetArgument("wrappedCommand")!;
+            if (parsed.Operation == "command-wrapper-origin")
+            {
+                if (imageOriginalWorkspaceName == null)
+                {
+                    Message("This window does not have an origin workspace.");
+                    return true;
+                }
+
+                var originWindows = Application.Current.Windows
+                    .OfType<MainWindow>()
+                    .Where(window => window.imageOriginalWorkspaceName != null &&
+                        window.imageOriginalWorkspaceName.Equals(imageOriginalWorkspaceName))
+                    .ToList();
+                foreach (MainWindow window in originWindows)
+                    await window.ExecuteCommand(command);
+                return true;
+            }
+
             await SendCommandToOthers(command);
             if (parsed.Operation == "command-wrapper-all")
                 await ExecuteCommand(command);
@@ -1525,17 +1543,38 @@ namespace Cloudless
                     MinimizeAllOtherInstances();
                     MinimizeWindow();
                     return true;
+                case "minimize-window":
+                    MinimizeWindow();
+                    return true;
                 case "minimize-others":
                     MinimizeAllOtherInstances();
                     return true;
                 case "minimize-origin":
                     MinimizeWorkspaceOriginInstances();
                     return true;
+                case "minimize-selected":
+                    foreach (MainWindow selectedWindow in GlobalMouseModeManager.GetSelectedWindows())
+                        selectedWindow.MinimizeWindow();
+                    return true;
                 case "unminimize-all":
+                    UnminimizeAllOtherInstances();
+                    return true;
+                case "unminimize-window":
+                    if (WindowState == WindowState.Minimized)
+                        WindowState = WindowState.Normal;
+                    return true;
+                case "unminimize-others":
                     UnminimizeAllOtherInstances();
                     return true;
                 case "unminimize-origin":
                     UnminimizeWorkspaceOriginInstances();
+                    return true;
+                case "unminimize-selected":
+                    foreach (MainWindow selectedWindow in GlobalMouseModeManager.GetSelectedWindows())
+                    {
+                        if (selectedWindow.WindowState == WindowState.Minimized)
+                            selectedWindow.WindowState = WindowState.Normal;
+                    }
                     return true;
                 case "shutdown":
                     Shutdown();
