@@ -20,10 +20,13 @@ namespace Cloudless
         private Point initialWindowPosition;
         private bool isSelectionDragPending;
         private bool isDraggingSelectionGroup;
+        private bool selectionDragWindowWasSelected;
+        private bool selectionDragThresholdCrossed;
         private bool isMarqueeSelectionPending;
         private bool isDraggingMarqueeSelection;
         internal bool AvoidOverlap { get; private set; }
         private Point selectionDragStartScreenPosition;
+        private Point selectionDragInitialWindowPosition;
         private MainWindow[] selectionDragWindows = Array.Empty<MainWindow>();
         private Point[] selectionDragInitialPositions = Array.Empty<Point>();
         public bool Bottommost = false;
@@ -56,9 +59,12 @@ namespace Cloudless
 
                 isSelectionDragPending = true;
                 isDraggingSelectionGroup = false;
+                selectionDragWindowWasSelected = GlobalMouseModeManager.IsSelected(this);
+                selectionDragThresholdCrossed = false;
                 isMarqueeSelectionPending = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
                 isDraggingMarqueeSelection = false;
                 selectionDragStartScreenPosition = PointToScreen(e.GetPosition(this));
+                selectionDragInitialWindowPosition = new Point(Left, Top);
                 selectionDragWindows = Array.Empty<MainWindow>();
                 selectionDragInitialPositions = Array.Empty<Point>();
                 LostMouseCapture += Window_LostMouseCapture;
@@ -96,6 +102,21 @@ namespace Cloudless
                 Point start = selectionDragInitialPositions[index];
                 window.RepositionWindow(start.X + mouseDelta.X, start.Y + mouseDelta.Y);
             }
+        }
+
+        private void MoveUnselectedWindow(Vector mouseDelta)
+        {
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+            {
+                if (Math.Abs(mouseDelta.X) > Math.Abs(mouseDelta.Y))
+                    mouseDelta.Y = 0;
+                else
+                    mouseDelta.X = 0;
+            }
+
+            RepositionWindow(
+                selectionDragInitialWindowPosition.X + mouseDelta.X,
+                selectionDragInitialWindowPosition.Y + mouseDelta.Y);
         }
 
         private void SnapSelectionGroupToDisplayTop()
@@ -234,17 +255,28 @@ namespace Cloudless
                     return;
                 }
 
-                if (!isDraggingSelectionGroup)
+                if (!selectionDragThresholdCrossed)
                 {
-                    if (MainWindow.LayoutLocked || WindowState != WindowState.Normal ||
-                        (Math.Abs(mouseDelta.X) < SystemParameters.MinimumHorizontalDragDistance &&
-                         Math.Abs(mouseDelta.Y) < SystemParameters.MinimumVerticalDragDistance))
+                    if (Math.Abs(mouseDelta.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                        Math.Abs(mouseDelta.Y) < SystemParameters.MinimumVerticalDragDistance)
                         return;
 
-                    BeginSelectionGroupDrag();
+                    selectionDragThresholdCrossed = true;
                 }
 
-                MoveSelectionGroup(mouseDelta);
+                if (MainWindow.LayoutLocked || WindowState != WindowState.Normal)
+                    return;
+
+                if (selectionDragWindowWasSelected)
+                {
+                    if (!isDraggingSelectionGroup)
+                        BeginSelectionGroupDrag();
+                    MoveSelectionGroup(mouseDelta);
+                }
+                else
+                {
+                    MoveUnselectedWindow(mouseDelta);
+                }
                 return;
             }
 
@@ -367,11 +399,13 @@ namespace Cloudless
                     SnapSelectionGroupToDisplayTop();
                     WindowCollisionManager.EndGroupMove();
                 }
-                else if (!isMarqueeSelectionPending)
+                else if (!isMarqueeSelectionPending && !selectionDragThresholdCrossed)
                     GlobalMouseModeManager.ToggleSelection(this);
 
                 isSelectionDragPending = false;
                 isDraggingSelectionGroup = false;
+                selectionDragWindowWasSelected = false;
+                selectionDragThresholdCrossed = false;
                 isMarqueeSelectionPending = false;
                 isDraggingMarqueeSelection = false;
                 selectionDragWindows = Array.Empty<MainWindow>();
@@ -454,7 +488,11 @@ namespace Cloudless
                 GlobalMouseModeManager.SetMarqueeSelectionRectangle(this, null);
 
             isSelectionDragPending = false;
+            if (isDraggingSelectionGroup)
+                WindowCollisionManager.EndGroupMove();
             isDraggingSelectionGroup = false;
+            selectionDragWindowWasSelected = false;
+            selectionDragThresholdCrossed = false;
             isMarqueeSelectionPending = false;
             isDraggingMarqueeSelection = false;
             selectionDragWindows = Array.Empty<MainWindow>();

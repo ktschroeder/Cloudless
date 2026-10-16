@@ -111,6 +111,55 @@ public sealed class PageCommandUiTests
         });
     }
 
+    [Fact]
+    public void DraggingAnUnselectedWindowInSelectionModeMovesItWithoutSelectingIt()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var originalMouseMode = GlobalMouseModeManager.CurrentMode;
+            MainWindow? window = null;
+            try
+            {
+                window = new MainWindow(string.Empty, 800, 600, workspaceLoad: true)
+                {
+                    Left = 120,
+                    Top = 120
+                };
+                window.Show();
+                GlobalMouseModeManager.ClearSelection();
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Selection);
+                SetField(window, "selectionDragInitialWindowPosition", new Point(window.Left, window.Top));
+
+                var moveMethod = typeof(MainWindow).GetMethod("MoveUnselectedWindow", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(moveMethod);
+                moveMethod!.Invoke(window, new object[] { new Vector(80, 60) });
+
+                Assert.Equal(200, window.Left);
+                Assert.Equal(180, window.Top);
+                Assert.False(GlobalMouseModeManager.IsSelected(window));
+
+                SetField(window, "isSelectionDragPending", true);
+                SetField(window, "selectionDragThresholdCrossed", true);
+                var mouseUp = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+                {
+                    RoutedEvent = Mouse.MouseUpEvent
+                };
+                var mouseUpMethod = typeof(MainWindow).GetMethod("Window_MouseUp", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.NotNull(mouseUpMethod);
+                mouseUpMethod!.Invoke(window, new object[] { window, mouseUp });
+                Assert.False(GlobalMouseModeManager.IsSelected(window));
+            }
+            finally
+            {
+                CloseTestWindows();
+                GlobalMouseModeManager.ClearSelection();
+                GlobalMouseModeManager.SetMode(originalMouseMode);
+                ShutdownApplication(app);
+            }
+        });
+    }
+
     private static MainWindow GetTopmostWindow(params MainWindow[] windows)
     {
         var byHandle = windows.ToDictionary(window => new System.Windows.Interop.WindowInteropHelper(window).Handle);
