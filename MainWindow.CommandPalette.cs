@@ -410,6 +410,136 @@ namespace Cloudless
             bool alt = (modifiers & ModifierKeys.Alt) != 0;
             bool shift = (modifiers & ModifierKeys.Shift) != 0;
 
+            Key key = e.Key;
+            if (control)
+            {
+                // capture ALT + num key events that otherwise get swallowed by Windows as system inputs
+                if (e.SystemKey == Key.Back || e.SystemKey == Key.Delete || e.SystemKey == Key.Left || e.SystemKey == Key.Right)
+                {
+                    key = e.SystemKey;
+                }
+
+                if (shift && key == Key.Back)
+                {
+                    var tb = GetCommandTextBox();
+                    string t = tb.Text;
+                    if (tb != null && tb.CaretIndex > 0)
+                    {
+                        if (alt)
+                        {
+                            // remove substring from caret position back to start of text
+                            int i = tb.CaretIndex - 1;
+                            
+                            while (i >= 0)
+                            {
+                                t = t.Remove(i, 1);
+                                i--;
+                            }
+                            tb.Text = t;
+                            tb.CaretIndex = 0;
+                        }
+                        else
+                        {
+                            // remove substring from caret position back to previous whitespace (excluding trailing whitespace leading to caret position) or start of text
+                            // similar to default Windows behavior but we don't stop for dashes etc.
+                            int i = tb.CaretIndex - 1;
+                            while (i >= 0 && char.IsWhiteSpace(t[i]))
+                            {
+                                t = t.Remove(i, 1);
+                                i--;
+                            }
+                            while (i >= 0 && !char.IsWhiteSpace(t[i]))
+                            {
+                                t = t.Remove(i, 1);
+                                i--;
+                            }
+                            tb.Text = t;
+                            tb.CaretIndex = i + 1;  // move caret to position after last removed character
+                        }
+                    }
+                    e.Handled = true;
+                    return;
+                }
+
+                if (shift && key == Key.Delete)
+                {
+                    var tb = GetCommandTextBox();
+                    string t = tb.Text;
+                    if (tb != null && tb.CaretIndex < t.Length)
+                    {
+                        if (alt)
+                        {
+                            // remove substring from caret position to end of text
+                            int i = tb.CaretIndex;
+                            while (t.Length > i)
+                            {
+                                t = t.Remove(i, 1);
+                            }
+                            tb.Text = t;
+                            tb.CaretIndex = i;
+                        }
+                        else
+                        {
+                            // remove substring from caret position back to next whitespace (excluding trailing whitespace leading to caret position) or end of text
+                            // similar to default Windows behavior but we don't stop for dashes etc.
+                            int i = tb.CaretIndex;
+                            while (t.Length > i && char.IsWhiteSpace(t[i]))
+                            {
+                                t = t.Remove(i, 1);
+                            }
+                            while (t.Length > i && !char.IsWhiteSpace(t[i]))
+                            {
+                                t = t.Remove(i, 1);
+                            }
+                            tb.Text = t;
+                            tb.CaretIndex = i;
+                        }
+                    }
+                    e.Handled = true;
+                    return;
+                }
+
+                if (key == Key.Left)
+                {
+                    var tb = GetCommandTextBox();
+                    if (tb != null && tb.CaretIndex > 0)
+                    {
+                        int i = tb.CaretIndex - 1;
+                        while (i >= 0 && char.IsWhiteSpace(tb.Text[i]))
+                        {
+                            i--;
+                        }
+                        while (i >= 0 && !char.IsWhiteSpace(tb.Text[i]))
+                        {
+                            i--;
+                        }
+                        tb.CaretIndex = i + 1;
+                    }
+                    e.Handled = true;
+                    return;
+                }
+
+                if (key == Key.Right)
+                {
+                    var tb = GetCommandTextBox();
+                    if (tb != null && tb.CaretIndex < tb.Text.Length)
+                    {
+                        int i = tb.CaretIndex;
+                        while (tb.Text.Length > i && char.IsWhiteSpace(tb.Text[i]))
+                        {
+                            i++;
+                        }
+                        while (tb.Text.Length > i && !char.IsWhiteSpace(tb.Text[i]))
+                        {
+                            i++;
+                        }
+                        tb.CaretIndex = i;
+                    }
+                    e.Handled = true;
+                    return;
+                }
+            }
+
             if (e.Key == Key.Tab)
             {
                 TabPressed(shift, control);
