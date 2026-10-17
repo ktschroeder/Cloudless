@@ -203,7 +203,7 @@ namespace Cloudless
 
             if (e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1)
             {
-                if (Keyboard.Modifiers == ModifierKeys.Control || MouseControlMode)
+                if (ShouldPanImageOnLeftMouseDown(GlobalMouseModeManager.CurrentMode, Keyboard.Modifiers))
                 {
                     if (!isExplorationMode) EnterExplorationMode();
 

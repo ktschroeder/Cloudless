@@ -335,6 +335,18 @@ public sealed class PageCommandUiTests
         });
     }
 
+    [Theory]
+    [InlineData(ModifierKeys.None, true)]
+    [InlineData(ModifierKeys.Control, false)]
+    [InlineData(ModifierKeys.Control | ModifierKeys.Shift, false)]
+    [InlineData(ModifierKeys.Shift, true)]
+    public void ExplorationControlModeUsesCtrlDragForWindowMovement(ModifierKeys modifiers, bool shouldPan)
+    {
+        Assert.Equal(
+            shouldPan,
+            MainWindow.ShouldPanImageOnLeftMouseDown(CloudlessMouseMode.Control, modifiers));
+    }
+
     [Fact]
     public void DraggingAnUnselectedWindowInSelectionModeMovesItWithoutSelectingIt()
     {

@@ -772,6 +772,13 @@ namespace Cloudless
         private Cursor? _mouseCommandCursor;
         private Cursor? _pageControlCursor;
 
+        internal static bool ShouldPanImageOnLeftMouseDown(CloudlessMouseMode mode, ModifierKeys modifiers)
+        {
+            return mode == CloudlessMouseMode.Control
+                ? (modifiers & ModifierKeys.Control) == 0
+                : modifiers == ModifierKeys.Control;
+        }
+
         internal void ApplyGlobalMouseModeCursor(CloudlessMouseMode mode)
         {
             if (mode == CloudlessMouseMode.Normal)
