@@ -24,6 +24,10 @@ namespace Cloudless
         private bool selectionDragThresholdCrossed;
         private bool isMarqueeSelectionPending;
         private bool isDraggingMarqueeSelection;
+        private bool isPageControlDragPending;
+        private Point pageControlDragStartScreenPosition;
+        private Point pageControlDragInitialWindowPosition;
+        private MainWindow[] pageControlDragWindows = Array.Empty<MainWindow>();
         internal bool AvoidOverlap { get; private set; }
         private Point selectionDragStartScreenPosition;
         private Point selectionDragInitialWindowPosition;
@@ -47,6 +51,20 @@ namespace Cloudless
 
         private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.PageControl && e.ChangedButton == MouseButton.Left)
+            {
+                CloseQuickCommandWindow();
+                isPageControlDragPending = true;
+                pageControlDragStartScreenPosition = PointToScreen(e.GetPosition(this));
+                pageControlDragInitialWindowPosition = new Point(Left, Top);
+                pageControlDragWindows = GlobalMouseModeManager.IsSelected(this)
+                    ? GlobalMouseModeManager.GetSelectedWindows()
+                    : new[] { this };
+                LostMouseCapture += Window_LostMouseCapture;
+                Mouse.Capture(this);
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection && e.ChangedButton == MouseButton.Left)
             {
                 GlobalMouseModeManager.ResetOverlapWindowCycle();
@@ -160,6 +178,9 @@ namespace Cloudless
                 _videoControlsWindow.EnsureZOrderAboveOwner();
             }
 
+            if (isPageControlDragPending && e.ChangedButton == MouseButton.Left)
+                return;
+
             if (e.ChangedButton == MouseButton.Middle && e.ButtonState == MouseButtonState.Pressed)
             {
                 Point currentMousePosition = e.GetPosition(this);
@@ -237,6 +258,28 @@ namespace Cloudless
         {
             ShowCursorIfHidden();
             RefreshGlobalMouseModeCursor();
+
+            if (isPageControlDragPending && e.LeftButton == MouseButtonState.Pressed)
+            {
+                if (!MainWindow.LayoutLocked && WindowState == WindowState.Normal)
+                {
+                    Point currentScreenPosition = PointToScreen(e.GetPosition(this));
+                    Vector mouseDelta = currentScreenPosition - pageControlDragStartScreenPosition;
+                    if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                    {
+                        if (Math.Abs(mouseDelta.X) > Math.Abs(mouseDelta.Y))
+                            mouseDelta.Y = 0;
+                        else
+                            mouseDelta.X = 0;
+                    }
+
+                    RepositionWindow(
+                        pageControlDragInitialWindowPosition.X + mouseDelta.X,
+                        pageControlDragInitialWindowPosition.Y + mouseDelta.Y);
+                }
+
+                return;
+            }
 
             if (isSelectionDragPending && e.LeftButton == MouseButtonState.Pressed)
             {
@@ -386,6 +429,13 @@ namespace Cloudless
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (isPageControlDragPending && e.ChangedButton == MouseButton.Left)
+            {
+                EndPageControlDrag(releaseCapture: true);
+                e.Handled = true;
+                return;
+            }
+
             if (isSelectionDragPending && e.ChangedButton == MouseButton.Left)
             {
                 if (isDraggingMarqueeSelection)
@@ -485,6 +535,9 @@ namespace Cloudless
         private void Window_LostMouseCapture(object sender, MouseEventArgs e)
         {
             LostMouseCapture -= Window_LostMouseCapture;
+            if (isPageControlDragPending)
+                EndPageControlDrag(releaseCapture: false);
+
             if (isMarqueeSelectionPending)
                 GlobalMouseModeManager.SetMarqueeSelectionRectangle(this, null);
 
@@ -498,6 +551,15 @@ namespace Cloudless
             isDraggingMarqueeSelection = false;
             selectionDragWindows = Array.Empty<MainWindow>();
             selectionDragInitialPositions = Array.Empty<Point>();
+        }
+
+        private void EndPageControlDrag(bool releaseCapture)
+        {
+            isPageControlDragPending = false;
+            pageControlDragWindows = Array.Empty<MainWindow>();
+            LostMouseCapture -= Window_LostMouseCapture;
+            if (releaseCapture)
+                Mouse.Capture(null);
         }
 
         public async Task SimulateKeyEvent(Key key, bool shift, bool control, bool alt)
@@ -1427,6 +1489,13 @@ namespace Cloudless
         }
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.PageControl)
+            {
+                HandlePageControlMouseWheel(e.Delta);
+                e.Handled = true;
+                return;
+            }
+
             ModifierKeys modifiers = Keyboard.Modifiers;
             ModifierKeys controlAltAndShift = ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Shift;
             if ((modifiers & controlAltAndShift) == controlAltAndShift)
@@ -1544,6 +1613,24 @@ namespace Cloudless
                     await GoToNextImage();
                 }
             }
+        }
+
+        internal void HandlePageControlMouseWheel(int delta)
+        {
+            if (delta == 0)
+                return;
+
+            int pageDirection = delta > 0 ? -1 : 1;
+            int currentPageIndex = GetCurrentPageIndex();
+            int targetPageIndex = (currentPageIndex - 1 + pageDirection + 20) % 20 + 1;
+
+            if (isPageControlDragPending)
+            {
+                foreach (MainWindow window in pageControlDragWindows)
+                    window.AdvancePageForMouseCarry(pageDirection);
+            }
+
+            SwapViewToPage(targetPageIndex);
         }
 
         internal async Task<bool> HandleSelectionModeMouseWheel(int delta, ModifierKeys modifiers, Point screenPosition)

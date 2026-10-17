@@ -225,6 +225,99 @@ public sealed class PageCommandUiTests
     }
 
     [Fact]
+    public void PageControlModeWheelCyclesPagesAndWrapsAtTheEnds()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            var originalMouseMode = GlobalMouseModeManager.CurrentMode;
+            try
+            {
+                settings.CurrentPage = 20;
+                var pageTwentyWindow = CreateMediaWindow(20, "page-twenty.jpg");
+                var pageOneWindow = CreateMediaWindow(1, "page-one.jpg");
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.PageControl);
+
+                pageTwentyWindow.HandlePageControlMouseWheel(-120);
+
+                Assert.Equal(1, settings.CurrentPage);
+                Assert.False(pageTwentyWindow.IsVisible);
+                Assert.True(pageOneWindow.IsVisible);
+
+                pageOneWindow.HandlePageControlMouseWheel(120);
+
+                Assert.Equal(20, settings.CurrentPage);
+                Assert.True(pageTwentyWindow.IsVisible);
+                Assert.False(pageOneWindow.IsVisible);
+            }
+            finally
+            {
+                CloseTestWindows();
+                GlobalMouseModeManager.SetMode(originalMouseMode);
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
+    public void PageControlModeCarriesSelectionByTheSamePageDelta()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            var settings = Cloudless.Properties.Settings.Default;
+            var originalCurrentPage = settings.CurrentPage;
+            var originalMouseMode = GlobalMouseModeManager.CurrentMode;
+            try
+            {
+                settings.CurrentPage = 2;
+                var selectedWindowOnPageOne = CreateMediaWindow(1, "selected-page-one.jpg");
+                var draggedWindowOnPageTwo = CreateMediaWindow(2, "dragged-page-two.jpg");
+                GlobalMouseModeManager.ClearSelection();
+                GlobalMouseModeManager.SelectWindow(selectedWindowOnPageOne);
+                GlobalMouseModeManager.SelectWindow(draggedWindowOnPageTwo);
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.PageControl);
+                SetField(draggedWindowOnPageTwo, "isPageControlDragPending", true);
+                SetField(draggedWindowOnPageTwo, "pageControlDragWindows", new[]
+                {
+                    selectedWindowOnPageOne,
+                    draggedWindowOnPageTwo
+                });
+
+                draggedWindowOnPageTwo.HandlePageControlMouseWheel(-120);
+
+                Assert.Equal(3, settings.CurrentPage);
+                Assert.Equal(2, GetPageIndex(selectedWindowOnPageOne));
+                Assert.Equal(3, GetPageIndex(draggedWindowOnPageTwo));
+                Assert.Equal(1, GetPageIndex(draggedWindowOnPageTwo) - GetPageIndex(selectedWindowOnPageOne));
+
+                draggedWindowOnPageTwo.HandlePageControlMouseWheel(-120);
+
+                Assert.Equal(4, settings.CurrentPage);
+                Assert.Equal(3, GetPageIndex(selectedWindowOnPageOne));
+                Assert.Equal(4, GetPageIndex(draggedWindowOnPageTwo));
+                Assert.Equal(1, GetPageIndex(draggedWindowOnPageTwo) - GetPageIndex(selectedWindowOnPageOne));
+                Assert.Equal(2, GlobalMouseModeManager.SelectedWindowCount);
+                Assert.True(draggedWindowOnPageTwo.IsVisible);
+                Assert.False(selectedWindowOnPageOne.IsVisible);
+            }
+            finally
+            {
+                CloseTestWindows();
+                GlobalMouseModeManager.ClearSelection();
+                GlobalMouseModeManager.SetMode(originalMouseMode);
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
     public void DraggingAnUnselectedWindowInSelectionModeMovesItWithoutSelectingIt()
     {
         RunOnStaThread(() =>

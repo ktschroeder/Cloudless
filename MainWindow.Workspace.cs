@@ -1303,6 +1303,25 @@ namespace Cloudless
             }
         }
 
+        internal void AdvancePageForMouseCarry(int direction)
+        {
+            int targetPageIndex = (windowPageIndex - 1 + direction + 20) % 20 + 1;
+            if (targetPageIndex == windowPageIndex)
+                return;
+
+            int triggerCount = SlideshowTriggerCount;
+            if (triggerCount > 0)
+            {
+                SlideshowManager.UnregisterTriggerPage(windowPageIndex);
+                SlideshowTriggerCount = 0;
+                _slideshowTriggerHitCount = 0;
+            }
+
+            windowPageIndex = targetPageIndex;
+            if (triggerCount > 0)
+                SetSlideshowTrigger(triggerCount);
+        }
+
         public int ZIndexBeforePageSwap = 0;
         public void SwapViewToPage(int pageIndex, bool skipHide = false, bool fromSlideshow = false)
         {
