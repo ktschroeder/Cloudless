@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -24,6 +24,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="custom_cursor.cur" />
+	  <None Remove="page-cursor.cur" />
 	  <None Remove="no-thumbnail.png" />
 	</ItemGroup>
 	<ItemGroup>
@@ -43,6 +44,9 @@
 
   <ItemGroup>
     <Resource Include="custom_cursor.cur">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="page-cursor.cur">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

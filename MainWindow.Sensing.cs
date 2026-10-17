@@ -353,7 +353,8 @@ namespace Cloudless
                 }
             }
 
-            if (!isPanningImage && Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver && !MouseControlMode && !MouseCommandMode)
+            if (!isPanningImage && Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver &&
+                GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Normal)
             {
                 this.Cursor = Cursors.Hand;  // could be better custom cursor
             }
@@ -1377,7 +1378,7 @@ namespace Cloudless
             if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
             {
                 // Revert to the default cursor when Ctrl is released
-                if (!isPanningImage && !MouseControlMode && !MouseCommandMode)
+                if (!isPanningImage && GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Normal)
                 {
                     this.Cursor = Cursors.Arrow;
                 }

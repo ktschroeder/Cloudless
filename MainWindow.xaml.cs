@@ -799,6 +799,7 @@ namespace Cloudless
         public bool MouseControlMode => GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Control;
         public bool MouseCommandMode => GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection;
         private Cursor? _mouseCommandCursor;
+        private Cursor? _pageControlCursor;
 
         private void ToggleMouseControlMode()
         {
@@ -825,7 +826,13 @@ namespace Cloudless
 
             _cursorIdleTimer?.Stop();
             _cursorIsHidden = false;
-            Cursor = mode == CloudlessMouseMode.Control ? Cursors.ScrollAll : GetMouseCommandCursor();
+            Cursor = mode switch
+            {
+                CloudlessMouseMode.Control => Cursors.ScrollAll,
+                CloudlessMouseMode.Selection => GetMouseCommandCursor(),
+                CloudlessMouseMode.PageControl => GetPageControlCursor(),
+                _ => Cursors.Arrow
+            };
         }
 
         internal void RefreshGlobalMouseModeCursor()
@@ -909,6 +916,29 @@ namespace Cloudless
             return _mouseCommandCursor;
         }
 
+        private Cursor GetPageControlCursor()
+        {
+            if (_pageControlCursor != null)
+                return _pageControlCursor;
+
+            try
+            {
+                var streamInfo = Application.GetResourceStream(
+                    new Uri("pack://application:,,,/Cloudless;component/page-cursor.cur", UriKind.Absolute));
+                if (streamInfo?.Stream == null)
+                    return Cursors.ScrollNS;
+
+                using (streamInfo.Stream)
+                    _pageControlCursor = new Cursor(streamInfo.Stream);
+            }
+            catch (IOException)
+            {
+                _pageControlCursor = Cursors.ScrollNS;
+            }
+
+            return _pageControlCursor;
+        }
+
         private MenuItem CreateFullWidthSeparator()
         {
             var sep = new MenuItem();
@@ -950,6 +980,13 @@ namespace Cloudless
             // Ensure submenu uses full-width items panel so separators stretch
             zoomMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
             cm.Items.Add(zoomMenu);
+
+            var mouseModeMenu = new MenuItem { Header = "Mouse Mode" };
+            mouseModeMenu.SubmenuOpened += MouseModeMenu_SubmenuOpened;
+            mouseModeMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
+            foreach (CloudlessMouseMode mode in Enum.GetValues<CloudlessMouseMode>())
+                mouseModeMenu.Items.Add(CreateMouseModeMenuItem(mode));
+            cm.Items.Add(mouseModeMenu);
 
             _audioTrackMenu = new MenuItem { Header = "Audio Track", IsEnabled = false };
             cm.Items.Add(_audioTrackMenu);
@@ -1040,6 +1077,63 @@ namespace Cloudless
             // Populate recent files menu now so HasItems is set and arrow will appear
             _ = UpdateRecentFilesMenu(isStartUp: true);
             _ = UpdateBookmarksMenu();
+        }
+
+        private MenuItem CreateMouseModeMenuItem(CloudlessMouseMode mode)
+        {
+            var item = new MenuItem
+            {
+                Tag = mode,
+                IsCheckable = true
+            };
+            item.Click += MouseModeMenuItem_Click;
+            SetMouseModeMenuItemHeader(item, mode);
+            return item;
+        }
+
+        private void SetMouseModeMenuItemHeader(MenuItem item, CloudlessMouseMode mode)
+        {
+            bool isSelected = GlobalMouseModeManager.CurrentMode == mode;
+            string modeName = mode switch
+            {
+                CloudlessMouseMode.Normal => "Standard",
+                CloudlessMouseMode.Control => "Exploration Control",
+                CloudlessMouseMode.Selection => "Selection",
+                CloudlessMouseMode.PageControl => "Page Control Mode",
+                _ => mode.ToString()
+            };
+            item.Header = $"{(isSelected ? "✓ " : "  ")}{modeName}";
+            item.IsChecked = isSelected;
+        }
+
+        private void MouseModeMenu_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem menu)
+                return;
+
+            foreach (var item in menu.Items.OfType<MenuItem>())
+            {
+                if (item.Tag is CloudlessMouseMode mode)
+                    SetMouseModeMenuItemHeader(item, mode);
+                else if (Enum.TryParse(item.Tag?.ToString(), out mode))
+                    SetMouseModeMenuItemHeader(item, mode);
+            }
+        }
+
+        private void MouseModeMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item)
+                return;
+
+            CloudlessMouseMode mode;
+            if (item.Tag is CloudlessMouseMode typedMode)
+                mode = typedMode;
+            else if (!Enum.TryParse(item.Tag?.ToString(), out mode))
+                return;
+
+            GlobalMouseModeManager.SetMode(mode);
+            if (item.Parent is MenuItem menu)
+                MouseModeMenu_SubmenuOpened(menu, e);
         }
     }
 }

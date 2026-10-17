@@ -8,7 +8,8 @@ internal enum CloudlessMouseMode
 {
     Normal,
     Control,
-    Selection
+    Selection,
+    PageControl
 }
 
 internal static class GlobalMouseModeManager
