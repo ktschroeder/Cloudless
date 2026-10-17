@@ -259,6 +259,12 @@ namespace Cloudless
             ShowCursorIfHidden();
             RefreshGlobalMouseModeCursor();
 
+            if (_mouseModeRadialWindow != null && _middleClickCaptureActive)
+            {
+                _mouseModeRadialWindow.UpdateHighlight(PointToScreen(e.GetPosition(this)));
+                return;
+            }
+
             if (isPageControlDragPending && e.LeftButton == MouseButtonState.Pressed)
             {
                 if (!MainWindow.LayoutLocked && WindowState == WindowState.Normal)
@@ -1489,6 +1495,12 @@ namespace Cloudless
         }
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
+            if (_mouseModeRadialWindow != null)
+            {
+                e.Handled = true;
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.PageControl)
             {
                 HandlePageControlMouseWheel(e.Delta);
@@ -1672,29 +1684,29 @@ namespace Cloudless
         }
         private async void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (!GlobalMouseModeManager.ShouldSuppressNextContextMenu)
-            {
-                await UpdateZoomMenuHeaderAsync();
-                UpdateVideoTrackMenus();
-                // Get mouse position in screen coordinates
-                Point mousePos = e.GetPosition(this);
-                
-                // Set explicit placement to avoid WPF's auto-flip behavior on different DPI settings
-                ImageContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Relative;
-                ImageContextMenu.PlacementTarget = this;
-                ImageContextMenu.HorizontalOffset = mousePos.X;
-                ImageContextMenu.VerticalOffset = mousePos.Y;
-                
-                ImageContextMenu.IsOpen = true;
-            }
-            //else
-            //    ImageContextMenu.IsOpen = false;
-
-            //SkipNextContextMenu = false;
+            await UpdateZoomMenuHeaderAsync();
+            UpdateVideoTrackMenus();
+            Point mousePos = e.GetPosition(this);
+            ImageContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Relative;
+            ImageContextMenu.PlacementTarget = this;
+            ImageContextMenu.HorizontalOffset = mousePos.X;
+            ImageContextMenu.VerticalOffset = mousePos.Y;
+            ImageContextMenu.IsOpen = true;
         }
         DispatcherTimer _middleClickDoubleClickTimer;
+        private bool _middleClickLongPressTriggered;
+        private bool _middleClickCaptureActive;
+        private bool _middleClickCancelled;
+        private MouseModeRadialWindow? _mouseModeRadialWindow;
+
         private void MiddleClickDown()
         {
+            _middleClickLongPressTriggered = false;
+            _middleClickCancelled = false;
+            _middleClickCaptureActive = Mouse.Capture(this);
+            if (_middleClickCaptureActive)
+                LostMouseCapture += MiddleClick_LostMouseCapture;
+
             _middleClickHoldTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Settings.Default.MouseLongPressMS) };
 
             _middleClickHoldTimer.Tick += (s, args) =>
@@ -1703,15 +1715,41 @@ namespace Cloudless
                 if (Mouse.MiddleButton != MouseButtonState.Pressed)
                     return;
 
-                ToggleMouseCommandMode();
-                //e.Handled = true;
+                _middleClickLongPressTriggered = true;
+                OpenMouseModeRadialWindow();
             };
             _middleClickHoldTimer.Start();
         }
+
         private async Task MiddleClickUp()
         {
             bool timerStillLive = _middleClickHoldTimer?.IsEnabled ?? false;
             _middleClickHoldTimer?.Stop();
+
+            if (_middleClickCancelled)
+            {
+                CloseMouseModeRadialWindow();
+                ReleaseMiddleClickCapture();
+                _middleClickCancelled = false;
+                _middleClickLongPressTriggered = false;
+                return;
+            }
+
+            if (_middleClickLongPressTriggered)
+            {
+                Point screenPosition = PointToScreen(Mouse.GetPosition(this));
+                CloudlessMouseMode? selectedMode = _mouseModeRadialWindow?.GetModeAtScreenPosition(screenPosition);
+                CloseMouseModeRadialWindow();
+                _middleClickDoubleClickTimer?.Stop();
+                _middleClickLongPressTriggered = false;
+                ReleaseMiddleClickCapture();
+
+                if (selectedMode.HasValue)
+                    GlobalMouseModeManager.SetMode(selectedMode.Value);
+                return;
+            }
+
+            ReleaseMiddleClickCapture();
 
             if (_middleClickDoubleClickTimer?.IsEnabled ?? false)  // we got a second middle click within double click threshold
             {
@@ -1732,6 +1770,45 @@ namespace Cloudless
                 }
             }            
         }
+
+        private void OpenMouseModeRadialWindow()
+        {
+            CloseMouseModeRadialWindow();
+            Point anchor = PointToScreen(TargetCenterForQuickCommandDisplay);
+            _mouseModeRadialWindow = new MouseModeRadialWindow(this, anchor);
+            _mouseModeRadialWindow.Show();
+            _mouseModeRadialWindow.UpdateHighlight(PointToScreen(Mouse.GetPosition(this)));
+        }
+
+        private void CloseMouseModeRadialWindow()
+        {
+            _mouseModeRadialWindow?.Close();
+            _mouseModeRadialWindow = null;
+        }
+
+        private void ReleaseMiddleClickCapture()
+        {
+            if (!_middleClickCaptureActive)
+                return;
+
+            _middleClickCaptureActive = false;
+            LostMouseCapture -= MiddleClick_LostMouseCapture;
+            if (Mouse.Captured == this)
+                Mouse.Capture(null);
+        }
+
+        private void MiddleClick_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            if (!_middleClickCaptureActive)
+                return;
+
+            _middleClickCaptureActive = false;
+            LostMouseCapture -= MiddleClick_LostMouseCapture;
+            _middleClickCancelled = true;
+            _middleClickHoldTimer?.Stop();
+            CloseMouseModeRadialWindow();
+        }
+
         private void ShortMiddleClick()
         {
             OpenQuickCommandWindow();

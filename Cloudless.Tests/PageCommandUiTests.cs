@@ -318,6 +318,24 @@ public sealed class PageCommandUiTests
     }
 
     [Fact]
+    public void RadialModeIconsLoadForWindowsAndCustomCursors()
+    {
+        RunOnStaThread(() =>
+        {
+            var app = CreateApplication();
+            try
+            {
+                foreach (CloudlessMouseMode mode in Enum.GetValues<CloudlessMouseMode>())
+                    Assert.True(MouseModeRadialWindow.CreateCursorImage(mode) != null, $"The {mode} cursor did not render.");
+            }
+            finally
+            {
+                ShutdownApplication(app);
+            }
+        });
+    }
+
+    [Fact]
     public void DraggingAnUnselectedWindowInSelectionModeMovesItWithoutSelectingIt()
     {
         RunOnStaThread(() =>

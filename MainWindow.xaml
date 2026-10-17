@@ -22,10 +22,7 @@
         DragOver="Window_DragOver"
         Drop="Window_Drop"
         Loaded="Window_Loaded"
-        PreviewMouseDown="Window_PreviewMouseDown"
-        PreviewMouseRightButtonDown="Window_PreviewMouseRightButtonDown"
-        PreviewMouseRightButtonUp="Window_PreviewMouseRightButtonUp"
-        ContextMenuOpening="Window_ContextMenuOpening">
+        PreviewMouseDown="Window_PreviewMouseDown">
 
     <Border x:Name="MainBorder" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="2">
         <Grid Name="MyGrid">

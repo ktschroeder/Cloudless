@@ -57,8 +57,7 @@ public class CommandPaletteExecutionTests
                 Assert.Equal(galleryCountBeforeInvalidPreview, Application.Current.Windows.OfType<GalleryWindow>().Count());
 
                 modeInitiator = new MainWindow("global-mouse-mode-probe", 400, 300, workspaceLoad: true);
-                typeof(MainWindow).GetMethod("ToggleMouseCommandMode", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-                    .Invoke(modeInitiator, null);
+                GlobalMouseModeManager.SetMode(CloudlessMouseMode.Selection);
                 Assert.True(modeInitiator.MouseCommandMode);
                 Assert.True(window.MouseCommandMode);
                 Assert.NotSame(System.Windows.Input.Cursors.Cross, window.Cursor);

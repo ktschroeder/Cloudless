@@ -255,8 +255,10 @@ namespace Cloudless
             this.PreviewMouseWheel -= OnMouseWheelZoom;
 
             // Stop any timers that may be active
-            _rightClickHoldTimer?.Stop();
             _middleClickHoldTimer?.Stop();
+            _middleClickDoubleClickTimer?.Stop();
+            CloseMouseModeRadialWindow();
+            ReleaseMiddleClickCapture();
             _resizeStarTimer?.Stop();
             _shootingStarTimer?.Stop();
             _cursorIdleTimer?.Stop();
@@ -743,38 +745,7 @@ namespace Cloudless
             return !string.IsNullOrEmpty(value);
         }
 
-        private DispatcherTimer _rightClickHoldTimer;
         private DispatcherTimer _middleClickHoldTimer;
-
-        private void Window_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            TimeSpan RIGHT_CLICK_LONG_HOLD = TimeSpan.FromMilliseconds(Settings.Default.MouseLongPressMS);
-
-            _rightClickHoldTimer = new DispatcherTimer { Interval = RIGHT_CLICK_LONG_HOLD };
-
-            _rightClickHoldTimer.Tick += (s, args) =>
-            {
-                _rightClickHoldTimer.Stop();
-                if (Mouse.RightButton != MouseButtonState.Pressed)
-                    return;
-
-                ToggleMouseControlMode();
-                GlobalMouseModeManager.SuppressNextContextMenu();
-                e.Handled = true;
-            };
-            _rightClickHoldTimer.Start();
-        }
-
-        private void Window_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            _rightClickHoldTimer?.Stop();
-        }
-
-        private void Window_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            if (GlobalMouseModeManager.ConsumeContextMenuSuppression())
-                e.Handled = true;
-        }
 
         // Toggle play/pause when space is pressed while focus is on the video control
         private void VideoControl_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
@@ -801,20 +772,6 @@ namespace Cloudless
         private Cursor? _mouseCommandCursor;
         private Cursor? _pageControlCursor;
 
-        private void ToggleMouseControlMode()
-        {
-            GlobalMouseModeManager.SetMode(MouseControlMode
-                ? CloudlessMouseMode.Normal
-                : CloudlessMouseMode.Control);
-        }
-
-        private void ToggleMouseCommandMode()
-        {
-            GlobalMouseModeManager.SetMode(MouseCommandMode
-                ? CloudlessMouseMode.Normal
-                : CloudlessMouseMode.Selection);
-        }
-
         internal void ApplyGlobalMouseModeCursor(CloudlessMouseMode mode)
         {
             if (mode == CloudlessMouseMode.Normal)
@@ -826,14 +783,16 @@ namespace Cloudless
 
             _cursorIdleTimer?.Stop();
             _cursorIsHidden = false;
-            Cursor = mode switch
-            {
-                CloudlessMouseMode.Control => Cursors.ScrollAll,
-                CloudlessMouseMode.Selection => GetMouseCommandCursor(),
-                CloudlessMouseMode.PageControl => GetPageControlCursor(),
-                _ => Cursors.Arrow
-            };
+            Cursor = GetMouseModeCursor(mode);
         }
+
+        internal Cursor GetMouseModeCursor(CloudlessMouseMode mode) => mode switch
+        {
+            CloudlessMouseMode.Control => Cursors.ScrollAll,
+            CloudlessMouseMode.Selection => GetMouseCommandCursor(),
+            CloudlessMouseMode.PageControl => GetPageControlCursor(),
+            _ => Cursors.Arrow
+        };
 
         internal void RefreshGlobalMouseModeCursor()
         {

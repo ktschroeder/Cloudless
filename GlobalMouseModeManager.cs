@@ -17,7 +17,6 @@ internal static class GlobalMouseModeManager
     private static readonly HashSet<MainWindow> Windows = new();
     private static readonly HashSet<MainWindow> SelectedWindows = new();
     private static MarqueeSelectionOverlayWindow? _marqueeOverlay;
-    private static bool _suppressNextContextMenu;
     private static Point? _lastOverlapCyclePoint;
     private static MainWindow[] _lastOverlapCycleCandidates = Array.Empty<MainWindow>();
     private static MainWindow? _lastOverlapCycleWindow;
@@ -28,7 +27,6 @@ internal static class GlobalMouseModeManager
 
     internal static CloudlessMouseMode CurrentMode { get; private set; }
     internal static int SelectedWindowCount => SelectedWindows.Count;
-    internal static bool ShouldSuppressNextContextMenu => _suppressNextContextMenu;
     internal static bool IsSelected(MainWindow window) => SelectedWindows.Contains(window);
     internal static MainWindow[] GetSelectedWindows() => SelectedWindows.ToArray();
     internal static MainWindow[] GetWindows() => Windows.ToArray();
@@ -195,12 +193,4 @@ internal static class GlobalMouseModeManager
         }
     }
 
-    internal static void SuppressNextContextMenu() => _suppressNextContextMenu = true;
-
-    internal static bool ConsumeContextMenuSuppression()
-    {
-        bool shouldSuppress = _suppressNextContextMenu;
-        _suppressNextContextMenu = false;
-        return shouldSuppress;
-    }
 }
