@@ -758,9 +758,7 @@ namespace Cloudless
                 }
                 else if (control && alt)
                 {
-                    DebugTextBlockBorder.Visibility = DebugTextBlockBorder.Visibility == Visibility.Visible
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
+                    ToggleDebugInfoWindow();
                     return;
                 }
 

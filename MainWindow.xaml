@@ -68,18 +68,6 @@ VerticalAlignment="Center">
                 </StackPanel>
             </Border>
 
-            <!-- Debug Info Overlay -->
-            <Border x:Name="DebugTextBlockBorder" HorizontalAlignment="Left" VerticalAlignment="Bottom" 
-                    Margin="10"
-                    Background="{DynamicResource OverlayBackground}"
-                    CornerRadius="5" Padding="5" Visibility="Collapsed" Panel.ZIndex="99999999">
-                <TextBlock x:Name="DebugTextBlock" 
-                           Foreground="{DynamicResource PrimaryForeground}"
-                           FontSize="12" 
-                           TextWrapping="Wrap">
-                </TextBlock>
-            </Border>
-
             <!-- Messages -->
             <StackPanel x:Name="MessageOverlayStack"
                         Orientation="Vertical"

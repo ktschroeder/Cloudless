@@ -91,6 +91,7 @@ namespace Cloudless
 
         private OverlayMessageManager? overlayManager;
         private OverlayMessageWindow? overlayWindow;
+        private DebugInfoWindow? _debugInfoWindow;
         private HwndSource? _hwndSource;
 
         private const int MaxRecentFilesInGallery = 30;
@@ -219,6 +220,7 @@ namespace Cloudless
 
             _filmStripWindow?.Close();
             _commandPaletteWindow?.Close();
+            _debugInfoWindow?.Close();
             overlayWindow?.Close();
             CleanupVideoControls();
 
@@ -533,7 +535,7 @@ namespace Cloudless
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
         {
-            if (ImageDisplay == null || DebugTextBlock.Visibility != Visibility.Visible )
+            if (ImageDisplay == null || _debugInfoWindow?.IsVisible != true)
                 return;
 
             // Window dimensions
@@ -590,7 +592,7 @@ namespace Cloudless
             var preloadKeys = _preloadManager != null ? _preloadManager.GetPreloadCacheKeys() : new List<string>();
 
             // Debug text
-            DebugTextBlock.Text =
+            string debugText =
             $"Window Dimensions: {windowWidth:F2} x {windowHeight:F2}\n" +
             $"Image Rendered Dimensions: {imageWidth:F2} x {imageHeight:F2}\n" +
             (imageTrueWidth.HasValue && imageTrueHeight.HasValue
@@ -613,9 +615,22 @@ namespace Cloudless
             $"Allocated memory (global): {MemoryMB:F2} MB";
 
             foreach (var key in preloadKeys)
+                debugText += $"Preload Cache: {key}\n";
+
+            _debugInfoWindow.DebugText = debugText;
+        }
+
+        private void ToggleDebugInfoWindow()
+        {
+            _debugInfoWindow ??= new DebugInfoWindow(this);
+            if (_debugInfoWindow.IsVisible)
             {
-                DebugTextBlock.Text += $"Preload Cache: {key}\n";
+                _debugInfoWindow.Hide();
+                return;
             }
+
+            _debugInfoWindow.AlignToOwner();
+            _debugInfoWindow.Show();
         }
 
         internal string? LastMessage { get; private set; }
