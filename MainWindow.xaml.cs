@@ -1017,6 +1017,10 @@ namespace Cloudless
             var mouseModeMenu = new MenuItem { Header = "Mouse Mode" };
             mouseModeMenu.SubmenuOpened += MouseModeMenu_SubmenuOpened;
             mouseModeMenu.ItemsPanel = (ItemsPanelTemplate)FindResource("FullWidthItemsPanelTemplate");
+            var mouseModeReferenceItem = new MenuItem { Header = "Mouse Mode Reference" };
+            mouseModeReferenceItem.Click += MouseModeRef_Click;
+            mouseModeMenu.Items.Add(mouseModeReferenceItem);
+            mouseModeMenu.Items.Add(CreateFullWidthSeparator());
             foreach (CloudlessMouseMode mode in Enum.GetValues<CloudlessMouseMode>())
                 mouseModeMenu.Items.Add(CreateMouseModeMenuItem(mode));
             cm.Items.Add(mouseModeMenu);

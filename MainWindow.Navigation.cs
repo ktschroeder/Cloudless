@@ -205,6 +205,19 @@ namespace Cloudless
         {
             CommandPaletteRef();
         }
+        private void MouseModeRef_Click(object sender, RoutedEventArgs e)
+        {
+            MouseModeRef();
+        }
+        private void MouseModeRef()
+        {
+            var mmrWindow = new MouseModeRefWindow();
+
+            mmrWindow.Owner = this;
+            mmrWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            mmrWindow.Show();
+        }
         private CommandRefWindow CommandPaletteRef()
         {
             var cprWindow = new CommandRefWindow();

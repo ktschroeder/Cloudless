@@ -89,6 +89,8 @@ VerticalAlignment="Center">
                         <!-- Items will be populated dynamically -->
                     </MenuItem>
                     <MenuItem x:Name="MouseModeMenu" Header="Mouse Mode" SubmenuOpened="MouseModeMenu_SubmenuOpened">
+                        <MenuItem Header="Mouse Mode Reference" Click="MouseModeRef_Click" />
+                        <Separator />
                         <MenuItem Header="Standard" Tag="Normal" IsCheckable="True" Click="MouseModeMenuItem_Click" />
                         <MenuItem Header="Exploration Control" Tag="Control" IsCheckable="True" Click="MouseModeMenuItem_Click" />
                         <MenuItem Header="Selection" Tag="Selection" IsCheckable="True" Click="MouseModeMenuItem_Click" />
