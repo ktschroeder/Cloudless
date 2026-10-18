@@ -839,7 +839,7 @@ namespace Cloudless
             CloudlessMouseMode.Control => Cursors.ScrollAll,
             CloudlessMouseMode.Selection => GetMouseCommandCursor(),
             CloudlessMouseMode.PageControl => GetPageControlCursor(),
-            CloudlessMouseMode.Arrangement => Cursors.SizeAll,
+            CloudlessMouseMode.Arrangement => Cursors.Hand,
             CloudlessMouseMode.Annotation => _annotationOverlayWindow?.AnnotationCursor ?? Cursors.Pen,
             _ => Cursors.Arrow
         };

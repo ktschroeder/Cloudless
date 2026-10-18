@@ -1658,7 +1658,10 @@ namespace Cloudless
                 if (currentWidth <= 0 || currentHeight <= 0 || !double.IsFinite(Left) || !double.IsFinite(Top))
                     return;
 
-                double scaleFactor = Math.Pow(1.05, e.Delta / 120.0);
+                double scalePerNotch = GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Arrangement
+                    ? GetArrangementScalePerNotch(modifiers)
+                    : 1.05;
+                double scaleFactor = Math.Pow(scalePerNotch, e.Delta / 120.0);
                 double minScale = Math.Max(
                     Math.Max(100, MinWidth) / currentWidth,
                     Math.Max(100, MinHeight) / currentHeight);
@@ -1779,6 +1782,13 @@ namespace Cloudless
             }
 
             SwapViewToPage(targetPageIndex);
+        }
+
+        internal static double GetArrangementScalePerNotch(ModifierKeys modifiers)
+        {
+            bool fine = (modifiers & ModifierKeys.Alt) != 0;
+            bool coarse = (modifiers & ModifierKeys.Shift) != 0;
+            return fine == coarse ? 1.05 : fine ? 1.01 : 1.20;
         }
 
         internal async Task<bool> HandleSelectionModeMouseWheel(int delta, ModifierKeys modifiers, Point screenPosition)
