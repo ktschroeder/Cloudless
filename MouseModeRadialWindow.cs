@@ -21,6 +21,17 @@ namespace Cloudless
         private const double RadialInnerRadius = 48;
         private const double RadialDeadZone = RadialInnerRadius;
         private const double RadialOuterRadius = 142;
+        private readonly record struct PixelOffset(int X, int Y);
+        private readonly record struct ModeContentOffsets(PixelOffset Icon, PixelOffset Label);
+        private static readonly IReadOnlyDictionary<CloudlessMouseMode, ModeContentOffsets> ContentOffsets = new Dictionary<CloudlessMouseMode, ModeContentOffsets>
+        {
+            [CloudlessMouseMode.Normal] = new(new PixelOffset(10, 0), new PixelOffset(0, 0)),
+            [CloudlessMouseMode.Control] = new(new PixelOffset(10, -2), new PixelOffset(-5, -5)),
+            [CloudlessMouseMode.Selection] = new(new PixelOffset(0, 5), new PixelOffset(8, 10)),
+            [CloudlessMouseMode.PageControl] = new(new PixelOffset(13, 8), new PixelOffset(-9 , 7)),
+            [CloudlessMouseMode.Arrangement] = new(new PixelOffset(0, 0), new PixelOffset(0, 10)),
+            [CloudlessMouseMode.Annotation] = new(new PixelOffset(0, 0), new PixelOffset(0, 0))
+        };
         private readonly Point _anchorScreenPosition;
         private readonly CloudlessMouseMode _currentMode;
         private readonly Dictionary<CloudlessMouseMode, ShapePath> _choices = new();
@@ -245,64 +256,65 @@ namespace Cloudless
             double centerAngle = sector * 45;
             _choices.Add(mode, path);
 
-            StackPanel content = CreateChoiceContent(mode, glyph, label);
-            const double contentWidth = 100;
-            const double contentHeight = 72;
             double labelRadius = (RadialInnerRadius + RadialOuterRadius) / 2;
             Point labelPosition = GetPoint(centerPosition.X, centerPosition.Y, labelRadius, centerAngle);
-            Canvas.SetLeft(content, labelPosition.X - contentWidth / 2);
-            Canvas.SetTop(content, labelPosition.Y - contentHeight / 2);
-            if (mode == _currentMode)
-                content.Opacity = 0.45;
-            canvas.Children.Add(content);
-        }
-
-        private static StackPanel CreateChoiceContent(CloudlessMouseMode mode, string glyph, string label)
-        {
-            StackPanel stack = new()
+            ModeContentOffsets offsets = ContentOffsets[mode];
+            FrameworkElement icon = CreateChoiceIcon(mode, glyph);
+            Canvas.SetLeft(icon, labelPosition.X - icon.Width / 2 + offsets.Icon.X);
+            Canvas.SetTop(icon, labelPosition.Y - 40 + offsets.Icon.Y);
+            TextBlock labelBlock = new()
             {
+                Text = label,
                 Width = 100,
-                Height = 72,
-                HorizontalAlignment = HorizontalAlignment.Center,
+                Height = 34,
+                Foreground = Brushes.White,
+                FontSize = 11,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
                 VerticalAlignment = VerticalAlignment.Center
             };
+            Canvas.SetLeft(labelBlock, labelPosition.X - labelBlock.Width / 2 + offsets.Label.X);
+            Canvas.SetTop(labelBlock, labelPosition.Y + 2 + offsets.Label.Y);
+            if (mode == _currentMode)
+            {
+                icon.Opacity = 0.45;
+                labelBlock.Opacity = 0.45;
+            }
 
+            canvas.Children.Add(icon);
+            canvas.Children.Add(labelBlock);
+        }
+
+        private static FrameworkElement CreateChoiceIcon(CloudlessMouseMode mode, string glyph)
+        {
             ImageSource? cursorImage = CreateCursorImage(mode);
             if (cursorImage != null)
             {
-                stack.Children.Add(new Image
+                Grid icon = new() { Width = 44, Height = 44 };
+                icon.Children.Add(new Image
                 {
                     Source = cursorImage,
                     Width = 32,
                     Height = 32,
                     Stretch = Stretch.Uniform,
-                    Margin = new Thickness(0, 0, 0, 4)
-                });
-            }
-            else
-            {
-                stack.Children.Add(new TextBlock
-                {
-                    Text = glyph,
-                    FontFamily = new FontFamily("Segoe UI Symbol"),
-                    FontSize = 32,
-                    Foreground = Brushes.White,
-                    TextAlignment = TextAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 4)
+                    VerticalAlignment = VerticalAlignment.Center
                 });
+                return icon;
             }
 
-            stack.Children.Add(new TextBlock
+            return new TextBlock
             {
-                Text = label,
+                Text = glyph,
+                Width = 44,
+                Height = 44,
+                FontFamily = new FontFamily("Segoe UI Symbol"),
+                FontSize = 32,
                 Foreground = Brushes.White,
-                FontSize = 11,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            });
-            return stack;
+            };
         }
 
         internal static ImageSource? CreateCursorImage(CloudlessMouseMode mode)
