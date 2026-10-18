@@ -1365,6 +1365,12 @@ namespace Cloudless
 
         private void ShowCursorIfHidden()
         {
+            if (_mouseModeRadialWindow != null)
+            {
+                Cursor = Cursors.None;
+                return;
+            }
+
             if (_cursorIsHidden)
             {
                 _cursorIsHidden = false;

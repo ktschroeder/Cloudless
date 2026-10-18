@@ -312,6 +312,7 @@ namespace Cloudless
             if (_mouseModeRadialWindow != null && _middleClickCaptureActive)
             {
                 _mouseModeRadialWindow.UpdateHighlight(PointToScreen(e.GetPosition(this)));
+                Cursor = Cursors.None;
                 return;
             }
 
@@ -1576,7 +1577,7 @@ namespace Cloudless
 
             if (key == Key.LeftCtrl || key == Key.RightCtrl)
             {
-                if (!isPanningImage && ImageDisplay.IsMouseOver && !MouseControlMode && !MouseCommandMode)
+                if (_mouseModeRadialWindow == null && !isPanningImage && ImageDisplay.IsMouseOver && !MouseControlMode && !MouseCommandMode)
                 {
                     this.Cursor = Cursors.Hand;
                 }
@@ -1587,7 +1588,7 @@ namespace Cloudless
             if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
             {
                 // Revert to the default cursor when Ctrl is released
-                if (!isPanningImage && GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Normal)
+                if (_mouseModeRadialWindow == null && !isPanningImage && GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Normal)
                 {
                     this.Cursor = Cursors.Arrow;
                 }
@@ -1976,13 +1977,17 @@ namespace Cloudless
             Point anchor = PointToScreen(TargetCenterForQuickCommandDisplay);
             _mouseModeRadialWindow = new MouseModeRadialWindow(this, anchor);
             _mouseModeRadialWindow.Show();
+            Cursor = Cursors.None;
             _mouseModeRadialWindow.UpdateHighlight(PointToScreen(Mouse.GetPosition(this)));
         }
 
         private void CloseMouseModeRadialWindow()
         {
+            bool wasOpen = _mouseModeRadialWindow != null;
             _mouseModeRadialWindow?.Close();
             _mouseModeRadialWindow = null;
+            if (wasOpen)
+                ApplyGlobalMouseModeCursor(GlobalMouseModeManager.CurrentMode);
         }
 
         private void ReleaseMiddleClickCapture()

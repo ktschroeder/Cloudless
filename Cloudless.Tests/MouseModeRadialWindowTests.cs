@@ -8,10 +8,10 @@ public sealed class MouseModeRadialWindowTests
 {
     [Theory]
     [InlineData(0, -80, "Normal")]
-    [InlineData(80, 0, "Control")]
+    [InlineData(80, -80, "Control")]
     [InlineData(80, 40, "Selection")]
     [InlineData(0, 80, "Arrangement")]
-    [InlineData(-80, 0, "PageControl")]
+    [InlineData(-80, 80, "PageControl")]
     [InlineData(-80, -80, "Annotation")]
     public void DragDirectionSelectsTheCorrespondingMouseMode(double offsetX, double offsetY, string expected)
     {
@@ -21,6 +21,20 @@ public sealed class MouseModeRadialWindowTests
         CloudlessMouseMode? selected = MouseModeRadialWindow.GetModeAtScreenPosition(anchor, releasePosition);
 
         Assert.Equal(Enum.Parse<CloudlessMouseMode>(expected), selected);
+    }
+
+    [Theory]
+    [InlineData(80, 0)]
+    [InlineData(-80, 0)]
+    public void UnusedRadialSectorsDoNotSelectAMode(double offsetX, double offsetY)
+    {
+        Point anchor = new(200, 200);
+
+        CloudlessMouseMode? selected = MouseModeRadialWindow.GetModeAtScreenPosition(
+            anchor,
+            new Point(anchor.X + offsetX, anchor.Y + offsetY));
+
+        Assert.Null(selected);
     }
 
     [Theory]

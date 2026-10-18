@@ -10,23 +10,32 @@ using System.Windows.Media.Imaging;
 using Bitmap = System.Drawing.Bitmap;
 using Graphics = System.Drawing.Graphics;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
+using ShapeEllipse = System.Windows.Shapes.Ellipse;
+using ShapeLine = System.Windows.Shapes.Line;
+using ShapePath = System.Windows.Shapes.Path;
 
 namespace Cloudless
 {
     internal sealed class MouseModeRadialWindow : Window
     {
-        private const double RadialDeadZone = 32;
+        private const double RadialInnerRadius = 48;
+        private const double RadialDeadZone = RadialInnerRadius;
+        private const double RadialOuterRadius = 142;
         private readonly Point _anchorScreenPosition;
-        private readonly Dictionary<CloudlessMouseMode, Border> _choices = new();
+        private readonly CloudlessMouseMode _currentMode;
+        private readonly Dictionary<CloudlessMouseMode, ShapePath> _choices = new();
+        private ShapeLine? _cursorLine;
+        private ShapeEllipse? _cursorMarker;
         private CloudlessMouseMode? _highlightedMode;
 
         internal MouseModeRadialWindow(MainWindow owner, Point anchorScreenPosition)
         {
             _anchorScreenPosition = anchorScreenPosition;
+            _currentMode = GlobalMouseModeManager.CurrentMode;
             Owner = owner;
             SecondaryWindowOpacity.Apply(this);
-            Width = 300;
-            Height = 300;
+            Width = 600;
+            Height = 600;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
             AllowsTransparency = true;
@@ -54,53 +63,108 @@ namespace Cloudless
                 return null;
 
             double angle = Math.Atan2(offset.Y, offset.X) * 180 / Math.PI;
-            if (angle >= -120 && angle < -60)
-                return CloudlessMouseMode.Normal;
-            if (angle >= -60 && angle <= 0)
-                return CloudlessMouseMode.Control;
-            if (angle > 0 && angle < 60)
-                return CloudlessMouseMode.Selection;
-            if (angle >= 60 && angle < 120)
-                return CloudlessMouseMode.Arrangement;
-            if (angle >= 120)
-                return CloudlessMouseMode.PageControl;
-            return CloudlessMouseMode.Annotation;
+            int sector = ((int)Math.Floor((angle + 22.5 + 360) / 45)) % 8;
+            return sector switch
+            {
+                0 or 4 => null,
+                1 => CloudlessMouseMode.Selection,
+                2 => CloudlessMouseMode.Arrangement,
+                3 => CloudlessMouseMode.PageControl,
+                5 => CloudlessMouseMode.Annotation,
+                6 => CloudlessMouseMode.Normal,
+                7 => CloudlessMouseMode.Control,
+                _ => null
+            };
         }
 
         internal void UpdateHighlight(Point screenPosition)
         {
+            Point cursorPosition = new(
+                Width / 2 + screenPosition.X - _anchorScreenPosition.X,
+                Height / 2 + screenPosition.Y - _anchorScreenPosition.Y);
+            if (_cursorLine != null)
+            {
+                _cursorLine.X2 = cursorPosition.X;
+                _cursorLine.Y2 = cursorPosition.Y;
+            }
+
+            if (_cursorMarker != null)
+            {
+                Canvas.SetLeft(_cursorMarker, cursorPosition.X - _cursorMarker.Width / 2);
+                Canvas.SetTop(_cursorMarker, cursorPosition.Y - _cursorMarker.Height / 2);
+            }
+
             CloudlessMouseMode? mode = GetModeAtScreenPosition(screenPosition);
             if (_highlightedMode == mode)
                 return;
 
             _highlightedMode = mode;
-            foreach ((CloudlessMouseMode choice, Border border) in _choices)
+            foreach ((CloudlessMouseMode choice, ShapePath path) in _choices)
             {
-                bool isHighlighted = choice == mode;
-                border.Background = new SolidColorBrush(isHighlighted
-                    ? Color.FromArgb(240, 50, 115, 190)
-                    : Color.FromArgb(220, 35, 35, 35));
-                border.BorderBrush = new SolidColorBrush(isHighlighted
+                bool isCurrentMode = choice == _currentMode;
+                bool isHighlighted = choice == mode && !isCurrentMode;
+                path.Fill = new SolidColorBrush(isHighlighted
+                    ? Color.FromArgb(245, 50, 115, 190)
+                    : isCurrentMode
+                        ? Color.FromArgb(90, 35, 35, 35)
+                        : Color.FromArgb(220, 35, 35, 35));
+                path.Stroke = new SolidColorBrush(isHighlighted
                     ? Colors.White
-                    : Color.FromArgb(230, 145, 145, 145));
+                    : isCurrentMode
+                        ? Color.FromArgb(100, 145, 145, 145)
+                        : Color.FromArgb(230, 145, 145, 145));
             }
         }
 
-        private Grid CreateContent()
+        private Canvas CreateContent()
         {
-            Grid grid = new() { Margin = new Thickness(8) };
-            for (int i = 0; i < 3; i++)
+            const double size = 600;
+            const double centerCoordinate = size / 2;
+            ShapePath[] sectorPaths = new ShapePath[8];
+            Canvas canvas = new()
             {
-                grid.RowDefinitions.Add(new RowDefinition());
-                grid.ColumnDefinitions.Add(new ColumnDefinition());
+                Width = size,
+                Height = size
+            };
+
+            for (int sector = 0; sector < 8; sector++)
+            {
+                double centerAngle = sector * 45;
+                ShapePath path = CreateSectorPath(centerCoordinate, centerCoordinate, centerAngle - 22.5 + 1.5, centerAngle + 22.5 - 1.5);
+                bool isUnusedSector = sector is 0 or 4;
+                path.Fill = new SolidColorBrush(isUnusedSector
+                    ? Color.FromArgb(90, 35, 35, 35)
+                    : Color.FromArgb(220, 35, 35, 35));
+                path.Stroke = new SolidColorBrush(isUnusedSector
+                    ? Color.FromArgb(100, 145, 145, 145)
+                    : Color.FromArgb(230, 145, 145, 145));
+                path.StrokeThickness = 1.5;
+                canvas.Children.Add(path);
+                sectorPaths[sector] = path;
             }
 
-            AddChoice(grid, CloudlessMouseMode.Normal, "➤", "Standard", 0, 1);
-            AddChoice(grid, CloudlessMouseMode.Control, "✥", "Exploration\nControl", 0, 2);
-            AddChoice(grid, CloudlessMouseMode.Selection, "⌖", "Selection", 2, 2);
-            AddChoice(grid, CloudlessMouseMode.PageControl, "↕", "Page Control", 2, 0);
-            AddChoice(grid, CloudlessMouseMode.Arrangement, "✣", "Arrangement", 2, 1);
-            AddChoice(grid, CloudlessMouseMode.Annotation, "✎", "Annotation", 0, 0);
+            _cursorLine = new ShapeLine
+            {
+                X1 = centerCoordinate,
+                Y1 = centerCoordinate,
+                X2 = centerCoordinate,
+                Y2 = centerCoordinate,
+                Stroke = new SolidColorBrush(Color.FromArgb(235, 235, 245, 255)),
+                StrokeThickness = 2,
+                IsHitTestVisible = false
+            };
+            canvas.Children.Add(_cursorLine);
+
+            AddChoice(canvas, sectorPaths[6], CloudlessMouseMode.Normal, "➤", "Standard", 6);
+            AddChoice(canvas, sectorPaths[7], CloudlessMouseMode.Control, "✥", "Exploration\nControl", 7);
+            AddChoice(canvas, sectorPaths[1], CloudlessMouseMode.Selection, "⌖", "Selection", 1);
+            AddChoice(canvas, sectorPaths[3], CloudlessMouseMode.PageControl, "↕", "Page Control", 3);
+            AddChoice(canvas, sectorPaths[2], CloudlessMouseMode.Arrangement, "✣", "Arrangement", 2);
+            AddChoice(canvas, sectorPaths[5], CloudlessMouseMode.Annotation, "✎", "Annotation", 5);
+
+            ShapePath currentModePath = _choices[_currentMode];
+            currentModePath.Fill = new SolidColorBrush(Color.FromArgb(90, 35, 35, 35));
+            currentModePath.Stroke = new SolidColorBrush(Color.FromArgb(100, 145, 145, 145));
 
             Border center = new()
             {
@@ -120,34 +184,70 @@ namespace Cloudless
                     VerticalAlignment = VerticalAlignment.Center
                 }
             };
-            Grid.SetRow(center, 1);
-            Grid.SetColumn(center, 1);
-            grid.Children.Add(center);
-            return grid;
+            Canvas.SetLeft(center, size / 2 - center.Width / 2);
+            Canvas.SetTop(center, size / 2 - center.Height / 2);
+            canvas.Children.Add(center);
+
+            _cursorMarker = new ShapeEllipse
+            {
+                Width = 9,
+                Height = 9,
+                Fill = new SolidColorBrush(Color.FromArgb(245, 235, 245, 255)),
+                Stroke = new SolidColorBrush(Color.FromArgb(255, 30, 35, 45)),
+                StrokeThickness = 1.5,
+                IsHitTestVisible = false
+            };
+            Canvas.SetLeft(_cursorMarker, centerCoordinate - _cursorMarker.Width / 2);
+            Canvas.SetTop(_cursorMarker, centerCoordinate - _cursorMarker.Height / 2);
+            canvas.Children.Add(_cursorMarker);
+            return canvas;
         }
 
-        private void AddChoice(Grid grid, CloudlessMouseMode mode, string glyph, string label, int row, int column)
+        private static ShapePath CreateSectorPath(double centerX, double centerY, double startAngle, double endAngle)
         {
-            Border border = new()
-            {
-                Margin = new Thickness(5),
-                Padding = new Thickness(5),
-                CornerRadius = new CornerRadius(8),
-                BorderThickness = new Thickness(1.5),
-                Background = new SolidColorBrush(Color.FromArgb(220, 35, 35, 35)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(230, 145, 145, 145)),
-                Child = CreateChoiceContent(mode, glyph, label)
-            };
-            Grid.SetRow(border, row);
-            Grid.SetColumn(border, column);
-            grid.Children.Add(border);
-            _choices.Add(mode, border);
+            Point outerStart = GetPoint(centerX, centerY, RadialOuterRadius, startAngle);
+            Point outerEnd = GetPoint(centerX, centerY, RadialOuterRadius, endAngle);
+            Point innerEnd = GetPoint(centerX, centerY, RadialInnerRadius, endAngle);
+            Point innerStart = GetPoint(centerX, centerY, RadialInnerRadius, startAngle);
+
+            PathFigure figure = new() { StartPoint = outerStart, IsClosed = true };
+            figure.Segments.Add(new ArcSegment(outerEnd, new Size(RadialOuterRadius, RadialOuterRadius), 0, false, SweepDirection.Clockwise, true));
+            figure.Segments.Add(new LineSegment(innerEnd, true));
+            figure.Segments.Add(new ArcSegment(innerStart, new Size(RadialInnerRadius, RadialInnerRadius), 0, false, SweepDirection.Counterclockwise, true));
+            PathGeometry geometry = new();
+            geometry.Figures.Add(figure);
+            return new ShapePath { Data = geometry };
+        }
+
+        private static Point GetPoint(double centerX, double centerY, double radius, double angle)
+        {
+            double radians = angle * Math.PI / 180;
+            return new Point(centerX + Math.Cos(radians) * radius, centerY + Math.Sin(radians) * radius);
+        }
+
+        private void AddChoice(Canvas canvas, ShapePath path, CloudlessMouseMode mode, string glyph, string label, int sector)
+        {
+            double centerAngle = sector * 45;
+            _choices.Add(mode, path);
+
+            StackPanel content = CreateChoiceContent(mode, glyph, label);
+            const double contentWidth = 100;
+            const double contentHeight = 72;
+            double labelRadius = (RadialInnerRadius + RadialOuterRadius) / 2;
+            Point labelPosition = GetPoint(canvas.Width / 2, canvas.Height / 2, labelRadius, centerAngle);
+            Canvas.SetLeft(content, labelPosition.X - contentWidth / 2);
+            Canvas.SetTop(content, labelPosition.Y - contentHeight / 2);
+            if (mode == _currentMode)
+                content.Opacity = 0.45;
+            canvas.Children.Add(content);
         }
 
         private static StackPanel CreateChoiceContent(CloudlessMouseMode mode, string glyph, string label)
         {
             StackPanel stack = new()
             {
+                Width = 100,
+                Height = 72,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };

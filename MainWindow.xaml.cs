@@ -789,6 +789,12 @@ namespace Cloudless
 
         internal void ApplyGlobalMouseModeCursor(CloudlessMouseMode mode)
         {
+            if (_mouseModeRadialWindow != null)
+            {
+                Cursor = Cursors.None;
+                return;
+            }
+
             if (mode == CloudlessMouseMode.Annotation)
                 _annotationOverlayWindow ??= new AnnotationOverlayWindow(this, OpenAnnotationControlWindow);
             _annotationOverlayWindow?.SetAnnotationMode(mode == CloudlessMouseMode.Annotation);
