@@ -34,8 +34,11 @@ namespace Cloudless
             _currentMode = GlobalMouseModeManager.CurrentMode;
             Owner = owner;
             SecondaryWindowOpacity.Apply(this);
-            Width = 600;
-            Height = 600;
+            const double cursorMargin = 12;
+            Left = SystemParameters.VirtualScreenLeft - cursorMargin;
+            Top = SystemParameters.VirtualScreenTop - cursorMargin;
+            Width = SystemParameters.VirtualScreenWidth + cursorMargin * 2;
+            Height = SystemParameters.VirtualScreenHeight + cursorMargin * 2;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
             AllowsTransparency = true;
@@ -46,9 +49,12 @@ namespace Cloudless
             Focusable = false;
             IsHitTestVisible = false;
             WindowStartupLocation = WindowStartupLocation.Manual;
-            Left = anchorScreenPosition.X - Width / 2;
-            Top = anchorScreenPosition.Y - Height / 2;
-            Content = CreateContent();
+            Content = new Canvas { Width = Width, Height = Height };
+            Loaded += (_, _) =>
+            {
+                InitializeSelector();
+                UpdateHighlight(_anchorScreenPosition);
+            };
         }
 
         internal CloudlessMouseMode? GetModeAtScreenPosition(Point screenPosition)
@@ -79,9 +85,11 @@ namespace Cloudless
 
         internal void UpdateHighlight(Point screenPosition)
         {
-            Point cursorPosition = new(
-                Width / 2 + screenPosition.X - _anchorScreenPosition.X,
-                Height / 2 + screenPosition.Y - _anchorScreenPosition.Y);
+            InitializeSelector();
+            if (_cursorLine == null || _cursorMarker == null)
+                return;
+
+            Point cursorPosition = PointFromScreen(screenPosition);
             if (_cursorLine != null)
             {
                 _cursorLine.X2 = cursorPosition.X;
@@ -116,21 +124,28 @@ namespace Cloudless
             }
         }
 
-        private Canvas CreateContent()
+        private void InitializeSelector()
         {
-            const double size = 600;
-            const double centerCoordinate = size / 2;
+            if (_cursorLine != null)
+                return;
+
+            Point centerPosition = PointFromScreen(_anchorScreenPosition);
+            Content = CreateContent(centerPosition);
+        }
+
+        private Canvas CreateContent(Point centerPosition)
+        {
             ShapePath[] sectorPaths = new ShapePath[8];
             Canvas canvas = new()
             {
-                Width = size,
-                Height = size
+                Width = Width,
+                Height = Height
             };
 
             for (int sector = 0; sector < 8; sector++)
             {
                 double centerAngle = sector * 45;
-                ShapePath path = CreateSectorPath(centerCoordinate, centerCoordinate, centerAngle - 22.5 + 1.5, centerAngle + 22.5 - 1.5);
+                ShapePath path = CreateSectorPath(centerPosition.X, centerPosition.Y, centerAngle - 22.5 + 1.5, centerAngle + 22.5 - 1.5);
                 bool isUnusedSector = sector is 0 or 4;
                 path.Fill = new SolidColorBrush(isUnusedSector
                     ? Color.FromArgb(90, 35, 35, 35)
@@ -145,22 +160,22 @@ namespace Cloudless
 
             _cursorLine = new ShapeLine
             {
-                X1 = centerCoordinate,
-                Y1 = centerCoordinate,
-                X2 = centerCoordinate,
-                Y2 = centerCoordinate,
+                X1 = centerPosition.X,
+                Y1 = centerPosition.Y,
+                X2 = centerPosition.X,
+                Y2 = centerPosition.Y,
                 Stroke = new SolidColorBrush(Color.FromArgb(235, 235, 245, 255)),
                 StrokeThickness = 2,
                 IsHitTestVisible = false
             };
             canvas.Children.Add(_cursorLine);
 
-            AddChoice(canvas, sectorPaths[6], CloudlessMouseMode.Normal, "➤", "Standard", 6);
-            AddChoice(canvas, sectorPaths[7], CloudlessMouseMode.Control, "✥", "Exploration\nControl", 7);
-            AddChoice(canvas, sectorPaths[1], CloudlessMouseMode.Selection, "⌖", "Selection", 1);
-            AddChoice(canvas, sectorPaths[3], CloudlessMouseMode.PageControl, "↕", "Page Control", 3);
-            AddChoice(canvas, sectorPaths[2], CloudlessMouseMode.Arrangement, "✣", "Arrangement", 2);
-            AddChoice(canvas, sectorPaths[5], CloudlessMouseMode.Annotation, "✎", "Annotation", 5);
+            AddChoice(canvas, centerPosition, sectorPaths[6], CloudlessMouseMode.Normal, "➤", "Standard", 6);
+            AddChoice(canvas, centerPosition, sectorPaths[7], CloudlessMouseMode.Control, "✥", "Exploration\nControl", 7);
+            AddChoice(canvas, centerPosition, sectorPaths[1], CloudlessMouseMode.Selection, "⌖", "Selection", 1);
+            AddChoice(canvas, centerPosition, sectorPaths[3], CloudlessMouseMode.PageControl, "↕", "Page Control", 3);
+            AddChoice(canvas, centerPosition, sectorPaths[2], CloudlessMouseMode.Arrangement, "✣", "Arrangement", 2);
+            AddChoice(canvas, centerPosition, sectorPaths[5], CloudlessMouseMode.Annotation, "✎", "Annotation", 5);
 
             ShapePath currentModePath = _choices[_currentMode];
             currentModePath.Fill = new SolidColorBrush(Color.FromArgb(90, 35, 35, 35));
@@ -184,8 +199,8 @@ namespace Cloudless
                     VerticalAlignment = VerticalAlignment.Center
                 }
             };
-            Canvas.SetLeft(center, size / 2 - center.Width / 2);
-            Canvas.SetTop(center, size / 2 - center.Height / 2);
+            Canvas.SetLeft(center, centerPosition.X - center.Width / 2);
+            Canvas.SetTop(center, centerPosition.Y - center.Height / 2);
             canvas.Children.Add(center);
 
             _cursorMarker = new ShapeEllipse
@@ -197,8 +212,8 @@ namespace Cloudless
                 StrokeThickness = 1.5,
                 IsHitTestVisible = false
             };
-            Canvas.SetLeft(_cursorMarker, centerCoordinate - _cursorMarker.Width / 2);
-            Canvas.SetTop(_cursorMarker, centerCoordinate - _cursorMarker.Height / 2);
+            Canvas.SetLeft(_cursorMarker, centerPosition.X - _cursorMarker.Width / 2);
+            Canvas.SetTop(_cursorMarker, centerPosition.Y - _cursorMarker.Height / 2);
             canvas.Children.Add(_cursorMarker);
             return canvas;
         }
@@ -225,7 +240,7 @@ namespace Cloudless
             return new Point(centerX + Math.Cos(radians) * radius, centerY + Math.Sin(radians) * radius);
         }
 
-        private void AddChoice(Canvas canvas, ShapePath path, CloudlessMouseMode mode, string glyph, string label, int sector)
+        private void AddChoice(Canvas canvas, Point centerPosition, ShapePath path, CloudlessMouseMode mode, string glyph, string label, int sector)
         {
             double centerAngle = sector * 45;
             _choices.Add(mode, path);
@@ -234,7 +249,7 @@ namespace Cloudless
             const double contentWidth = 100;
             const double contentHeight = 72;
             double labelRadius = (RadialInnerRadius + RadialOuterRadius) / 2;
-            Point labelPosition = GetPoint(canvas.Width / 2, canvas.Height / 2, labelRadius, centerAngle);
+            Point labelPosition = GetPoint(centerPosition.X, centerPosition.Y, labelRadius, centerAngle);
             Canvas.SetLeft(content, labelPosition.X - contentWidth / 2);
             Canvas.SetTop(content, labelPosition.Y - contentHeight / 2);
             if (mode == _currentMode)
