@@ -28,6 +28,7 @@ namespace Cloudless
         private bool _annotationMouseCaptured;
         private bool _arrangementCtrlGesturePending;
         private bool _arrangementCtrlDragActive;
+        private bool _rightClickFineZoomed;
         private Point _arrangementCtrlDragStartScreenPosition;
         private Point _arrangementCtrlDragInitialWindowPosition;
         private Point pageControlDragStartScreenPosition;
@@ -63,6 +64,9 @@ namespace Cloudless
 
         private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ChangedButton == MouseButton.Right)
+                _rightClickFineZoomed = false;
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Arrangement &&
                 e.ChangedButton == MouseButton.Left &&
                 (Keyboard.Modifiers & ModifierKeys.Control) != 0)
@@ -1628,6 +1632,31 @@ namespace Cloudless
                 Message($"Failed to load the dragged content: {ex.Message}");
             }
         }
+
+        private async Task ApplyFineMouseWheelZoom(MouseWheelEventArgs e)
+        {
+            double zoomDelta = e.Delta > 0 ? 1.005 : 1 / 1.005;
+            if (VideoHost.Content is Cloudless.PluginBase.IVideoPlayer videoPlayer)
+            {
+                try
+                {
+                    SetVideoZoomAtPoint(videoPlayer, videoPlayer.GetVideoZoom() * zoomDelta, e.GetPosition(VideoHost));
+                    InvalidateVisual();
+                }
+                catch (Exception ex)
+                {
+                    Message($"Failed to set video zoom: {ex.Message}");
+                }
+
+                return;
+            }
+
+            if (!isExplorationMode)
+                EnterExplorationMode();
+
+            await Zoom(e.GetPosition(PrimaryWindow), zoomDelta: zoomDelta);
+        }
+
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
             if (_mouseModeRadialWindow != null)
@@ -1639,6 +1668,14 @@ namespace Cloudless
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.PageControl)
             {
                 HandlePageControlMouseWheel(e.Delta);
+                e.Handled = true;
+                return;
+            }
+
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Control && Mouse.RightButton == MouseButtonState.Pressed)
+            {
+                _rightClickFineZoomed = true;
+                await ApplyFineMouseWheelZoom(e);
                 e.Handled = true;
                 return;
             }
@@ -1830,8 +1867,16 @@ namespace Cloudless
         }
         private async void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (_rightClickFineZoomed)
+            {
+                _rightClickFineZoomed = false;
+                e.Handled = true;
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation)
             {
+                _rightClickFineZoomed = false;
                 e.Handled = true;
                 return;
             }
