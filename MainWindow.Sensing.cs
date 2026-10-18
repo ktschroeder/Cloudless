@@ -25,6 +25,7 @@ namespace Cloudless
         private bool isMarqueeSelectionPending;
         private bool isDraggingMarqueeSelection;
         private bool isPageControlDragPending;
+        private bool _annotationMouseCaptured;
         private Point pageControlDragStartScreenPosition;
         private Point pageControlDragInitialWindowPosition;
         private MainWindow[] pageControlDragWindows = Array.Empty<MainWindow>();
@@ -51,6 +52,26 @@ namespace Cloudless
 
         private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation &&
+                _annotationOverlayWindow != null &&
+                (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right))
+            {
+                CloseQuickCommandWindow();
+                if (e.ChangedButton == MouseButton.Left)
+                {
+                    _annotationOverlayWindow.BeginAnnotationInput(e.GetPosition(this));
+                    CaptureAnnotationMouse();
+                }
+                else if (e.ChangedButton == MouseButton.Right)
+                {
+                    _annotationOverlayWindow.StartRightHold();
+                    CaptureAnnotationMouse();
+                }
+
+                e.Handled = true;
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.PageControl && e.ChangedButton == MouseButton.Left)
             {
                 CloseQuickCommandWindow();
@@ -265,6 +286,12 @@ namespace Cloudless
                 return;
             }
 
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation && e.LeftButton == MouseButtonState.Pressed)
+            {
+                _annotationOverlayWindow?.ContinueAnnotationInput(e.GetPosition(this));
+                return;
+            }
+
             if (isPageControlDragPending && e.LeftButton == MouseButtonState.Pressed)
             {
                 if (!MainWindow.LayoutLocked && WindowState == WindowState.Normal)
@@ -435,6 +462,19 @@ namespace Cloudless
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation &&
+                (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right))
+            {
+                if (e.ChangedButton == MouseButton.Left)
+                    _annotationOverlayWindow?.EndAnnotationInput();
+                else
+                    _annotationOverlayWindow?.StopRightHold();
+
+                ReleaseAnnotationMouseCapture();
+                e.Handled = true;
+                return;
+            }
+
             if (isPageControlDragPending && e.ChangedButton == MouseButton.Left)
             {
                 EndPageControlDrag(releaseCapture: true);
@@ -557,6 +597,36 @@ namespace Cloudless
             isDraggingMarqueeSelection = false;
             selectionDragWindows = Array.Empty<MainWindow>();
             selectionDragInitialPositions = Array.Empty<Point>();
+        }
+
+        private void CaptureAnnotationMouse()
+        {
+            if (_annotationMouseCaptured)
+                return;
+
+            LostMouseCapture += AnnotationInput_LostMouseCapture;
+            _annotationMouseCaptured = Mouse.Capture(this);
+            if (!_annotationMouseCaptured)
+                LostMouseCapture -= AnnotationInput_LostMouseCapture;
+        }
+
+        private void ReleaseAnnotationMouseCapture()
+        {
+            if (!_annotationMouseCaptured)
+                return;
+
+            _annotationMouseCaptured = false;
+            LostMouseCapture -= AnnotationInput_LostMouseCapture;
+            if (Mouse.Captured == this)
+                Mouse.Capture(null);
+        }
+
+        private void AnnotationInput_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            LostMouseCapture -= AnnotationInput_LostMouseCapture;
+            _annotationMouseCaptured = false;
+            _annotationOverlayWindow?.StopRightHold();
+            _annotationOverlayWindow?.EndAnnotationInput();
         }
 
         private void EndPageControlDrag(bool releaseCapture)
@@ -1684,6 +1754,12 @@ namespace Cloudless
         }
         private async void Window_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation)
+            {
+                e.Handled = true;
+                return;
+            }
+
             await UpdateZoomMenuHeaderAsync();
             UpdateVideoTrackMenus();
             Point mousePos = e.GetPosition(this);

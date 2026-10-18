@@ -53,10 +53,16 @@ namespace Cloudless
             if (offset.Length < RadialDeadZone)
                 return null;
 
-            if (Math.Abs(offset.X) > Math.Abs(offset.Y))
-                return offset.X > 0 ? CloudlessMouseMode.Control : CloudlessMouseMode.PageControl;
-
-            return offset.Y > 0 ? CloudlessMouseMode.Selection : CloudlessMouseMode.Normal;
+            double angle = Math.Atan2(offset.Y, offset.X) * 180 / Math.PI;
+            if (angle >= -157.5 && angle < -112.5)
+                return CloudlessMouseMode.Annotation;
+            if (angle >= -112.5 && angle < -45)
+                return CloudlessMouseMode.Normal;
+            if (angle >= -45 && angle < 45)
+                return CloudlessMouseMode.Control;
+            if (angle >= 45 && angle < 135)
+                return CloudlessMouseMode.Selection;
+            return CloudlessMouseMode.PageControl;
         }
 
         internal void UpdateHighlight(Point screenPosition)
@@ -91,6 +97,7 @@ namespace Cloudless
             AddChoice(grid, CloudlessMouseMode.Control, "✥", "Exploration\nControl", 1, 2);
             AddChoice(grid, CloudlessMouseMode.Selection, "⌖", "Selection", 2, 1);
             AddChoice(grid, CloudlessMouseMode.PageControl, "↕", "Page Control", 1, 0);
+            AddChoice(grid, CloudlessMouseMode.Annotation, "✎", "Annotation", 0, 0);
 
             Border center = new()
             {
@@ -235,6 +242,8 @@ namespace Cloudless
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_ARROW));
             if (mode == CloudlessMouseMode.Control)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_SIZEALL));
+            if (mode == CloudlessMouseMode.Annotation)
+                return LoadCursor(IntPtr.Zero, new IntPtr(IDC_PEN));
 
             string cursorFile = mode == CloudlessMouseMode.Selection ? "custom_cursor.cur" : "page-cursor.cur";
             IntPtr cursor = LoadCursorResource(cursorFile);
@@ -281,6 +290,7 @@ namespace Cloudless
 
         private const int IDC_ARROW = 32512;
         private const int IDC_SIZEALL = 32646;
+        private const int IDC_PEN = 32631;
         private const uint DI_NORMAL = 0x0003;
 
         [DllImport("user32.dll", EntryPoint = "LoadCursorW", SetLastError = true)]

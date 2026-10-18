@@ -92,6 +92,8 @@ namespace Cloudless
         private OverlayMessageManager? overlayManager;
         private OverlayMessageWindow? overlayWindow;
         private DebugInfoWindow? _debugInfoWindow;
+        private AnnotationOverlayWindow? _annotationOverlayWindow;
+        private AnnotationControlWindow? _annotationControlWindow;
         private HwndSource? _hwndSource;
 
         private const int MaxRecentFilesInGallery = 30;
@@ -221,6 +223,8 @@ namespace Cloudless
             _filmStripWindow?.Close();
             _commandPaletteWindow?.Close();
             _debugInfoWindow?.Close();
+            _annotationControlWindow?.Close();
+            _annotationOverlayWindow?.Close();
             overlayWindow?.Close();
             CleanupVideoControls();
 
@@ -781,6 +785,16 @@ namespace Cloudless
 
         internal void ApplyGlobalMouseModeCursor(CloudlessMouseMode mode)
         {
+            if (mode == CloudlessMouseMode.Annotation)
+                _annotationOverlayWindow ??= new AnnotationOverlayWindow(this, OpenAnnotationControlWindow);
+            _annotationOverlayWindow?.SetAnnotationMode(mode == CloudlessMouseMode.Annotation);
+
+            if (mode != CloudlessMouseMode.Annotation)
+            {
+                _annotationControlWindow?.Close();
+                _annotationControlWindow = null;
+            }
+
             if (mode == CloudlessMouseMode.Normal)
             {
                 Cursor = Cursors.Arrow;
@@ -793,11 +807,36 @@ namespace Cloudless
             Cursor = GetMouseModeCursor(mode);
         }
 
+        private void OpenAnnotationControlWindow()
+        {
+            if (GlobalMouseModeManager.CurrentMode != CloudlessMouseMode.Annotation || _annotationOverlayWindow == null)
+                return;
+
+            if (_annotationControlWindow?.IsVisible == true)
+            {
+                ReleaseAnnotationMouseCapture();
+                _annotationOverlayWindow.SetControlsVisible(true, _annotationControlWindow);
+                _annotationControlWindow.Activate();
+                return;
+            }
+
+            ReleaseAnnotationMouseCapture();
+            _annotationControlWindow = new AnnotationControlWindow(this, _annotationOverlayWindow);
+            _annotationControlWindow.Closed += (_, _) =>
+            {
+                _annotationControlWindow = null;
+                _annotationOverlayWindow?.SetControlsVisible(false);
+            };
+            _annotationControlWindow.Show();
+            _annotationOverlayWindow.SetControlsVisible(true, _annotationControlWindow);
+        }
+
         internal Cursor GetMouseModeCursor(CloudlessMouseMode mode) => mode switch
         {
             CloudlessMouseMode.Control => Cursors.ScrollAll,
             CloudlessMouseMode.Selection => GetMouseCommandCursor(),
             CloudlessMouseMode.PageControl => GetPageControlCursor(),
+            CloudlessMouseMode.Annotation => _annotationOverlayWindow?.AnnotationCursor ?? Cursors.Pen,
             _ => Cursors.Arrow
         };
 
@@ -1066,6 +1105,7 @@ namespace Cloudless
                 CloudlessMouseMode.Control => "Exploration Control",
                 CloudlessMouseMode.Selection => "Selection",
                 CloudlessMouseMode.PageControl => "Page Control Mode",
+                CloudlessMouseMode.Annotation => "Annotation",
                 _ => mode.ToString()
             };
             item.Header = $"{(isSelected ? "✓ " : "  ")}{modeName}";
