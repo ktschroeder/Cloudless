@@ -14,6 +14,7 @@ internal static class SecondaryWindowOpacity
         window.Opacity = Cloudless.Properties.Settings.Default.SlightlyTransparentSecondaryWindows
             ? TransparentOpacity
             : 1.0;
+        SecondaryWindowShadowHitTesting.Configure(window);
     }
 
     internal static void ApplyToOpenWindows()
