@@ -246,7 +246,11 @@ namespace Cloudless
             if (mode == CloudlessMouseMode.Control)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_SIZEALL));
             if (mode == CloudlessMouseMode.Arrangement)
-                return LoadCursor(IntPtr.Zero, new IntPtr(IDC_HAND));
+            {
+                IntPtr arrangementCursor = LoadCursorResource("custom-cursor-arrangement.cur");
+                shouldDestroy = arrangementCursor != IntPtr.Zero;
+                return arrangementCursor;
+            }
             if (mode == CloudlessMouseMode.Annotation)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_PEN));
 
@@ -294,7 +298,6 @@ namespace Cloudless
         }
 
         private const int IDC_ARROW = 32512;
-        private const int IDC_HAND = 32649;
         private const int IDC_SIZEALL = 32646;
         private const int IDC_PEN = 32631;
         private const uint DI_NORMAL = 0x0003;

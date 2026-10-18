@@ -24,6 +24,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="custom_cursor.cur" />
+   <None Remove="custom-cursor-arrangement.cur" />
 	  <None Remove="page-cursor.cur" />
 	  <None Remove="no-thumbnail.png" />
 	</ItemGroup>
@@ -44,6 +45,9 @@
 
   <ItemGroup>
     <Resource Include="custom_cursor.cur">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="custom-cursor-arrangement.cur">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="page-cursor.cur">

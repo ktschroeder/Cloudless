@@ -775,6 +775,7 @@ namespace Cloudless
         public bool MouseCommandMode => GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Selection;
         private Cursor? _mouseCommandCursor;
         private Cursor? _pageControlCursor;
+        private Cursor? _arrangementCursor;
 
         internal static bool ShouldPanImageOnLeftMouseDown(CloudlessMouseMode mode, ModifierKeys modifiers)
         {
@@ -839,7 +840,7 @@ namespace Cloudless
             CloudlessMouseMode.Control => Cursors.ScrollAll,
             CloudlessMouseMode.Selection => GetMouseCommandCursor(),
             CloudlessMouseMode.PageControl => GetPageControlCursor(),
-            CloudlessMouseMode.Arrangement => Cursors.Hand,
+            CloudlessMouseMode.Arrangement => GetArrangementCursor(),
             CloudlessMouseMode.Annotation => _annotationOverlayWindow?.AnnotationCursor ?? Cursors.Pen,
             _ => Cursors.Arrow
         };
@@ -946,6 +947,29 @@ namespace Cloudless
             }
 
             return _pageControlCursor;
+        }
+
+        private Cursor GetArrangementCursor()
+        {
+            if (_arrangementCursor != null)
+                return _arrangementCursor;
+
+            try
+            {
+                var streamInfo = Application.GetResourceStream(
+                    new Uri("pack://application:,,,/Cloudless;component/custom-cursor-arrangement.cur", UriKind.Absolute));
+                if (streamInfo?.Stream == null)
+                    return Cursors.Hand;
+
+                using (streamInfo.Stream)
+                    _arrangementCursor = new Cursor(streamInfo.Stream);
+            }
+            catch (IOException)
+            {
+                _arrangementCursor = Cursors.Hand;
+            }
+
+            return _arrangementCursor;
         }
 
         private MenuItem CreateFullWidthSeparator()
