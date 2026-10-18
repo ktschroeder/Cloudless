@@ -150,6 +150,7 @@ internal static class CommandSyntaxCatalog
     private static readonly CommandToken InvertSelectionAliasRoot = CommandToken.Literal("command", "is");
     private static readonly CommandToken CloseRoot = CommandToken.Literal("command", "close", "c");
     private static readonly CommandToken CloseOriginRoot = CommandToken.Literal("command", "c");
+    private static readonly CommandToken UnloadRoot = CommandToken.Literal("command", "unload", "ul");
     private static readonly CommandToken MinimizeRoot = CommandToken.LiteralWithHiddenAlias("command", "minimize", "m");
     private static readonly CommandToken UnminimizeRoot = CommandToken.LiteralWithHiddenAlias("command", "unminimize", "um");
     private static readonly CommandToken AllAction = CommandToken.Literal("scope", "all");
@@ -672,6 +673,7 @@ internal static class CommandSyntaxCatalog
 
         var generalActionForms = new[]
         {
+            new CommandForm("unload-media", "Unload this window's media and return it to its empty state.", UnloadRoot),
             new CommandForm("close-window", "Close this window.", CloseRoot),
             new CommandForm("close-all", "Close all windows.", CloseRoot, AllAction),
             new CommandForm("close-others", "Close all other windows.", CloseRoot, OthersAction),

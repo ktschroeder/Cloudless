@@ -729,6 +729,71 @@ namespace Cloudless
             }
         }
 
+        private void UnloadMedia()
+        {
+            StopSlideshow();
+            SaveCurrentVideoPosition();
+            HideVideoControlsForMediaChange();
+
+            if (SlideshowTriggerCount > 0)
+            {
+                SlideshowManager.UnregisterTriggerPage(windowPageIndex);
+                SlideshowTriggerCount = 0;
+                _slideshowTriggerHitCount = 0;
+            }
+            if (VideoHost.Content is IVideoPlayer triggerPlayer && _triggerTimeChangedHandler != null)
+            {
+                triggerPlayer.TimeChanged -= _triggerTimeChangedHandler;
+            }
+            _triggerTimeChangedHandler = null;
+            _pluginLoopTemporarilyDisabled = false;
+
+            SetSync(false);
+            ResetCustomVideoLoop();
+            if (isDrawingSelection)
+                ExitSelectionMode(silent: true);
+
+            isCropMode = false;
+            SetWindowCropMode(false);
+            _currentImageEverCropped = false;
+            _hasCroppedViewport = false;
+            isComicMode = false;
+            autoResizingSpaceIsToggled = false;
+
+            if (VideoHost.Content is UIElement videoUi)
+                videoUi.PreviewKeyDown -= VideoControl_PreviewKeyDown;
+
+            if (VideoHost.Content is IVideoPlayer videoPlayer)
+            {
+                videoPlayer.Stop();
+                videoPlayer.Dispose();
+            }
+
+            VideoHost.Content = null;
+            VideoHost.Width = 0;
+            VideoHost.Height = 0;
+            CleanupVideoControls();
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+            ReleaseDisplayedImage();
+            ImageDisplay.Visibility = Visibility.Collapsed;
+
+            currentlyDisplayedImagePath = null;
+            currentDirectory = null;
+            imageFiles = null;
+            currentImageIndex = 0;
+            imageOriginalWorkspaceName = null;
+            _videoFlag = null;
+            _videoPausedBeforeUserChangedPage = false;
+            _preloadManager?.Clear();
+
+            ApplyDisplayMode(silent: true);
+            if (NoImageMessage != null)
+                NoImageMessage.Visibility = Visibility.Visible;
+            Zen(includeInfoText: true);
+            RefreshFilmStrip();
+            _ = UpdateContextMenuState();
+        }
+
         private void SaveCurrentVideoPosition()
         {
             if (VideoHost.Content is IVideoPlayer videoPlayer && !string.IsNullOrWhiteSpace(currentlyDisplayedImagePath))

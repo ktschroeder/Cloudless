@@ -23,6 +23,7 @@ namespace Cloudless.ReferenceData
                 }, "The command palette provides advanced features using a text-based interface."),
                 new ReferenceTab("General", new List<ReferenceItem>
                 {
+                    new ReferenceItem("unload | ul", "Unload the current window's media and restore its empty state without closing the window"),
                     new ReferenceItem("cip", "Copy image path to clipboard"),
                     new ReferenceItem("rev", "Reveal current image in File Explorer"),
                     new ReferenceItem("close | c", "Close window"),

@@ -108,6 +108,75 @@ public sealed class ImageNavigationCommandUiTests
         });
     }
 
+    [Fact]
+    public void UnloadCommandRestoresWindowToEmptyMediaState()
+    {
+        RunOnStaThread(() =>
+        {
+            ResetWpfApplicationSingletonForTestIsolation();
+            App.SuppressStartupForUiTests = true;
+            var app = new App();
+            app.InitializeComponent();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            ThemeManager.ApplyThemeGlobalResources("Dark");
+
+            var settings = Cloudless.Properties.Settings.Default;
+            int originalCurrentPage = settings.CurrentPage;
+            string recentFilesPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Cloudless",
+                "recent_files.json");
+            byte[]? originalRecentFiles = File.Exists(recentFilesPath) ? File.ReadAllBytes(recentFilesPath) : null;
+            string directory = Path.Combine(Path.GetTempPath(), "cloudless-unload-" + Guid.NewGuid().ToString("N"));
+            MainWindow? window = null;
+            try
+            {
+                Directory.CreateDirectory(directory);
+                string mediaPath = Path.Combine(directory, "loaded.jpg");
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "TestAssets", "img1-landscape.jpg"), mediaPath);
+                settings.CurrentPage = 1;
+
+                window = new MainWindow(string.Empty, 800, 600, workspaceLoad: true);
+                window.Show();
+                SynchronizationContext? previousContext = SynchronizationContext.Current;
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(window.Dispatcher));
+                try
+                {
+                    window.ExecuteCommand("o " + mediaPath).GetAwaiter().GetResult();
+                    Assert.Equal(mediaPath, GetCurrentMediaPath(window), StringComparer.OrdinalIgnoreCase);
+
+                    window.ExecuteCommand("unload").GetAwaiter().GetResult();
+
+                    Assert.Null(GetCurrentMediaPath(window));
+                    Assert.Null(GetPrivateField(window, "imageFiles"));
+                    Assert.Null(window.VideoHost.Content);
+                    Assert.Equal(Visibility.Collapsed, window.ImageDisplay.Visibility);
+                    Assert.Equal(Visibility.Visible, GetPrivateField(window, "NoImageMessage") is FrameworkElement emptyMessage
+                        ? emptyMessage.Visibility
+                        : Visibility.Collapsed);
+                    Assert.True(window.IsVisible);
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(previousContext);
+                }
+            }
+            finally
+            {
+                foreach (Window openWindow in Application.Current.Windows.OfType<Window>().ToArray())
+                    openWindow.Close();
+                settings.CurrentPage = originalCurrentPage;
+                settings.Save();
+                app.Shutdown();
+                App.SuppressStartupForUiTests = false;
+                ResetWpfApplicationSingletonForTestIsolation();
+                RestoreFile(recentFilesPath, originalRecentFiles);
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, recursive: true);
+            }
+        });
+    }
+
     private static void ExecuteAndAssertPath(MainWindow window, string command, string expectedPath)
     {
         window.ExecuteCommand(command).GetAwaiter().GetResult();
@@ -115,6 +184,11 @@ public sealed class ImageNavigationCommandUiTests
             ?? throw new InvalidOperationException("The current media path field was not found.");
         Assert.Equal(expectedPath, pathField.GetValue(window)?.ToString(), StringComparer.OrdinalIgnoreCase);
     }
+
+    private static object? GetPrivateField(object instance, string name) =>
+        instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(instance);
+
+    private static string? GetCurrentMediaPath(MainWindow window) => GetPrivateField(window, "currentlyDisplayedImagePath")?.ToString();
 
     private static void RestoreFile(string path, byte[]? contents)
     {

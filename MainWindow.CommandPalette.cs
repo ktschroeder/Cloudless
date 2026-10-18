@@ -1633,6 +1633,9 @@ namespace Cloudless
                 case "close-window":
                     Close();
                     return true;
+                case "unload-media":
+                    UnloadMedia();
+                    return true;
                 case "close-all":
                     if (!SaveWorkspaceBeforeCloseAll())
                         return true;

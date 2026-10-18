@@ -148,6 +148,8 @@ public sealed class CommandSyntaxValidatorTests
     [InlineData("sel hotkey u")]
     [InlineData("origin close")]
     [InlineData("origin echo from origin")]
+    [InlineData("unload")]
+    [InlineData("ul")]
     [InlineData("sel prevent overlap")]
     [InlineData("all allow overlap")]
     [InlineData("close; goto start")]
