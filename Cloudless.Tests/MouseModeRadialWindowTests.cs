@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using Xunit;
 
 namespace Cloudless.Tests;
@@ -8,8 +9,10 @@ public sealed class MouseModeRadialWindowTests
     [Theory]
     [InlineData(0, -80, "Normal")]
     [InlineData(80, 0, "Control")]
-    [InlineData(0, 80, "Selection")]
+    [InlineData(80, 40, "Selection")]
+    [InlineData(0, 80, "Arrangement")]
     [InlineData(-80, 0, "PageControl")]
+    [InlineData(-80, -80, "Annotation")]
     public void DragDirectionSelectsTheCorrespondingMouseMode(double offsetX, double offsetY, string expected)
     {
         Point anchor = new(200, 200);
@@ -18,6 +21,14 @@ public sealed class MouseModeRadialWindowTests
         CloudlessMouseMode? selected = MouseModeRadialWindow.GetModeAtScreenPosition(anchor, releasePosition);
 
         Assert.Equal(Enum.Parse<CloudlessMouseMode>(expected), selected);
+    }
+
+    [Theory]
+    [InlineData(ModifierKeys.None)]
+    [InlineData(ModifierKeys.Control)]
+    public void ArrangementModeDoesNotPanImageOnLeftClick(ModifierKeys modifiers)
+    {
+        Assert.False(MainWindow.ShouldPanImageOnLeftMouseDown(CloudlessMouseMode.Arrangement, modifiers));
     }
 
     [Fact]

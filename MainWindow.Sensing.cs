@@ -26,10 +26,15 @@ namespace Cloudless
         private bool isDraggingMarqueeSelection;
         private bool isPageControlDragPending;
         private bool _annotationMouseCaptured;
+        private bool _arrangementCtrlGesturePending;
+        private bool _arrangementCtrlDragActive;
+        private Point _arrangementCtrlDragStartScreenPosition;
+        private Point _arrangementCtrlDragInitialWindowPosition;
         private Point pageControlDragStartScreenPosition;
         private Point pageControlDragInitialWindowPosition;
         private MainWindow[] pageControlDragWindows = Array.Empty<MainWindow>();
         internal bool AvoidOverlap { get; private set; }
+        private bool IsTemporaryCollisionDragActive => isDraggingWindow && (Keyboard.Modifiers & ModifierKeys.Control) != 0;
         private Point selectionDragStartScreenPosition;
         private Point selectionDragInitialWindowPosition;
         private MainWindow[] selectionDragWindows = Array.Empty<MainWindow>();
@@ -37,6 +42,12 @@ namespace Cloudless
         public bool Bottommost = false;
 
         internal void SetAvoidOverlap(bool avoidOverlap) => AvoidOverlap = avoidOverlap;
+
+        private void ToggleAvoidOverlapWithFeedback()
+        {
+            SetAvoidOverlap(!AvoidOverlap);
+            Message($"Collision avoidance {(AvoidOverlap ? "enabled" : "disabled")}");
+        }
 
         //Window snapping preference:
         // TODO make this a configurable setting (an advanced setting)
@@ -52,6 +63,20 @@ namespace Cloudless
 
         private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Arrangement &&
+                e.ChangedButton == MouseButton.Left &&
+                (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            {
+                _arrangementCtrlGesturePending = true;
+                _arrangementCtrlDragActive = false;
+                _arrangementCtrlDragStartScreenPosition = PointToScreen(e.GetPosition(this));
+                _arrangementCtrlDragInitialWindowPosition = new Point(Left, Top);
+                LostMouseCapture += Window_LostMouseCapture;
+                Mouse.Capture(this);
+                e.Handled = true;
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation &&
                 _annotationOverlayWindow != null &&
                 (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right))
@@ -286,6 +311,28 @@ namespace Cloudless
                 return;
             }
 
+            if (_arrangementCtrlGesturePending && e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point currentScreenPosition = PointToScreen(e.GetPosition(this));
+                Vector mouseDelta = currentScreenPosition - _arrangementCtrlDragStartScreenPosition;
+                if (!_arrangementCtrlDragActive &&
+                    (Math.Abs(mouseDelta.X) >= SystemParameters.MinimumHorizontalDragDistance ||
+                     Math.Abs(mouseDelta.Y) >= SystemParameters.MinimumVerticalDragDistance))
+                {
+                    _arrangementCtrlDragActive = true;
+                    isDraggingWindow = true;
+                }
+
+                if (_arrangementCtrlDragActive && !MainWindow.LayoutLocked && WindowState == WindowState.Normal)
+                {
+                    RepositionWindow(
+                        _arrangementCtrlDragInitialWindowPosition.X + mouseDelta.X,
+                        _arrangementCtrlDragInitialWindowPosition.Y + mouseDelta.Y);
+                }
+
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation && e.LeftButton == MouseButtonState.Pressed)
             {
                 _annotationOverlayWindow?.ContinueAnnotationInput(e.GetPosition(this));
@@ -462,6 +509,21 @@ namespace Cloudless
         // MouseUp: Stop Dragging
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (_arrangementCtrlGesturePending && e.ChangedButton == MouseButton.Left)
+            {
+                if (!_arrangementCtrlDragActive)
+                    ToggleAvoidOverlapWithFeedback();
+
+                _arrangementCtrlGesturePending = false;
+                _arrangementCtrlDragActive = false;
+                isDraggingWindow = false;
+                LostMouseCapture -= Window_LostMouseCapture;
+                if (Mouse.Captured == this)
+                    Mouse.Capture(null);
+                e.Handled = true;
+                return;
+            }
+
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Annotation &&
                 (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right))
             {
@@ -581,6 +643,9 @@ namespace Cloudless
         private void Window_LostMouseCapture(object sender, MouseEventArgs e)
         {
             LostMouseCapture -= Window_LostMouseCapture;
+            _arrangementCtrlGesturePending = false;
+            _arrangementCtrlDragActive = false;
+            isDraggingWindow = false;
             if (isPageControlDragPending)
                 EndPageControlDrag(releaseCapture: false);
 
@@ -1580,7 +1645,8 @@ namespace Cloudless
 
             ModifierKeys modifiers = Keyboard.Modifiers;
             ModifierKeys controlAltAndShift = ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Shift;
-            if ((modifiers & controlAltAndShift) == controlAltAndShift)
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Arrangement ||
+                (modifiers & controlAltAndShift) == controlAltAndShift)
             {  // scale window up or down from center as anchor
                 e.Handled = true;
 
@@ -2025,7 +2091,8 @@ namespace Cloudless
                 return (IntPtr)HTCLIENT;
             }
 
-            if ((msg == WM_MOVING || msg == WM_SIZING) && AvoidOverlap &&
+            bool temporaryCollisionDrag = IsTemporaryCollisionDragActive;
+            if ((msg == WM_MOVING || msg == WM_SIZING) && (AvoidOverlap || temporaryCollisionDrag) &&
                 !MainWindow.LayoutLocked && WindowState == WindowState.Normal &&
                 WindowCollisionManager.TryGetBounds(this, out Rect currentBounds))
             {
@@ -2039,7 +2106,8 @@ namespace Cloudless
                     this,
                     currentBounds,
                     proposedBounds,
-                    isResizing: msg == WM_SIZING);
+                    isResizing: msg == WM_SIZING,
+                    includeAllPeers: temporaryCollisionDrag);
 
                 proposedNativeBounds.Left = (int)Math.Round(constrainedBounds.Left);
                 proposedNativeBounds.Top = (int)Math.Round(constrainedBounds.Top);
@@ -2063,7 +2131,8 @@ namespace Cloudless
                     needsWriteBack = true;
                 }
 
-                if ((AvoidOverlap || WindowCollisionManager.IsInGroupMove(this)) && !MainWindow.LayoutLocked && WindowState == WindowState.Normal &&
+                temporaryCollisionDrag = IsTemporaryCollisionDragActive;
+                if ((AvoidOverlap || temporaryCollisionDrag || WindowCollisionManager.IsInGroupMove(this)) && !MainWindow.LayoutLocked && WindowState == WindowState.Normal &&
                     WindowCollisionManager.TryGetBounds(this, out Rect movingWindowBounds))
                 {
                     bool noMove = (wp.flags & SWP_NOMOVE) != 0;
@@ -2073,7 +2142,12 @@ namespace Cloudless
                         noMove ? movingWindowBounds.Top : wp.y,
                         noSize ? movingWindowBounds.Width : Math.Max(1, wp.cx),
                         noSize ? movingWindowBounds.Height : Math.Max(1, wp.cy));
-                    Rect constrainedBounds = WindowCollisionManager.Constrain(this, movingWindowBounds, proposedBounds, !noSize);
+                    Rect constrainedBounds = WindowCollisionManager.Constrain(
+                        this,
+                        movingWindowBounds,
+                        proposedBounds,
+                        !noSize,
+                        includeAllPeers: temporaryCollisionDrag);
 
                     if (!noMove)
                     {

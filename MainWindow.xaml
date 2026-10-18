@@ -93,6 +93,7 @@ VerticalAlignment="Center">
                         <MenuItem Header="Exploration Control" Tag="Control" IsCheckable="True" Click="MouseModeMenuItem_Click" />
                         <MenuItem Header="Selection" Tag="Selection" IsCheckable="True" Click="MouseModeMenuItem_Click" />
                         <MenuItem Header="Page Control Mode" Tag="PageControl" IsCheckable="True" Click="MouseModeMenuItem_Click" />
+                        <MenuItem Header="Arrangement" Tag="Arrangement" IsCheckable="True" Click="MouseModeMenuItem_Click" />
                         <MenuItem Header="Annotation" Tag="Annotation" IsCheckable="True" Click="MouseModeMenuItem_Click" />
                     </MenuItem>
                     <MenuItem x:Name="RecentFilesMenu" Header="Recent Images" SubmenuOpened="RecentFilesMenu_SubmenuOpened">

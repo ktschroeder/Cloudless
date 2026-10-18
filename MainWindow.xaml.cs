@@ -778,6 +778,9 @@ namespace Cloudless
 
         internal static bool ShouldPanImageOnLeftMouseDown(CloudlessMouseMode mode, ModifierKeys modifiers)
         {
+            if (mode == CloudlessMouseMode.Arrangement)
+                return false;
+
             return mode == CloudlessMouseMode.Control
                 ? (modifiers & ModifierKeys.Control) == 0
                 : modifiers == ModifierKeys.Control;
@@ -836,6 +839,7 @@ namespace Cloudless
             CloudlessMouseMode.Control => Cursors.ScrollAll,
             CloudlessMouseMode.Selection => GetMouseCommandCursor(),
             CloudlessMouseMode.PageControl => GetPageControlCursor(),
+            CloudlessMouseMode.Arrangement => Cursors.SizeAll,
             CloudlessMouseMode.Annotation => _annotationOverlayWindow?.AnnotationCursor ?? Cursors.Pen,
             _ => Cursors.Arrow
         };
@@ -1105,6 +1109,7 @@ namespace Cloudless
                 CloudlessMouseMode.Control => "Exploration Control",
                 CloudlessMouseMode.Selection => "Selection",
                 CloudlessMouseMode.PageControl => "Page Control Mode",
+                CloudlessMouseMode.Arrangement => "Arrangement",
                 CloudlessMouseMode.Annotation => "Annotation",
                 _ => mode.ToString()
             };

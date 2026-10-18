@@ -54,15 +54,17 @@ namespace Cloudless
                 return null;
 
             double angle = Math.Atan2(offset.Y, offset.X) * 180 / Math.PI;
-            if (angle >= -157.5 && angle < -112.5)
-                return CloudlessMouseMode.Annotation;
-            if (angle >= -112.5 && angle < -45)
+            if (angle >= -120 && angle < -60)
                 return CloudlessMouseMode.Normal;
-            if (angle >= -45 && angle < 45)
+            if (angle >= -60 && angle <= 0)
                 return CloudlessMouseMode.Control;
-            if (angle >= 45 && angle < 135)
+            if (angle > 0 && angle < 60)
                 return CloudlessMouseMode.Selection;
-            return CloudlessMouseMode.PageControl;
+            if (angle >= 60 && angle < 120)
+                return CloudlessMouseMode.Arrangement;
+            if (angle >= 120)
+                return CloudlessMouseMode.PageControl;
+            return CloudlessMouseMode.Annotation;
         }
 
         internal void UpdateHighlight(Point screenPosition)
@@ -94,9 +96,10 @@ namespace Cloudless
             }
 
             AddChoice(grid, CloudlessMouseMode.Normal, "➤", "Standard", 0, 1);
-            AddChoice(grid, CloudlessMouseMode.Control, "✥", "Exploration\nControl", 1, 2);
-            AddChoice(grid, CloudlessMouseMode.Selection, "⌖", "Selection", 2, 1);
-            AddChoice(grid, CloudlessMouseMode.PageControl, "↕", "Page Control", 1, 0);
+            AddChoice(grid, CloudlessMouseMode.Control, "✥", "Exploration\nControl", 0, 2);
+            AddChoice(grid, CloudlessMouseMode.Selection, "⌖", "Selection", 2, 2);
+            AddChoice(grid, CloudlessMouseMode.PageControl, "↕", "Page Control", 2, 0);
+            AddChoice(grid, CloudlessMouseMode.Arrangement, "✣", "Arrangement", 2, 1);
             AddChoice(grid, CloudlessMouseMode.Annotation, "✎", "Annotation", 0, 0);
 
             Border center = new()
@@ -241,6 +244,8 @@ namespace Cloudless
             if (mode == CloudlessMouseMode.Normal)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_ARROW));
             if (mode == CloudlessMouseMode.Control)
+                return LoadCursor(IntPtr.Zero, new IntPtr(IDC_SIZEALL));
+            if (mode == CloudlessMouseMode.Arrangement)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_SIZEALL));
             if (mode == CloudlessMouseMode.Annotation)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_PEN));

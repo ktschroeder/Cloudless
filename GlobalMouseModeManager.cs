@@ -10,6 +10,7 @@ internal enum CloudlessMouseMode
     Control,
     Selection,
     PageControl,
+    Arrangement,
     Annotation
 }
 

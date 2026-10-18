@@ -32,7 +32,7 @@ internal static class WindowCollisionManager
         _hasCachedGroupDelta = false;
     }
 
-    internal static Rect Constrain(MainWindow window, Rect current, Rect proposed, bool isResizing)
+    internal static Rect Constrain(MainWindow window, Rect current, Rect proposed, bool isResizing, bool includeAllPeers = false)
     {
         if (!isResizing && _selectionGroupInitialBounds is not null &&
             _selectionGroupInitialBounds.TryGetValue(window, out Rect initialBounds))
@@ -47,7 +47,7 @@ internal static class WindowCollisionManager
         }
 
         Rect[] peers = GlobalMouseModeManager.GetWindows()
-            .Where(other => other != window && other.AvoidOverlap && other.IsVisible && other.WindowState != WindowState.Minimized)
+            .Where(other => other != window && (includeAllPeers || other.AvoidOverlap) && other.IsVisible && other.WindowState != WindowState.Minimized)
             .Select(other => TryGetBounds(other, out Rect bounds) ? (Rect?)bounds : null)
             .Where(bounds => bounds.HasValue)
             .Select(bounds => bounds.GetValueOrDefault())
