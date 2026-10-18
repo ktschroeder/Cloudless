@@ -747,7 +747,7 @@ namespace Cloudless
             var key = e.Key;
 
             // capture ALT + num key events that otherwise get swallowed by Windows as system inputs
-            if (alt && (IsNumberKey(e.SystemKey) || e.SystemKey == Key.Left || e.SystemKey == Key.Right || e.SystemKey == Key.Up || e.SystemKey == Key.Down))
+            if (alt && (IsNumberKey(e.SystemKey) || e.SystemKey == Key.Left || e.SystemKey == Key.Right || e.SystemKey == Key.Up || e.SystemKey == Key.Down || e.SystemKey == Key.H))
             {
                 key = e.SystemKey;
             }
@@ -1143,8 +1143,10 @@ namespace Cloudless
 
             if (key == Key.H)
             {
-                if (control)
+                if (control && !alt)
                     CommandPaletteRef();
+                else if (alt && !control)
+                    MouseModeRef();
                 else
                     HotkeyRef();
                 return;
