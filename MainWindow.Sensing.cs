@@ -44,6 +44,15 @@ namespace Cloudless
 
         internal void SetAvoidOverlap(bool avoidOverlap) => AvoidOverlap = avoidOverlap;
 
+        private void SetWindowDragging(bool isDragging)
+        {
+            if (isDraggingWindow == isDragging)
+                return;
+
+            isDraggingWindow = isDragging;
+            SpotlightOverlayWindow.SetWindowDragging(this, isDragging);
+        }
+
         private void ToggleAvoidOverlapWithFeedback()
         {
             SetAvoidOverlap(!AvoidOverlap);
@@ -291,7 +300,7 @@ namespace Cloudless
                     {
                         return;
                     }
-                    isDraggingWindow = true;
+                    SetWindowDragging(true);
                     initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
                     initialWindowPosition = new Point(this.Left, this.Top);
 
@@ -325,7 +334,7 @@ namespace Cloudless
                      Math.Abs(mouseDelta.Y) >= SystemParameters.MinimumVerticalDragDistance))
                 {
                     _arrangementCtrlDragActive = true;
-                    isDraggingWindow = true;
+                    SetWindowDragging(true);
                 }
 
                 if (_arrangementCtrlDragActive && !MainWindow.LayoutLocked && WindowState == WindowState.Normal)
@@ -445,7 +454,7 @@ namespace Cloudless
                 // Handle dragging window out of fullscreen
                 Point cursorPosition = e.GetPosition(this);
                 await ToggleFullscreen();
-                isDraggingWindow = true;  // this will then hit the below if-block
+                SetWindowDragging(true);  // this will then hit the below if-block
 
                 // TODO center window on cursor
 
@@ -521,7 +530,7 @@ namespace Cloudless
 
                 _arrangementCtrlGesturePending = false;
                 _arrangementCtrlDragActive = false;
-                isDraggingWindow = false;
+                SetWindowDragging(false);
                 LostMouseCapture -= Window_LostMouseCapture;
                 if (Mouse.Captured == this)
                     Mouse.Capture(null);
@@ -611,7 +620,7 @@ namespace Cloudless
                 Mouse.Capture(null);  // Release mouse capture
             }
 
-            isDraggingWindow = false;
+            SetWindowDragging(false);
             isDraggingWindowFromFullscreen = false;
             await UpdateContextMenuState();  // for zoom amount, which may change when window is resized
         }
@@ -650,7 +659,7 @@ namespace Cloudless
             LostMouseCapture -= Window_LostMouseCapture;
             _arrangementCtrlGesturePending = false;
             _arrangementCtrlDragActive = false;
-            isDraggingWindow = false;
+            SetWindowDragging(false);
             if (isPageControlDragPending)
                 EndPageControlDrag(releaseCapture: false);
 

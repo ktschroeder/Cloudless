@@ -36,6 +36,7 @@ internal sealed class SpotlightOverlayWindow : IDisposable
     private static readonly IntPtr HwndTopmost = new(-1);
     private delegate IntPtr WindowProcedure(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam);
     private static readonly WindowProcedure NativeWindowProcedure = NativeWndProc;
+    private static readonly HashSet<MainWindow> DraggingWindows = new();
     private static int _diameter = 300;
     private static SpotlightOverlayWindow? _activeWindow;
 
@@ -106,13 +107,33 @@ internal sealed class SpotlightOverlayWindow : IDisposable
         if (_mouseHook == IntPtr.Zero)
         {
             Debug.WriteLine($"Unable to install spotlight mouse hook: {Marshal.GetLastWin32Error()}");
-            _cursorTimer = new DispatcherTimer(DispatcherPriority.Render, _dispatcher)
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
-            _cursorTimer.Tick += (_, _) => UpdateSpotlightPosition();
-            _cursorTimer.Start();
         }
+
+        _cursorTimer = new DispatcherTimer(DispatcherPriority.Render, _dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(DraggingWindows.Count > 0 ? 33 : 16)
+        };
+        _cursorTimer.Tick += (_, _) =>
+        {
+            if (_mouseHook == IntPtr.Zero)
+            {
+                UpdateSpotlightPosition();
+                return;
+            }
+
+            NativePoint cursorPosition;
+            lock (_cursorPositionLock)
+            {
+                if (!_cursorUpdatePending)
+                    return;
+
+                cursorPosition = _pendingCursorPosition;
+                _cursorUpdatePending = false;
+            }
+
+            UpdateSpotlightPosition(cursorPosition);
+        };
+        _cursorTimer.Start();
     }
 
     internal static void SetActive(bool active)
@@ -137,6 +158,17 @@ internal sealed class SpotlightOverlayWindow : IDisposable
         SpotlightOverlayWindow? activeWindow = _activeWindow;
         _activeWindow = null;
         activeWindow?.Dispose();
+    }
+
+    internal static void SetWindowDragging(MainWindow window, bool isDragging)
+    {
+        if (isDragging)
+            DraggingWindows.Add(window);
+        else
+            DraggingWindows.Remove(window);
+
+        if (_activeWindow?._cursorTimer != null)
+            _activeWindow._cursorTimer.Interval = TimeSpan.FromMilliseconds(DraggingWindows.Count > 0 ? 33 : 16);
     }
 
     private void UpdateSpotlightPosition()
@@ -212,23 +244,8 @@ internal sealed class SpotlightOverlayWindow : IDisposable
         lock (_cursorPositionLock)
         {
             _pendingCursorPosition = cursorPosition;
-            if (_cursorUpdatePending)
-                return;
-
             _cursorUpdatePending = true;
         }
-
-        _dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
-        {
-            NativePoint latestPosition;
-            lock (_cursorPositionLock)
-            {
-                latestPosition = _pendingCursorPosition;
-                _cursorUpdatePending = false;
-            }
-
-            UpdateSpotlightPosition(latestPosition);
-        }));
     }
 
     internal static int CalculateDiameterAfterWheel(int diameter, int delta, bool fine, bool coarse)

@@ -70,6 +70,7 @@ internal static class GlobalMouseModeManager
     {
         Windows.Remove(window);
         SelectedWindows.Remove(window);
+        SpotlightOverlayWindow.SetWindowDragging(window, false);
         window.SetWindowSelected(false);
         if (Windows.Count == 0)
             SpotlightOverlayWindow.SetActive(false);
