@@ -36,6 +36,8 @@ namespace Cloudless
         private readonly Point _anchorScreenPosition;
         private readonly CloudlessMouseMode _currentMode;
         private readonly Dictionary<CloudlessMouseMode, ShapePath> _choices = new();
+        private bool _isDarkTheme;
+        private Point? _lastScreenPosition;
         private ShapeLine? _cursorLine;
         private ShapeEllipse? _cursorMarker;
         private CloudlessMouseMode? _highlightedMode;
@@ -44,6 +46,7 @@ namespace Cloudless
         {
             _anchorScreenPosition = anchorScreenPosition;
             _currentMode = GlobalMouseModeManager.CurrentMode;
+            _isDarkTheme = string.Equals(Properties.Settings.Default["Theme"] as string, "Dark", System.StringComparison.OrdinalIgnoreCase);
             Owner = owner;
             SecondaryWindowOpacity.Apply(this);
             const double cursorMargin = 12;
@@ -99,6 +102,7 @@ namespace Cloudless
         internal void UpdateHighlight(Point screenPosition)
         {
             InitializeSelector();
+            _lastScreenPosition = screenPosition;
             if (_cursorLine == null || _cursorMarker == null)
                 return;
 
@@ -124,17 +128,27 @@ namespace Cloudless
             {
                 bool isCurrentMode = choice == _currentMode;
                 bool isHighlighted = choice == mode && !isCurrentMode;
-                path.Fill = new SolidColorBrush(isHighlighted
-                    ? Color.FromArgb(245, 50, 115, 190)
-                    : isCurrentMode
-                        ? Color.FromArgb(90, 35, 35, 35)
-                        : Color.FromArgb(220, 35, 35, 35));
-                path.Stroke = new SolidColorBrush(isHighlighted
-                    ? Colors.White
-                    : isCurrentMode
-                        ? Color.FromArgb(100, 145, 145, 145)
-                        : Color.FromArgb(230, 145, 145, 145));
+                path.Fill = new SolidColorBrush(GetSectorFill(isCurrentMode, isHighlighted));
+                path.Stroke = new SolidColorBrush(GetSectorStroke(isCurrentMode, isHighlighted));
             }
+        }
+
+        internal void UpdateTheme(string? themeName)
+        {
+            bool isDarkTheme = string.Equals(themeName, "Dark", System.StringComparison.OrdinalIgnoreCase);
+            if (_isDarkTheme == isDarkTheme)
+                return;
+
+            _isDarkTheme = isDarkTheme;
+            if (_cursorLine == null)
+                return;
+
+            _choices.Clear();
+            _cursorLine = null;
+            _cursorMarker = null;
+            _highlightedMode = null;
+            InitializeSelector();
+            UpdateHighlight(_lastScreenPosition ?? _anchorScreenPosition);
         }
 
         private void InitializeSelector()
@@ -160,12 +174,12 @@ namespace Cloudless
                 double centerAngle = sector * 45;
                 ShapePath path = CreateSectorPath(centerPosition.X, centerPosition.Y, centerAngle - 22.5 + 1.5, centerAngle + 22.5 - 1.5);
                 bool isUnusedSector = sector == 4;
-                path.Fill = new SolidColorBrush(isUnusedSector
-                    ? Color.FromArgb(90, 35, 35, 35)
-                    : Color.FromArgb(220, 35, 35, 35));
-                path.Stroke = new SolidColorBrush(isUnusedSector
-                    ? Color.FromArgb(100, 145, 145, 145)
-                    : Color.FromArgb(230, 145, 145, 145));
+                path.Fill = new SolidColorBrush(_isDarkTheme
+                    ? isUnusedSector ? Color.FromArgb(90, 35, 35, 35) : Color.FromArgb(220, 35, 35, 35)
+                    : isUnusedSector ? Color.FromArgb(100, 235, 235, 235) : Color.FromArgb(225, 250, 250, 250));
+                path.Stroke = new SolidColorBrush(_isDarkTheme
+                    ? isUnusedSector ? Color.FromArgb(100, 145, 145, 145) : Color.FromArgb(230, 145, 145, 145)
+                    : isUnusedSector ? Color.FromArgb(100, 80, 80, 80) : Color.FromArgb(210, 90, 90, 90));
                 path.StrokeThickness = 1.5;
                 canvas.Children.Add(path);
                 sectorPaths[sector] = path;
@@ -177,7 +191,7 @@ namespace Cloudless
                 Y1 = centerPosition.Y,
                 X2 = centerPosition.X,
                 Y2 = centerPosition.Y,
-                Stroke = new SolidColorBrush(Color.FromArgb(235, 235, 245, 255)),
+                Stroke = new SolidColorBrush(_isDarkTheme ? Color.FromArgb(235, 235, 245, 255) : Color.FromArgb(235, 40, 75, 115)),
                 StrokeThickness = 2,
                 IsHitTestVisible = false
             };
@@ -192,21 +206,21 @@ namespace Cloudless
             AddChoice(canvas, centerPosition, sectorPaths[0], CloudlessMouseMode.Spotlight, "◉", "Spotlight", 0);
 
             ShapePath currentModePath = _choices[_currentMode];
-            currentModePath.Fill = new SolidColorBrush(Color.FromArgb(90, 35, 35, 35));
-            currentModePath.Stroke = new SolidColorBrush(Color.FromArgb(100, 145, 145, 145));
+            currentModePath.Fill = new SolidColorBrush(GetSectorFill(isCurrentMode: true, isHighlighted: false));
+            currentModePath.Stroke = new SolidColorBrush(GetSectorStroke(isCurrentMode: true, isHighlighted: false));
 
             Border center = new()
             {
                 Width = 76,
                 Height = 76,
                 CornerRadius = new CornerRadius(38),
-                Background = new SolidColorBrush(Color.FromArgb(230, 25, 25, 25)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(230, 145, 145, 145)),
+                Background = new SolidColorBrush(_isDarkTheme ? Color.FromArgb(230, 25, 25, 25) : Color.FromArgb(240, 255, 255, 255)),
+                BorderBrush = new SolidColorBrush(_isDarkTheme ? Color.FromArgb(230, 145, 145, 145) : Color.FromArgb(230, 90, 90, 90)),
                 BorderThickness = new Thickness(1.5),
                 Child = new TextBlock
                 {
                     Text = "MOUSE\nMODE",
-                    Foreground = Brushes.White,
+                    Foreground = _isDarkTheme ? Brushes.White : Brushes.Black,
                     FontWeight = FontWeights.SemiBold,
                     FontSize = 11,
                     TextAlignment = TextAlignment.Center,
@@ -221,7 +235,7 @@ namespace Cloudless
             {
                 Width = 9,
                 Height = 9,
-                Fill = new SolidColorBrush(Color.FromArgb(245, 235, 245, 255)),
+                Fill = new SolidColorBrush(_isDarkTheme ? Color.FromArgb(245, 235, 245, 255) : Color.FromArgb(245, 40, 75, 115)),
                 Stroke = new SolidColorBrush(Color.FromArgb(255, 30, 35, 45)),
                 StrokeThickness = 1.5,
                 IsHitTestVisible = false
@@ -254,6 +268,24 @@ namespace Cloudless
             return new Point(centerX + Math.Cos(radians) * radius, centerY + Math.Sin(radians) * radius);
         }
 
+        private Color GetSectorFill(bool isCurrentMode, bool isHighlighted)
+        {
+            if (isHighlighted)
+                return Color.FromArgb(245, 50, 115, 190);
+            if (_isDarkTheme)
+                return isCurrentMode ? Color.FromArgb(90, 35, 35, 35) : Color.FromArgb(220, 35, 35, 35);
+            return isCurrentMode ? Color.FromArgb(155, 215, 225, 240) : Color.FromArgb(225, 250, 250, 250);
+        }
+
+        private Color GetSectorStroke(bool isCurrentMode, bool isHighlighted)
+        {
+            if (isHighlighted)
+                return _isDarkTheme ? Colors.White : Color.FromRgb(35, 75, 125);
+            if (_isDarkTheme)
+                return isCurrentMode ? Color.FromArgb(100, 145, 145, 145) : Color.FromArgb(230, 145, 145, 145);
+            return isCurrentMode ? Color.FromArgb(180, 75, 95, 125) : Color.FromArgb(210, 90, 90, 90);
+        }
+
         private void AddChoice(Canvas canvas, Point centerPosition, ShapePath path, CloudlessMouseMode mode, string glyph, string label, int sector)
         {
             double centerAngle = sector * 45;
@@ -270,7 +302,7 @@ namespace Cloudless
                 Text = label,
                 Width = 100,
                 Height = 34,
-                Foreground = Brushes.White,
+                Foreground = _isDarkTheme ? Brushes.White : Brushes.Black,
                 FontSize = 11,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
@@ -288,7 +320,7 @@ namespace Cloudless
             canvas.Children.Add(labelBlock);
         }
 
-        private static FrameworkElement CreateChoiceIcon(CloudlessMouseMode mode, string glyph)
+        private FrameworkElement CreateChoiceIcon(CloudlessMouseMode mode, string glyph)
         {
             ImageSource? cursorImage = CreateCursorImage(mode);
             if (cursorImage != null)
@@ -313,7 +345,7 @@ namespace Cloudless
                 Height = 44,
                 FontFamily = new FontFamily("Segoe UI Symbol"),
                 FontSize = 32,
-                Foreground = Brushes.White,
+                Foreground = _isDarkTheme ? Brushes.White : Brushes.Black,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center

@@ -26,6 +26,10 @@ namespace Cloudless
                 {
                     ApplyThemeToWindow(mw);
                 }
+                else if (w is MouseModeRadialWindow radialWindow)
+                {
+                    radialWindow.UpdateTheme(themeName);
+                }
             }
         }
 
