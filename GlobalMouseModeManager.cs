@@ -11,7 +11,8 @@ internal enum CloudlessMouseMode
     Selection,
     PageControl,
     Arrangement,
-    Annotation
+    Annotation,
+    Spotlight
 }
 
 internal static class GlobalMouseModeManager
@@ -70,6 +71,8 @@ internal static class GlobalMouseModeManager
         Windows.Remove(window);
         SelectedWindows.Remove(window);
         window.SetWindowSelected(false);
+        if (Windows.Count == 0)
+            SpotlightOverlayWindow.SetActive(false);
     }
 
     internal static void SetMode(CloudlessMouseMode mode)
@@ -78,6 +81,7 @@ internal static class GlobalMouseModeManager
         CurrentMode = mode;
         foreach (MainWindow window in Windows)
             window.ApplyGlobalMouseModeCursor(mode);
+        SpotlightOverlayWindow.SetActive(mode == CloudlessMouseMode.Spotlight);
     }
 
     internal static bool CycleOverlappingWindows(MainWindow source, Point screenPosition, int wheelDelta)

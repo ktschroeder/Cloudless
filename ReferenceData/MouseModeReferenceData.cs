@@ -56,6 +56,15 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Left-click and drag", "Draw/erase an annotation on the window."),
                     new ReferenceItem("Long-hold right-click", "Open annotation controls window to choose a color or size, use the eraser, clear annotations, or close the controls."),
                 }, "Draw directly over the window. Annotations remain visible while using other mouse modes, but are lost once a window is closed."),
+                new ReferenceTab("Spotlight", new List<ReferenceItem>
+                {
+                    new ReferenceItem("Scroll up/down", "Increase/decrease the spotlight diameter."),
+                    new ReferenceItem("Alt + scroll", "Adjust the spotlight size more finely."),
+                    new ReferenceItem("Shift + scroll", "Adjust the spotlight size more coarsely."),
+                    new ReferenceItem("Left-click + drag", "Move the window as in Standard mode."),
+                    new ReferenceItem("Ctrl left-click + drag", "Pan media as in Standard mode."),
+                    new ReferenceItem("Ctrl + scroll", "Zoom media as in Standard mode."),
+                }, "Dim the desktop outside a cursor-centered spotlight."),
             };
         }
     }

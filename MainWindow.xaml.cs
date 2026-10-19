@@ -22,7 +22,7 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.15.0";
+        public const string CURRENT_VERSION = "0.15.0.100";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -782,6 +782,9 @@ namespace Cloudless
             if (mode == CloudlessMouseMode.Arrangement)
                 return false;
 
+            if (mode == CloudlessMouseMode.Spotlight)
+                return modifiers == ModifierKeys.Control;
+
             return mode == CloudlessMouseMode.Control
                 ? (modifiers & ModifierKeys.Control) == 0
                 : modifiers == ModifierKeys.Control;
@@ -848,8 +851,17 @@ namespace Cloudless
             CloudlessMouseMode.PageControl => GetPageControlCursor(),
             CloudlessMouseMode.Arrangement => GetArrangementCursor(),
             CloudlessMouseMode.Annotation => _annotationOverlayWindow?.AnnotationCursor ?? Cursors.Pen,
+            CloudlessMouseMode.Spotlight => GetSpotlightCursor(),
             _ => Cursors.Arrow
         };
+
+        private Cursor GetSpotlightCursor()
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control || !ImageDisplay.IsMouseOver)
+                return Cursors.None;
+
+            return isPanningImage ? Cursors.SizeAll : Cursors.Hand;
+        }
 
         internal void RefreshGlobalMouseModeCursor()
         {

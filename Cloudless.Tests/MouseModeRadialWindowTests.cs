@@ -13,6 +13,7 @@ public sealed class MouseModeRadialWindowTests
     [InlineData(0, 80, "Arrangement")]
     [InlineData(-80, 80, "PageControl")]
     [InlineData(-80, -80, "Annotation")]
+    [InlineData(80, 0, "Spotlight")]
     public void DragDirectionSelectsTheCorrespondingMouseMode(double offsetX, double offsetY, string expected)
     {
         Point anchor = new(200, 200);
@@ -24,7 +25,6 @@ public sealed class MouseModeRadialWindowTests
     }
 
     [Theory]
-    [InlineData(80, 0)]
     [InlineData(-80, 0)]
     public void UnusedRadialSectorsDoNotSelectAMode(double offsetX, double offsetY)
     {
@@ -43,6 +43,14 @@ public sealed class MouseModeRadialWindowTests
     public void ArrangementModeDoesNotPanImageOnLeftClick(ModifierKeys modifiers)
     {
         Assert.False(MainWindow.ShouldPanImageOnLeftMouseDown(CloudlessMouseMode.Arrangement, modifiers));
+    }
+
+    [Theory]
+    [InlineData(ModifierKeys.None, false)]
+    [InlineData(ModifierKeys.Control, true)]
+    public void SpotlightModePansOnlyWhenControlIsHeld(ModifierKeys modifiers, bool expected)
+    {
+        Assert.Equal(expected, MainWindow.ShouldPanImageOnLeftMouseDown(CloudlessMouseMode.Spotlight, modifiers));
     }
 
     [Fact]

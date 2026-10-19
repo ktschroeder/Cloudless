@@ -1587,6 +1587,12 @@ namespace Cloudless
         {
             if (e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
             {
+                if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Spotlight)
+                {
+                    ApplyGlobalMouseModeCursor(CloudlessMouseMode.Spotlight);
+                    return;
+                }
+
                 // Revert to the default cursor when Ctrl is released
                 if (_mouseModeRadialWindow == null && !isPanningImage && GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Normal)
                 {
@@ -1663,6 +1669,13 @@ namespace Cloudless
         private async void OnMouseWheelZoom(object sender, MouseWheelEventArgs e)
         {
             if (_mouseModeRadialWindow != null)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Spotlight &&
+                (Keyboard.Modifiers & ModifierKeys.Control) == 0)
             {
                 e.Handled = true;
                 return;

@@ -328,7 +328,12 @@ namespace Cloudless
         }
         private void StopPanning()
         {
-            if (!MouseControlMode && !MouseCommandMode)
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Spotlight)
+            {
+                isPanningImage = false;
+                RefreshGlobalMouseModeCursor();
+            }
+            else if (!MouseControlMode && !MouseCommandMode)
             {
                 // Revert to open hand cursor when mouse is released, if still applicable
                 if (Keyboard.Modifiers == ModifierKeys.Control && ImageDisplay.IsMouseOver)
@@ -340,10 +345,9 @@ namespace Cloudless
 
             isPanningImage = false;
             ImageDisplay.ReleaseMouseCapture();
-
             UpdateCropModeInfo();
-            
         }
+
         private void ResizeWindow(double width, double height)
         {
             if (isExplorationMode) ApplyDisplayMode();  // exit exploration mode
