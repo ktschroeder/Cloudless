@@ -528,10 +528,10 @@ namespace Cloudless
                                 });
                             }
 
-                                TimeSpan? resumePosition = Cloudless.Properties.Settings.Default.ResumeVideosFromPreviousPosition
-                                    ? VideoPlaybackPositionStore.GetPosition(uri.LocalPath)
-                                    : null;
-                                _ = PlayVideoWithOptionalResumeAsync(player, uri, postPlayTask, resumePosition);
+                            TimeSpan? resumePosition = Cloudless.Properties.Settings.Default.ResumeVideosFromPreviousPosition
+                                ? VideoPlaybackPositionStore.GetPosition(uri.LocalPath)
+                                : null;
+                            _ = PlayVideoWithOptionalResumeAsync(player, uri, postPlayTask, resumePosition);
 
                         }  // TODO else?
                         ImageBehavior.SetAnimatedSource(ImageDisplay, null);
@@ -815,6 +815,7 @@ namespace Cloudless
                     {
                         TimeSpan position = resumePosition.Value > duration ? duration : resumePosition.Value;
                         player.SeekTo(position);
+                        Message($"Resumed video from previous position");
                         return;
                     }
 
