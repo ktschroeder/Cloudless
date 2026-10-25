@@ -1337,7 +1337,7 @@ namespace Cloudless
 
         private void HideCursorIfVideoPlaying()
         {
-            if (GlobalMouseModeManager.CurrentMode != CloudlessMouseMode.Normal)  //TODO revisit, maybe lose this
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Spotlight)
                 return;
 
             // Only hide cursor if:
