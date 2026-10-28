@@ -12,7 +12,8 @@ internal enum CloudlessMouseMode
     PageControl,
     Arrangement,
     Annotation,
-    Spotlight
+    Spotlight,
+    Magnifier
 }
 
 internal static class GlobalMouseModeManager
@@ -64,6 +65,8 @@ internal static class GlobalMouseModeManager
         Windows.Add(window);
         window.ApplyGlobalMouseModeCursor(CurrentMode);
         window.SetWindowSelected(SelectedWindows.Contains(window));
+        if (CurrentMode == CloudlessMouseMode.Magnifier)
+            MagnifierOverlayWindow.SetActive(true);
     }
 
     internal static void Unregister(MainWindow window)
@@ -71,6 +74,8 @@ internal static class GlobalMouseModeManager
         Windows.Remove(window);
         SelectedWindows.Remove(window);
         SpotlightOverlayWindow.SetWindowDragging(window, false);
+        if (Windows.Count == 0)
+            MagnifierOverlayWindow.SetActive(false);
         window.SetWindowSelected(false);
         if (Windows.Count == 0)
             SpotlightOverlayWindow.SetActive(false);
@@ -83,6 +88,7 @@ internal static class GlobalMouseModeManager
         foreach (MainWindow window in Windows)
             window.ApplyGlobalMouseModeCursor(mode);
         SpotlightOverlayWindow.SetActive(mode == CloudlessMouseMode.Spotlight);
+        MagnifierOverlayWindow.SetActive(mode == CloudlessMouseMode.Magnifier);
     }
 
     internal static bool CycleOverlappingWindows(MainWindow source, Point screenPosition, int wheelDelta)

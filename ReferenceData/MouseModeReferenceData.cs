@@ -65,6 +65,13 @@ namespace Cloudless.ReferenceData
                     new ReferenceItem("Ctrl left-click + drag", "Pan media as in Standard mode."),
                     new ReferenceItem("Ctrl + scroll", "Zoom media as in Standard mode."),
                 }, "Dim the desktop outside a cursor-centered spotlight."),
+                new ReferenceTab("Magnifier", new List<ReferenceItem>
+                {
+                    new ReferenceItem("Scroll up/down", "Increase/decrease desktop magnification."),
+                    new ReferenceItem("Hold right-click + scroll up/down", "Increase/decrease the magnifier lens size."),
+                    new ReferenceItem("Alt + scroll", "Adjust magnification or lens size more finely."),
+                    new ReferenceItem("Shift + scroll", "Adjust magnification or lens size more coarsely."),
+                }, "Magnify everything (global, desktop inclusive) around the cursor. Useful to get larger views of UI elements, for instance."),
             };
         }
     }

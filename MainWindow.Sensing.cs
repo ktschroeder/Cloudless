@@ -295,6 +295,9 @@ namespace Cloudless
                 }
                 else if (WindowState == WindowState.Normal)
                 {
+                    if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Magnifier)
+                        return;
+
                     // Prevent user-initiated moves when layout lock is enabled
                     if (MainWindow.LayoutLocked)
                     {
@@ -1685,6 +1688,12 @@ namespace Cloudless
 
             if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Spotlight &&
                 (Keyboard.Modifiers & ModifierKeys.Control) == 0)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            if (GlobalMouseModeManager.CurrentMode == CloudlessMouseMode.Magnifier)
             {
                 e.Handled = true;
                 return;

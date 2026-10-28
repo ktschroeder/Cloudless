@@ -22,7 +22,7 @@ namespace Cloudless
         // This is a global flag respected by all MainWindow instances.
         public static bool LayoutLocked = false;
 
-        public const string CURRENT_VERSION = "0.15.0.200";
+        public const string CURRENT_VERSION = "0.15.0.400";
         // RemoveBeforeFlight
         public const bool LOCAL_DEV = false;
 
@@ -779,7 +779,7 @@ namespace Cloudless
 
         internal static bool ShouldPanImageOnLeftMouseDown(CloudlessMouseMode mode, ModifierKeys modifiers)
         {
-            if (mode == CloudlessMouseMode.Arrangement)
+            if (mode == CloudlessMouseMode.Arrangement || mode == CloudlessMouseMode.Magnifier)
                 return false;
 
             if (mode == CloudlessMouseMode.Spotlight)
@@ -1157,6 +1157,7 @@ namespace Cloudless
                 CloudlessMouseMode.PageControl => "Page Control Mode",
                 CloudlessMouseMode.Arrangement => "Arrangement",
                 CloudlessMouseMode.Annotation => "Annotation",
+                CloudlessMouseMode.Magnifier => "Magnifier",
                 _ => mode.ToString()
             };
             item.Header = $"{(isSelected ? "✓ " : "  ")}{modeName}";

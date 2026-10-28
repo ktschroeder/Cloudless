@@ -31,7 +31,8 @@ namespace Cloudless
             [CloudlessMouseMode.PageControl] = new(new PixelOffset(13, 8), new PixelOffset(-9 , 7)),
             [CloudlessMouseMode.Arrangement] = new(new PixelOffset(0, 0), new PixelOffset(0, 10)),
             [CloudlessMouseMode.Annotation] = new(new PixelOffset(0, 0), new PixelOffset(0, 0)),
-            [CloudlessMouseMode.Spotlight] = new(new PixelOffset(5, 3), new PixelOffset(5, 3))
+            [CloudlessMouseMode.Spotlight] = new(new PixelOffset(10, 5), new PixelOffset(10, 5)),
+            [CloudlessMouseMode.Magnifier] = new(new PixelOffset(-10, 3), new PixelOffset(-10, 5))
         };
         private readonly Point _anchorScreenPosition;
         private readonly CloudlessMouseMode _currentMode;
@@ -88,7 +89,7 @@ namespace Cloudless
             return sector switch
             {
                 0 => CloudlessMouseMode.Spotlight,
-                4 => null,
+                4 => CloudlessMouseMode.Magnifier,
                 1 => CloudlessMouseMode.Selection,
                 2 => CloudlessMouseMode.Arrangement,
                 3 => CloudlessMouseMode.PageControl,
@@ -173,13 +174,12 @@ namespace Cloudless
             {
                 double centerAngle = sector * 45;
                 ShapePath path = CreateSectorPath(centerPosition.X, centerPosition.Y, centerAngle - 22.5 + 1.5, centerAngle + 22.5 - 1.5);
-                bool isUnusedSector = sector == 4;
                 path.Fill = new SolidColorBrush(_isDarkTheme
-                    ? isUnusedSector ? Color.FromArgb(90, 35, 35, 35) : Color.FromArgb(220, 35, 35, 35)
-                    : isUnusedSector ? Color.FromArgb(100, 235, 235, 235) : Color.FromArgb(225, 250, 250, 250));
+                    ? Color.FromArgb(220, 35, 35, 35)
+                    : Color.FromArgb(225, 250, 250, 250));
                 path.Stroke = new SolidColorBrush(_isDarkTheme
-                    ? isUnusedSector ? Color.FromArgb(100, 145, 145, 145) : Color.FromArgb(230, 145, 145, 145)
-                    : isUnusedSector ? Color.FromArgb(100, 80, 80, 80) : Color.FromArgb(210, 90, 90, 90));
+                    ? Color.FromArgb(230, 145, 145, 145)
+                    : Color.FromArgb(210, 90, 90, 90));
                 path.StrokeThickness = 1.5;
                 canvas.Children.Add(path);
                 sectorPaths[sector] = path;
@@ -204,6 +204,7 @@ namespace Cloudless
             AddChoice(canvas, centerPosition, sectorPaths[2], CloudlessMouseMode.Arrangement, "✣", "Arrangement", 2);
             AddChoice(canvas, centerPosition, sectorPaths[5], CloudlessMouseMode.Annotation, "✎", "Annotation", 5);
             AddChoice(canvas, centerPosition, sectorPaths[0], CloudlessMouseMode.Spotlight, "◉", "Spotlight", 0);
+            AddChoice(canvas, centerPosition, sectorPaths[4], CloudlessMouseMode.Magnifier, "⌕", "Magnifier", 4);
 
             ShapePath currentModePath = _choices[_currentMode];
             currentModePath.Fill = new SolidColorBrush(GetSectorFill(isCurrentMode: true, isHighlighted: false));
@@ -403,7 +404,7 @@ namespace Cloudless
         private static IntPtr LoadModeCursor(CloudlessMouseMode mode, out bool shouldDestroy)
         {
             shouldDestroy = false;
-            if (mode == CloudlessMouseMode.Spotlight)
+            if (mode == CloudlessMouseMode.Spotlight || mode == CloudlessMouseMode.Magnifier)
                 return IntPtr.Zero;
             if (mode == CloudlessMouseMode.Normal)
                 return LoadCursor(IntPtr.Zero, new IntPtr(IDC_ARROW));

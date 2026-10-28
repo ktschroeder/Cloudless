@@ -326,7 +326,10 @@ public sealed class PageCommandUiTests
             try
             {
                 foreach (CloudlessMouseMode mode in Enum.GetValues<CloudlessMouseMode>())
-                    Assert.True(MouseModeRadialWindow.CreateCursorImage(mode) != null, $"The {mode} cursor did not render.");
+                {
+                    bool hasCursorImage = MouseModeRadialWindow.CreateCursorImage(mode) != null;
+                    Assert.Equal(mode != CloudlessMouseMode.Spotlight && mode != CloudlessMouseMode.Magnifier, hasCursorImage);
+                }
             }
             finally
             {
