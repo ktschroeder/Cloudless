@@ -790,6 +790,17 @@ namespace Cloudless
                 : modifiers == ModifierKeys.Control;
         }
 
+        internal static bool ShouldToggleVideoPlaybackOnClick(bool settingEnabled, CloudlessMouseMode mode) =>
+            settingEnabled && (mode is CloudlessMouseMode.Normal or CloudlessMouseMode.Control);
+
+        internal static bool HasExceededVideoClickDragThreshold(
+            Point start,
+            Point current,
+            double minimumHorizontalDistance,
+            double minimumVerticalDistance) =>
+            Math.Abs(current.X - start.X) >= minimumHorizontalDistance ||
+            Math.Abs(current.Y - start.Y) >= minimumVerticalDistance;
+
         internal void ApplyGlobalMouseModeCursor(CloudlessMouseMode mode)
         {
             if (_mouseModeRadialWindow != null)

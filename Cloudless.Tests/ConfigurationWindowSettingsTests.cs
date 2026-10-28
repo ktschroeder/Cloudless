@@ -17,7 +17,7 @@ public sealed class ConfigurationWindowSettingsTests
         "Background", "ImageDirectorySortOrder", "CommandPaletteValidCommandIndicator", "DisableSmartZoom", "DisableZenMode", "ImgBBKey",
         "StartOnWindowsStart", "MouseLongPressMS", "PreloadImages", "ComicModeMouseControlScroll",
         "FilmStripCloseAfterward", "FilmStripOpenImageInNewWindow", "StartVideosMuted",
-        "ResumeVideosFromPreviousPosition", "UseManualVideoControls", "Theme"
+        "ResumeVideosFromPreviousPosition", "UseManualVideoControls", "ToggleVideoPlaybackOnClick", "Theme"
     };
 
     [Fact]
@@ -95,6 +95,7 @@ public sealed class ConfigurationWindowSettingsTests
         settings.StartVideosMuted = false;
         settings.ResumeVideosFromPreviousPosition = true;
         settings.UseManualVideoControls = false;
+        settings.ToggleVideoPlaybackOnClick = false;
         settings["Theme"] = "Light";
     }
 
@@ -128,6 +129,7 @@ public sealed class ConfigurationWindowSettingsTests
         AssertCheckbox(window, "StartVideosMutedCheckbox", false);
         AssertCheckbox(window, "ResumeVideosFromPreviousPositionCheckbox", true);
         AssertCheckbox(window, "UseManualVideoControlsCheckbox", false);
+        AssertCheckbox(window, "ToggleVideoPlaybackOnClickCheckbox", false);
     }
 
     private static void SetEditedControlValues(ConfigurationWindow window)
@@ -160,6 +162,7 @@ public sealed class ConfigurationWindowSettingsTests
         SetCheckbox(window, "StartVideosMutedCheckbox", true);
         SetCheckbox(window, "ResumeVideosFromPreviousPositionCheckbox", false);
         SetCheckbox(window, "UseManualVideoControlsCheckbox", true);
+        SetCheckbox(window, "ToggleVideoPlaybackOnClickCheckbox", true);
     }
 
     private static void AssertConfigurationProperties(ConfigurationWindow window)
@@ -191,6 +194,7 @@ public sealed class ConfigurationWindowSettingsTests
         Assert.True(window.StartVideosMuted);
         Assert.False(window.ResumeVideosFromPreviousPosition);
         Assert.True(window.UseManualVideoControls);
+        Assert.True(window.ToggleVideoPlaybackOnClick);
     }
 
     private static void AssertPersistedSettings(Cloudless.Properties.Settings settings)
@@ -221,6 +225,7 @@ public sealed class ConfigurationWindowSettingsTests
         Assert.True(settings.StartVideosMuted);
         Assert.False(settings.ResumeVideosFromPreviousPosition);
         Assert.True(settings.UseManualVideoControls);
+        Assert.True(settings.ToggleVideoPlaybackOnClick);
         Assert.Equal("Dark", settings["Theme"]);
     }
 

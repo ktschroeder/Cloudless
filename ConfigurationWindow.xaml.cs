@@ -53,6 +53,7 @@ namespace Cloudless
         public bool StartVideosMuted { get; private set; }
         public bool ResumeVideosFromPreviousPosition { get; private set; }
         public bool UseManualVideoControls { get; private set; }
+        public bool ToggleVideoPlaybackOnClick { get; private set; }
 
         private MainWindow _mw;
 
@@ -150,6 +151,10 @@ namespace Cloudless
             var currentUseManualVideoControls = Cloudless.Properties.Settings.Default.UseManualVideoControls;
             UseManualVideoControlsCheckbox.IsChecked = currentUseManualVideoControls;
             UseManualVideoControls = currentUseManualVideoControls;
+
+            var currentToggleVideoPlaybackOnClick = Cloudless.Properties.Settings.Default.ToggleVideoPlaybackOnClick;
+            ToggleVideoPlaybackOnClickCheckbox.IsChecked = currentToggleVideoPlaybackOnClick;
+            ToggleVideoPlaybackOnClick = currentToggleVideoPlaybackOnClick;
 
             var currentBackground = Cloudless.Properties.Settings.Default.Background;
             // Set the current selection
@@ -424,6 +429,7 @@ namespace Cloudless
             StartVideosMuted = StartVideosMutedCheckbox.IsChecked ?? false;
             ResumeVideosFromPreviousPosition = ResumeVideosFromPreviousPositionCheckbox.IsChecked ?? false;
             UseManualVideoControls = UseManualVideoControlsCheckbox.IsChecked ?? false;
+            ToggleVideoPlaybackOnClick = ToggleVideoPlaybackOnClickCheckbox.IsChecked ?? false;
 
             var parsedSize = double.TryParse(MaxCompressedCopySizeMBTextBox.Text.Trim(), out double size);
             MaxCompressedCopySizeMB = parsedSize ? size : 10.0;

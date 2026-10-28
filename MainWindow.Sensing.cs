@@ -18,6 +18,9 @@ namespace Cloudless
         private bool isDraggingWindow = false;
         private Point initialMouseScreenPosition;
         private Point initialWindowPosition;
+        private IVideoPlayer? _videoPlaybackClickCandidate;
+        private Point _videoPlaybackClickStartScreenPosition;
+        private bool _videoWindowMovePending;
         private bool isSelectionDragPending;
         private bool isDraggingSelectionGroup;
         private bool selectionDragWindowWasSelected;
@@ -73,6 +76,26 @@ namespace Cloudless
 
         private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                _videoPlaybackClickCandidate = null;
+                _videoWindowMovePending = false;
+
+                if (MainWindow.ShouldToggleVideoPlaybackOnClick(
+                        Cloudless.Properties.Settings.Default.ToggleVideoPlaybackOnClick,
+                        GlobalMouseModeManager.CurrentMode) &&
+                    VideoHost.Content is IVideoPlayer videoPlayer &&
+                    VideoHost.ActualWidth > 0 && VideoHost.ActualHeight > 0)
+                {
+                    Point videoHostPosition = e.GetPosition(VideoHost);
+                    if (new Rect(0, 0, VideoHost.ActualWidth, VideoHost.ActualHeight).Contains(videoHostPosition))
+                    {
+                        _videoPlaybackClickCandidate = videoPlayer;
+                        _videoPlaybackClickStartScreenPosition = GetVideoClickScreenPosition(e);
+                    }
+                }
+            }
+
             if (e.ChangedButton == MouseButton.Right)
                 _rightClickFineZoomed = false;
 
@@ -149,6 +172,98 @@ namespace Cloudless
                 e.Handled = true;
             }
         }
+
+        private void Window_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_videoPlaybackClickCandidate == null || e.LeftButton != MouseButtonState.Pressed)
+                return;
+
+            Point currentScreenPosition = GetVideoClickScreenPosition(e);
+            if (!MainWindow.HasExceededVideoClickDragThreshold(
+                    _videoPlaybackClickStartScreenPosition,
+                    currentScreenPosition,
+                    SystemParameters.MinimumHorizontalDragDistance,
+                    SystemParameters.MinimumVerticalDragDistance))
+                return;
+
+            _videoPlaybackClickCandidate = null;
+            if (_videoWindowMovePending)
+            {
+                _videoWindowMovePending = false;
+                SetWindowDragging(true);
+                if (!fluidSnaplessDragPreference &&
+                    !Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
+                {
+                    try
+                    {
+                        ReleaseCapture();
+                        SendMessage(
+                            WindowHandle,
+                            WmSysCommand,
+                            (IntPtr)(ScMove | HtCaption),
+                            IntPtr.Zero);
+                    }
+                    finally
+                    {
+                        SetWindowDragging(false);
+                    }
+                }
+                else
+                {
+                    Mouse.Capture(this);
+                }
+            }
+        }
+
+        private void Window_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left)
+                return;
+
+            try
+            {
+                IVideoPlayer? videoPlayer = _videoPlaybackClickCandidate;
+                _videoPlaybackClickCandidate = null;
+                if (videoPlayer == null ||
+                    !MainWindow.ShouldToggleVideoPlaybackOnClick(
+                        Cloudless.Properties.Settings.Default.ToggleVideoPlaybackOnClick,
+                        GlobalMouseModeManager.CurrentMode) ||
+                    !ReferenceEquals(VideoHost.Content, videoPlayer))
+                {
+                    return;
+                }
+
+                bool wasPaused = videoPlayer.IsPaused();
+                videoPlayer.TogglePause();
+                if (wasPaused)
+                    NotifySyncWaiting(false);
+            }
+            catch (Exception ex)
+            {
+                Message($"Failed to toggle video playback: {ex.Message}");
+            }
+            finally
+            {
+                _videoWindowMovePending = false;
+            }
+        }
+
+        private Point GetVideoClickScreenPosition(MouseEventArgs e)
+        {
+            return GetCursorPos(out POINT cursorPosition)
+                ? new Point(cursorPosition.X, cursorPosition.Y)
+                : PointToScreen(e.GetPosition(this));
+        }
+
+        private const int WmSysCommand = 0x0112;
+        private const int ScMove = 0xF010;
+        private const int HtCaption = 2;
+
+        [DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int message, IntPtr wParam, IntPtr lParam);
 
         private void BeginSelectionGroupDrag()
         {
@@ -303,6 +418,15 @@ namespace Cloudless
                     {
                         return;
                     }
+
+                    if (_videoPlaybackClickCandidate != null)
+                    {
+                        _videoWindowMovePending = true;
+                        initialMouseScreenPosition = _videoPlaybackClickStartScreenPosition;
+                        initialWindowPosition = new Point(Left, Top);
+                        return;
+                    }
+
                     SetWindowDragging(true);
                     initialMouseScreenPosition = PointToScreen(e.GetPosition(this)); // Use screen coordinates
                     initialWindowPosition = new Point(this.Left, this.Top);
@@ -437,7 +561,7 @@ namespace Cloudless
                 ClampTransformToIntuitiveBounds(delta);
                 lastMousePosition = currentMousePosition;
             }
-            else if (isPanningVideo)
+            else if (isPanningVideo && _videoPlaybackClickCandidate == null)
             {
                 // Video panning: send delta to video player
                 Point current = e.GetPosition(this);
@@ -623,6 +747,13 @@ namespace Cloudless
                 Mouse.Capture(null);  // Release mouse capture
             }
 
+            if (_videoWindowMovePending)
+            {
+                _videoWindowMovePending = false;
+                if (Mouse.Captured == this)
+                    Mouse.Capture(null);
+            }
+
             SetWindowDragging(false);
             isDraggingWindowFromFullscreen = false;
             await UpdateContextMenuState();  // for zoom amount, which may change when window is resized
@@ -660,6 +791,8 @@ namespace Cloudless
         private void Window_LostMouseCapture(object sender, MouseEventArgs e)
         {
             LostMouseCapture -= Window_LostMouseCapture;
+            _videoPlaybackClickCandidate = null;
+            _videoWindowMovePending = false;
             _arrangementCtrlGesturePending = false;
             _arrangementCtrlDragActive = false;
             SetWindowDragging(false);

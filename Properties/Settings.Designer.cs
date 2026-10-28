@@ -424,5 +424,17 @@ namespace Cloudless.Properties {
                 this["UseManualVideoControls"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ToggleVideoPlaybackOnClick {
+            get {
+                return ((bool)(this["ToggleVideoPlaybackOnClick"]));
+            }
+            set {
+                this["ToggleVideoPlaybackOnClick"] = value;
+            }
+        }
     }
 }

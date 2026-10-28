@@ -105,6 +105,7 @@ namespace Cloudless
             settings.StartVideosMuted = configurationWindow.StartVideosMuted;
             settings.ResumeVideosFromPreviousPosition = configurationWindow.ResumeVideosFromPreviousPosition;
             settings.UseManualVideoControls = configurationWindow.UseManualVideoControls;
+            settings.ToggleVideoPlaybackOnClick = configurationWindow.ToggleVideoPlaybackOnClick;
             settings["Theme"] = configurationWindow.SelectedTheme ?? "Light";
             settings.Save();
             SecondaryWindowOpacity.ApplyToOpenWindows();

@@ -42,6 +42,38 @@ public sealed class MouseModeRadialWindowTests
     }
 
     [Theory]
+    [InlineData(true, "Normal", true)]
+    [InlineData(true, "Control", true)]
+    [InlineData(true, "Selection", false)]
+    [InlineData(false, "Normal", false)]
+    public void VideoClickPlaybackIsLimitedToConfiguredMouseModes(bool settingEnabled, string modeName, bool expected)
+    {
+        CloudlessMouseMode mode = Enum.Parse<CloudlessMouseMode>(modeName);
+
+        Assert.Equal(expected, MainWindow.ShouldToggleVideoPlaybackOnClick(settingEnabled, mode));
+    }
+
+    [Theory]
+    [InlineData(0, 0, 3, 3, 4, 4, false)]
+    [InlineData(0, 0, 4, 0, 4, 4, true)]
+    [InlineData(0, 0, 0, -4, 4, 4, true)]
+    public void VideoClickDragThresholdDistinguishesClicksFromDrags(
+        double startX,
+        double startY,
+        double currentX,
+        double currentY,
+        double horizontalThreshold,
+        double verticalThreshold,
+        bool expected)
+    {
+        Assert.Equal(expected, MainWindow.HasExceededVideoClickDragThreshold(
+            new Point(startX, startY),
+            new Point(currentX, currentY),
+            horizontalThreshold,
+            verticalThreshold));
+    }
+
+    [Theory]
     [InlineData(ModifierKeys.None, false)]
     [InlineData(ModifierKeys.Control, true)]
     public void SpotlightModePansOnlyWhenControlIsHeld(ModifierKeys modifiers, bool expected)
